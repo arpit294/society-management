@@ -72,6 +72,9 @@
   const showActiveTheme = theme => {
     const activeThemeIcon = document.querySelector('.theme-icon-active');
     const btnToActive = document.querySelector(`[data-coreui-theme-value="${theme}"]`);
+    if (!btnToActive) {
+      return;
+    }
     const svgOfActiveBtn = btnToActive.querySelector('svg');
     for (const element of document.querySelectorAll('[data-coreui-theme-value]')) {
       element.classList.remove('active');

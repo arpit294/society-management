@@ -27,7 +27,7 @@
             </svg>
         </div>
         <button class="btn-close d-lg-none" type="button" data-coreui-theme="dark" aria-label="Close"
-            onclick="coreui.Sidebar.getInstance(document.querySelector('#sidebar')).toggle()"></button>
+            onclick="(function(){const sidebar=document.getElementById('sidebar');if(!sidebar||!window.coreui?.Sidebar)return;const instance=window.coreui.Sidebar.getInstance(sidebar);instance?.toggle();})()"></button>
     </div>
     <ul class="sidebar-nav" data-coreui="navigation" data-simplebar>
         <li class="nav-item">
@@ -55,6 +55,18 @@
                 User Management
             </a>
         </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('flats.index') }}">
+                <!-- Flat / Building Icon -->
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M96 48C78.3 48 64 62.3 64 80v352c0 17.7 14.3 32 32 32h96V336h128v128h96c17.7 0 32-14.3 32-32V80c0-17.7-14.3-32-32-32H96zm64 64h48v48h-48v-48zm0 96h48v48h-48v-48zm0 96h48v48h-48v-48zm144-192h48v48h-48v-48zm0 96h48v48h-48v-48zm0 96h48v48h-48v-48z" />
+                </svg>
+                Flat Management
+            </a>
+        </li>
+
 
 
 

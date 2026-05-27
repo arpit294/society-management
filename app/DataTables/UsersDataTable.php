@@ -22,6 +22,12 @@ class UsersDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
+            ->filterColumn('role', function (QueryBuilder $query, string $keyword): void {
+                $query->where('role', $keyword);
+            })
+            ->filterColumn('status', function (QueryBuilder $query, string $keyword): void {
+                $query->where('status', $keyword);
+            })
             ->addColumn('action', 'users.action')
             ->editColumn('created_at', function (User $user) {
                 return $user->created_at?->format('d-m-Y h:i A');
