@@ -32,11 +32,6 @@ $(function () {
     // Toast source element
     const toastSource = $('#users-toast-source');
 
-    // Stop execution if users table is not found
-    if (!usersTable.length) {
-        return;
-    }
-
     // Show initial toast message if available
     if (toastSource.length && toastSource.data('message')) {
         showToast(
@@ -44,6 +39,8 @@ $(function () {
             String(toastSource.data('type') || 'success')
         );
     }
+
+
 
     /**
      * Build AJAX request headers
@@ -260,8 +257,51 @@ $(function () {
     }
 
     /**
+     * Apply server-side filters for Role + Status (exact stored values)
+     * DataTable columns order (0-based):
+     * 0=id(computed), 1=name, 2=email, 3=phone, 4=role, 5=status, 6=created_at, 7=action
+     */
+    function applyRoleStatusFilters() {
+
+        if (!$.fn.DataTable.isDataTable(usersTable)) {
+            return;
+        }
+
+        const dt = usersTable.DataTable();
+
+        const roleValue = String($('#users-filter-role').val() || '').trim().toLowerCase();
+        const statusValue = String($('#users-filter-status').val() || '').trim().toLowerCase();
+
+        dt.column(4).search(roleValue);
+        dt.column(5).search(statusValue);
+
+        dt.draw();
+    }
+
+    // Filter change handlers
+    $(document).on('change', '#users-filter-role, #users-filter-status', function () {
+
+        // Apply filters after DataTable is initialized
+        if ($.fn.DataTable.isDataTable(usersTable)) {
+            applyRoleStatusFilters();
+            return;
+        }
+
+        setTimeout(applyRoleStatusFilters, 200);
+    });
+
+    $(document).on('click', '#users-filter-reset', function () {
+
+        $('#users-filter-role').val('');
+        $('#users-filter-status').val('');
+
+        applyRoleStatusFilters();
+    });
+
+    /**
      * Close modal when dismiss button clicked
      */
+
     $(document).on(
         'click',
         '#user-modal [data-coreui-dismiss="modal"]',

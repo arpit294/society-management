@@ -12,7 +12,7 @@ class LoginController extends Controller
 {
     public function create(): View
     {
-        return view('login');
+        return view('authentication.login');
     }
 
     public function store(Request $request): RedirectResponse

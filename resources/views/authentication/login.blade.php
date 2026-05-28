@@ -1,10 +1,17 @@
 <x-layout>
+    <div id="users-toasts" class="users-toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    @if (session('success'))
+        <div id="users-toast-source" data-message="{{ e(session('success')) }}" data-type="success" hidden></div>
+    @elseif ($errors->any())
+        <div id="users-toast-source" data-message="{{ e($errors->first()) }}" data-type="danger" hidden></div>
+    @endif
 
     @push('styles')
         <style>
             .auth-page {
                 min-height: 100vh;
-                background: #ffffff;
+                background: #f3f4f7;
             }
 
             .auth-card {
@@ -12,15 +19,15 @@
             }
 
             .login-card {
-                background: #fff;
-                border: 1px solid #e5e5e5;
-                border-radius: 20px;
+                background: #ffffff;
+                border: 1px solid #dbdfe6;
+                border-radius: 16px;
                 overflow: hidden;
             }
 
             .card-header {
-                background: #000 !important;
-                border-bottom: 1px solid #000;
+                background: #5856d6 !important;
+                border-bottom: 1px solid #5856d6;
                 padding: 25px;
             }
 
@@ -34,62 +41,56 @@
             }
 
             .form-label {
-                color: #000;
+                color: #212631;
                 font-weight: 600;
             }
 
             .form-control {
-                background: #fff;
-                border: 1px solid #d1d5db;
-                color: #000;
+                background: #ffffff;
+                border: 1px solid #dbdfe6;
+                color: #212631;
                 border-radius: 10px;
                 height: 48px;
             }
 
             .form-control::placeholder {
-                color: #6b7280;
+                color: #6d7d9c;
             }
 
             .form-control:focus {
-                background: #fff;
-                color: #000;
-                border-color: #000;
-                box-shadow: none;
+                background: #ffffff;
+                color: #212631;
+                border-color: #5856d6;
+                box-shadow: 0 0 0 0.25rem rgba(88, 86, 214, 0.25);
             }
 
             .btn-primary {
-                background: #000;
-                color: #fff;
-                border: none;
+                background: #5856d6;
+                color: #ffffff;
+                border: 1px solid #5856d6;
                 border-radius: 10px;
                 padding: 10px 22px;
                 font-weight: 600;
             }
 
             .btn-primary:hover {
-                background: #222;
-                color: #fff;
+                background: #4644b8;
+                border-color: #4644b8;
+                color: #ffffff;
             }
 
             .text-muted {
-                color: #6b7280 !important;
+                color: #6d7d9c !important;
             }
 
             .text-muted a {
-                color: #000 !important;
+                color: #5856d6 !important;
                 font-weight: 600;
                 text-decoration: none;
             }
 
-            .alert-success {
-                background: #f3f4f6;
-                color: #000;
-                border: 1px solid #d1d5db;
-                border-radius: 10px;
-            }
-
             .invalid-feedback {
-                color: #dc2626;
+                color: #e55353;
             }
         </style>
     @endpush
@@ -109,13 +110,6 @@
                 </div>
 
                 <div class="card-body">
-
-                    @if (session('success'))
-                        <div class="alert alert-success">
-                            {{ session('success') }}
-                        </div>
-                    @endif
-
                     <form action="{{ route('login.store') }}" method="POST">
                         @csrf
 
@@ -157,6 +151,10 @@
                             </button>
                         </div>
 
+                        <p class="text-center text-muted small mb-0 mt-3">
+                            <a href="{{ route('password.request') }}">Forgot password?</a>
+                        </p>
+
                         <p class="text-center text-muted small mb-0 mt-4">
                             Don't have an account?
                             <a href="{{ route('register') }}">
@@ -175,5 +173,3 @@
     </main>
 
 </x-layout>
-
-{{-- --}}

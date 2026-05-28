@@ -1,7 +1,7 @@
 <header class="header header-sticky p-0 mb-4">
     <div class="container-fluid border-bottom px-4">
         <button class="header-toggler" type="button"
-            onclick="coreui.Sidebar.getInstance(document.querySelector('#sidebar')).toggle()"
+            onclick="(function(){const sidebar=document.getElementById('sidebar');if(!sidebar||!window.coreui?.Sidebar)return;const instance=window.coreui.Sidebar.getInstance(sidebar);instance?.toggle();})()"
             style="margin-inline-start: -14px">
             <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                 <path fill="var(--ci-primary-color, currentcolor)"
@@ -128,8 +128,8 @@
                                     <path fill="var(--ci-primary-color, currentcolor)"
                                         d="M77.155 272.034H351.75v-32.001H77.155l75.053-75.053v-.001l-22.628-22.626-113.681 113.68.001.001h-.001L129.58 369.715l22.628-22.627v-.001z"
                                         class="ci-primary" />
-                                    <path fill="var(--ci-primary-color, currentcolor)" d="M160 16v32h304v416H160v32h336V16z"
-                                        class="ci-primary" />
+                                    <path fill="var(--ci-primary-color, currentcolor)"
+                                        d="M160 16v32h304v416H160v32h336V16z" class="ci-primary" />
                                 </svg>
                                 Logout
                             </button>
