@@ -12,7 +12,7 @@ class RegisterController extends Controller
 {
     public function create(): View
     {
-        return view('register');
+        return view('authentication.register');
     }
 
     public function store(Request $request): RedirectResponse
@@ -30,7 +30,7 @@ class RegisterController extends Controller
         User::create($validated);
 
         return redirect()
-            ->route('register')
+            ->route('login')
             ->with('success', 'Registration completed successfully.');
     }
 }

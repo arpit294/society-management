@@ -1,4 +1,10 @@
 <x-layout>
+    <div id="users-toasts" class="users-toast-container" aria-live="polite" aria-atomic="true"></div>
+
+    @if (session('success'))
+        <div id="users-toast-source" data-message="{{ e(session('success')) }}" data-type="success" hidden></div>
+    @endif
+
     <x-sidebar />
     <div class="wrapper d-flex flex-column min-vh-100">
         <x-header />
@@ -2430,5 +2436,5 @@
 
 
 
-
+{{-- --}}
 </x-layout>
