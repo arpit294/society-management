@@ -124,3 +124,5 @@
     {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
 @endpush
 </x-user-page>
+
+

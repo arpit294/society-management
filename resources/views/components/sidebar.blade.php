@@ -56,7 +56,27 @@
             </a>
         </li>
 
+        <li class="nav-item">
+            <a class="nav-link" href="#">
+                <!-- Flat / Building Icon -->
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512">
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M256 0C167.6 0 96 71.6 96 160V512H480V160C480 71.6 408.4 0 320 0H256zM160 64H416c17.7 0 32 14.3 32 32V448H352V352H224V448H128V96c0-17.7 14.3-32 32-32zM192 128v32h32V128H192zm96 0v32h32V128H288zm96 0v32h32V128H384zM192 224v32h32V224H192zm96 0v32h32V224H288zm96 0v32h32V224H384z" />
+                </svg>
+                Flat Management
+            </a>
+        </li>
 
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('blocks.index') }}">
+                <!-- Block Management Icon -->
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M32 32C14.3 32 0 46.3 0 64V448c0 17.7 14.3 32 32 32H480c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32H32zm64 64H224V224H96V96zm192 0H416V224H288V96zM96 288H224V416H96V288zm192 0H416V416H288V288z" />
+                </svg>
+                Block Management
+            </a>
+        </li>
 
     </ul>
     <div class="sidebar-footer border-top d-none d-md-flex">
