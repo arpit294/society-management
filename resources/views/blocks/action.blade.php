@@ -1,9 +1,7 @@
 <div class="d-flex gap-2 justify-content-center">
-    <a href="{{ $editUrl }}" class="btn btn-sm btn-outline-primary">Edit</a>
+    <button type="button" class="btn btn-sm btn-outline-primary btn-edit-block" data-url="{{ route('blocks.edit', $id) }}"
+        data-title="Edit Block">Edit</button>
 
-    <form action="{{ $deleteUrl }}" method="POST" onsubmit="return confirm('Delete this block?');" class="d-inline">
-        @csrf
-        @method('DELETE')
-        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-    </form>
+    <button type="button" class="btn btn-sm btn-outline-danger btn-delete-block" data-url="{{ route('blocks.destroy', $id) }}"
+        data-id="{{ $id }}">Delete</button>
 </div>

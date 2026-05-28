@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
+use App\DataTables\UsersDataTable;
+use App\Http\Requests\StoreUserRequest;
+use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Yajra\DataTables\Facades\DataTables;
-use App\DataTables\UsersDataTable;
 
 class UserController extends Controller
 {
     /**
-     * Display the users listing page with DataTable.
+     * Display a listing of the resource.
+     * Uses Yajra DataTables to handle AJAX rendering automatically.
      */
     public function index(UsersDataTable $dataTable)
     {
@@ -19,57 +20,10 @@ class UserController extends Controller
     }
 
     /**
-     * Fetch user data for DataTables using AJAX.
-     */
-    public function data()
-    {
-        return DataTables::eloquent(User::query())
-
-            // Add automatic serial number column
-            ->addIndexColumn()
-
-            // Add custom ID column
-            ->addColumn('id', function (User $user) {
-                return $user->id;
-            })
-
-            // Generate edit URL for each user
-            ->addColumn('edit_url', function (User $user) {
-                return route('users.edit', $user);
-            })
-
-            // Generate delete URL for each user
-            ->addColumn('delete_url', function (User $user) {
-                return route('users.destroy', $user);
-            })
-
-            // Format role name properly
-            ->editColumn('role', function (User $user) {
-                return $user->role
-                    ? ucfirst(str_replace('_', ' ', $user->role))
-                    : '-';
-            })
-
-            // Show phone number or default value
-            ->editColumn('phone', function (User $user) {
-                return $user->phone ?: '-';
-            })
-
-            // Capitalize status text
-            ->editColumn('status', function (User $user) {
-                return ucfirst($user->status);
-            })
-
-            // Return JSON response
-            ->make(true);
-    }
-
-    /**
-     * Show create user form.
+     * Show the form for creating a new resource.
      */
     public function create()
     {
-        // Return modal form if request is AJAX
         if (request()->ajax()) {
             return view('users.create', [
                 'user' => null,
@@ -81,54 +35,29 @@ class UserController extends Controller
     }
 
     /**
-     * Store new user data into database.
+     * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(StoreUserRequest $request)
     {
-        // Validate incoming request data
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|max:20',
-            'role' => [
-                'required',
-                Rule::in([
-                    'owner',
-                    'rental',
-                    'security',
-                    'committee_member'
-                ])
-            ],
-            'password' => 'required|string|min:6',
-            'aadhar_id' => 'required|string|max:20',
-            'status' => [
-                'required',
-                Rule::in(['active', 'inactive'])
-            ],
-        ]);
+        User::create($request->validated());
 
-        // Create new user
-        $user = User::create($validated);
-
-        // Return JSON response for AJAX request
         if ($request->ajax()) {
             return response()->json([
+                'success' => true,
                 'message' => 'User created successfully.',
             ]);
         }
 
-        // Redirect with success message
         return redirect()
             ->route('users.index')
             ->with('success', 'User created successfully.');
     }
 
     /**
-     * Show edit form for selected user.
+     * Show the form for editing the specified resource.
      */
     public function edit(User $user)
     {
-        // Return edit modal form if request is AJAX
         if (request()->ajax()) {
             return view('users.edit', [
                 'user' => $user,
@@ -140,80 +69,113 @@ class UserController extends Controller
     }
 
     /**
-     * Update existing user data.
+     * Update the specified resource in storage.
      */
-    public function update(Request $request, User $user)
+    public function update(UpdateUserRequest $request, User $user)
     {
-        // Validate updated data
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
+        $validatedData = $request->validated();
 
-            // Ignore current user email while updating
-            'email' => [
-                'required',
-                'email',
-                Rule::unique('users', 'email')->ignore($user->id)
-            ],
+        // TRICKY: If the user didn't type a new password in the edit form, 
+        // we remove 'password' from the array so we don't accidentally overwrite 
+        // their current password with an empty string!
+        // (Note: Hashing is handled automatically by the 'hashed' cast in the User model)
+        if (empty($validatedData['password'])) {
+            unset($validatedData['password']);
+        }
 
-            'phone' => 'required|string|max:20',
+        $user->update($validatedData);
 
-            'role' => [
-                'required',
-                Rule::in([
-                    'owner',
-                    'rental',
-                    'security',
-                    'committee_member'
-                ])
-            ],
-
-            'password' => 'required|string|min:6',
-            'aadhar_id' => 'required|string|max:20',
-
-            'status' => [
-                'required',
-                Rule::in(['active', 'inactive'])
-            ],
-        ]);
-
-        // Update user data
-        $user->update($validated);
-
-        // Return JSON response for AJAX request
         if ($request->ajax()) {
             return response()->json([
+                'success' => true,
                 'message' => 'User updated successfully.',
             ]);
         }
 
-        // Redirect with success message
         return redirect()
             ->route('users.index')
             ->with('success', 'User updated successfully.');
     }
 
     /**
-     * Delete selected user from database.
+     * Remove the specified resource from storage.
      */
     public function destroy(Request $request, User $user)
     {
-        // Store user ID before delete
         $id = $user->id;
-
-        // Delete user
         $user->delete();
 
-        // Return JSON response for AJAX request
         if ($request->ajax()) {
             return response()->json([
+                'success' => true,
                 'message' => 'User deleted successfully.',
                 'id' => $id,
             ]);
         }
 
-        // Redirect with success message
         return redirect()
             ->route('users.index')
             ->with('success', 'User deleted successfully.');
+    }
+
+    /**
+     * Bulk Delete Users
+     */
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->input('select', []);
+
+        // TRICKY: Datatables might send the IDs as a single comma-separated string (e.g. "1,2,3") 
+        // rather than an array. We need to explode it into a real array first so Eloquent can use it.
+        if (! is_array($ids)) {
+            $ids = array_filter(explode(',', $ids));
+        }
+
+        if (count($ids) > 0) {
+            $deletedCount = User::destroy($ids);
+
+            return response()->json([
+                'success' => true,
+                'message' => $deletedCount.' users deleted successfully.',
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No users selected.',
+        ], 400);
+    }
+
+    /**
+     * Bulk Update Users
+     */
+    public function bulkUpdate(Request $request)
+    {
+        $validated = $request->validate([
+            'select' => 'required',
+            'status' => 'required|string|in:active,inactive',
+        ]);
+
+        $ids = $request->input('select', []);
+        $status = $request->input('status');
+
+        // TRICKY: Same as bulkDelete, convert comma-separated string to array if necessary.
+        if (! is_array($ids)) {
+            $ids = array_filter(explode(',', $ids));
+        }
+
+        if (count($ids) > 0) {
+            $updatedCount = User::whereIn('id', $ids)->update(['status' => $status]);
+
+            return response()->json([
+                'success' => true,
+                'message' => $updatedCount.' users updated successfully.',
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'No valid users selected for update.',
+        ], 422);
     }
 }

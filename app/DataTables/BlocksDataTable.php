@@ -5,7 +5,7 @@ namespace App\DataTables;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
 
-use Yajra\DataTables\EloquentDataTable;
+use Yajra\DataTables\QueryDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
@@ -15,9 +15,9 @@ use Yajra\DataTables\Services\DataTable;
 
 class BlocksDataTable extends DataTable
 {
-    public function dataTable($query): EloquentDataTable
+    public function dataTable($query): QueryDataTable
     {
-        return (new EloquentDataTable($query))
+        return (new QueryDataTable($query))
 
             ->addColumn('action', 'blocks.action')
             ->editColumn('created_at', function ($row) {
@@ -54,6 +54,7 @@ class BlocksDataTable extends DataTable
             ]);
     }
 
+    
     public function getColumns(): array
     {
         return [

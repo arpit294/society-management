@@ -2,87 +2,87 @@
 
 namespace App\Http\Controllers;
 
+use App\DataTables\BlocksDataTable;
+use App\Models\Block;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class BlockController extends Controller
 {
-    public function index()
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(BlocksDataTable $dataTable)
     {
-        $blocks = DB::table('blocks')->orderByDesc('id')->get();
-        return view('blocks.index', compact('blocks'));
+        return $dataTable->render('blocks.index');
     }
 
+    /**
+     * Show the form for creating a new resource.
+     */
     public function create()
     {
         return view('blocks.create');
     }
 
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'block_name' => ['required', 'string', 'max:255'],
-            'total_floor' => ['required', 'integer', 'min:0'],
-            'total_flats' => ['required', 'integer', 'min:0'],
+        $validatedData = $request->validate([
+            'block_name' => 'required|string|max:255',
+            'total_floor' => 'required|integer|min:0',
+            'total_flats' => 'required|integer|min:0',
         ]);
 
-        DB::table('blocks')->insert([
-            ...$validated,
-            'created_at' => now(),
-            // migration has no updated_at column, so we don't set it
+        Block::create($validatedData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Block created successfully.',
         ]);
-
-        return redirect()->route('blocks.index')->with('success', 'Block created successfully.');
     }
 
-    public function show(string $id)
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Block $block)
     {
-        $block = DB::table('blocks')->where('id', $id)->first();
-        abort_unless($block, 404);
-
-        return view('blocks.show', compact('block'));
-    }
-
-    public function edit(string $id)
-    {
-        $block = DB::table('blocks')->where('id', $id)->first();
-        abort_unless($block, 404);
-
         return view('blocks.edit', compact('block'));
     }
 
-    public function update(Request $request, string $id)
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Block $block)
     {
-        $block = DB::table('blocks')->where('id', $id)->first();
-        abort_unless($block, 404);
-
-        $validated = $request->validate([
-            'block_name' => ['required', 'string', 'max:255'],
-            'total_floor' => ['required', 'integer', 'min:0'],
-            'total_flats' => ['required', 'integer', 'min:0'],
+        $validatedData = $request->validate([
+            'block_name' => 'required|string|max:255',
+            'total_floor' => 'required|integer|min:0',
+            'total_flats' => 'required|integer|min:0',
         ]);
 
-        DB::table('blocks')
-            ->where('id', $id)
-            ->update($validated);
+        $block->update($validatedData);
 
-        return redirect()->route('blocks.index')->with('success', 'Block updated successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Block updated successfully.',
+        ]);
     }
 
-    public function destroy(string $id, Request $request)
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Block $block)
     {
-        $block = DB::table('blocks')->where('id', $id)->first();
-        abort_unless($block, 404);
+        $block->delete();
 
-        DB::table('blocks')->where('id', $id)->delete();
-
-        if ($request->ajax()) {
-            return response()->json([
-                'message' => 'Block deleted successfully.',
-                'id' => $id,
-            ]);
-        }
-
-        return redirect()->route('blocks.index')->with('success', 'Block deleted successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Block deleted successfully.',
+        ]);
     }
 }
+
+
+//

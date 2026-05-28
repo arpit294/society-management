@@ -2,7 +2,7 @@
 
 namespace App\DataTables;
 
-use App\Models\FlatsDatatable;
+use App\Models\Flat;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -17,23 +17,32 @@ class FlatsDatatables extends DataTable
     /**
      * Build the DataTable class.
      *
-     * @param QueryBuilder<FlatsDatatable> $query Results from query() method.
+     * @param QueryBuilder<Flat> $query Results from query() method.
      */
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
-            ->addColumn('action', 'flatsdatatables.action')
+            ->addColumn('action', 'flats.action')
+            ->editColumn('block_id', function ($model) {
+                return $model->block ? $model->block->block_name : '-';
+            })
+            ->editColumn('created_at', function ($model) {
+                return $model->created_at ? $model->created_at->format('Y-m-d H:i:s') : '-';
+            })
+            ->editColumn('updated_at', function ($model) {
+                return $model->updated_at ? $model->updated_at->format('Y-m-d H:i:s') : '-';
+            })
             ->setRowId('id');
     }
 
     /**
      * Get the query source of dataTable.
      *
-     * @return QueryBuilder<FlatsDatatable>
+     * @return QueryBuilder<Flat>
      */
-    public function query(FlatsDatatables $model): QueryBuilder
+    public function query(Flat $model): QueryBuilder
     {
-        return $model->newQuery();
+        return $model->newQuery()->with('block');
     }
 
     /**
@@ -42,7 +51,7 @@ class FlatsDatatables extends DataTable
     public function html(): HtmlBuilder
     {
         return $this->builder()
-            ->setTableId('flatsdatatables-table')
+            ->setTableId('flats-table')
             ->columns($this->getColumns())
             ->minifiedAjax()
             ->orderBy(1)
@@ -64,7 +73,7 @@ class FlatsDatatables extends DataTable
     {
         return [
             Column::make('id'),
-            Column::make('block_id'),
+            Column::make('block_id')->title('Block'),
             Column::make('flat_no'),
             Column::make('floor_no'),
             Column::make('flat_type'),

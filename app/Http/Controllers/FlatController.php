@@ -2,87 +2,113 @@
 
 namespace App\Http\Controllers;
 
+use App\DataTables\FlatsDatatables;
+use App\Models\Block;
+use App\Models\Flat;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class FlatController extends Controller
 {
-    public function index()
+    /**
+     * Display a listing of the resource.
+     */
+    public function index(FlatsDatatables $dataTable)
     {
-        $flats = DB::table('flats')->orderByDesc('id')->get();
-        return view('flats.index', compact('flats'));
+        return $dataTable->render('flats.index');
     }
 
+    /**
+     * Show the form for creating a new resource.
+     */
     public function create()
     {
-        return view('flats.create');
+        $blocks = Block::all();
+        return view('flats.create', compact('blocks'));
     }
 
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'block_id' => ['nullable', 'integer'],
-            'flat_no' => ['required', 'string', 'max:255'],
-            'floor_no' => ['required', 'string', 'max:255'],
-            'flat_type' => ['required', 'string', 'max:255'],
-            'maintenance_amount' => ['required', 'numeric', 'min:0'],
-            'status' => ['required', 'string', 'max:255'],
+        $validatedData = $request->validate([
+            'block_id' => 'nullable|integer|exists:blocks,id',
+            'flat_no' => 'required|string|max:255',
+            'floor_no' => 'required|integer|min:0',
+            'flat_type' => 'required|string|max:255',
+            'maintenance_amount' => 'required|numeric|min:0',
+            'status' => 'required|string|max:255',
         ]);
 
-        DB::table('flats')->insert(array_merge($validated, [
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]));
+        // Check if a block is selected and ensure the provided floor_no does not exceed the block's total_floor
+        if (!empty($validatedData['block_id'])) {
+            $block = \App\Models\Block::find($validatedData['block_id']);
+            if ($block && $validatedData['floor_no'] > $block->total_floor) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.']
+                ]);
+            }
+        }
 
-        return redirect()->route('flats.index')->with('success', 'Flat created successfully.');
+        Flat::create($validatedData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Flat created successfully.',
+        ]);
     }
 
-    public function show(string $id)
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(Flat $flat)
     {
-        abort_if(!$id, 404);
-
-        $flat = DB::table('flats')->where('id', $id)->first();
-        abort_unless($flat, 404);
-
-        return view('flats.show', compact('flat'));
+        $blocks = Block::all();
+        return view('flats.edit', compact('flat', 'blocks'));
     }
 
-    public function edit(string $id)
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Flat $flat)
     {
-        $flat = DB::table('flats')->where('id', $id)->first();
-        abort_unless($flat, 404);
-
-        return view('flats.edit', compact('flat'));
-    }
-
-    public function update(Request $request, string $id)
-    {
-        $flat = DB::table('flats')->where('id', $id)->first();
-        abort_unless($flat, 404);
-
-        $validated = $request->validate([
-            'block_id' => ['nullable', 'integer'],
-            'flat_no' => ['required', 'string', 'max:255'],
-            'floor_no' => ['required', 'string', 'max:255'],
-            'flat_type' => ['required', 'string', 'max:255'],
-            'maintenance_amount' => ['required', 'numeric', 'min:0'],
-            'status' => ['required', 'string', 'max:255'],
+        $validatedData = $request->validate([
+            'block_id' => 'nullable|integer|exists:blocks,id',
+            'flat_no' => 'required|string|max:255',
+            'floor_no' => 'required|integer|min:0',
+            'flat_type' => 'required|string|max:255',
+            'maintenance_amount' => 'required|numeric|min:0',
+            'status' => 'required|string|max:255',
         ]);
 
-        DB::table('flats')
-            ->where('id', $id)
-            ->update(array_merge($validated, ['updated_at' => now()]));
+        // Check if a block is selected and ensure the provided floor_no does not exceed the block's total_floor
+        if (!empty($validatedData['block_id'])) {
+            $block = Block::find($validatedData['block_id']);
+            if ($block && $validatedData['floor_no'] > $block->total_floor) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.']
+                ]);
+            }
+        }
 
-        return redirect()->route('flats.index')->with('success', 'Flat updated successfully.');
+        $flat->update($validatedData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Flat updated successfully.',
+        ]);
     }
 
-    public function destroy(string $id)
+    /**
+     * Remove the specified flat from id
+     */
+    public function destroy(Flat $flat)
     {
-        $flat = DB::table('flats')->where('id', $id)->first();
-        abort_unless($flat, 404);
+        $flat->delete();
 
-        DB::table('flats')->where('id', $id)->delete();
-
-        return redirect()->route('flats.index')->with('success', 'Flat deleted successfully.');
+        return response()->json([
+            'success' => true,
+            'message' => 'Flat deleted successfully.',
+        ]);
     }
 }

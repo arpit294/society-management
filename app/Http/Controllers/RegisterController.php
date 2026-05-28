@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class RegisterController extends Controller
@@ -15,19 +14,9 @@ class RegisterController extends Controller
         return view('authentication.register');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(RegisterRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|max:20',
-            'role' => ['required', Rule::in(['owner', 'rental', 'security', 'committee_member'])],
-            'aadhar_id' => 'required|string|max:20',
-            'status' => ['required', Rule::in(['active', 'inactive'])],
-            'password' => 'required|string|min:6|confirmed',
-        ]);
-
-        User::create($validated);
+        User::create($request->validated());
 
         return redirect()
             ->route('login')

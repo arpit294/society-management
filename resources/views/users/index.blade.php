@@ -127,7 +127,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="filter-col" style="min-width: 200px;">
+            <div class="filter-col d-none" id="users-filter-reset-col" style="min-width: 200px;">
                 <button type="button" id="users-filter-reset" class="btn btn-outline-secondary w-100">
                     Reset filters
                 </button>
