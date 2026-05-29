@@ -17,7 +17,7 @@
             <div class="col-md-6">
                 <label class="form-label">Block Name</label>
                 <input type="text" name="block_name" class="form-control"
-                    value="{{ old('block_name', $block->block_name) }}" required>
+                    value="{{ old('block_name', $block->block_name) }}">
                 @error('block_name')
                     <div class="invalid-feedback d-block field-error">{{ $message }}</div>
                 @enderror
@@ -26,7 +26,7 @@
             <div class="col-md-3">
                 <label class="form-label">Total Floor</label>
                 <input type="number" name="total_floor" class="form-control"
-                    value="{{ old('total_floor', $block->total_floor) }}" min="0" required>
+                    value="{{ old('total_floor', $block->total_floor) }}" min="0">
                 @error('total_floor')
                     <div class="invalid-feedback d-block field-error">{{ $message }}</div>
                 @enderror
@@ -35,7 +35,7 @@
             <div class="col-md-3">
                 <label class="form-label">Total Flats</label>
                 <input type="number" name="total_flats" class="form-control"
-                    value="{{ old('total_flats', $block->total_flats) }}" min="0" required>
+                    value="{{ old('total_flats', $block->total_flats) }}" min="0">
                 @error('total_flats')
                     <div class="invalid-feedback d-block field-error">{{ $message }}</div>
                 @enderror

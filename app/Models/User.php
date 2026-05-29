@@ -36,4 +36,9 @@ class User extends Authenticatable
             'created_at' => 'datetime',
         ];
     }
+
+    public function complains()
+    {
+        return $this->hasMany(Complain::class);
+    }
 }

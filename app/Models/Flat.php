@@ -19,4 +19,6 @@ class Flat extends Model
     {
         return $this->belongsTo(Block::class, 'block_id');
     }
+
+
 }

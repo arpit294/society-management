@@ -29,7 +29,7 @@
 
             <div class="col-md-6">
                 <label class="form-label">Flat No</label>
-                <input type="text" name="flat_no" class="form-control" value="{{ old('flat_no', $flat->flat_no) }}" required>
+                <input type="text" name="flat_no" class="form-control" value="{{ old('flat_no', $flat->flat_no) }}">
                 @error('flat_no')
                     <div class="invalid-feedback d-block field-error">{{ $message }}</div>
                 @enderror
@@ -37,7 +37,7 @@
 
             <div class="col-md-6">
                 <label class="form-label">Floor No</label>
-                <input type="number" id="floor_no" name="floor_no" class="form-control" value="{{ old('floor_no', $flat->floor_no) }}" min="0" required>
+                <input type="number" id="floor_no" name="floor_no" class="form-control" value="{{ old('floor_no', $flat->floor_no) }}" min="0">
                 <small class="text-muted d-none" id="floor-help">Max floors: <span></span></small>
                 @error('floor_no')
                     <div class="invalid-feedback d-block field-error">{{ $message }}</div>
@@ -46,7 +46,7 @@
 
             <div class="col-md-6">
                 <label class="form-label">Flat Type</label>
-                <select name="flat_type" class="form-select" required>
+                <select name="flat_type" class="form-select">
                     <option value="">Select Flat Type</option>
                     <option value="1BHK" {{ old('flat_type', $flat->flat_type) == '1BHK' ? 'selected' : '' }}>1BHK</option>
                     <option value="2BHK" {{ old('flat_type', $flat->flat_type) == '2BHK' ? 'selected' : '' }}>2BHK</option>
@@ -60,7 +60,7 @@
             <div class="col-md-6">
                 <label class="form-label">Maintenance Amount</label>
                 <input type="number" step="0.01" name="maintenance_amount" class="form-control"
-                    value="{{ old('maintenance_amount', $flat->maintenance_amount) }}" required>
+                    value="{{ old('maintenance_amount', $flat->maintenance_amount) }}">
                 @error('maintenance_amount')
                     <div class="invalid-feedback d-block field-error">{{ $message }}</div>
                 @enderror
@@ -68,7 +68,7 @@
 
             <div class="col-md-6">
                 <label class="form-label">Status</label>
-                <select name="status" class="form-select" required>
+                <select name="status" class="form-select">
                     <option value="">Select Status</option>
                     <option value="Empty" {{ old('status', $flat->status) == 'Empty' ? 'selected' : '' }}>Empty</option>
                     <option value="Occupied" {{ old('status', $flat->status) == 'Occupied' ? 'selected' : '' }}>Occupied</option>

@@ -37,16 +37,19 @@ Route::middleware('auth')->group(function () {
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
 
     // Users
-    Route::post('users/bulk-delete', [UserController::class, 'bulkDelete'])->name('users.bulkDelete');
-    Route::post('users/bulk-update', [UserController::class, 'bulkUpdate'])->name('users.bulkUpdate');
     Route::resource('users', UserController::class)->except(['show']);
 
     // Flats
-    Route::post('flats/bulk-delete', [FlatController::class, 'bulkDelete'])->name('flats.bulkDelete');
-    Route::post('flats/bulk-update', [FlatController::class, 'bulkUpdate'])->name('flats.bulkUpdate');
     Route::resource('flats', FlatController::class)->except(['show']);
 
     // Blocks
-    Route::post('blocks/bulk-delete', [BlockController::class, 'bulkDelete'])->name('blocks.bulkDelete');
     Route::resource('blocks', BlockController::class)->except(['show']);
+
+    // Complains
+    Route::resource('complains', \App\Http\Controllers\ComplainController::class)->except(['show']);
+
+    // Residents
+    Route::resource('residents', \App\Http\Controllers\ResidentController::class)->only(['index', 'create', 'store']);
 });
+
+// 

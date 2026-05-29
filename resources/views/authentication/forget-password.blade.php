@@ -25,12 +25,20 @@
                             <div class="text-body-secondary">Enter your email address and we will send you instructions
                                 on how to reset your password.</div>
                         </div>
-                        <form class="row gap-3 text-start" action="{{ route('password.email') }}" method="post"
+                        @if (session('status'))
+                            <div id="users-toast-source" data-message="{{ session('status') }}" data-type="success" style="display: none;"></div>
+                        @endif
+                        <form id="resetPasswordForm" class="row gap-3 text-start" action="{{ route('password.email') }}" method="post"
                             autocomplete="off" novalidate>
+                            @csrf
                             <div>
                                 <label class="form-label" for="email">Email address</label>
-                                <input class="form-control" id="email" name="email" type="email"
-                                    placeholder="your@email.com" autocomplete="off">
+                                <input class="form-control @error('email') is-invalid @enderror" id="email" name="email" type="email"
+                                    placeholder="your@email.com" autocomplete="off" value="{{ old('email') }}">
+                                @error('email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div id="js-email-error" class="invalid-feedback text-danger" style="display: none;"></div>
                             </div>
                             <div>
                                 <button class="btn btn-primary w-100" type="submit">
@@ -48,4 +56,53 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const toastSource = document.getElementById('users-toast-source');
+                if (!toastSource) return;
+
+                const message = toastSource.getAttribute('data-message');
+                const type = toastSource.getAttribute('data-type') || 'success';
+
+                if (message && window.jQuery && typeof window.showToast === 'function') {
+                    window.showToast(message, type);
+                }
+            });
+
+            document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
+                const emailInput = document.getElementById('email');
+                const jsError = document.getElementById('js-email-error');
+                let isValid = true;
+                let errorMessage = '';
+
+                // Reset previous state
+                emailInput.classList.remove('is-invalid');
+                jsError.style.display = 'none';
+                jsError.textContent = '';
+
+                // If there's an existing blade error, hide it when JS validates
+                const bladeError = emailInput.parentElement.querySelector('.invalid-feedback:not(#js-email-error)');
+                if (bladeError) {
+                    bladeError.style.display = 'none';
+                }
+
+                if (!emailInput.value.trim()) {
+                    isValid = false;
+                    errorMessage = 'The email field is required.';
+                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)) {
+                    isValid = false;
+                    errorMessage = 'Please enter a valid email address.';
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    emailInput.classList.add('is-invalid');
+                    jsError.textContent = errorMessage;
+                    jsError.style.display = 'block';
+                }
+            });
+        </script>
+    @endpush
 </x-layout>
