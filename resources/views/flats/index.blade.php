@@ -102,33 +102,33 @@
     @endif
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">User Management</h4>
-        <button type="button" class="btn btn-primary" id="btn-add-user" data-url="{{ route('users.create') }}"
-            data-title="Add User">Add User</button>
+        <h4 class="mb-0">Flat Management</h4>
+
+        <button type="button" class="btn btn-primary" id="btn-add-flat" data-url="{{ route('flats.create') }}"
+            data-title="Add Flat">Add Flat</button>
     </div>
 
     <div class="mb-3">
         <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
             <div class="filter-col" style="min-width: 220px;">
-                <label class="form-label mb-1" for="users-filter-role">Filter by Role</label>
-                <select id="users-filter-role" class="form-select" style="max-width: 320px;">
-                    <option value="">All Roles</option>
-                    @foreach (['owner', 'rental', 'security', 'committee_member'] as $role)
-                        <option value="{{ $role }}">{{ $role }}</option>
-                    @endforeach
+                <label class="form-label mb-1" for="flats-filter-type">Filter by Flat Type</label>
+                <select id="flats-filter-type" class="form-select" style="max-width: 320px;">
+                    <option value="">All Flat Types</option>
+                    <option value="1BHK">1BHK</option>
+                    <option value="2BHK">2BHK</option>
+                    <option value="3BHK">3BHK</option>
                 </select>
             </div>
             <div class="filter-col" style="min-width: 220px;">
-                <label class="form-label mb-1" for="users-filter-status">Filter by Status</label>
-                <select id="users-filter-status" class="form-select" style="max-width: 320px;">
+                <label class="form-label mb-1" for="flats-filter-status">Filter by Status</label>
+                <select id="flats-filter-status" class="form-select" style="max-width: 320px;">
                     <option value="">All Status</option>
-                    @foreach (['active', 'inactive'] as $status)
-                        <option value="{{ $status }}">{{ ucfirst($status) }}</option>
-                    @endforeach
+                    <option value="Empty">Empty</option>
+                    <option value="Occupied">Occupied</option>
                 </select>
             </div>
-            <div class="filter-col d-none" id="users-filter-reset-col" style="min-width: 200px;">
-                <button type="button" id="users-filter-reset" class="btn btn-outline-secondary w-100">
+            <div class="filter-col d-none" id="flats-filter-reset-col" style="min-width: 200px;">
+                <button type="button" id="flats-filter-reset" class="btn btn-outline-secondary w-100">
                     Reset filters
                 </button>
             </div>
@@ -141,9 +141,9 @@
         </div>
     </div>
 
-    <div class="modal fade" id="user-modal" tabindex="-1" aria-labelledby="user-modal-label" aria-hidden="true">
+    <div class="modal fade" id="flat-modal" tabindex="-1" aria-labelledby="flat-modal-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" id="user-modal-content"></div>
+            <div class="modal-content" id="flat-modal-content"></div>
         </div>
     </div>
 
@@ -151,5 +151,3 @@
         {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
     @endpush
 </x-user-page>
-
-

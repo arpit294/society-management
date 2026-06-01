@@ -1,0 +1,87 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+use App\DataTables\ComplainsDataTable;
+use App\Models\Complain;
+use App\Models\User;
+use Illuminate\Validation\Rule;
+
+class ComplainController extends Controller
+{
+    public function index(ComplainsDataTable $dataTable)
+    {
+        return $dataTable->render('complains.index');
+    }
+
+    public function create()
+    {
+        $users =User::all();
+        return view('complains.create', compact('users'));
+    }
+
+    public function store(Request $request)
+    {
+        $validatedData = $request->validate([
+            'subject' => 'required|string|max:255',
+            'description' => 'required|string',
+            'user_id' => 'required|exists:users,id',
+            'category' => ['required', Rule::in([
+                'Maintenance Issues',
+                'Security Issues',
+                'Cleanliness & Housekeeping',
+                'Common Facilities',
+                'other'
+            ])],
+        ]);
+
+        Complain::create($validatedData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Complaint created successfully.',
+        ]);
+    }
+
+    public function edit(Complain $complain)
+    {
+        $users = \App\Models\User::all();
+        return view('complains.edit', compact('complain', 'users'));
+    }
+
+    public function update(Request $request, Complain $complain)
+    {
+        $validatedData = $request->validate([
+            'subject' => 'required|string|max:255',
+            'description' => 'required|string',
+            'user_id' => 'required|exists:users,id',
+            'category' => ['required', Rule::in([
+                'Maintenance Issues',
+                'Security Issues',
+                'Cleanliness & Housekeeping',
+                'Common Facilities',
+                'other'
+            ])],
+        ]);
+
+        $complain->update($validatedData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Complaint updated successfully.',
+        ]);
+    }
+
+
+    public function destroy(Complain $complain)
+    {
+        $complain->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Complaint deleted successfully.',
+        ]);
+    }
+}

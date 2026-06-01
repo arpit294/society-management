@@ -102,37 +102,10 @@
     @endif
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">User Management</h4>
-        <button type="button" class="btn btn-primary" id="btn-add-user" data-url="{{ route('users.create') }}"
-            data-title="Add User">Add User</button>
-    </div>
+        <h4 class="mb-0">Block Management</h4>
 
-    <div class="mb-3">
-        <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
-            <div class="filter-col" style="min-width: 220px;">
-                <label class="form-label mb-1" for="users-filter-role">Filter by Role</label>
-                <select id="users-filter-role" class="form-select" style="max-width: 320px;">
-                    <option value="">All Roles</option>
-                    @foreach (['owner', 'rental', 'security', 'committee_member'] as $role)
-                        <option value="{{ $role }}">{{ $role }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="filter-col" style="min-width: 220px;">
-                <label class="form-label mb-1" for="users-filter-status">Filter by Status</label>
-                <select id="users-filter-status" class="form-select" style="max-width: 320px;">
-                    <option value="">All Status</option>
-                    @foreach (['active', 'inactive'] as $status)
-                        <option value="{{ $status }}">{{ ucfirst($status) }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="filter-col d-none" id="users-filter-reset-col" style="min-width: 200px;">
-                <button type="button" id="users-filter-reset" class="btn btn-outline-secondary w-100">
-                    Reset filters
-                </button>
-            </div>
-        </div>
+        <button type="button" class="btn btn-primary" id="btn-add-block" data-url="{{ route('blocks.create') }}"
+            data-title="Add Block">Add Block</button>
     </div>
 
     <div class="card">
@@ -141,9 +114,9 @@
         </div>
     </div>
 
-    <div class="modal fade" id="user-modal" tabindex="-1" aria-labelledby="user-modal-label" aria-hidden="true">
+    <div class="modal fade" id="block-modal" tabindex="-1" aria-labelledby="block-modal-label" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" id="user-modal-content"></div>
+            <div class="modal-content" id="block-modal-content"></div>
         </div>
     </div>
 
@@ -151,5 +124,3 @@
         {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
     @endpush
 </x-user-page>
-
-

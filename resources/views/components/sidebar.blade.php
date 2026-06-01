@@ -69,6 +69,36 @@
 
 
 
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('blocks.index') }}">
+                <!-- Block Management Icon -->
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M32 32C14.3 32 0 46.3 0 64V448c0 17.7 14.3 32 32 32H480c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32H32zm64 64H224V224H96V96zm192 0H416V224H288V96zM96 288H224V416H96V288zm192 0H416V416H288V288z" />
+                </svg>
+                Block Management
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('complains.index') }}">
+                <!-- Complaint Icon -->
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M256 32C114.6 32 0 125.1 0 240c0 49.6 21.4 95 57 130.7C44.5 421.1 22.7 481.2 22 483.5c-1.6 5.4-1.1 11.3 1.4 16.3s7.2 8.1 12.7 8.1c66.6 0 119.4-33.3 151.4-58.4 22.2 6.4 46 9.8 70.5 9.8 141.4 0 256-92.9 256-208S397.4 32 256 32zm0 395.3c-23.1 0-45.7-3.6-67-10.6l-16.1-5.3-13.8 9.6c-27 18.8-67 43.1-118 48 9.3-26.6 24.3-64.8 32-84.3l8.8-22.3-16.4-17.5C33.8 310.6 16 276.6 16 240c0-106 107.5-192 240-192s240 86 240 192-107.5 192-240 192zM272 160h-32v112h32V160zm-16 176c-13.3 0-24 10.7-24 24s10.7 24 24 24 24-10.7 24-24-10.7-24-24-24z"/>
+                </svg>
+                Complaints
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('residents.index') }}">
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="var(--ci-primary-color, currentcolor)" d="M256 160c-44.2 0-80 35.8-80 80s35.8 80 80 80 80-35.8 80-80-35.8-80-80-80zm0 128c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm171.1-125.1L355.2 234.8c-2.4 12.5-8 23.9-15.8 33.6l64.1 64.1c12.5 12.5 32.8 12.5 45.3 0 12.5-12.5 12.5-32.8 0-45.3l-21.7-24.3zM140.7 268.4c-7.8-9.7-13.4-21.1-15.8-33.6L52.9 162.9c-12.5-12.5-12.5-32.8 0-45.3 12.5-12.5 32.8-12.5 45.3 0l71.9 71.9L140.7 268.4z" />
+                </svg>
+                Residents
+            </a>
+        </li>
+
 
     </ul>
     <div class="sidebar-footer border-top d-none d-md-flex">

@@ -24,24 +24,28 @@
                             <div class="text-body-secondary">Enter your new password and confirm it.</div>
                         </div>
 
-                        <form class="row gap-3 text-start" action="{{ route('password.update') }}" method="post"
+                        <form id="resetPasswordForm" class="row gap-3 text-start" action="{{ route('password.update') }}" method="post"
                             autocomplete="off" novalidate>
                             @csrf
                             <input type="hidden" name="token" value="{{ $token }}">
 
                             <div>
                                 <label class="form-label" for="email">Email address</label>
-                                <input class="form-control" id="email" type="email" name="email"
+                                <input class="form-control @error('email') is-invalid @enderror" id="email" type="email" name="email"
                                     placeholder="Enter your email" value="{{ $email ?? old('email') }}" required>
+                                @error('email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                                <div id="js-email-error" class="invalid-feedback text-danger" style="display: none;"></div>
                             </div>
 
                             <div>
                                 <label class="form-label" for="new-password">New password</label>
                                 <div class="input-group">
-                                    <input class="form-control" id="new-password" name="password" type="password"
+                                    <input class="form-control @error('password') is-invalid @enderror" id="new-password" name="password" type="password"
                                         placeholder="Enter new password" autocomplete="off">
                                     <span class="input-group-text">
-                                        <button class="bg-transparent border-0 p-0 link-secondary" type="button"
+                                        <button class="bg-transparent border-0 p-0 link-secondary toggle-password-btn" type="button"
                                             data-coreui-toggle="tooltip" aria-label="Show password"
                                             data-coreui-original-title="Show password">
                                             <svg class="icon" xmlns="http://www.w3.org/2000/svg"
@@ -57,6 +61,10 @@
                                             </svg>
                                         </button>
                                     </span>
+                                    @error('password')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div id="js-password-error" class="invalid-feedback text-danger" style="display: none;"></div>
                                 </div>
                             </div>
 
@@ -66,7 +74,7 @@
                                     <input class="form-control" id="confirm-password" name="password_confirmation"
                                         type="password" placeholder="Re-enter new password" autocomplete="off">
                                     <span class="input-group-text">
-                                        <button class="bg-transparent border-0 p-0 link-secondary" type="button"
+                                        <button class="bg-transparent border-0 p-0 link-secondary toggle-password-btn" type="button"
                                             data-coreui-toggle="tooltip" aria-label="Show password"
                                             data-coreui-original-title="Show password">
                                             <svg class="icon" xmlns="http://www.w3.org/2000/svg"
@@ -82,6 +90,7 @@
                                             </svg>
                                         </button>
                                     </span>
+                                    <div id="js-confirm-password-error" class="invalid-feedback text-danger" style="display: none;"></div>
                                 </div>
                             </div>
 
@@ -106,6 +115,97 @@
 
                 if (message && window.jQuery && typeof window.showToast === 'function') {
                     window.showToast(message, type);
+                }
+            });
+
+            document.querySelectorAll('.toggle-password-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const input = this.closest('.input-group').querySelector('input');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        this.setAttribute('aria-label', 'Hide password');
+                        this.setAttribute('data-coreui-original-title', 'Hide password');
+                    } else {
+                        input.type = 'password';
+                        this.setAttribute('aria-label', 'Show password');
+                        this.setAttribute('data-coreui-original-title', 'Show password');
+                    }
+                });
+            });
+
+            document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
+                const emailInput = document.getElementById('email');
+                const passwordInput = document.getElementById('new-password');
+                const confirmPasswordInput = document.getElementById('confirm-password');
+
+                const emailError = document.getElementById('js-email-error');
+                const passwordError = document.getElementById('js-password-error');
+                const confirmPasswordError = document.getElementById('js-confirm-password-error');
+
+                let isValid = true;
+
+                // Reset previous state
+                [emailInput, passwordInput, confirmPasswordInput].forEach(input => {
+                    input.classList.remove('is-invalid');
+                    if(input.parentElement.classList.contains('input-group')) {
+                        const bladeError = input.parentElement.querySelector('.invalid-feedback:not([id^="js-"])');
+                        if (bladeError) bladeError.style.display = 'none';
+                    } else {
+                        const bladeError = input.parentElement.querySelector('.invalid-feedback:not([id^="js-"])');
+                        if (bladeError) bladeError.style.display = 'none';
+                    }
+                });
+                
+                [emailError, passwordError, confirmPasswordError].forEach(err => {
+                    if (err) {
+                        err.style.display = 'none';
+                        err.textContent = '';
+                    }
+                });
+
+                // Email validation
+                if (!emailInput.value.trim()) {
+                    isValid = false;
+                    emailInput.classList.add('is-invalid');
+                    emailError.textContent = 'The email field is required.';
+                    emailError.style.display = 'block';
+                } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)) {
+                    isValid = false;
+                    emailInput.classList.add('is-invalid');
+                    emailError.textContent = 'Please enter a valid email address.';
+                    emailError.style.display = 'block';
+                }
+
+                // Password validation
+                if (!passwordInput.value) {
+                    isValid = false;
+                    passwordInput.classList.add('is-invalid');
+                    passwordError.textContent = 'The password field is required.';
+                    passwordError.style.display = 'block';
+                } else if (passwordInput.value.length < 5) {
+                    isValid = false;
+                    passwordInput.classList.add('is-invalid');
+                    passwordError.textContent = 'The password must be at least 5 characters.';
+                    passwordError.style.display = 'block';
+                }
+
+                // Confirm Password validation
+                if (passwordInput.value && passwordInput.value.length >= 5) {
+                    if (!confirmPasswordInput.value) {
+                        isValid = false;
+                        confirmPasswordInput.classList.add('is-invalid');
+                        confirmPasswordError.textContent = 'Please confirm your password.';
+                        confirmPasswordError.style.display = 'block';
+                    } else if (passwordInput.value !== confirmPasswordInput.value) {
+                        isValid = false;
+                        confirmPasswordInput.classList.add('is-invalid');
+                        confirmPasswordError.textContent = 'The password confirmation does not match.';
+                        confirmPasswordError.style.display = 'block';
+                    }
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
                 }
             });
         </script>

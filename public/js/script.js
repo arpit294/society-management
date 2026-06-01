@@ -1,485 +1,1041 @@
-/**
- * App-wide JavaScript
- * This file handles all AJAX operations for User CRUD.
- * Loaded globally using layout.blade.php
- */
+$(document).ready(function () {
+    // SweetAlert Configuration
+    const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+            confirmButton: "btn btn-danger mx-2",
+            cancelButton: "btn btn-secondary",
+        },
+        buttonsStyling: false,
+    });
 
-$(function () {
+    // Toastr Configuration
+    toastr.options = {
+        closeButton: true,
+        progressBar: true,
+        positionClass: "toast-top-right",
+        timeOut: 3000,
+    };
 
-    // Get CSRF token from meta tag for secure Laravel requests
-    const csrfToken = $('meta[name="csrf-token"]').attr('content');
+    // CSRF TOKEN
+    $.ajaxSetup({
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr("content"),
+            "X-Requested-With": "XMLHttpRequest",
+            Accept: "application/json",
+        },
+    });
 
-    // Toast notification container
-    const toastContainer = $('#users-toasts');
+    // Block Modal Variables
+    const blockModalEl = document.getElementById("block-modal");
+    const BlockModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const blockModalInstance =
+        blockModalEl && BlockModalClass
+            ? BlockModalClass.getOrCreateInstance(blockModalEl)
+            : null;
 
-    // Modal element for add/edit user form
-    const modalEl = document.getElementById('user-modal');
+    // User Modal Variables
+    const userModalEl = document.getElementById("user-modal");
+    const UserModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const userModalInstance =
+        userModalEl && UserModalClass
+            ? UserModalClass.getOrCreateInstance(userModalEl)
+            : null;
 
-    // Detect CoreUI or Bootstrap modal class
-    const ModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    // Toast Source Check
+    let toastSource = $("#users-toast-source");
 
-    // Create modal instance
-    const modalInstance = modalEl && ModalClass
-        ? ModalClass.getOrCreateInstance(modalEl)
-        : null;
+    if (toastSource.length && toastSource.data("message")) {
+        let type = toastSource.data("type") || "success";
 
-    // Users table selector
-    const usersTable = $('#users-table');
-
-    // Template for action buttons
-    const actionsTemplate = $('#users-actions-template');
-
-    // Toast source element
-    const toastSource = $('#users-toast-source');
-
-    // Show initial toast message if available
-    if (toastSource.length && toastSource.data('message')) {
-        showToast(
-            String(toastSource.data('message')),
-            String(toastSource.data('type') || 'success')
-        );
+        if (type === "success") {
+            toastr.success(toastSource.data("message"));
+        } else {
+            toastr.error(toastSource.data("message"));
+        }
     }
 
-
-
-    /**
-     * Build AJAX request headers
-     * Adds JSON headers and CSRF token
-     */
-    function ajaxHeaders() {
-
-        const headers = {
-            'X-Requested-With': 'XMLHttpRequest',
-            Accept: 'application/json',
-        };
-
-        // Add CSRF token if available
-        if (csrfToken) {
-            headers['X-CSRF-TOKEN'] = csrfToken;
+    // Toggle User Reset Button Visibility
+    function toggleUserResetBtn() {
+        if ($("#users-filter-role").val() || $("#users-filter-status").val()) {
+            $("#users-filter-reset-col").removeClass("d-none");
+        } else {
+            $("#users-filter-reset-col").addClass("d-none");
         }
-
-        return headers;
     }
 
-    /**
-     * Show Toast Notification
-     * Used for success/error messages
-     */
-    function showToast(message, type = 'success') {
+    // user Role Filter Change
+    $(document)
+        .off("change", "#users-filter-role")
+        .on("change", "#users-filter-role", function () {
+            let roleValue = $(this).val();
 
-        // Return if toast container not found
-        if (!toastContainer.length) {
-            return;
-        }
-
-        // Set icon and title based on type
-        const icon = type === 'success' ? '✓' : '!';
-        const title = type === 'success' ? 'Success' : 'Error';
-
-        // Create toast element
-        const $toast = $(
-            '<div class="users-toast ' + type + '" role="alert" aria-live="assertive"></div>'
-        );
-
-        // Add icon
-        $toast.append('<span class="users-toast-icon">' + icon + '</span>');
-
-        // Add content wrapper
-        $toast.append(
-            '<div class="users-toast-content">' +
-                '<div class="users-toast-title"></div>' +
-                '<p class="users-toast-message"></p>' +
-            '</div>'
-        );
-
-        // Set title and message text
-        $toast.find('.users-toast-title').text(title);
-        $toast.find('.users-toast-message').text(message);
-
-        // Append toast into container
-        toastContainer.append($toast);
-
-        // Show animation
-        requestAnimationFrame(function () {
-            $toast.addClass('show');
+            $("#users-table").DataTable().column(4).search(roleValue).draw();
+            toggleUserResetBtn();
         });
 
-        // Auto remove toast after 3.2 seconds
-        setTimeout(function () {
 
-            $toast.removeClass('show');
+    // $(document)
+    // .off("change","usaers-filter-role")
+    // .on("change", " #users-filter-role", function () {
+    //     let rolevalue = $(this).val();
 
-            setTimeout(function () {
-                $toast.remove();
-            }, 220);
+    //     $("#users-table").DataTable().column(4).search(rolevalue).draw();0
+    //     toggleUserResetBtn();
+    // });
 
-        }, 3200);
+    // user Status Filter Change
+    $(document)
+        .off("change", "#users-filter-status")
+        .on("change", "#users-filter-status", function () {
+            let statusValue = $(this).val();
+
+            $("#users-table").DataTable().column(5).search(statusValue).draw();
+            toggleUserResetBtn();
+        });
+
+    // user Filter Reset
+    $(document)
+        .off("click", "#users-filter-reset")
+        .on("click", "#users-filter-reset", function () {
+            $("#users-filter-role").val("");
+            $("#users-filter-status").val("");
+
+            let dt = $("#users-table").DataTable();
+
+            dt.column(4).search("");
+            dt.column(5).search("");
+            dt.draw();
+            toggleUserResetBtn();
+        });
+
+    // Toggle Flat Reset Button Visibility
+    function toggleFlatResetBtn() {
+        if ($("#flats-filter-type").val() || $("#flats-filter-status").val()) {
+            $("#flats-filter-reset-col").removeClass("d-none");
+        } else {
+            $("#flats-filter-reset-col").addClass("d-none");
+        }
     }
 
-    /**
-     * Show Validation Errors
-     * Display errors inside modal alert box
-     */
-    function showFormErrors(errors) {
+    // Flat Type Filter Change
+    $(document)
+        .off("change", "#flats-filter-type")
+        .on("change", "#flats-filter-type", function () {
+            let typeValue = $(this).val();
+            $("#flats-table")
+                .DataTable()
+                .column("flat_type:name")
+                .search(typeValue)
+                .draw();
+            toggleFlatResetBtn();
+        });
 
-        const errorBox = $('#user-form-errors');
+    // Flat Status Filter Change
+    $(document)
+        .off("change", "#flats-filter-status")
+        .on("change", "#flats-filter-status", function () {
+            let statusValue = $(this).val();
+            $("#flats-table")
+                .DataTable()
+                .column("status:name")
+                .search(statusValue)
+                .draw();
+            toggleFlatResetBtn();
+        });
 
-        // Return if error box not found
-        if (!errorBox.length) {
-            return;
-        }
+    // $(document)
+    //     .off("change", "#flats-filter-status")
+    //     .on("change", "#flats-filter-status" , function () {
+    //         let statusValue = $(this).val();
+    //         $("#falts-table")
+    //         .DataTable()
+    //         .column("status:name")
+    //         .draw();
+    //         toggleFlatResetBtn();
+    //     });
 
-        // Clear previous errors
-        errorBox.empty().addClass('d-none');
+    // Flat Filter Reset
+    $(document)
+        .off("click", "#flats-filter-reset")
+        .on("click", "#flats-filter-reset", function () {
+            $("#flats-filter-type").val("");
+            $("#flats-filter-status").val("");
 
-        // Return if no errors
-        if (!errors || !Object.keys(errors).length) {
-            return;
-        }
+            let dt = $("#flats-table").DataTable();
+            dt.column("flat_type:name").search("");
+            dt.column("status:name").search("");
+            dt.draw();
+            toggleFlatResetBtn();
+        });
 
-        // Build error list
-        const errorList = Object.values(errors)
-            .map(function (value) {
-                return '<li>' + value[0] + '</li>';
-            })
-            .join('');
+    // Add User Form Open
+    $(document)
+        .off("click", "#btn-add-user")
+        .on("click", "#btn-add-user", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
 
-        // Show errors
-        errorBox
-            .removeClass('d-none')
-            .html('<ul class="mb-0">' + errorList + '</ul>');
-    }
+            $.ajax({
+                type: "GET",
+                url: url,
 
-    /**
-     * Remove inline field errors
-     */
-    function clearFieldErrors($form) {
+                success: function (response) {
+                    $("#user-modal-content").html(response);
 
-        // Remove error messages
-        $form.find('.field-error').remove();
+                    $("#user-modal-content .modal-title").text(title);
 
-        // Remove invalid class
-        $form.find('.is-invalid').removeClass('is-invalid');
-    }
+                    userModalInstance?.show();
+                },
 
-    /**
-     * Show Inline Field Errors
-     * Display error below each field
-     */
-    function showFieldErrors($form, errors) {
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
 
-        // Clear previous errors first
-        clearFieldErrors($form);
+        // $(document)
+        // .off("click","#btn-add-user")
+        // .on("click","#btn-add-user" , function () {
+        //     let url = $(this).data("url");
+        //     let title = $(this).data("title");
 
-        // Return if no errors
-        if (!errors || !Object.keys(errors).length) {
-            return;
-        }
+        //     $.ajax({
+        //         type:"GET",
+        //         url : url,
 
-        // Loop through validation errors
-        Object.keys(errors).forEach(function (fieldName) {
+        //         success: function (response){
+        //             $("#user-model-content").html(responce);
 
-            // Get error message
-            const message = Array.isArray(errors[fieldName])
-                ? errors[fieldName][0]
-                : errors[fieldName];
+        //             $("#user-modol-content . model-title").text(title);
 
-            // Find input field
-            const $field = $form.find('[name="' + fieldName + '"]');
+        //             userModalInstance?.show();
+        //         },
 
-            // Skip if field not found
-            if (!$field.length) {
-                return;
+        //         error: function() {
+        //             toastr.error("could not load form");
+        //         }
+        //     })
+        // })
+
+    // Edit User Form Open
+    $(document)
+        .off("click", "#users-table .btn-edit-user")
+        .on("click", "#users-table .btn-edit-user", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#user-modal-content").html(response);
+
+                    $("#user-modal-content .modal-title").text(title);
+
+                    userModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Add/Edit User Form Submit
+    $(document)
+        .off("submit", "#user-ajax-form")
+        .on("submit", "#user-ajax-form", function (e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+            let requestType = $(this).attr("method") || "POST";
+            let formAction = $(this).attr("action");
+
+            let $btn = $(this).find('button[type="submit"]');
+            $btn.prop("disabled", true);
+
+            $(".field-error").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            $.ajax({
+                url: formAction,
+                method: requestType,
+                data: formData,
+                processData: false,
+                contentType: false,
+
+                success: function (response) {
+                    $btn.prop("disabled", false);
+                    toastr.success(response.message || "Saved successfully.");
+
+                    userModalInstance?.hide();
+
+                    $("#users-table").DataTable().ajax.reload();
+                },
+
+                error: function (xhr) {
+                    $btn.prop("disabled", false);
+                    $(".field-error").remove();
+                    $(".is-invalid").removeClass("is-invalid");
+
+                    let errors = xhr.responseJSON?.errors;
+
+                    if (errors) {
+                        $.each(errors, function (key, value) {
+                            let field = $('[name="' + key + '"]');
+
+                            field.addClass("is-invalid");
+
+                            let target = field;
+                            if (field.parent().hasClass("input-group")) {
+                                target = field.parent();
+                            }
+
+                            $(
+                                '<div class="invalid-feedback d-block field-error text-danger"></div>',
+                            )
+                                .text(value[0])
+                                .insertAfter(target);
+                        });
+                    } else {
+                        toastr.error(
+                            xhr.responseJSON?.message ||
+                                "Something went wrong.",
+                        );
+                    }
+                },
+            });
+        });
+
+    // Delete Single User
+    $(document)
+        .off("click", "#users-table .btn-delete-user")
+        .on("click", "#users-table .btn-delete-user", function () {
+            let url = $(this).data("url");
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "Are you sure?",
+                    text: "This user will be deleted permanently!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true,
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: "DELETE",
+
+                            success: function (response) {
+                                toastr.success(
+                                    response.message || "Deleted successfully.",
+                                );
+
+                                $("#users-table").DataTable().ajax.reload();
+                            },
+
+                            error: function (xhr) {
+                                toastr.error(
+                                    xhr.responseJSON?.message ||
+                                        "Could not delete user.",
+                                );
+                            },
+                        });
+                    }
+                });
+        });
+
+    // Add Block Form Open
+    $(document)
+        .off("click", "#btn-add-block")
+        .on("click", "#btn-add-block", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#block-modal-content").html(response);
+
+                    $("#block-modal-content .modal-title").text(title);
+
+                    blockModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+
+      
+
+    // Edit Block Form Open
+    $(document)
+        .off("click", "#blocks-table .btn-edit-block")
+        .on("click", "#blocks-table .btn-edit-block", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#block-modal-content").html(response);
+
+                    $("#block-modal-content .modal-title").text(title);
+
+                    blockModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Add/Edit Block Form Submit
+    $(document)
+        .off("submit", "#block-ajax-form")
+        .on("submit", "#block-ajax-form", function (e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+            let requestType = $(this).attr("method") || "POST";
+            let formAction = $(this).attr("action");
+
+            let $btn = $(this).find('button[type="submit"]');
+            $btn.prop("disabled", true);
+
+            $(".field-error").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            $.ajax({
+                url: formAction,
+                method: requestType,
+                data: formData,
+                processData: false,
+                contentType: false,
+
+                success: function (response) {
+                    $btn.prop("disabled", false);
+                    toastr.success(response.message || "Saved successfully.");
+
+                    blockModalInstance?.hide();
+
+                    if ($.fn.DataTable.isDataTable("#blocks-table")) {
+                        $("#blocks-table").DataTable().ajax.reload();
+                    }
+                },
+
+                error: function (xhr) {
+                    $btn.prop("disabled", false);
+                    $(".field-error").remove();
+                    $(".is-invalid").removeClass("is-invalid");
+
+                    let errors = xhr.responseJSON?.errors;
+
+                    if (errors) {
+                        $.each(errors, function (key, value) {
+                            let field = $('[name="' + key + '"]');
+                            field.addClass("is-invalid");
+
+                            let target = field;
+                            if (field.parent().hasClass("input-group")) {
+                                target = field.parent();
+                            }
+
+                            $(
+                                '<div class="invalid-feedback d-block field-error text-danger"></div>',
+                            )
+                                .text(value[0])
+                                .insertAfter(target);
+                        });
+                    } else {
+                        toastr.error(
+                            xhr.responseJSON?.message ||
+                                "Something went wrong.",
+                        );
+                    }
+                },
+            });
+        });
+
+    // Delete Single Block
+    $(document)
+        .off("click", "#blocks-table .btn-delete-block")
+        .on("click", "#blocks-table .btn-delete-block", function () {
+            let url = $(this).data("url");
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "Are you sure?",
+                    text: "This block will be deleted permanently!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true,
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: "DELETE",
+
+                            success: function (response) {
+                                toastr.success(
+                                    response.message || "Deleted successfully.",
+                                );
+
+                                if (
+                                    $.fn.DataTable.isDataTable("#blocks-table")
+                                ) {
+                                    $("#blocks-table")
+                                        .DataTable()
+                                        .ajax.reload();
+                                }
+                            },
+
+                            error: function (xhr) {
+                                toastr.error(
+                                    xhr.responseJSON?.message ||
+                                        "Could not delete block.",
+                                );
+                            },
+                        });
+                    }
+                });
+        });
+
+    // Flat Modal Variables
+    const flatModalEl = document.getElementById("flat-modal");
+    const FlatModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const flatModalInstance =
+        flatModalEl && FlatModalClass
+            ? FlatModalClass.getOrCreateInstance(flatModalEl)
+            : null;
+
+    // Flat Form Block Selection Change
+    $(document)
+        .off("change", '#flat-ajax-form select[name="block_id"]')
+        .on("change", '#flat-ajax-form select[name="block_id"]', function () {
+            const selectedOption = $(this).find("option:selected");
+            const maxFloor = selectedOption.data("total-floor");
+            const floorInput = $("#floor_no");
+            const floorHelp = $("#floor-help");
+
+            if (maxFloor) {
+                floorInput.attr("max", maxFloor);
+                floorHelp.find("span").text(maxFloor);
+                floorHelp.removeClass("d-none");
+
+                if (parseInt(floorInput.val()) > parseInt(maxFloor)) {
+                    floorInput.val(maxFloor);
+                }
+            } else {
+                floorInput.removeAttr("max");
+                floorHelp.addClass("d-none");
+            }
+        });
+
+    // Add Flat Form Open
+    $(document)
+        .off("click", "#btn-add-flat")
+        .on("click", "#btn-add-flat", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#flat-modal-content").html(response);
+                    $("#flat-modal-content .modal-title").text(title);
+                    flatModalInstance?.show();
+
+                    // Trigger block change to set max floors if a block is already selected
+                    $('#flat-ajax-form select[name="block_id"]').trigger(
+                        "change",
+                    );
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Edit Flat Form Open
+    $(document)
+        .off("click", "#flats-table .btn-edit-flat")
+        .on("click", "#flats-table .btn-edit-flat", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#flat-modal-content").html(response);
+                    $("#flat-modal-content .modal-title").text(title);
+                    flatModalInstance?.show();
+
+                    // Trigger block change to set max floors if a block is already selected
+                    $('#flat-ajax-form select[name="block_id"]').trigger(
+                        "change",
+                    );
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Add/Edit Flat Form Submit
+    $(document)
+        .off("submit", "#flat-ajax-form")
+        .on("submit", "#flat-ajax-form", function (e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+            let requestType = $(this).attr("method") || "POST";
+            let formAction = $(this).attr("action");
+
+            // Handle Laravel method spoofing for PUT/PATCH
+            let spoofedMethod = $(this).find('input[name="_method"]').val();
+            if (spoofedMethod) {
+                requestType = spoofedMethod;
             }
 
-            // Add invalid class
-            $field.addClass('is-invalid');
-
-            // Insert error message below field
-            $('<div class="invalid-feedback d-block field-error"></div>')
-                .text(message)
-                .insertAfter($field);
-        });
-    }
-
-    /**
-     * Open User Form in Modal
-     * Used for Add/Edit user
-     */
-    function openUserForm(url, title) {
-
-        $.ajax({
-
-            // Request type
-            type: 'GET',
-
-            // URL for form
-            url: url,
-
-            // AJAX headers
-            headers: ajaxHeaders(),
-
-            // Success callback
-            success: function (response) {
-
-                // Load form HTML into modal
-                $('#user-modal-content').html(response);
-
-                // Get form
-                const $form = $('#user-ajax-form');
-
-                // Clear errors
-                clearFieldErrors($form);
-                showFormErrors({});
-
-                // Set modal title
-                $('#user-modal-content .modal-title').text(title);
-
-                // Show modal
-                modalInstance?.show();
-            },
-
-            // Error callback
-            error: function () {
-                showToast('Could not load form.', 'danger');
-            },
-        });
-    }
-
-    /**
-     * Reload Yajra DataTable after create/update/delete.
-     */
-    function reloadUsersTable() {
-
-        if ($.fn.DataTable.isDataTable(usersTable)) {
-            usersTable.DataTable().ajax.reload(null, false);
-        }
-    }
-
-    /**
-     * Apply server-side filters for Role + Status (exact stored values)
-     * DataTable columns order (0-based):
-     * 0=id(computed), 1=name, 2=email, 3=phone, 4=role, 5=status, 6=created_at, 7=action
-     */
-    function applyRoleStatusFilters() {
-
-        if (!$.fn.DataTable.isDataTable(usersTable)) {
-            return;
-        }
-
-        const dt = usersTable.DataTable();
-
-        const roleValue = String($('#users-filter-role').val() || '').trim().toLowerCase();
-        const statusValue = String($('#users-filter-status').val() || '').trim().toLowerCase();
-
-        dt.column(4).search(roleValue);
-        dt.column(5).search(statusValue);
-
-        dt.draw();
-    }
-
-    // Filter change handlers
-    $(document).on('change', '#users-filter-role, #users-filter-status', function () {
-
-        // Apply filters after DataTable is initialized
-        if ($.fn.DataTable.isDataTable(usersTable)) {
-            applyRoleStatusFilters();
-            return;
-        }
-
-        setTimeout(applyRoleStatusFilters, 200);
-    });
-
-    $(document).on('click', '#users-filter-reset', function () {
-
-        $('#users-filter-role').val('');
-        $('#users-filter-status').val('');
-
-        applyRoleStatusFilters();
-    });
-
-    /**
-     * Close modal when dismiss button clicked
-     */
-
-    $(document).on(
-        'click',
-        '#user-modal [data-coreui-dismiss="modal"]',
-        function () {
-            modalInstance?.hide();
-        }
-    );
-
-    /**
-     * Open Add User Form
-     */
-    $(document).on('click', '#btn-add-user', function () {
-
-        openUserForm(
-            $(this).data('url'),
-            $(this).data('title')
-        );
-    });
-
-    /**
-     * Open Edit User Form
-     */
-    $(document).on('click', '#users-table .btn-edit-user', function () {
-
-        openUserForm(
-            $(this).data('url'),
-            $(this).data('title')
-        );
-    });
-
-    /**
-     * Submit Add/Edit User Form using AJAX
-     */
-    $(document).on('submit', '#user-ajax-form', function (e) {
-
-        // Prevent normal form submit
-        e.preventDefault();
-
-        const $form = $(this);
-
-        // Clear old errors
-        clearFieldErrors($form);
-        showFormErrors({});
-
-        // Get form data
-        const formData = new FormData(this);
-
-        // Get request type
-        const requestType = $(this).attr('method') || 'POST';
-
-        $.ajax({
-
-            // Form action URL
-            url: $(this).attr('action'),
-
-            // Request method
-            type: requestType,
-
-            // Form data
-            data: formData,
-
-            // Required for FormData
-            processData: false,
-            contentType: false,
-
-            // Headers
-            headers: ajaxHeaders(),
-
-            // Success callback
-            success: function (response) {
-
-                // Clear errors
-                clearFieldErrors($form);
-
-                // Close modal
-                modalInstance?.hide();
-
-                // Reload DataTable
-                reloadUsersTable();
-
-                // Show success toast
-                showToast(
-                    response.message || 'Saved successfully.'
-                );
-            },
-
-            // Error callback
-            error: function (xhr) {
-
-                // Handle validation errors
-                if (
-                    xhr.status === 422 &&
-                    xhr.responseJSON?.errors
-                ) {
-                    showFieldErrors(
-                        $form,
-                        xhr.responseJSON.errors
-                    );
-                    return;
-                }
-
-                // Show generic error
-                showToast(
-                    xhr.responseJSON?.message ||
-                    'Something went wrong.',
-                    'danger'
-                );
-            },
-        });
-    });
-
-    /**
-     * Delete User
-     */
-    $(document).on(
-        'click',
-        '#users-table .btn-delete-user',
-        function () {
-
-            // Get delete URL
-            const deleteUrl = $(this).data('url');
-
-            // SweetAlert confirmation
-            Swal.fire({
-
-                title: 'Delete user?',
-                text: 'This action cannot be undone.',
-                icon: 'warning',
-
-                showCancelButton: true,
-
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-
-                confirmButtonText: 'Yes, delete it',
-
-                reverseButtons: true,
-
-            }).then(function (result) {
-
-                // Stop if cancelled
-                if (!result.isConfirmed) {
-                    return;
-                }
-
-                // Send AJAX delete request
-                $.ajax({
-
-                    url: deleteUrl,
-
-                    method: 'DELETE',
-
-                    headers: ajaxHeaders(),
-
-                    // Success callback
-                    success: function (response) {
-
-                        // Reload DataTable
-                        reloadUsersTable();
-
-                        // Show success message
-                        showToast(
-                            response.message ||
-                            'Deleted successfully.'
-                        );
-                    },
-
-                    // Error callback
-                    error: function (xhr) {
-
-                        showToast(
+            let $btn = $(this).find('button[type="submit"]');
+            $btn.prop("disabled", true);
+
+            $(".field-error").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            $.ajax({
+                url: formAction,
+                method: "POST", // Always POST for form data with files, spoofing via _method
+                data: formData,
+                processData: false,
+                contentType: false,
+
+                success: function (response) {
+                    $btn.prop("disabled", false);
+                    toastr.success(response.message || "Saved successfully.");
+
+                    flatModalInstance?.hide();
+
+                    if ($.fn.DataTable.isDataTable("#flats-table")) {
+                        $("#flats-table").DataTable().ajax.reload();
+                    }
+                },
+
+                error: function (xhr) {
+                    $btn.prop("disabled", false);
+                    $(".field-error").remove();
+                    $(".is-invalid").removeClass("is-invalid");
+
+                    let errors = xhr.responseJSON?.errors;
+
+                    if (errors) {
+                        $.each(errors, function (key, value) {
+                            let field = $('[name="' + key + '"]');
+                            field.addClass("is-invalid");
+                            let target = field;
+                            if (field.parent().hasClass("input-group")) {
+                                target = field.parent();
+                            }
+                            $(
+                                '<div class="invalid-feedback d-block field-error text-danger"></div>',
+                            )
+                                .text(value[0])
+                                .insertAfter(target);
+                        });
+                    } else {
+                        toastr.error(
                             xhr.responseJSON?.message ||
-                            'Could not delete user.',
-                            'danger'
+                                "Something went wrong.",
                         );
-                    },
-                });
+                    }
+                },
             });
+        });
+
+    // Delete Single Flat
+    $(document)
+        .off("click", "#flats-table .btn-delete-flat")
+        .on("click", "#flats-table .btn-delete-flat", function () {
+            let url = $(this).data("url");
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "Are you sure?",
+                    text: "This flat will be deleted permanently!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true,
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: "DELETE",
+
+                            success: function (response) {
+                                toastr.success(
+                                    response.message || "Deleted successfully.",
+                                );
+
+                                if (
+                                    $.fn.DataTable.isDataTable("#flats-table")
+                                ) {
+                                    $("#flats-table").DataTable().ajax.reload();
+                                }
+                            },
+
+                            error: function (xhr) {
+                                toastr.error(
+                                    xhr.responseJSON?.message ||
+                                        "Could not delete flat.",
+                                );
+                            },
+                        });
+                    }
+                });
+        });
+
+    // Modal Close Cleanup
+    $(document)
+        .off("click", '[data-coreui-dismiss="modal"]')
+        .on("click", '[data-coreui-dismiss="modal"]', function () {
+            userModalInstance?.hide();
+            blockModalInstance?.hide();
+            flatModalInstance?.hide();
+            complainModalInstance?.hide();
+        });
+
+    // Complain Modal Variables
+    const complainModalEl = document.getElementById("complain-modal");
+    const ComplainModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const complainModalInstance =
+        complainModalEl && ComplainModalClass
+            ? ComplainModalClass.getOrCreateInstance(complainModalEl)
+            : null;
+
+    // Toggle Complain Reset Button Visibility
+    function toggleComplainResetBtn() {
+        if ($("#complains-filter-category").val()) {
+            $("#complains-filter-reset-col").removeClass("d-none");
+        } else {
+            $("#complains-filter-reset-col").addClass("d-none");
         }
-    );
+    }
+
+    // Complain Category Filter Change
+    $(document)
+        .off("change", "#complains-filter-category")
+        .on("change", "#complains-filter-category", function () {
+            let categoryValue = $(this).val();
+            $("#complains-table")
+                .DataTable()
+                .column("complains.category:name")
+                .search(categoryValue)
+                .draw();
+            toggleComplainResetBtn();
+        });
+
+    // Complain Filter Reset
+    $(document)
+        .off("click", "#complains-filter-reset")
+        .on("click", "#complains-filter-reset", function () {
+            $("#complains-filter-category").val("");
+
+            let dt = $("#complains-table").DataTable();
+            dt.column("complains.category:name").search("");
+            dt.draw();
+            toggleComplainResetBtn();
+        });
+
+    // Add Complain Form Open
+    $(document)
+        .off("click", "#btn-add-complain")
+        .on("click", "#btn-add-complain", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#complain-modal-content").html(response);
+                    $("#complain-modal-content .modal-title").text(title);
+                    complainModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Edit Complain Form Open
+    $(document)
+        .off("click", "#complains-table .btn-edit-complain")
+        .on("click", "#complains-table .btn-edit-complain", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#complain-modal-content").html(response);
+                    $("#complain-modal-content .modal-title").text(title);
+                    complainModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Add/Edit Complain Form Submit
+    $(document)
+        .off("submit", "#complain-ajax-form")
+        .on("submit", "#complain-ajax-form", function (e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+            let requestType = $(this).attr("method") || "POST";
+            let formAction = $(this).attr("action");
+
+            let spoofedMethod = $(this).find('input[name="_method"]').val();
+            if (spoofedMethod) {
+                requestType = spoofedMethod;
+            }
+
+            let $btn = $(this).find('button[type="submit"]');
+            $btn.prop("disabled", true);
+
+            $(".field-error").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            $.ajax({
+                url: formAction,
+                method: "POST", // Handle via spoofing
+                data: formData,
+                processData: false,
+                contentType: false,
+
+                success: function (response) {
+                    $btn.prop("disabled", false);
+                    toastr.success(response.message || "Saved successfully.");
+
+                    complainModalInstance?.hide();
+
+                    if ($.fn.DataTable.isDataTable("#complains-table")) {
+                        $("#complains-table").DataTable().ajax.reload();
+                    }
+                },
+
+                error: function (xhr) {
+                    $btn.prop("disabled", false);
+                    $(".field-error").remove();
+                    $(".is-invalid").removeClass("is-invalid");
+
+                    let errors = xhr.responseJSON?.errors;
+
+                    if (errors) {
+                        $.each(errors, function (key, value) {
+                            let field = $('[name="' + key + '"]');
+                            field.addClass("is-invalid");
+                            let target = field;
+                            if (field.parent().hasClass("input-group")) {
+                                target = field.parent();
+                            }
+                            $(
+                                '<div class="invalid-feedback d-block field-error text-danger"></div>',
+                            )
+                                .text(value[0])
+                                .insertAfter(target);
+                        });
+                    } else {
+                        toastr.error(
+                            xhr.responseJSON?.message ||
+                                "Something went wrong.",
+                        );
+                    }
+                },
+            });
+        });
+
+    // Delete Single Complain
+    $(document)
+        .off("click", "#complains-table .btn-delete-complain")
+        .on("click", "#complains-table .btn-delete-complain", function () {
+            let url = $(this).data("url");
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "Are you sure?",
+                    text: "This complaint will be deleted permanently!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true,
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: "DELETE",
+
+                            success: function (response) {
+                                toastr.success(
+                                    response.message || "Deleted successfully.",
+                                );
+
+                                if (
+                                    $.fn.DataTable.isDataTable(
+                                        "#complains-table",
+                                    )
+                                ) {
+                                    $("#complains-table")
+                                        .DataTable()
+                                        .ajax.reload();
+                                }
+                            },
+
+                            error: function (xhr) {
+                                toastr.error(
+                                    xhr.responseJSON?.message ||
+                                        "Could not delete complaint.",
+                                );
+                            },
+                        });
+                    }
+                });
+        });
+
+    // Resident Modal Variables
+    const residentModalEl = document.getElementById("resident-modal");
+    const ResidentModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const residentModalInstance =
+        residentModalEl && ResidentModalClass
+            ? ResidentModalClass.getOrCreateInstance(residentModalEl)
+            : null;
+
+    // Add Resident Form Open
+    $(document)
+        .off("click", "#btn-add-resident")
+        .on("click", "#btn-add-resident", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#resident-modal-content").html(response);
+                    $("#resident-modal-content .modal-title").text(title);
+                    residentModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Add/Edit Resident Form Submit
+    $(document)
+        .off("submit", "#resident-ajax-form")
+        .on("submit", "#resident-ajax-form", function (e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+            let requestType = $(this).attr("method") || "POST";
+            let formAction = $(this).attr("action");
+
+            let spoofedMethod = $(this).find('input[name="_method"]').val();
+            if (spoofedMethod) {
+                requestType = spoofedMethod;
+            }
+
+            let $btn = $(this).find('button[type="submit"]');
+            $btn.prop("disabled", true);
+
+            $(".field-error").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            $.ajax({
+                url: formAction,
+                method: "POST", // Handle via spoofing
+                data: formData,
+                processData: false,
+                contentType: false,
+
+                success: function (response) {
+                    $btn.prop("disabled", false);
+                    toastr.success(response.message || "Saved successfully.");
+
+                    residentModalInstance?.hide();
+
+                    if ($.fn.DataTable.isDataTable("#residents-table")) {
+                        $("#residents-table").DataTable().ajax.reload();
+                    } else if (window.LaravelDataTables && window.LaravelDataTables['residents-table']) {
+                        window.LaravelDataTables['residents-table'].ajax.reload();
+                    }
+                },
+
+                error: function (xhr) {
+                    $btn.prop("disabled", false);
+                    $(".field-error").remove();
+                    $(".is-invalid").removeClass("is-invalid");
+
+                    let errors = xhr.responseJSON?.errors;
+
+                    if (errors) {
+                        $.each(errors, function (key, value) {
+                            let field = $('[name="' + key + '"]');
+                            field.addClass("is-invalid");
+                            let target = field;
+                            if (field.parent().hasClass("input-group")) {
+                                target = field.parent();
+                            }
+                            $(
+                                '<div class="invalid-feedback d-block field-error text-danger"></div>',
+                            )
+                                .text(value[0])
+                                .insertAfter(target);
+                        });
+                    } else {
+                        toastr.error(
+                            xhr.responseJSON?.message ||
+                                "Something went wrong.",
+                        );
+                    }
+                },
+            });
+        });
 });

@@ -176,6 +176,27 @@
                         </div>
                     </div>
                     <!-- /.col-->
+                    <div class="col-sm-6 col-xl-3">
+                        <a href="{{ route('residents.index') }}" class="text-decoration-none">
+                            <div class="card text-white bg-success">
+                                <div class="card-body pb-0 d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <div class="fs-4 fw-semibold">
+                                            Residents
+                                        </div>
+                                        <div>Manage Residents</div>
+                                    </div>
+                                    <div class="dropdown">
+                                        <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                                            <path fill="var(--ci-primary-color, currentcolor)" d="M256 160c-44.2 0-80 35.8-80 80s35.8 80 80 80 80-35.8 80-80-35.8-80-80-80zm0 128c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm171.1-125.1L355.2 234.8c-2.4 12.5-8 23.9-15.8 33.6l64.1 64.1c12.5 12.5 32.8 12.5 45.3 0 12.5-12.5 12.5-32.8 0-45.3l-21.7-24.3zM140.7 268.4c-7.8-9.7-13.4-21.1-15.8-33.6L52.9 162.9c-12.5-12.5-12.5-32.8 0-45.3 12.5-12.5 32.8-12.5 45.3 0l71.9 71.9L140.7 268.4z" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="c-chart-wrapper mt-3 mx-3" style="height: 70px">
+                                </div>
+                            </div>
+                        </a>
+                    </div>
                 </div>
                 <!-- /.row-->
                 <div class="card mb-4">
