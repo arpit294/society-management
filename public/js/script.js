@@ -1038,4 +1038,72 @@ $(document).ready(function () {
                 },
             });
         });
+
+    // Edit Resident Form Open
+    $(document)
+        .off("click", "#residents-table .btn-edit-resident")
+        .on("click", "#residents-table .btn-edit-resident", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#resident-modal-content").html(response);
+                    $("#resident-modal-content .modal-title").text(title);
+                    residentModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Delete Single Resident
+    $(document)
+        .off("click", "#residents-table .btn-delete-resident")
+        .on("click", "#residents-table .btn-delete-resident", function () {
+            let url = $(this).data("url");
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "Are you sure?",
+                    text: "This resident will be deleted permanently!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true,
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: "DELETE",
+
+                            success: function (response) {
+                                toastr.success(
+                                    response.message || "Deleted successfully.",
+                                );
+
+                                if ($.fn.DataTable.isDataTable("#residents-table")) {
+                                    $("#residents-table").DataTable().ajax.reload();
+                                } else if (window.LaravelDataTables && window.LaravelDataTables['residents-table']) {
+                                    window.LaravelDataTables['residents-table'].ajax.reload();
+                                }
+                            },
+
+                            error: function (xhr) {
+                                toastr.error(
+                                    xhr.responseJSON?.message ||
+                                        "Could not delete resident.",
+                                );
+                            },
+                        });
+                    }
+                });
+        });
 });

@@ -49,7 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('complains', \App\Http\Controllers\ComplainController::class)->except(['show']);
 
     // Residents
-    Route::resource('residents', \App\Http\Controllers\ResidentController::class)->only(['index', 'create', 'store']);
+    Route::resource('residents', \App\Http\Controllers\ResidentController::class)->except(['show']);
 });
 
 // 
