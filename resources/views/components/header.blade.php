@@ -121,6 +121,7 @@
                 <li class="breadcrumb-item"><a href="{{ route('flats.index') }}">Flats</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('blocks.index') }}">Blocks</a></li>
                 <li class="breadcrumb-item"><a href="{{ route('complains.index') }}">Complaints</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('expenses.index') }}">Expenses</a></li>
             </ol>
         </nav>
     </div>

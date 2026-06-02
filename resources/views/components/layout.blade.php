@@ -54,8 +54,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="{{ asset('js/script.js') }}?v={{ filemtime(public_path('js/script.js')) }}"></script>
     <!-- Plugins and scripts required by this view-->
-    {{-- <script src="{{ asset('vendors/chart.js/js/chart.umd.js') }}"></script> --}}
-    {{-- <script src="{{ asset('vendors/@coreui/chartjs/js/coreui-chartjs.js') }}"></script> --}}
+    <script src="{{ asset('vendors/chart.js/js/chart.umd.js') }}"></script>
+    <script src="{{ asset('vendors/@coreui/chartjs/js/coreui-chartjs.js') }}"></script>
     <script src="{{ asset('vendors/@coreui/utils/js/index.js') }}"></script>
     {{-- <script src="{{ asset('js/main.js') }}"></script> --}}
         @stack('scripts')

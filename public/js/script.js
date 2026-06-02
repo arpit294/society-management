@@ -939,103 +939,411 @@ $(document).ready(function () {
     // Resident Modal Variables
     const residentModalEl = document.getElementById("resident-modal");
     const ResidentModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
-    const residentModalInstance =
-        residentModalEl && ResidentModalClass
-            ? ResidentModalClass.getOrCreateInstance(residentModalEl)
-            : null;
+    const residentModalInstance = residentModalEl && ResidentModalClass ? ResidentModalClass.getOrCreateInstance(residentModalEl) : null;
 
-    // Add Resident Form Open
+    // Add/Edit Resident Form Open
     $(document)
-        .off("click", "#btn-add-resident")
-        .on("click", "#btn-add-resident", function () {
+        .off("click", "#btn-add-resident, #residents-table .btn-edit-resident")
+        .on("click", "#btn-add-resident, #residents-table .btn-edit-resident", function () {
             let url = $(this).data("url");
             let title = $(this).data("title");
-
             $.ajax({
                 type: "GET",
                 url: url,
-
                 success: function (response) {
                     $("#resident-modal-content").html(response);
                     $("#resident-modal-content .modal-title").text(title);
                     residentModalInstance?.show();
                 },
-
-                error: function () {
-                    toastr.error("Could not load form.");
+                error: function (xhr) {
+                    toastr.error(xhr.responseJSON?.message || "Could not load form.");
                 },
             });
         });
 
+    // Resident Block Change (Load Flats)
+    $(document).on('change', '#block_id', function() {
+        var blockId = $(this).val();
+        if(blockId) {
+            $.ajax({
+                url: '/api/flats-by-block/' + blockId,
+                type: "GET",
+                dataType: "json",
+                success:function(data) {
+                    $('#flat_id').empty();
+                    $('#flat_id').append('<option value="">Select Flat</option>');
+                    $.each(data, function(key, value) {
+                        $('#flat_id').append('<option value="'+ value.id +'">'+ value.flat_no +'</option>');
+                    });
+                }
+            });
+        } else {
+            $('#flat_id').empty();
+            $('#flat_id').append('<option value="">Select Block First</option>');
+        }
+    });
+
     // Add/Edit Resident Form Submit
     $(document)
         .off("submit", "#resident-ajax-form")
-        .on("submit", "#resident-ajax-form", function (e) {
+        .on("submit", "#resident-ajax-form", function(e) {
             e.preventDefault();
-
             let formData = new FormData(this);
-            let requestType = $(this).attr("method") || "POST";
-            let formAction = $(this).attr("action");
-
-            let spoofedMethod = $(this).find('input[name="_method"]').val();
-            if (spoofedMethod) {
-                requestType = spoofedMethod;
+            
+            // Check if this is an update request (it has a hidden _method=PUT)
+            if($(this).find('input[name="_method"]').length > 0) {
+                formData.append('_method', $(this).find('input[name="_method"]').val());
             }
 
+            let formAction = $(this).attr("action");
             let $btn = $(this).find('button[type="submit"]');
             $btn.prop("disabled", true);
-
             $(".field-error").remove();
             $(".is-invalid").removeClass("is-invalid");
 
             $.ajax({
                 url: formAction,
-                method: "POST", // Handle via spoofing
+                method: "POST", // Form data and files require POST, spoof PUT if needed
                 data: formData,
                 processData: false,
                 contentType: false,
-
                 success: function (response) {
                     $btn.prop("disabled", false);
                     toastr.success(response.message || "Saved successfully.");
-
                     residentModalInstance?.hide();
 
                     if ($.fn.DataTable.isDataTable("#residents-table")) {
                         $("#residents-table").DataTable().ajax.reload();
-                    } else if (window.LaravelDataTables && window.LaravelDataTables['residents-table']) {
-                        window.LaravelDataTables['residents-table'].ajax.reload();
                     }
                 },
-
                 error: function (xhr) {
                     $btn.prop("disabled", false);
-                    $(".field-error").remove();
-                    $(".is-invalid").removeClass("is-invalid");
-
                     let errors = xhr.responseJSON?.errors;
-
                     if (errors) {
                         $.each(errors, function (key, value) {
                             let field = $('[name="' + key + '"]');
                             field.addClass("is-invalid");
-                            let target = field;
-                            if (field.parent().hasClass("input-group")) {
-                                target = field.parent();
-                            }
-                            $(
-                                '<div class="invalid-feedback d-block field-error text-danger"></div>',
-                            )
+                            $('<div class="invalid-feedback d-block field-error text-danger"></div>')
                                 .text(value[0])
-                                .insertAfter(target);
+                                .insertAfter(field);
                         });
                     } else {
-                        toastr.error(
-                            xhr.responseJSON?.message ||
-                                "Something went wrong.",
-                        );
+                        toastr.error(xhr.responseJSON?.message || "Something went wrong.");
                     }
                 },
             });
         });
+
+    // Delete Resident
+    $(document)
+        .off("click", "#residents-table .btn-delete-resident")
+        .on("click", "#residents-table .btn-delete-resident", function () {
+            let url = $(this).data("url");
+            if (swalWithBootstrapButtons) {
+                swalWithBootstrapButtons
+                    .fire({
+                        title: "Are you sure?",
+                        text: "This resident will be deleted permanently!",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, delete!",
+                        cancelButtonText: "Cancel",
+                        reverseButtons: true,
+                    })
+                    .then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                url: url,
+                                type: "DELETE",
+                                success: function (response) {
+                                    toastr.success(response.message || "Deleted successfully.");
+                                    if ($.fn.DataTable.isDataTable("#residents-table")) {
+                                        $("#residents-table").DataTable().ajax.reload();
+                                    }
+                                },
+                                error: function (xhr) {
+                                    toastr.error(xhr.responseJSON?.message || "Could not delete resident.");
+                                },
+                            });
+                        }
+                    });
+            }
+        });
+
+    // Expense Category Modal Variables
+    const expenseCategoryModalEl = document.getElementById("expense-category-modal");
+    const ExpenseCategoryModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const expenseCategoryModalInstance = expenseCategoryModalEl && ExpenseCategoryModalClass ? ExpenseCategoryModalClass.getOrCreateInstance(expenseCategoryModalEl) : null;
+
+    // Add/Edit Expense Category Form Open
+    $(document)
+        .off("click", "#btn-add-expense-category, #expensecategories-table .btn-edit-category")
+        .on("click", "#btn-add-expense-category, #expensecategories-table .btn-edit-category", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function (response) {
+                    $("#expense-category-modal-content").html(response);
+                    $("#expense-category-modal-content .modal-title").text(title);
+                    expenseCategoryModalInstance?.show();
+                },
+                error: function (xhr) {
+                    toastr.error(xhr.responseJSON?.message || "Could not load form.");
+                },
+            });
+        });
+
+    // Add/Edit Expense Category Form Submit
+    $(document)
+        .off("submit", "#expense-category-ajax-form")
+        .on("submit", "#expense-category-ajax-form", function(e) {
+            e.preventDefault();
+            let formData = new FormData(this);
+            
+            // Check if this is an update request (it has a hidden _method=PUT)
+            if($(this).find('input[name="_method"]').length > 0) {
+                formData.append('_method', $(this).find('input[name="_method"]').val());
+            }
+
+            let formAction = $(this).attr("action");
+            let $btn = $(this).find('button[type="submit"]');
+            $btn.prop("disabled", true);
+            $(".field-error").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            $.ajax({
+                url: formAction,
+                method: "POST", // Form data and files require POST, spoof PUT if needed
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    $btn.prop("disabled", false);
+                    toastr.success(response.message || "Saved successfully.");
+                    expenseCategoryModalInstance?.hide();
+
+                    if ($.fn.DataTable.isDataTable("#expensecategories-table")) {
+                        $("#expensecategories-table").DataTable().ajax.reload();
+                    }
+                },
+                error: function (xhr) {
+                    $btn.prop("disabled", false);
+                    let errors = xhr.responseJSON?.errors;
+                    if (errors) {
+                        $.each(errors, function (key, value) {
+                            let field = $('[name="' + key + '"]');
+                            field.addClass("is-invalid");
+                            $('<div class="invalid-feedback d-block field-error text-danger"></div>')
+                                .text(value[0])
+                                .insertAfter(field);
+                        });
+                    } else {
+                        toastr.error(xhr.responseJSON?.message || "Something went wrong.");
+                    }
+                },
+            });
+        });
+
+    // Delete Expense Category
+    $(document)
+        .off("click", "#expensecategories-table .btn-delete-category")
+        .on("click", "#expensecategories-table .btn-delete-category", function () {
+            let url = $(this).data("url");
+            if (swalWithBootstrapButtons) {
+                swalWithBootstrapButtons
+                    .fire({
+                        title: "Are you sure?",
+                        text: "This category will be deleted permanently!",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, delete!",
+                        cancelButtonText: "Cancel",
+                        reverseButtons: true,
+                    })
+                    .then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                url: url,
+                                type: "DELETE",
+                                success: function (response) {
+                                    toastr.success(response.message || "Deleted successfully.");
+                                    if ($.fn.DataTable.isDataTable("#expensecategories-table")) {
+                                        $("#expensecategories-table").DataTable().ajax.reload();
+                                    }
+                                },
+                                error: function (xhr) {
+                                    toastr.error(xhr.responseJSON?.message || "Could not delete category.");
+                                },
+                            });
+                        }
+                    });
+            }
+        });
+
+    // Expenses Modal Variables
+    const expenseModalEl = document.getElementById("expense-modal");
+    const ExpenseModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const expenseModalInstance = expenseModalEl && ExpenseModalClass ? ExpenseModalClass.getOrCreateInstance(expenseModalEl) : null;
+
+    // Add/Edit Expense Form Open
+    $(document)
+        .off("click", "#btn-add-expense, #expenses-table .btn-edit-expense")
+        .on("click", "#btn-add-expense, #expenses-table .btn-edit-expense", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+            $.ajax({
+                type: "GET",
+                url: url,
+                success: function (response) {
+                    $("#expense-modal-content").html(response);
+                    $("#expense-modal-content .modal-title").text(title);
+                    expenseModalInstance?.show();
+                },
+                error: function (xhr) {
+                    toastr.error(xhr.responseJSON?.message || "Could not load form.");
+                },
+            });
+        });
+
+    // Add/Edit Expense Form Submit
+    $(document)
+        .off("submit", "#expense-ajax-form")
+        .on("submit", "#expense-ajax-form", function(e) {
+            e.preventDefault();
+            let formData = new FormData(this);
+            
+            // Check if this is an update request (it has a hidden _method=PUT)
+            if($(this).find('input[name="_method"]').length > 0) {
+                formData.append('_method', $(this).find('input[name="_method"]').val());
+            }
+
+            let formAction = $(this).attr("action");
+            let $btn = $(this).find('button[type="submit"]');
+            $btn.prop("disabled", true);
+            $(".field-error").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            $.ajax({
+                url: formAction,
+                method: "POST", // Form data and files require POST
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    $btn.prop("disabled", false);
+                    toastr.success(response.message || "Saved successfully.");
+                    expenseModalInstance?.hide();
+
+                    if ($.fn.DataTable.isDataTable("#expenses-table")) {
+                        $("#expenses-table").DataTable().ajax.reload();
+                    }
+                },
+                error: function (xhr) {
+                    $btn.prop("disabled", false);
+                    let errors = xhr.responseJSON?.errors;
+                    if (errors) {
+                        $.each(errors, function (key, value) {
+                            let field = $('[name="' + key + '"]');
+                            field.addClass("is-invalid");
+                            $('<div class="invalid-feedback d-block field-error text-danger"></div>')
+                                .text(value[0])
+                                .insertAfter(field);
+                        });
+                    } else {
+                        toastr.error(xhr.responseJSON?.message || "Something went wrong.");
+                    }
+                },
+            });
+        });
+
+    // Delete Expense
+    $(document)
+        .off("click", "#expenses-table .btn-delete-expense")
+        .on("click", "#expenses-table .btn-delete-expense", function () {
+            let url = $(this).data("url");
+            if (swalWithBootstrapButtons) {
+                swalWithBootstrapButtons
+                    .fire({
+                        title: "Are you sure?",
+                        text: "This expense will be deleted permanently!",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, delete!",
+                        cancelButtonText: "Cancel",
+                        reverseButtons: true,
+                    })
+                    .then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                url: url,
+                                type: "DELETE",
+                                success: function (response) {
+                                    toastr.success(response.message || "Deleted successfully.");
+                                    if ($.fn.DataTable.isDataTable("#expenses-table")) {
+                                        $("#expenses-table").DataTable().ajax.reload();
+                                    }
+                                },
+                                error: function (xhr) {
+                                    toastr.error(xhr.responseJSON?.message || "Could not delete expense.");
+                                },
+                            });
+                        }
+                    });
+            }
+        });
+
+    // Dashboard Charts
+    if (document.getElementById('occupancyChart')) {
+        const occCanvas = document.getElementById('occupancyChart');
+        const occupied = occCanvas.dataset.occupied;
+        const empty = occCanvas.dataset.empty;
+
+        new Chart(occCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: ['Occupied', 'Empty'],
+                datasets: [{
+                    data: [occupied, empty],
+                    backgroundColor: ['#2eb85c', '#e55353'], // CoreUI success and danger colors
+                    hoverBackgroundColor: ['#2eb85c', '#e55353']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+            }
+        });
+    }
+
+    if (document.getElementById('complaintsChart')) {
+        const compCanvas = document.getElementById('complaintsChart');
+        const labels = JSON.parse(compCanvas.dataset.labels);
+        const counts = JSON.parse(compCanvas.dataset.counts);
+
+        new Chart(compCanvas, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Complaints',
+                    backgroundColor: '#3399ff', // CoreUI primary color
+                    data: counts
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
 });

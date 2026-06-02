@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Resident extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'block_id',
         'flat_id',
@@ -15,14 +18,17 @@ class Resident extends Model
         'move_out_date',
     ];
 
-    protected $casts = [
-        'move_in_date' => 'date',
-        'move_out_date' => 'date',
-    ];
-
-    public function user()
+    protected function casts(): array
     {
-        return $this->belongsTo(User::class);
+        return [
+            'move_in_date' => 'date',
+            'move_out_date' => 'date',
+        ];
+    }
+
+    public function block()
+    {
+        return $this->belongsTo(Block::class);
     }
 
     public function flat()
@@ -30,8 +36,8 @@ class Resident extends Model
         return $this->belongsTo(Flat::class);
     }
 
-    public function block()
+    public function user()
     {
-        return $this->belongsTo(Block::class);
+        return $this->belongsTo(User::class);
     }
 }

@@ -29,10 +29,14 @@ class UsersDataTable extends DataTable
                 $query->where('status', $keyword);
             })
             ->addColumn('action', 'users.action')
+            ->editColumn('status', function (User $user) {
+                $class = $user->status === 'active' ? 'bg-success' : 'bg-danger';
+                return '<span class="badge ' . $class . '">' . ucfirst($user->status) . '</span>';
+            })
             ->editColumn('created_at', function (User $user) {
                 return $user->created_at?->format('d-m-Y h:i A');
             })
-            ->rawColumns(['action'])
+            ->rawColumns(['status', 'action'])
             ->setRowId('id');
     }
 

@@ -22,7 +22,17 @@ class ComplainsDataTable extends DataTable
             ->filterColumn('category', function ($query, $keyword) {
                 $query->where('complains.category', 'like', "%{$keyword}%");
             })
-            ->rawColumns(['action'])
+            ->editColumn('status', function ($row) {
+                if ($row->status === 'resolved') {
+                    $class = 'bg-success';
+                } elseif ($row->status === 'in-progress') {
+                    $class = 'bg-info';
+                } else {
+                    $class = 'bg-warning';
+                }
+                return '<span class="badge ' . $class . '">' . ucfirst($row->status) . '</span>';
+            })
+            ->rawColumns(['status', 'action'])
             ->setRowId('id');
     }
 
@@ -35,6 +45,7 @@ class ComplainsDataTable extends DataTable
                 'complains.subject',
                 'complains.category',
                 'users.name as user_name',
+                'complains.status',
                 'complains.created_at'
             ]);
 
@@ -71,6 +82,7 @@ class ComplainsDataTable extends DataTable
             Column::make('subject')->data('subject')->name('complains.subject'),
             Column::make('user_name')->data('user_name')->name('users.name')->title('User'),
             Column::make('category')->data('category')->name('complains.category'),
+            Column::make('status')->data('status')->name('complains.status'),
             Column::make('created_at')->data('created_at')->name('complains.created_at')->title('Created At'),
             Column::computed('action')->orderable(false)->searchable(false),
         ];

@@ -11,6 +11,8 @@ class Complain extends Model
         'description',
         'user_id',
         'category',
+        'status',
+        'resolution_notes',
     ];
 
     public function user()

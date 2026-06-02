@@ -6,6 +6,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\FlatController;
+use App\Http\Controllers\ComplainController;
+use App\Http\Controllers\ExpenseCategoryController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -31,7 +33,20 @@ Route::middleware('guest')->group(function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/', function () {
-        return view('dashboard');
+        $data = [
+            'total_residents' => \App\Models\Resident::count(),
+            'total_flats' => \App\Models\Flat::count(),
+            'total_blocks' => \App\Models\Block::count(),
+            'active_complaints' => \DB::table('complains')->count(), // assuming all are active for now
+            'occupied_flats' => \App\Models\Flat::where('status', 'occupied')->count(),
+            'empty_flats' => \App\Models\Flat::where('status', 'empty')->count(),
+            'monthly_complaints' => \DB::table('complains')
+                ->select(\DB::raw('MONTHNAME(created_at) as month, COUNT(*) as count'))
+                ->groupBy('month')
+                ->orderByRaw('MIN(created_at)')
+                ->get(),
+        ];
+        return view('dashboard', $data);
     })->name('/');
 
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
@@ -42,14 +57,21 @@ Route::middleware('auth')->group(function () {
     // Flats
     Route::resource('flats', FlatController::class)->except(['show']);
 
-    // Blocks
+    // Expense Categories
+    Route::resource('expense-categories', ExpenseCategoryController::class)->except(['show']);
+
+    // Expenses
+    Route::resource('expenses', \App\Http\Controllers\ExpenseController::class)->except(['show']);
     Route::resource('blocks', BlockController::class)->except(['show']);
 
     // Complains
     Route::resource('complains', \App\Http\Controllers\ComplainController::class)->except(['show']);
 
     // Residents
-    Route::resource('residents', \App\Http\Controllers\ResidentController::class)->only(['index', 'create', 'store']);
+    Route::resource('residents', \App\Http\Controllers\ResidentController::class)->except(['show']);
+    Route::get('api/flats-by-block/{block_id}', [\App\Http\Controllers\ResidentController::class, 'getFlatsByBlock'])->name('api.flats-by-block');
+
+
 });
 
 // 

@@ -98,6 +98,22 @@
                 Residents
             </a>
         </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->is('expense-categories*') ? 'active' : '' }}" href="{{ route('expense-categories.index') }}">
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-tags"></i>
+                    </span> Expense Categories
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request()->is('expenses*') ? 'active' : '' }}" href="{{ route('expenses.index') }}">
+                    <span class="nav-icon">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </span> Expenses
+                </a>
+            </li>
+
+
 
 
     </ul>

@@ -55,6 +55,26 @@
                     <div class="invalid-feedback d-block field-error">{{ $message }}</div>
                 @enderror
             </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="pending" {{ $complain->status === 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="in-progress" {{ $complain->status === 'in-progress' ? 'selected' : '' }}>In-Progress</option>
+                    <option value="resolved" {{ $complain->status === 'resolved' ? 'selected' : '' }}>Resolved</option>
+                </select>
+                @error('status')
+                    <div class="invalid-feedback d-block field-error">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div class="col-md-12">
+                <label class="form-label">Resolution Notes</label>
+                <textarea name="resolution_notes" class="form-control" rows="3" placeholder="Notes for the resident...">{{ old('resolution_notes', $complain->resolution_notes) }}</textarea>
+                @error('resolution_notes')
+                    <div class="invalid-feedback d-block field-error">{{ $message }}</div>
+                @enderror
+            </div>
         </div>
     </div>
 
