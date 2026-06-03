@@ -40,6 +40,11 @@ class FlatsDatatables extends DataTable
             ->editColumn('updated_at', function ($model) {
                 return $model->updated_at ? $model->updated_at->format('Y-m-d H:i:s') : '-';
             })
+            ->editColumn('status', function ($model) {
+                $class = strtolower($model->status) === 'occupied' ? 'bg-success' : 'bg-danger';
+                return '<span class="badge ' . $class . '">' . ucfirst($model->status) . '</span>';
+            })
+            ->rawColumns(['status', 'action'])
             ->setRowId('id');
     }
 

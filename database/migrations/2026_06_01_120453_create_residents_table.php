@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('residents', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('block_id')->constrained()->onDelete('cascade');
-            $table->foreignId('flat_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->string('type');
+            $table->foreignId('block_id')->constrained('blocks')->cascadeOnDelete();
+            $table->foreignId('flat_id')->constrained('flats')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->enum('type', ['owner', 'rental']);
             $table->date('move_in_date');
             $table->date('move_out_date')->nullable();
             $table->timestamps();

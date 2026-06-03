@@ -64,6 +64,8 @@ class ComplainController extends Controller
                 'Common Facilities',
                 'other'
             ])],
+            'status' => 'required|in:pending,in-progress,resolved',
+            'resolution_notes' => 'nullable|string',
         ]);
 
         $complain->update($validatedData);

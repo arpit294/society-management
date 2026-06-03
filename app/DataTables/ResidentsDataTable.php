@@ -8,6 +8,8 @@ use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
+use Yajra\DataTables\Html\Editor\Editor;
+use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
 class ResidentsDataTable extends DataTable
@@ -20,6 +22,15 @@ class ResidentsDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
+            ->addColumn('block', function (Resident $resident) {
+                return $resident->block?->block_name;
+            })
+            ->addColumn('flat', function (Resident $resident) {
+                return $resident->flat?->flat_no;
+            })
+            ->addColumn('user', function (Resident $resident) {
+                return $resident->user?->name;
+            })
             ->editColumn('created_at', function (Resident $resident) {
                 return $resident->created_at?->format('d-m-Y h:i A');
             })
@@ -29,8 +40,10 @@ class ResidentsDataTable extends DataTable
             ->editColumn('move_out_date', function (Resident $resident) {
                 return $resident->move_out_date?->format('d-m-Y');
             })
+            ->editColumn('type', function (Resident $resident) {
+                return ucfirst($resident->type);
+            })
             ->addColumn('action', 'residents.action')
-            ->rawColumns(['action'])
             ->setRowId('id');
     }
 
@@ -41,7 +54,7 @@ class ResidentsDataTable extends DataTable
      */
     public function query(Resident $model): QueryBuilder
     {
-        return $model->newQuery()->with(['user', 'flat', 'block']);
+        return $model->newQuery()->with(['block', 'flat', 'user']);
     }
 
     /**
@@ -50,19 +63,14 @@ class ResidentsDataTable extends DataTable
     public function html(): HtmlBuilder
     {
         return $this->builder()
-            ->setTableId('residents-table')
-            ->columns($this->getColumns())
-            ->minifiedAjax()
-            ->orderBy(1)
-            ->selectStyleSingle()
-            ->buttons([
-                Button::make('excel'),
-                Button::make('csv'),
-                Button::make('pdf'),
-                Button::make('print'),
-                Button::make('reset'),
-                Button::make('reload')
-            ]);
+                    ->setTableId('residents-table')
+                    ->columns($this->getColumns())
+                    ->minifiedAjax()
+                    ->orderBy(1)
+                    ->selectStyleSingle()
+                    ->parameters([
+                        'dom' => '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
+                    ]);
     }
 
     /**
@@ -71,21 +79,19 @@ class ResidentsDataTable extends DataTable
     public function getColumns(): array
     {
         return [
-            Column::computed('id')
-                ->orderable(false)
-                ->searchable(false)
-                ->exportable(false)
-                ->printable(false)
-                ->width(120)
-                ->addClass('text-center'),
-            Column::make('user.name')->title('User'),
-            Column::make('block.block_name')->title('Block'),
-            Column::make('flat.flat_no')->title('Flat'),
-            Column::make('type'),
-            Column::make('move_in_date'),
-            Column::make('move_out_date'),
-            Column::make('created_at'),
-            Column::make('action')->orderable(false)->searchable(false),
+            Column::make('id')->title('ID'),
+            Column::computed('block')->title('Block Name'),
+            Column::computed('flat')->title('Flat No'),
+            Column::computed('user')->title('User Name'),
+            Column::make('type')->title('Type'),
+            Column::make('move_in_date')->title('Move In'),
+            Column::make('move_out_date')->title('Move Out'),
+            Column::make('created_at')->title('Created At'),
+            Column::computed('action')
+                  ->exportable(false)
+                  ->printable(false)
+                  ->width(120)
+                  ->addClass('text-center'),
         ];
     }
 
