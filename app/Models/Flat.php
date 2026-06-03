@@ -10,8 +10,7 @@ class Flat extends Model
         'block_id',
         'flat_no',
         'floor_no',
-        'flat_type',
-        'maintenance_amount',
+        'flat_type_id',
         'status',
     ];
 
@@ -20,5 +19,8 @@ class Flat extends Model
         return $this->belongsTo(Block::class, 'block_id');
     }
 
-
+    public function flatType()
+    {
+        return $this->belongsTo(FlatType::class, 'flat_type_id');
+    }
 }

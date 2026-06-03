@@ -45,23 +45,16 @@
             </div>
 
             <div class="col-md-6">
-                <label class="form-label">Flat Type</label>
-                <select name="flat_type" class="form-select">
+                <label class="form-label">Flat Type <span class="text-danger">*</span></label>
+                <select name="flat_type_id" class="form-select" required>
                     <option value="">Select Flat Type</option>
-                    <option value="1BHK" {{ old('flat_type') == '1BHK' ? 'selected' : '' }}>1BHK</option>
-                    <option value="2BHK" {{ old('flat_type') == '2BHK' ? 'selected' : '' }}>2BHK</option>
-                    <option value="3BHK" {{ old('flat_type') == '3BHK' ? 'selected' : '' }}>3BHK</option>
+                    @foreach ($flatTypes as $type)
+                        <option value="{{ $type->id }}" {{ old('flat_type_id') == $type->id ? 'selected' : '' }}>
+                            {{ $type->name }} (${{ number_format($type->maintenance_fee, 2) }})
+                        </option>
+                    @endforeach
                 </select>
-                @error('flat_type')
-                    <div class="invalid-feedback d-block field-error">{{ $message }}</div>
-                @enderror
-            </div>
-
-            <div class="col-md-6">
-                <label class="form-label">Maintenance Amount</label>
-                <input type="number" step="0.01" name="maintenance_amount" class="form-control"
-                    value="{{ old('maintenance_amount') }}">
-                @error('maintenance_amount')
+                @error('flat_type_id')
                     <div class="invalid-feedback d-block field-error">{{ $message }}</div>
                 @enderror
             </div>

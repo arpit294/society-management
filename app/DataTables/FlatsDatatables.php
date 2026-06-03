@@ -26,6 +26,9 @@ class FlatsDatatables extends DataTable
             ->editColumn('block_id', function ($model) {
                 return $model->block ? $model->block->block_name : '-';
             })
+            ->editColumn('flat_type_id', function ($model) {
+                return $model->flatType ? $model->flatType->name : '-';
+            })
             ->editColumn('created_at', function ($model) {
                 return $model->created_at ? $model->created_at->format('Y-m-d H:i:s') : '-';
             })
@@ -42,7 +45,7 @@ class FlatsDatatables extends DataTable
      */
     public function query(Flat $model): QueryBuilder
     {
-        return $model->newQuery()->with('block');
+        return $model->newQuery()->with(['block', 'flatType']);
     }
 
     /**
@@ -76,8 +79,7 @@ class FlatsDatatables extends DataTable
             Column::make('block_id')->title('Block'),
             Column::make('flat_no'),
             Column::make('floor_no'),
-            Column::make('flat_type'),
-            Column::make('maintenance_amount'),
+            Column::make('flat_type_id')->title('Flat Type'),
             Column::make('status'),
             Column::make('created_at'),
             Column::make('updated_at'),

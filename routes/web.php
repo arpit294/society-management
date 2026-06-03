@@ -30,9 +30,8 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', function () {
-        return view('dashboard');
-    })->name('/');
+    Route::get('/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.alias');
 
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
 
@@ -50,6 +49,18 @@ Route::middleware('auth')->group(function () {
 
     // Residents
     Route::resource('residents', \App\Http\Controllers\ResidentController::class)->only(['index', 'create', 'store']);
+    // Expenses
+    Route::resource('expenses', \App\Http\Controllers\ExpenseController::class)->except(['show']);
+
+    // Expense Categories
+    Route::resource('expense-categories', \App\Http\Controllers\ExpenseCategoryController::class)->except(['show']);
+
+    // Flat Types
+    Route::resource('flat-types', \App\Http\Controllers\FlatTypeController::class)->except(['show']);
+
+    // Maintenance Bills
+    Route::get('maintenance-bills/resident-info/{user_id}', [\App\Http\Controllers\MaintenanceBillController::class, 'getResidentInfo'])->name('maintenance-bills.resident-info');
+    Route::resource('maintenance-bills', \App\Http\Controllers\MaintenanceBillController::class)->except(['show']);
 });
 
 // 

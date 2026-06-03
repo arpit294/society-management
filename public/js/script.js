@@ -727,6 +727,10 @@ $(document).ready(function () {
             blockModalInstance?.hide();
             flatModalInstance?.hide();
             complainModalInstance?.hide();
+            expenseModalInstance?.hide();
+            expenseCategoryModalInstance?.hide();
+            flatTypeModalInstance?.hide();
+            maintenanceBillModalInstance?.hide();
         });
 
     // Complain Modal Variables
@@ -1037,5 +1041,752 @@ $(document).ready(function () {
                     }
                 },
             });
+        });
+    // Expense Modal Variables
+    const expenseModalEl = document.getElementById("expense-modal");
+    const ExpenseModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const expenseModalInstance =
+        expenseModalEl && ExpenseModalClass
+            ? ExpenseModalClass.getOrCreateInstance(expenseModalEl)
+            : null;
+
+    // Invoice Image Preview handler
+    $(document)
+        .off("change", "#expense-modal-content #invoice")
+        .on("change", "#expense-modal-content #invoice", function(event) {
+            const file = event.target.files[0];
+            const previewContainer = $("#invoice-preview-container");
+            const previewImg = $("#invoice-preview-img");
+
+            if (file) {
+                // Check if file is an image
+                if (file.type.match('image.*')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImg.attr('src', e.target.result);
+                        previewContainer.removeClass('d-none');
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    // Hide preview if not an image (e.g. PDF)
+                    previewImg.attr('src', '');
+                    previewContainer.addClass('d-none');
+                }
+            } else {
+                previewImg.attr('src', '');
+                previewContainer.addClass('d-none');
+            }
+        });
+
+    // Add Expense Form Open
+    $(document)
+        .off("click", "#btn-add-expense")
+        .on("click", "#btn-add-expense", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#expense-modal-content").html(response);
+                    $("#expense-modal-content .modal-title").text(title);
+                    expenseModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Edit Expense Form Open
+    $(document)
+        .off("click", "#expenses-table .btn-edit-expense")
+        .on("click", "#expenses-table .btn-edit-expense", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#expense-modal-content").html(response);
+                    $("#expense-modal-content .modal-title").text(title);
+                    expenseModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Add/Edit Expense Form Submit
+    $(document)
+        .off("submit", "#expense-ajax-form")
+        .on("submit", "#expense-ajax-form", function (e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+            let requestType = $(this).attr("method") || "POST";
+            let formAction = $(this).attr("action");
+
+            let spoofedMethod = $(this).find('input[name="_method"]').val();
+            if (spoofedMethod) {
+                requestType = spoofedMethod;
+            }
+
+            let $btn = $(this).find('button[type="submit"]');
+            $btn.prop("disabled", true);
+
+            $(".field-error").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            $.ajax({
+                url: formAction,
+                method: "POST", // Handle via spoofing
+                data: formData,
+                processData: false,
+                contentType: false,
+
+                success: function (response) {
+                    $btn.prop("disabled", false);
+                    toastr.success(response.message || "Saved successfully.");
+
+                    expenseModalInstance?.hide();
+
+                    if ($.fn.DataTable.isDataTable("#expenses-table")) {
+                        $("#expenses-table").DataTable().ajax.reload();
+                    } else if (window.LaravelDataTables && window.LaravelDataTables['expenses-table']) {
+                        window.LaravelDataTables['expenses-table'].ajax.reload();
+                    }
+                },
+
+                error: function (xhr) {
+                    $btn.prop("disabled", false);
+                    $(".field-error").remove();
+                    $(".is-invalid").removeClass("is-invalid");
+
+                    let errors = xhr.responseJSON?.errors;
+
+                    if (errors) {
+                        $.each(errors, function (key, value) {
+                            let field = $('[name="' + key + '"]');
+                            field.addClass("is-invalid");
+                            let target = field;
+                            if (field.parent().hasClass("input-group")) {
+                                target = field.parent();
+                            }
+                            $(
+                                '<div class="invalid-feedback d-block field-error text-danger"></div>',
+                            )
+                                .text(value[0])
+                                .insertAfter(target);
+                        });
+                    } else {
+                        toastr.error(
+                            xhr.responseJSON?.message ||
+                                "Something went wrong.",
+                        );
+                    }
+                },
+            });
+        });
+
+    // Delete Single Expense
+    $(document)
+        .off("click", "#expenses-table .btn-delete-expense")
+        .on("click", "#expenses-table .btn-delete-expense", function () {
+            let url = $(this).data("url");
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "Are you sure?",
+                    text: "This expense will be deleted permanently!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true,
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: "DELETE",
+
+                            success: function (response) {
+                                toastr.success(
+                                    response.message || "Deleted successfully.",
+                                );
+
+                                if ($.fn.DataTable.isDataTable("#expenses-table")) {
+                                    $("#expenses-table").DataTable().ajax.reload();
+                                } else if (window.LaravelDataTables && window.LaravelDataTables['expenses-table']) {
+                                    window.LaravelDataTables['expenses-table'].ajax.reload();
+                                }
+                            },
+
+                            error: function (xhr) {
+                                toastr.error(
+                                    xhr.responseJSON?.message ||
+                                        "Could not delete expense.",
+                                );
+                            },
+                        });
+                    }
+                });
+        });
+    // Expense Category Modal Variables
+    const expenseCategoryModalEl = document.getElementById("expense-category-modal");
+    const ExpenseCategoryModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const expenseCategoryModalInstance =
+        expenseCategoryModalEl && ExpenseCategoryModalClass
+            ? ExpenseCategoryModalClass.getOrCreateInstance(expenseCategoryModalEl)
+            : null;
+
+    // Add Expense Category Form Open
+    $(document)
+        .off("click", "#btn-add-expense-category")
+        .on("click", "#btn-add-expense-category", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#expense-category-modal-content").html(response);
+                    $("#expense-category-modal-content .modal-title").text(title);
+                    expenseCategoryModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Edit Expense Category Form Open
+    $(document)
+        .off("click", "#expense-categories-table .btn-edit-expense-category")
+        .on("click", "#expense-categories-table .btn-edit-expense-category", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#expense-category-modal-content").html(response);
+                    $("#expense-category-modal-content .modal-title").text(title);
+                    expenseCategoryModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Add/Edit Expense Category Form Submit
+    $(document)
+        .off("submit", "#expense-category-ajax-form")
+        .on("submit", "#expense-category-ajax-form", function (e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+            let requestType = $(this).attr("method") || "POST";
+            let formAction = $(this).attr("action");
+
+            let spoofedMethod = $(this).find('input[name="_method"]').val();
+            if (spoofedMethod) {
+                requestType = spoofedMethod;
+            }
+
+            let $btn = $(this).find('button[type="submit"]');
+            $btn.prop("disabled", true);
+
+            $(".field-error").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            $.ajax({
+                url: formAction,
+                method: "POST", // Handle via spoofing
+                data: formData,
+                processData: false,
+                contentType: false,
+
+                success: function (response) {
+                    $btn.prop("disabled", false);
+                    toastr.success(response.message || "Saved successfully.");
+
+                    expenseCategoryModalInstance?.hide();
+
+                    if ($.fn.DataTable.isDataTable("#expense-categories-table")) {
+                        $("#expense-categories-table").DataTable().ajax.reload();
+                    } else if (window.LaravelDataTables && window.LaravelDataTables['expense-categories-table']) {
+                        window.LaravelDataTables['expense-categories-table'].ajax.reload();
+                    }
+                },
+
+                error: function (xhr) {
+                    $btn.prop("disabled", false);
+                    $(".field-error").remove();
+                    $(".is-invalid").removeClass("is-invalid");
+
+                    let errors = xhr.responseJSON?.errors;
+
+                    if (errors) {
+                        $.each(errors, function (key, value) {
+                            let field = $('[name="' + key + '"]');
+                            field.addClass("is-invalid");
+                            let target = field;
+                            if (field.parent().hasClass("input-group")) {
+                                target = field.parent();
+                            }
+                            $(
+                                '<div class="invalid-feedback d-block field-error text-danger"></div>',
+                            )
+                                .text(value[0])
+                                .insertAfter(target);
+                        });
+                    } else {
+                        toastr.error(
+                            xhr.responseJSON?.message ||
+                                "Something went wrong.",
+                        );
+                    }
+                },
+            });
+        });
+
+    // Delete Single Expense Category
+    $(document)
+        .off("click", "#expense-categories-table .btn-delete-expense-category")
+        .on("click", "#expense-categories-table .btn-delete-expense-category", function () {
+            let url = $(this).data("url");
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "Are you sure?",
+                    text: "This category will be deleted permanently!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true,
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: "DELETE",
+
+                            success: function (response) {
+                                toastr.success(
+                                    response.message || "Deleted successfully.",
+                                );
+
+                                if ($.fn.DataTable.isDataTable("#expense-categories-table")) {
+                                    $("#expense-categories-table").DataTable().ajax.reload();
+                                } else if (window.LaravelDataTables && window.LaravelDataTables['expense-categories-table']) {
+                                    window.LaravelDataTables['expense-categories-table'].ajax.reload();
+                                }
+                            },
+
+                            error: function (xhr) {
+                                toastr.error(
+                                    xhr.responseJSON?.message ||
+                                        "Could not delete category.",
+                                );
+                            },
+                        });
+                    }
+                });
+        });
+
+    // Flat Type Modal Variables
+    const flatTypeModalEl = document.getElementById("flat-type-modal");
+    const FlatTypeModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const flatTypeModalInstance =
+        flatTypeModalEl && FlatTypeModalClass
+            ? FlatTypeModalClass.getOrCreateInstance(flatTypeModalEl)
+            : null;
+
+    // Add Flat Type Form Open
+    $(document)
+        .off("click", "#btn-add-flat-type")
+        .on("click", "#btn-add-flat-type", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#flat-type-modal-content").html(response);
+                    $("#flat-type-modal-content .modal-title").text(title);
+                    flatTypeModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Edit Flat Type Form Open
+    $(document)
+        .off("click", "#flat-types-table .btn-edit-flat-type")
+        .on("click", "#flat-types-table .btn-edit-flat-type", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#flat-type-modal-content").html(response);
+                    $("#flat-type-modal-content .modal-title").text(title);
+                    flatTypeModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Add/Edit Flat Type Form Submit
+    $(document)
+        .off("submit", "#flat-type-ajax-form")
+        .on("submit", "#flat-type-ajax-form", function (e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+            let requestType = $(this).attr("method") || "POST";
+            let formAction = $(this).attr("action");
+
+            let spoofedMethod = $(this).find('input[name="_method"]').val();
+            if (spoofedMethod) {
+                requestType = spoofedMethod;
+            }
+
+            let $btn = $(this).find('button[type="submit"]');
+            $btn.prop("disabled", true);
+
+            $(".field-error").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            $.ajax({
+                url: formAction,
+                method: "POST", // Handle via spoofing
+                data: formData,
+                processData: false,
+                contentType: false,
+
+                success: function (response) {
+                    $btn.prop("disabled", false);
+                    toastr.success(response.message || "Saved successfully.");
+
+                    flatTypeModalInstance?.hide();
+
+                    if ($.fn.DataTable.isDataTable("#flat-types-table")) {
+                        $("#flat-types-table").DataTable().ajax.reload();
+                    } else if (window.LaravelDataTables && window.LaravelDataTables['flat-types-table']) {
+                        window.LaravelDataTables['flat-types-table'].ajax.reload();
+                    }
+                },
+
+                error: function (xhr) {
+                    $btn.prop("disabled", false);
+                    $(".field-error").remove();
+                    $(".is-invalid").removeClass("is-invalid");
+
+                    let errors = xhr.responseJSON?.errors;
+
+                    if (errors) {
+                        $.each(errors, function (key, value) {
+                            let field = $('[name="' + key + '"]');
+                            field.addClass("is-invalid");
+                            let target = field;
+                            if (field.parent().hasClass("input-group")) {
+                                target = field.parent();
+                            }
+                            $(
+                                '<div class="invalid-feedback d-block field-error text-danger"></div>',
+                            )
+                                .text(value[0])
+                                .insertAfter(target);
+                        });
+                    } else {
+                        toastr.error(
+                            xhr.responseJSON?.message ||
+                                "Something went wrong.",
+                        );
+                    }
+                },
+            });
+        });
+
+    // Delete Single Flat Type
+    $(document)
+        .off("click", "#flat-types-table .btn-delete-flat-type")
+        .on("click", "#flat-types-table .btn-delete-flat-type", function () {
+            let url = $(this).data("url");
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "Are you sure?",
+                    text: "This flat type will be deleted permanently!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true,
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: "DELETE",
+
+                            success: function (response) {
+                                toastr.success(
+                                    response.message || "Deleted successfully.",
+                                );
+
+                                if ($.fn.DataTable.isDataTable("#flat-types-table")) {
+                                    $("#flat-types-table").DataTable().ajax.reload();
+                                } else if (window.LaravelDataTables && window.LaravelDataTables['flat-types-table']) {
+                                    window.LaravelDataTables['flat-types-table'].ajax.reload();
+                                }
+                            },
+
+                            error: function (xhr) {
+                                toastr.error(
+                                    xhr.responseJSON?.message ||
+                                        "Could not delete flat type.",
+                                );
+                            },
+                        });
+                    }
+                });
+        });
+
+    // Maintenance Bill Modal Variables
+    const maintenanceBillModalEl = document.getElementById("maintenance-bill-modal");
+    const MaintenanceBillModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const maintenanceBillModalInstance =
+        maintenanceBillModalEl && MaintenanceBillModalClass
+            ? MaintenanceBillModalClass.getOrCreateInstance(maintenanceBillModalEl)
+            : null;
+
+    // Add Maintenance Bill Form Open
+    $(document)
+        .off("click", "#btn-add-maintenance-bill")
+        .on("click", "#btn-add-maintenance-bill", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#maintenance-bill-modal-content").html(response);
+                    $("#maintenance-bill-modal-content .modal-title").text(title);
+                    maintenanceBillModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Edit Maintenance Bill Form Open
+    $(document)
+        .off("click", "#maintenance-bills-table .btn-edit-maintenance-bill")
+        .on("click", "#maintenance-bills-table .btn-edit-maintenance-bill", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#maintenance-bill-modal-content").html(response);
+                    $("#maintenance-bill-modal-content .modal-title").text(title);
+                    maintenanceBillModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
+    // Auto-fill maintenance amount when flat is selected
+    $(document).on("change", "#maintenance-bill-ajax-form #flat_id", function () {
+        let selectedOption = $(this).find("option:selected");
+        let fee = selectedOption.data("maintenance-fee");
+        
+        if (fee !== undefined && fee !== "") {
+            $("#maintenance-bill-ajax-form #amount").val(parseFloat(fee).toFixed(2));
+        }
+    });
+
+    // Filter flats based on selected block
+    $(document).on("change", "#maintenance-bill-ajax-form #block_id", function () {
+        let blockId = $(this).val();
+        let flatSelect = $("#maintenance-bill-ajax-form #flat_id");
+        
+        // Show/hide options based on data-block-id
+        flatSelect.find("option").each(function () {
+            let optionBlockId = $(this).data("block-id");
+            if (!optionBlockId || optionBlockId == blockId) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+
+        // Reset flat selection if current selection is hidden
+        if (flatSelect.find("option:selected").css("display") === "none") {
+            flatSelect.val("");
+            $("#maintenance-bill-ajax-form #amount").val("");
+        }
+    });
+
+    // Initialize flat filtering if block is already selected (e.g. in Edit mode)
+    $(document).on('shown.coreui.modal', '#maintenance-bill-modal', function () {
+        $("#maintenance-bill-ajax-form #block_id").trigger('change');
+    });
+
+    // Add/Edit Maintenance Bill Form Submit
+    $(document)
+        .off("submit", "#maintenance-bill-ajax-form")
+        .on("submit", "#maintenance-bill-ajax-form", function (e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+            let requestType = $(this).attr("method") || "POST";
+            let formAction = $(this).attr("action");
+
+            let spoofedMethod = $(this).find('input[name="_method"]').val();
+            if (spoofedMethod) {
+                requestType = spoofedMethod;
+            }
+
+            let $btn = $(this).find('button[type="submit"]');
+            $btn.prop("disabled", true);
+
+            $(".field-error").remove();
+            $(".is-invalid").removeClass("is-invalid");
+
+            $.ajax({
+                url: formAction,
+                method: "POST", // Handle via spoofing
+                data: formData,
+                processData: false,
+                contentType: false,
+
+                success: function (response) {
+                    $btn.prop("disabled", false);
+                    toastr.success(response.message || "Saved successfully.");
+
+                    maintenanceBillModalInstance?.hide();
+
+                    if ($.fn.DataTable.isDataTable("#maintenance-bills-table")) {
+                        $("#maintenance-bills-table").DataTable().ajax.reload();
+                    } else if (window.LaravelDataTables && window.LaravelDataTables['maintenance-bills-table']) {
+                        window.LaravelDataTables['maintenance-bills-table'].ajax.reload();
+                    }
+                },
+
+                error: function (xhr) {
+                    $btn.prop("disabled", false);
+                    $(".field-error").remove();
+                    $(".is-invalid").removeClass("is-invalid");
+
+                    let errors = xhr.responseJSON?.errors;
+
+                    if (errors) {
+                        $.each(errors, function (key, value) {
+                            let field = $('[name="' + key + '"]');
+                            field.addClass("is-invalid");
+                            let target = field;
+                            if (field.parent().hasClass("input-group")) {
+                                target = field.parent();
+                            }
+                            $(
+                                '<div class="invalid-feedback d-block field-error text-danger"></div>',
+                            )
+                                .text(value[0])
+                                .insertAfter(target);
+                        });
+                    } else {
+                        toastr.error(
+                            xhr.responseJSON?.message ||
+                                "Something went wrong.",
+                        );
+                    }
+                },
+            });
+        });
+
+    // Delete Single Maintenance Bill
+    $(document)
+        .off("click", "#maintenance-bills-table .btn-delete-maintenance-bill")
+        .on("click", "#maintenance-bills-table .btn-delete-maintenance-bill", function () {
+            let url = $(this).data("url");
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "Are you sure?",
+                    text: "This bill will be deleted permanently!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true,
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: "DELETE",
+
+                            success: function (response) {
+                                toastr.success(
+                                    response.message || "Deleted successfully.",
+                                );
+
+                                if ($.fn.DataTable.isDataTable("#maintenance-bills-table")) {
+                                    $("#maintenance-bills-table").DataTable().ajax.reload();
+                                } else if (window.LaravelDataTables && window.LaravelDataTables['maintenance-bills-table']) {
+                                    window.LaravelDataTables['maintenance-bills-table'].ajax.reload();
+                                }
+                            },
+
+                            error: function (xhr) {
+                                toastr.error(
+                                    xhr.responseJSON?.message ||
+                                        "Could not delete bill.",
+                                );
+                            },
+                        });
+                    }
+                });
         });
 });

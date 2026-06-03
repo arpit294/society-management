@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\DataTables\FlatsDatatables;
 use App\Models\Block;
 use App\Models\Flat;
+use App\Models\FlatType;
 use Illuminate\Http\Request;
 
 class FlatController extends Controller
@@ -23,7 +24,8 @@ class FlatController extends Controller
     public function create()
     {
         $blocks = Block::all();
-        return view('flats.create', compact('blocks'));
+        $flatTypes = FlatType::where('status', 'active')->get();
+        return view('flats.create', compact('blocks', 'flatTypes'));
     }
 
     /**
@@ -35,8 +37,7 @@ class FlatController extends Controller
             'block_id' => 'nullable|integer|exists:blocks,id',
             'flat_no' => 'required|string|max:255',
             'floor_no' => 'required|integer|min:0',
-            'flat_type' => 'required|string|max:255',
-            'maintenance_amount' => 'required|numeric|min:0',
+            'flat_type_id' => 'required|integer|exists:flat_types,id',
             'status' => 'required|string|max:255',
         ]);
 
@@ -64,7 +65,8 @@ class FlatController extends Controller
     public function edit(Flat $flat)
     {
         $blocks = Block::all();
-        return view('flats.edit', compact('flat', 'blocks'));
+        $flatTypes = FlatType::all();
+        return view('flats.edit', compact('flat', 'blocks', 'flatTypes'));
     }
 
     /**
@@ -76,8 +78,7 @@ class FlatController extends Controller
             'block_id' => 'nullable|integer|exists:blocks,id',
             'flat_no' => 'required|string|max:255',
             'floor_no' => 'required|integer|min:0',
-            'flat_type' => 'required|string|max:255',
-            'maintenance_amount' => 'required|numeric|min:0',
+            'flat_type_id' => 'required|integer|exists:flat_types,id',
             'status' => 'required|string|max:255',
         ]);
 
