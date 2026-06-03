@@ -108,6 +108,25 @@
             data-title="Add Resident">Add Resident</button>
     </div>
 
+    <div class="mb-3">
+        <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
+            <div class="filter-col" style="min-width: 220px;">
+                <label class="form-label mb-1" for="residents-filter-block">Filter by Block</label>
+                <select id="residents-filter-block" class="form-select" style="max-width: 320px;">
+                    <option value="">All Blocks</option>
+                    @foreach($blocks as $block)
+                        <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="filter-col d-none" id="residents-filter-reset-col" style="min-width: 200px;">
+                <button type="button" id="residents-filter-reset" class="btn btn-outline-secondary w-100">
+                    Reset filters
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body table-responsive">
             {{ $dataTable->table() }}

@@ -43,7 +43,6 @@ class FlatTypesDataTable extends DataTable
                 'name',
                 'maintenance_fee',
                 'penalty_per_day',
-                'description',
                 'status',
                 'created_at'
             ]);
@@ -80,8 +79,7 @@ class FlatTypesDataTable extends DataTable
                 ->addClass('text-center'),
             Column::make('name')->data('name')->name('name'),
             Column::make('maintenance_fee')->data('maintenance_fee')->name('maintenance_fee')->title('Maintenance Fee'),
-            Column::make('penalty_per_day')->data('penalty_per_day')->name('penalty_per_day')->title('Penalty / Day'),
-            Column::make('description')->data('description')->name('description'),
+            Column::make('penalty_per_day')->data('penalty_per_day')->name('penalty_per_day')->title('Late Penalty'),
             Column::make('status')->data('status')->name('status'),
             Column::make('created_at')->data('created_at')->name('created_at')->title('Created At'),
             Column::computed('action')->orderable(false)->searchable(false)->width(120),

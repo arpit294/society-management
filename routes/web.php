@@ -48,7 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('complains', \App\Http\Controllers\ComplainController::class)->except(['show']);
 
     // Residents
-    Route::resource('residents', \App\Http\Controllers\ResidentController::class)->only(['index', 'create', 'store']);
+    Route::resource('residents', \App\Http\Controllers\ResidentController::class)->except(['show']);
     // Expenses
     Route::resource('expenses', \App\Http\Controllers\ExpenseController::class)->except(['show']);
 
@@ -60,7 +60,8 @@ Route::middleware('auth')->group(function () {
 
     // Maintenance Bills
     Route::get('maintenance-bills/resident-info/{user_id}', [\App\Http\Controllers\MaintenanceBillController::class, 'getResidentInfo'])->name('maintenance-bills.resident-info');
-    Route::resource('maintenance-bills', \App\Http\Controllers\MaintenanceBillController::class)->except(['show']);
+    Route::resource('maintenance-bills', \App\Http\Controllers\MaintenanceBillController::class);
+    Route::post('maintenance-bills/{maintenanceBill}/update-status', [\App\Http\Controllers\MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
 });
 
 // 

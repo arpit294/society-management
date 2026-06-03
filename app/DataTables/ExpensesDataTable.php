@@ -36,7 +36,7 @@ class ExpensesDataTable extends DataTable
                 }
                 return '<span class="text-muted"><i class="fa-solid fa-minus"></i></span>';
             })
-         
+
             ->filterColumn('category_name', function ($query, $keyword) {
                 $query->where('expense_categories.title', 'like', "%{$keyword}%");
             })
@@ -105,3 +105,7 @@ class ExpensesDataTable extends DataTable
         return 'Expenses_' . date('YmdHis');
     }
 }
+
+
+
+

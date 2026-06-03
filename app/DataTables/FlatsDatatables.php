@@ -22,6 +22,11 @@ class FlatsDatatables extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
+            ->filterColumn('flat_type_id', function ($query, $keyword) {
+                $query->whereHas('flatType', function ($q) use ($keyword) {
+                    $q->where('name', 'like', "%{$keyword}%");
+                });
+            })
             ->addColumn('action', 'flats.action')
             ->editColumn('block_id', function ($model) {
                 return $model->block ? $model->block->block_name : '-';

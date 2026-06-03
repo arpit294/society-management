@@ -124,7 +124,7 @@ $(document).ready(function () {
             let typeValue = $(this).val();
             $("#flats-table")
                 .DataTable()
-                .column("flat_type:name")
+                .column("flat_type_id:name")
                 .search(typeValue)
                 .draw();
             toggleFlatResetBtn();
@@ -162,10 +162,105 @@ $(document).ready(function () {
             $("#flats-filter-status").val("");
 
             let dt = $("#flats-table").DataTable();
-            dt.column("flat_type:name").search("");
+            dt.column("flat_type_id:name").search("");
             dt.column("status:name").search("");
             dt.draw();
             toggleFlatResetBtn();
+        });
+
+    function toggleResidentResetBtn() {
+        if ($("#residents-filter-block").val()) {
+            $("#residents-filter-reset-col").removeClass("d-none");
+        } else {
+            $("#residents-filter-reset-col").addClass("d-none");
+        }
+    }
+
+    // Resident Block Filter Change
+    $(document)
+        .off("change", "#residents-filter-block")
+        .on("change", "#residents-filter-block", function () {
+            let blockValue = $(this).val();
+            $("#residents-table")
+                .DataTable()
+                .column("block.block_name:name")
+                .search(blockValue)
+                .draw();
+            toggleResidentResetBtn();
+        });
+
+    // Resident Filter Reset
+    $(document)
+        .off("click", "#residents-filter-reset")
+        .on("click", "#residents-filter-reset", function () {
+            $("#residents-filter-block").val("");
+
+            let dt = $("#residents-table").DataTable();
+            dt.column("block.block_name:name").search("");
+            dt.draw();
+            toggleResidentResetBtn();
+        });
+
+    function toggleMaintenanceBillsResetBtn() {
+        if ($("#maintenance-bills-filter-status").val()) {
+            $("#maintenance-bills-filter-reset-col").removeClass("d-none");
+        } else {
+            $("#maintenance-bills-filter-reset-col").addClass("d-none");
+        }
+    }
+
+    $(document)
+        .off("change", "#maintenance-bills-filter-status")
+        .on("change", "#maintenance-bills-filter-status", function () {
+            let statusValue = $(this).val();
+            $("#maintenance-bills-table")
+                .DataTable()
+                .column("status:name")
+                .search(statusValue)
+                .draw();
+            toggleMaintenanceBillsResetBtn();
+        });
+
+    $(document)
+        .off("click", "#maintenance-bills-filter-reset")
+        .on("click", "#maintenance-bills-filter-reset", function () {
+            $("#maintenance-bills-filter-status").val("");
+
+            let dt = $("#maintenance-bills-table").DataTable();
+            dt.column("status:name").search("");
+            dt.draw();
+            toggleMaintenanceBillsResetBtn();
+        });
+
+    function toggleExpensesResetBtn() {
+        if ($("#expenses-filter-category").val()) {
+            $("#expenses-filter-reset-col").removeClass("d-none");
+        } else {
+            $("#expenses-filter-reset-col").addClass("d-none");
+        }
+    }
+
+    $(document)
+        .off("change", "#expenses-filter-category")
+        .on("change", "#expenses-filter-category", function () {
+            let categoryValue = $(this).val();
+            $("#expenses-table")
+                .DataTable()
+                .column("expense_categories.title:name")
+                .search(categoryValue)
+                .draw();
+            toggleExpensesResetBtn();
+        });
+
+    $(document)
+        .off("click", "#expenses-filter-reset")
+        .on("click", "#expenses-filter-reset", function () {
+            $("#expenses-filter-category").val("");
+
+            let dt = $("#expenses-table").DataTable();
+            dt.column("expense_categories.title:name").search("");
+            dt.draw();
+            toggleExpensesResetBtn();
         });
 
     // Add User Form Open
@@ -375,7 +470,7 @@ $(document).ready(function () {
         });
 
 
-      
+
 
     // Edit Block Form Open
     $(document)
@@ -948,6 +1043,29 @@ $(document).ready(function () {
             ? ResidentModalClass.getOrCreateInstance(residentModalEl)
             : null;
 
+    // Edit Resident Form Open
+    $(document)
+        .off("click", "#residents-table .btn-edit-resident")
+        .on("click", "#residents-table .btn-edit-resident", function () {
+            let url = $(this).data("url");
+            let title = $(this).data("title");
+
+            $.ajax({
+                type: "GET",
+                url: url,
+
+                success: function (response) {
+                    $("#resident-modal-content").html(response);
+                    $("#resident-modal-content .modal-title").text(title);
+                    residentModalInstance?.show();
+                },
+
+                error: function () {
+                    toastr.error("Could not load form.");
+                },
+            });
+        });
+
     // Add Resident Form Open
     $(document)
         .off("click", "#btn-add-resident")
@@ -1042,6 +1160,51 @@ $(document).ready(function () {
                 },
             });
         });
+    // Delete Single Resident
+    $(document)
+        .off("click", "#residents-table .btn-delete-resident")
+        .on("click", "#residents-table .btn-delete-resident", function () {
+            let url = $(this).data("url");
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "Are you sure?",
+                    text: "This resident will be deleted permanently!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true,
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: "DELETE",
+
+                            success: function (response) {
+                                toastr.success(
+                                    response.message || "Deleted successfully.",
+                                );
+
+                                if ($.fn.DataTable.isDataTable("#residents-table")) {
+                                    $("#residents-table").DataTable().ajax.reload();
+                                } else if (window.LaravelDataTables && window.LaravelDataTables['residents-table']) {
+                                    window.LaravelDataTables['residents-table'].ajax.reload();
+                                }
+                            },
+
+                            error: function (xhr) {
+                                toastr.error(
+                                    xhr.responseJSON?.message ||
+                                        "Could not delete resident.",
+                                );
+                            },
+                        });
+                    }
+                });
+        });
+
     // Expense Modal Variables
     const expenseModalEl = document.getElementById("expense-modal");
     const ExpenseModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
@@ -1640,7 +1803,7 @@ $(document).ready(function () {
     $(document).on("change", "#maintenance-bill-ajax-form #flat_id", function () {
         let selectedOption = $(this).find("option:selected");
         let fee = selectedOption.data("maintenance-fee");
-        
+
         if (fee !== undefined && fee !== "") {
             $("#maintenance-bill-ajax-form #amount").val(parseFloat(fee).toFixed(2));
         }
@@ -1650,7 +1813,7 @@ $(document).ready(function () {
     $(document).on("change", "#maintenance-bill-ajax-form #block_id", function () {
         let blockId = $(this).val();
         let flatSelect = $("#maintenance-bill-ajax-form #flat_id");
-        
+
         // Show/hide options based on data-block-id
         flatSelect.find("option").each(function () {
             let optionBlockId = $(this).data("block-id");
@@ -1789,4 +1952,295 @@ $(document).ready(function () {
                     }
                 });
         });
+
+    // ==========================================
+    // EXTRACTED FROM BLADE TEMPLATES
+    // ==========================================
+
+    // --- Dashboard Chart ---
+    if (document.getElementById('mainChart') && document.getElementById('dashboard-chart-data')) {
+        const chartDataEl = document.getElementById('dashboard-chart-data');
+        const months = JSON.parse(chartDataEl.getAttribute('data-months'));
+        const revenueData = JSON.parse(chartDataEl.getAttribute('data-revenue'));
+        const expenseData = JSON.parse(chartDataEl.getAttribute('data-expenses'));
+
+        Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--cui-body-color') || '#8a93a2';
+        Chart.defaults.scale.grid.color = getComputedStyle(document.documentElement).getPropertyValue('--cui-border-color-translucent') || 'rgba(0,0,0,0.1)';
+
+        const mainChartCtx = document.getElementById('mainChart').getContext('2d');
+        new Chart(mainChartCtx, {
+            type: 'bar',
+            data: {
+                labels: months,
+                datasets: [
+                    {
+                        label: 'Revenue (Paid Bills)',
+                        backgroundColor: 'rgba(46, 184, 92, 0.8)',
+                        borderColor: 'rgba(46, 184, 92, 1)',
+                        borderWidth: 1,
+                        data: revenueData
+                    },
+                    {
+                        label: 'Society Expenses',
+                        backgroundColor: 'rgba(229, 83, 83, 0.8)',
+                        borderColor: 'rgba(229, 83, 83, 1)',
+                        borderWidth: 1,
+                        data: expenseData
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) { label += ': '; }
+                                if (context.parsed.y !== null) {
+                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                }
+                                return label;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        if (document.getElementById('statusChart')) {
+            const statusChartCtx = document.getElementById('statusChart').getContext('2d');
+            const statusData = JSON.parse(chartDataEl.getAttribute('data-status'));
+            new Chart(statusChartCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Paid', 'Pending', 'Due'],
+                    datasets: [{
+                        data: [statusData.paid, statusData.pending, statusData.due],
+                        backgroundColor: [
+                            '#2eb85c', // success
+                            '#f9b115', // warning
+                            '#e55353'  // danger
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+    }
+
+    // --- Resident Type Dropdown Filtering ---
+    $(document).on('change', '#resident-type-select', function() {
+        const type = $(this).val();
+        const userSelect = $('#resident-user-select');
+        if (userSelect.length === 0) return;
+        
+        userSelect.val('');
+
+        userSelect.find('option').each(function() {
+            const role = $(this).attr('data-role');
+            if (!role) {
+                $(this).show().prop('disabled', false).prop('hidden', false);
+                return;
+            }
+
+            if (type === 'owner' && role === 'owner') {
+                $(this).show().prop('disabled', false).prop('hidden', false);
+            } else if (type === 'rental' && role === 'tenant') {
+                $(this).show().prop('disabled', false).prop('hidden', false);
+            } else {
+                $(this).hide().prop('disabled', true).prop('hidden', true);
+            }
+        });
+    });
+
+    // --- Maintenance Bill User Selection Auto-Fill ---
+    $(document).on('change', '#maintenance-bill-ajax-form #user_id', function() {
+        const userId = $(this).val();
+        if (!userId) {
+            $('#maintenance-bill-ajax-form #block_id').val('');
+            $('#maintenance-bill-ajax-form #flat_id').val('');
+            $('#maintenance-bill-ajax-form #amount').val('');
+            return;
+        }
+
+        fetch(`/maintenance-bills/resident-info/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    $('#maintenance-bill-ajax-form #block_id').val(data.block_id);
+                    $('#maintenance-bill-ajax-form #flat_id').val(data.flat_id);
+                    $('#maintenance-bill-ajax-form #amount').val(data.amount);
+                } else {
+                    $('#maintenance-bill-ajax-form #block_id').val('');
+                    $('#maintenance-bill-ajax-form #flat_id').val('');
+                    $('#maintenance-bill-ajax-form #amount').val('');
+                }
+            })
+            .catch(error => console.error('Error fetching resident info:', error));
+    });
+
+    // --- Maintenance Bill Status Update Form ---
+    $(document).on('submit', '.ajax-status-form', function(e) {
+        e.preventDefault();
+        var form = $(this);
+        var url = form.attr('action');
+        var formData = form.serialize();
+        var submitBtn = form.find('button[type="submit"]');
+        var originalText = submitBtn.html();
+        
+        submitBtn.html('<i class="fa-solid fa-spinner fa-spin"></i>').prop('disabled', true);
+
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    if (window.LaravelDataTables && window.LaravelDataTables["maintenancedetails-table"]) {
+                        window.LaravelDataTables["maintenancedetails-table"].ajax.reload(null, false);
+                    }
+                    
+                    if (response.paidCount !== undefined && response.totalCount !== undefined) {
+                        $('#paid-count-display').text(response.paidCount + '/' + response.totalCount);
+                    }
+                    if (response.totalAmountExpected !== undefined) {
+                        $('#total-amount-display').text('$' + response.totalAmountExpected);
+                    }
+                    
+                    if (typeof toastr !== 'undefined') {
+                        toastr.success(response.message);
+                    }
+                } else {
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error(response.message || 'Error updating status');
+                    }
+                }
+            },
+            error: function(xhr) {
+                console.error('Error updating status', xhr);
+                if (typeof toastr !== 'undefined') {
+                    toastr.error('Error updating status');
+                }
+            },
+            complete: function() {
+                submitBtn.html(originalText).prop('disabled', false);
+            }
+        });
+    });
+
+    // --- Auth Forms Validation ---
+    const authToastSource = document.getElementById('users-toast-source');
+    if (authToastSource) {
+        const message = authToastSource.getAttribute('data-message');
+        const type = authToastSource.getAttribute('data-type') || 'success';
+        if (message && window.jQuery && typeof window.showToast === 'function') {
+            window.showToast(message, type);
+        }
+    }
+
+    $(document).on('click', '.toggle-password-btn', function() {
+        const input = $(this).closest('.input-group').find('input')[0];
+        if (input.type === 'password') {
+            input.type = 'text';
+            $(this).attr('aria-label', 'Hide password').attr('data-coreui-original-title', 'Hide password');
+        } else {
+            input.type = 'password';
+            $(this).attr('aria-label', 'Show password').attr('data-coreui-original-title', 'Show password');
+        }
+    });
+
+    $(document).on('submit', '#resetPasswordForm', function(e) {
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('new-password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+
+        const emailError = document.getElementById('js-email-error');
+        const passwordError = document.getElementById('js-password-error');
+        const confirmPasswordError = document.getElementById('js-confirm-password-error');
+
+        let isValid = true;
+
+        [emailInput, passwordInput, confirmPasswordInput].forEach(input => {
+            if(!input) return;
+            input.classList.remove('is-invalid');
+            const bladeError = input.parentElement.querySelector('.invalid-feedback:not([id^="js-"])');
+            if (bladeError) bladeError.style.display = 'none';
+        });
+        
+        [emailError, passwordError, confirmPasswordError].forEach(err => {
+            if (err) {
+                err.style.display = 'none';
+                err.textContent = '';
+            }
+        });
+
+        if (emailInput && !emailInput.value.trim()) {
+            isValid = false;
+            emailInput.classList.add('is-invalid');
+            if(emailError){
+                emailError.textContent = 'The email field is required.';
+                emailError.style.display = 'block';
+            }
+        } else if (emailInput && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)) {
+            isValid = false;
+            emailInput.classList.add('is-invalid');
+            if(emailError){
+                emailError.textContent = 'Please enter a valid email address.';
+                emailError.style.display = 'block';
+            }
+        }
+
+        if (passwordInput && !passwordInput.value) {
+            isValid = false;
+            passwordInput.classList.add('is-invalid');
+            if(passwordError){
+                passwordError.textContent = 'The password field is required.';
+                passwordError.style.display = 'block';
+            }
+        } else if (passwordInput && passwordInput.value.length < 5) {
+            isValid = false;
+            passwordInput.classList.add('is-invalid');
+            if(passwordError){
+                passwordError.textContent = 'The password must be at least 5 characters.';
+                passwordError.style.display = 'block';
+            }
+        }
+
+        if (passwordInput && passwordInput.value && passwordInput.value.length >= 5 && confirmPasswordInput) {
+            if (!confirmPasswordInput.value) {
+                isValid = false;
+                confirmPasswordInput.classList.add('is-invalid');
+                if(confirmPasswordError){
+                    confirmPasswordError.textContent = 'Please confirm your password.';
+                    confirmPasswordError.style.display = 'block';
+                }
+            } else if (passwordInput.value !== confirmPasswordInput.value) {
+                isValid = false;
+                confirmPasswordInput.classList.add('is-invalid');
+                if(confirmPasswordError){
+                    confirmPasswordError.textContent = 'The password confirmation does not match.';
+                    confirmPasswordError.style.display = 'block';
+                }
+            }
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+
 });

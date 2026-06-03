@@ -13,7 +13,11 @@ class BlockController extends Controller
      */
     public function index(BlocksDataTable $dataTable)
     {
-        return $dataTable->render('blocks.index');
+        $blocks = Block::withCount('flats')->get();
+        $totalFlats = Block::sum('total_flats');
+        $totalActualFlats = \App\Models\Flat::count();
+
+        return $dataTable->render('blocks.index', compact('blocks', 'totalFlats', 'totalActualFlats'));
     }
 
     /**

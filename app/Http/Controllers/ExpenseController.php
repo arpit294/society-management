@@ -17,8 +17,10 @@ class ExpenseController extends Controller
                                     ->whereYear('created_at', date('Y'))
                                     ->sum('total_amount');
         $totalInvoices = Expense::whereNotNull('invoice')->count();
+        $totalMaintenanceIncome = \App\Models\MaintenanceBill::where('status', 'paid')->sum('total_amount');
+        $categories = ExpenseCategory::all();
 
-        return $dataTable->render('expenses.index', compact('totalExpenses', 'thisMonthExpenses', 'totalInvoices'));
+        return $dataTable->render('expenses.index', compact('totalExpenses', 'thisMonthExpenses', 'totalInvoices', 'totalMaintenanceIncome', 'categories'));
     }
 
     public function create()

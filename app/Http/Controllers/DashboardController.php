@@ -24,10 +24,11 @@ class DashboardController extends Controller
         // Revenue Chart Data (Current Year)
         $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
         
-        $monthlyRevenueDB = MaintenanceBill::where('status', 'paid')
-            ->where('year', date('Y'))
-            ->selectRaw('month, sum(total_amount) as total')
-            ->groupBy('month')
+        $monthlyRevenueDB = MaintenanceBill::where('maintenance_bills.status', 'paid')
+            ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
+            ->where('maintenances.year', date('Y'))
+            ->selectRaw('maintenances.month, sum(maintenance_bills.total_amount) as total')
+            ->groupBy('maintenances.month')
             ->pluck('total', 'month')
             ->toArray();
 

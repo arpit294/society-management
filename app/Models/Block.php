@@ -14,4 +14,9 @@ class Block extends Model
         'total_floor',
         'total_flats',
     ];
+
+    public function flats()
+    {
+        return $this->hasMany(Flat::class, 'block_id');
+    }
 }

@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\MaintenanceBill;
-use App\Models\User;
-use App\Models\Flat;
-use App\Models\Block;
+use App\Models\Maintenance;
+use App\Models\Resident;
 use App\DataTables\MaintenanceBillsDataTable;
+use Illuminate\Support\Facades\DB;
 
 class MaintenanceBillController extends Controller
 {
@@ -18,139 +18,123 @@ class MaintenanceBillController extends Controller
 
     public function create()
     {
-        $users = User::all();
-        $flats = Flat::with('flatType')->get();
-        $blocks = Block::all();
-        return view('maintenance_bills.create', compact('users', 'flats', 'blocks'));
+        return view('maintenance_bills.create');
     }
 
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'block_id' => 'required|exists:blocks,id',
-            'user_id' => 'required|exists:users,id',
-            'flat_id' => 'required|exists:flats,id',
-            'amount' => 'required|numeric|min:0',
             'month' => 'required|string|max:50',
             'year' => 'required|integer|min:2000',
             'due_date' => 'required|date',
-            'generated_date' => 'required|date',
-            'status' => 'required|in:paid,due,pending',
+            'status' => 'required|in:draft,published',
         ]);
 
-        $penaltyData = $this->calculatePenalty($validatedData);
-        $validatedData['penalty_amount'] = $penaltyData['penalty_amount'];
-        $validatedData['total_amount'] = $penaltyData['total_amount'];
+        DB::beginTransaction();
 
-        if ($validatedData['status'] === 'paid') {
-            $validatedData['paid_at'] = now();
-        }
+        try {
+            // Create Master Maintenance
+            $maintenance = Maintenance::create($validatedData);
 
-        MaintenanceBill::create($validatedData);
+            // Fetch all active residents
+            $activeResidents = Resident::with('flat.flatType')
+                ->where(function($query) {
+                    $query->whereNull('move_out_date')
+                          ->orWhere('move_out_date', '>=', now()->startOfDay());
+                })->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Maintenance Bill created successfully.',
-        ]);
-    }
+            foreach ($activeResidents as $resident) {
+                if (!$resident->flat || !$resident->flat->flatType) continue;
 
-    public function edit(MaintenanceBill $maintenanceBill)
-    {
-        $users = User::all();
-        $flats = Flat::with('flatType')->get();
-        $blocks = Block::all();
-        return view('maintenance_bills.edit', compact('maintenanceBill', 'users', 'flats', 'blocks'));
-    }
+                $amount = $resident->flat->flatType->maintenance_fee;
 
-    public function update(Request $request, MaintenanceBill $maintenanceBill)
-    {
-        $validatedData = $request->validate([
-            'block_id' => 'required|exists:blocks,id',
-            'user_id' => 'required|exists:users,id',
-            'flat_id' => 'required|exists:flats,id',
-            'amount' => 'required|numeric|min:0',
-            'month' => 'required|string|max:50',
-            'year' => 'required|integer|min:2000',
-            'due_date' => 'required|date',
-            'generated_date' => 'required|date',
-            'status' => 'required|in:paid,due,pending',
-        ]);
+                MaintenanceBill::create([
+                    'maintenance_id' => $maintenance->id,
+                    'user_id' => $resident->user_id,
+                    'flat_id' => $resident->flat_id,
+                    'block_id' => $resident->block_id,
+                    'amount' => $amount,
+                    'penalty_amount' => 0,
+                    'total_amount' => $amount,
+                    'generated_date' => now(),
+                    'status' => 'due',
+                ]);
+            }
 
-        $penaltyData = $this->calculatePenalty($validatedData, $maintenanceBill);
-        $validatedData['penalty_amount'] = $penaltyData['penalty_amount'];
-        $validatedData['total_amount'] = $penaltyData['total_amount'];
+            DB::commit();
 
-        if ($validatedData['status'] === 'paid' && !$maintenanceBill->paid_at) {
-            $validatedData['paid_at'] = now();
-        } elseif ($validatedData['status'] !== 'paid') {
-            $validatedData['paid_at'] = null;
-        }
-
-        $maintenanceBill->update($validatedData);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Maintenance Bill updated successfully.',
-        ]);
-    }
-
-    public function destroy(MaintenanceBill $maintenanceBill)
-    {
-        $maintenanceBill->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Maintenance Bill deleted successfully.',
-        ]);
-    }
-
-    private function calculatePenalty($validatedData, $maintenanceBill = null)
-    {
-        $flat = \App\Models\Flat::with('flatType')->find($validatedData['flat_id']);
-        $penaltyPerDay = $flat->flatType ? $flat->flatType->penalty_per_day : 0;
-        
-        $dueDate = \Carbon\Carbon::parse($validatedData['due_date'])->startOfDay();
-        
-        $paidAt = null;
-        if ($validatedData['status'] === 'paid') {
-            $paidAt = ($maintenanceBill && $maintenanceBill->paid_at) ? $maintenanceBill->paid_at : now();
-        }
-
-        $compareDate = $paidAt ? $paidAt->startOfDay() : now()->startOfDay();
-
-        $lateDays = 0;
-        if ($compareDate->gt($dueDate)) {
-            $lateDays = $dueDate->diffInDays($compareDate);
-        }
-
-        $penaltyAmount = $lateDays * $penaltyPerDay;
-        
-        return [
-            'penalty_amount' => $penaltyAmount,
-            'total_amount' => $validatedData['amount'] + $penaltyAmount
-        ];
-    }
-
-    public function getResidentInfo($userId)
-    {
-        $resident = \App\Models\Resident::with('flat.flatType')
-            ->where('user_id', $userId)
-            ->where(function($query) {
-                $query->whereNull('move_out_date')
-                      ->orWhere('move_out_date', '>=', now()->startOfDay());
-            })
-            ->first();
-
-        if ($resident) {
-            $amount = $resident->flat && $resident->flat->flatType ? $resident->flat->flatType->maintenance_fee : 0;
             return response()->json([
                 'success' => true,
-                'block_id' => $resident->block_id,
-                'flat_id' => $resident->flat_id,
-                'amount' => $amount
+                'message' => 'Maintenance records generated successfully.',
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Error generating maintenance: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function show(\App\DataTables\MaintenanceDetailsDataTable $dataTable, $id)
+    {
+        $maintenance = Maintenance::with(['maintenanceBills.user', 'maintenanceBills.flat'])->findOrFail($id);
+        return $dataTable->with('id', $id)->render('maintenance_bills.show', compact('maintenance'));
+    }
+
+    public function destroy($id)
+    {
+        $maintenance = Maintenance::findOrFail($id);
+        $maintenance->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Maintenance record deleted successfully.',
+        ]);
+    }
+
+    public function updateStatus(Request $request, $id)
+    {
+        $request->validate([
+            'status' => 'required|in:paid,due,pending'
+        ]);
+
+        $maintenanceBill = MaintenanceBill::findOrFail($id);
+
+        if ($request->status === 'paid' && $maintenanceBill->status !== 'paid') {
+            // Read dynamic amounts BEFORE changing status to paid, so accessors calculate correctly
+            $lockedPenalty = $maintenanceBill->penalty_amount;
+            $lockedTotal = $maintenanceBill->total_amount;
+
+            $maintenanceBill->status = 'paid';
+            $maintenanceBill->paid_at = now();
+
+            // Lock in the dynamically calculated amounts
+            $maintenanceBill->penalty_amount = $lockedPenalty;
+            $maintenanceBill->total_amount = $lockedTotal;
+        } elseif ($request->status !== 'paid') {
+            $maintenanceBill->status = $request->status;
+            $maintenanceBill->paid_at = null;
+        }
+
+        $maintenanceBill->save();
+
+        if ($request->ajax() || $request->expectsJson()) {
+            $maintenance = Maintenance::with('maintenanceBills')->findOrFail($maintenanceBill->maintenance_id);
+            $paidCount = $maintenance->maintenanceBills->where('status', 'paid')->count();
+            $totalCount = $maintenance->maintenanceBills->count();
+            $totalAmountExpected = $maintenance->maintenanceBills->sum('total_amount');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Status updated successfully.',
+                'paidCount' => $paidCount,
+                'totalCount' => $totalCount,
+                'totalAmountExpected' => number_format($totalAmountExpected, 2)
             ]);
         }
 
-        return response()->json(['success' => false]);
+        return redirect()->back()->with('success', 'Status updated successfully.');
     }
 }

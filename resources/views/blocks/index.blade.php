@@ -101,6 +101,48 @@
         <div id="users-toast-source" data-message="{{ e(session('success')) }}" data-type="success" hidden></div>
     @endif
 
+    <div class="row mb-4">
+        <div class="col-sm-6 col-md-4 col-xl mb-3">
+            <div class="card text-white bg-primary h-100">
+                <div class="card-body pb-3 d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="fs-4 fw-semibold">{{ $totalFlats }} Flats</div>
+                        <div>Total Capacity</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-sm-6 col-md-4 col-xl mb-3">
+            <div class="card text-white bg-info h-100">
+                <div class="card-body pb-3 d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="fs-4 fw-semibold">{{ $totalActualFlats }} Flats</div>
+                        <div>Total Created</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        @php
+            $bgColors = ['bg-primary', 'bg-info', 'bg-warning', 'bg-danger', 'bg-success'];
+        @endphp
+        @foreach($blocks as $block)
+            <div class="col-sm-6 col-md-4 col-xl mb-3">
+                <div class="card text-white {{ $bgColors[$loop->index % count($bgColors)] }} h-100">
+                    <div class="card-body pb-3 d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="fs-4 fw-semibold">{{ $block->flats_count }}/{{ $block->total_flats }} Flats</div>
+                            <div>Block {{ $block->block_name }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endforeach
+    </div>
+
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">Block Management</h4>
 

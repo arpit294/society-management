@@ -26,7 +26,7 @@ class LoginController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->route('/')->with('success', 'Logged in successfully.');
+        return redirect('/')->with('success', 'Logged in successfully.');
     }
 
     public function destroy(Request $request): RedirectResponse

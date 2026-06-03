@@ -102,6 +102,18 @@ class UserController extends Controller
      */
     public function destroy(Request $request, User $user)
     {
+        if (auth()->id() === $user->id) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You cannot delete your own account.',
+                ], 403);
+            }
+            return redirect()
+                ->route('users.index')
+                ->with('error', 'You cannot delete your own account.');
+        }
+
         $id = $user->id;
         $user->delete();
 

@@ -15,61 +15,37 @@ class MaintenanceBillsDataTable extends DataTable
     public function dataTable($query): QueryDataTable
     {
         return (new QueryDataTable($query))
-            ->addColumn('action', 'maintenance_bills.action')
-            ->editColumn('user_name', function ($row) {
-                return $row->user_name;
+            ->addColumn('action', function ($row) {
+                $viewBtn = '<a href="' . route('maintenance-bills.show', $row->id) . '" class="btn btn-sm btn-info me-1"><i class="fa-solid fa-eye"></i> View</a>';
+                $deleteBtn = '<button type="button" class="btn btn-sm btn-danger btn-delete-maintenance-bill" data-url="' . route('maintenance-bills.destroy', $row->id) . '"><i class="fa-solid fa-trash"></i> Delete</button>';
+                return $viewBtn . $deleteBtn;
             })
-            ->editColumn('flat_no', function ($row) {
-                return $row->flat_no;
+            ->editColumn('month', function ($row) {
+                return $row->month;
             })
-            ->editColumn('amount', function ($row) {
-                return '<span class="fw-bold">$' . number_format($row->amount, 2) . '</span>';
-            })
-            ->editColumn('penalty_amount', function ($row) {
-                return '<span class="badge bg-danger text-white">$' . number_format($row->penalty_amount, 2) . '</span>';
-            })
-            ->editColumn('total_amount', function ($row) {
-                return '<span class="fw-bold text-success">$' . number_format($row->total_amount, 2) . '</span>';
-            })
-            ->editColumn('due_date', function ($row) {
-                return $row->due_date ? date('d-m-Y', strtotime($row->due_date)) : '-';
+            ->editColumn('year', function ($row) {
+                return $row->year;
             })
             ->editColumn('status', function ($row) {
-                if ($row->status === 'paid') {
-                    return '<span class="badge bg-success">Paid</span>';
+                if ($row->status === 'published') {
+                    return '<span class="badge bg-success">Published</span>';
                 }
-                
-                if ($row->due_date && \Carbon\Carbon::parse($row->due_date)->endOfDay()->isPast()) {
-                    return '<span class="badge bg-danger">Due</span>';
-                }
-
-                return '<span class="badge bg-warning text-dark">Pending</span>';
+                return '<span class="badge bg-secondary">Draft</span>';
             })
-            ->rawColumns(['action', 'status', 'amount', 'penalty_amount', 'total_amount'])
+            ->rawColumns(['action', 'status'])
             ->setRowId('id');
     }
 
     public function query(): QueryBuilder
     {
-        $query = DB::table('maintenance_bills')
-            ->join('users', 'maintenance_bills.user_id', '=', 'users.id')
-            ->join('flats', 'maintenance_bills.flat_id', '=', 'flats.id')
-            ->join('blocks', 'maintenance_bills.block_id', '=', 'blocks.id')
+        return DB::table('maintenances')
             ->select([
-                'maintenance_bills.id',
-                'users.name as user_name',
-                'flats.flat_no as flat_no',
-                'blocks.block_name as block_name',
-                'maintenance_bills.amount',
-                'maintenance_bills.penalty_amount',
-                'maintenance_bills.total_amount',
-                'maintenance_bills.due_date',
-                'maintenance_bills.month',
-                'maintenance_bills.year',
-                'maintenance_bills.status',
+                'id',
+                'month',
+                'year',
+                'status',
+                'due_date',
             ]);
-
-        return $query;
     }
 
     public function html(): HtmlBuilder
@@ -78,16 +54,8 @@ class MaintenanceBillsDataTable extends DataTable
             ->setTableId('maintenance-bills-table')
             ->columns($this->getColumns())
             ->minifiedAjax()
-            ->orderBy(0)
-            ->selectStyleSingle()
-            ->buttons([
-                Button::make('excel'),
-                Button::make('csv'),
-                Button::make('pdf'),
-                Button::make('print'),
-                Button::make('reset'),
-                Button::make('reload')
-            ]);
+            ->orderBy(2, 'desc') // Order by year
+            ->selectStyleSingle();
     }
 
     public function getColumns(): array
@@ -95,21 +63,14 @@ class MaintenanceBillsDataTable extends DataTable
         return [
             Column::computed('id')
                 ->data('id')
-                ->name('maintenance_bills.id')
+                ->name('id')
                 ->title('ID')
                 ->width(60)
                 ->addClass('text-center'),
-            Column::make('block_name')->data('block_name')->name('blocks.block_name')->title('Block'),
-            Column::make('user_name')->data('user_name')->name('users.name')->title('Resident'),
-            Column::make('flat_no')->data('flat_no')->name('flats.flat_no')->title('Flat No'),
-            Column::make('month')->data('month')->name('maintenance_bills.month')->title('Month'),
-            Column::make('year')->data('year')->name('maintenance_bills.year')->title('Year'),
-            Column::make('due_date')->data('due_date')->name('maintenance_bills.due_date')->title('Due Date'),
-            Column::make('amount')->data('amount')->name('maintenance_bills.amount')->title('Maintenance'),
-            Column::make('penalty_amount')->data('penalty_amount')->name('maintenance_bills.penalty_amount')->title('Penalty'),
-            Column::make('total_amount')->data('total_amount')->name('maintenance_bills.total_amount')->title('Total Amount'),
-            Column::make('status')->data('status')->name('maintenance_bills.status')->title('Status'),
-            Column::computed('action')->orderable(false)->searchable(false)->width(120),
+            Column::make('year')->data('year')->name('year')->title('Year'),
+            Column::make('month')->data('month')->name('month')->title('Month'),
+            Column::make('status')->data('status')->name('status')->title('Status'),
+            Column::computed('action')->orderable(false)->searchable(false)->width(180),
         ];
     }
 

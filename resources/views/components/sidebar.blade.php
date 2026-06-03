@@ -1,7 +1,8 @@
 <div class="sidebar sidebar-dark sidebar-fixed border-end" id="sidebar">
     <div class="sidebar-header border-bottom">
         <div class="sidebar-brand me-auto">
-            <svg class="sidebar-brand-full" width="180" height="40" viewBox="0 0 180 40" xmlns="http://www.w3.org/2000/svg">
+            <svg class="sidebar-brand-full" width="180" height="40" viewBox="0 0 180 40"
+                xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stop-color="#3b82f6" />
@@ -9,13 +10,16 @@
                     </linearGradient>
                 </defs>
                 <g transform="translate(5, 4)">
-                    <rect x="4" y="12" width="10" height="20" rx="2" fill="url(#brandGrad)" opacity="0.8"/>
-                    <rect x="16" y="4" width="10" height="28" rx="2" fill="url(#brandGrad)"/>
-                    <path d="M0 32h30" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.2"/>
+                    <rect x="4" y="12" width="10" height="20" rx="2" fill="url(#brandGrad)"
+                        opacity="0.8" />
+                    <rect x="16" y="4" width="10" height="28" rx="2" fill="url(#brandGrad)" />
+                    <path d="M0 32h30" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.2" />
                 </g>
-                <text x="44" y="26" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#f8fafc" letter-spacing="0.5">Society</text>
+                <text x="44" y="26" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700"
+                    fill="#f8fafc" letter-spacing="0.5">Society</text>
             </svg>
-            <svg class="sidebar-brand-narrow" width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <svg class="sidebar-brand-narrow" width="32" height="32" viewBox="0 0 32 32"
+                xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="brandGradNarrow" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" stop-color="#3b82f6" />
@@ -23,9 +27,10 @@
                     </linearGradient>
                 </defs>
                 <g transform="translate(1, 0)">
-                    <rect x="4" y="12" width="10" height="20" rx="2" fill="url(#brandGradNarrow)" opacity="0.8"/>
-                    <rect x="16" y="4" width="10" height="28" rx="2" fill="url(#brandGradNarrow)"/>
-                    <path d="M0 32h30" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.2"/>
+                    <rect x="4" y="12" width="10" height="20" rx="2" fill="url(#brandGradNarrow)"
+                        opacity="0.8" />
+                    <rect x="16" y="4" width="10" height="28" rx="2" fill="url(#brandGradNarrow)" />
+                    <path d="M0 32h30" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.2" />
                 </g>
             </svg>
         </div>
@@ -72,7 +77,8 @@
         <li class="nav-item">
             <a class="nav-link" href="{{ route('flat-types.index') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M224 48H32v128h192V48zm0 192H32v224h192V240zm64-192v224h192V48H288zm0 288v160h192V336H288z"/>
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M224 48H32v128h192V48zm0 192H32v224h192V240zm64-192v224h192V48H288zm0 288v160h192V336H288z" />
                 </svg>
                 Flat Types
             </a>
@@ -96,7 +102,7 @@
                 <!-- Complaint Icon -->
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)"
-                        d="M256 32C114.6 32 0 125.1 0 240c0 49.6 21.4 95 57 130.7C44.5 421.1 22.7 481.2 22 483.5c-1.6 5.4-1.1 11.3 1.4 16.3s7.2 8.1 12.7 8.1c66.6 0 119.4-33.3 151.4-58.4 22.2 6.4 46 9.8 70.5 9.8 141.4 0 256-92.9 256-208S397.4 32 256 32zm0 395.3c-23.1 0-45.7-3.6-67-10.6l-16.1-5.3-13.8 9.6c-27 18.8-67 43.1-118 48 9.3-26.6 24.3-64.8 32-84.3l8.8-22.3-16.4-17.5C33.8 310.6 16 276.6 16 240c0-106 107.5-192 240-192s240 86 240 192-107.5 192-240 192zM272 160h-32v112h32V160zm-16 176c-13.3 0-24 10.7-24 24s10.7 24 24 24 24-10.7 24-24-10.7-24-24-24z"/>
+                        d="M256 32C114.6 32 0 125.1 0 240c0 49.6 21.4 95 57 130.7C44.5 421.1 22.7 481.2 22 483.5c-1.6 5.4-1.1 11.3 1.4 16.3s7.2 8.1 12.7 8.1c66.6 0 119.4-33.3 151.4-58.4 22.2 6.4 46 9.8 70.5 9.8 141.4 0 256-92.9 256-208S397.4 32 256 32zm0 395.3c-23.1 0-45.7-3.6-67-10.6l-16.1-5.3-13.8 9.6c-27 18.8-67 43.1-118 48 9.3-26.6 24.3-64.8 32-84.3l8.8-22.3-16.4-17.5C33.8 310.6 16 276.6 16 240c0-106 107.5-192 240-192s240 86 240 192-107.5 192-240 192zM272 160h-32v112h32V160zm-16 176c-13.3 0-24 10.7-24 24s10.7 24 24 24 24-10.7 24-24-10.7-24-24-24z" />
                 </svg>
                 Complaints
             </a>
@@ -104,7 +110,8 @@
         <li class="nav-item">
             <a class="nav-link" href="{{ route('residents.index') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M256 160c-44.2 0-80 35.8-80 80s35.8 80 80 80 80-35.8 80-80-35.8-80-80-80zm0 128c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm171.1-125.1L355.2 234.8c-2.4 12.5-8 23.9-15.8 33.6l64.1 64.1c12.5 12.5 32.8 12.5 45.3 0 12.5-12.5 12.5-32.8 0-45.3l-21.7-24.3zM140.7 268.4c-7.8-9.7-13.4-21.1-15.8-33.6L52.9 162.9c-12.5-12.5-12.5-32.8 0-45.3 12.5-12.5 32.8-12.5 45.3 0l71.9 71.9L140.7 268.4z" />
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M256 160c-44.2 0-80 35.8-80 80s35.8 80 80 80 80-35.8 80-80-35.8-80-80-80zm0 128c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm171.1-125.1L355.2 234.8c-2.4 12.5-8 23.9-15.8 33.6l64.1 64.1c12.5 12.5 32.8 12.5 45.3 0 12.5-12.5 12.5-32.8 0-45.3l-21.7-24.3zM140.7 268.4c-7.8-9.7-13.4-21.1-15.8-33.6L52.9 162.9c-12.5-12.5-12.5-32.8 0-45.3 12.5-12.5 32.8-12.5 45.3 0l71.9 71.9L140.7 268.4z" />
                 </svg>
                 Residents
             </a>
@@ -114,8 +121,10 @@
         <li class="nav-item">
             <a class="nav-link" href="{{ route('expense-categories.index') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M480 288H256c-17.7 0-32 14.3-32 32v192c0 17.7 14.3 32 32 32h224c17.7 0 32-14.3 32-32V320c0-17.7-14.3-32-32-32zm-32 192H288V352h160v128zM192 0H32C14.3 0 0 14.3 0 32v160c0 17.7 14.3 32 32 32h160c17.7 0 32-14.3 32-32V32C224 14.3 209.7 0 192 0zm-32 160H64V64h96v96z"/>
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M480 0H256c-17.7 0-32 14.3-32 32v160c0 17.7 14.3 32 32 32h224c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32zm-32 160H288V64h160v96zM192 288H32c-17.7 0-32 14.3-32 32v160c0 17.7 14.3 32 32 32h160c17.7 0 32-14.3 32-32V320c0-17.7-14.3-32-32-32zm-32 160H64v-96h96v96z"/>
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M480 288H256c-17.7 0-32 14.3-32 32v192c0 17.7 14.3 32 32 32h224c17.7 0 32-14.3 32-32V320c0-17.7-14.3-32-32-32zm-32 192H288V352h160v128zM192 0H32C14.3 0 0 14.3 0 32v160c0 17.7 14.3 32 32 32h160c17.7 0 32-14.3 32-32V32C224 14.3 209.7 0 192 0zm-32 160H64V64h96v96z" />
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M480 0H256c-17.7 0-32 14.3-32 32v160c0 17.7 14.3 32 32 32h224c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32zm-32 160H288V64h160v96zM192 288H32c-17.7 0-32 14.3-32 32v160c0 17.7 14.3 32 32 32h160c17.7 0 32-14.3 32-32V320c0-17.7-14.3-32-32-32zm-32 160H64v-96h96v96z" />
                 </svg>
                 Expense Categories
             </a>
@@ -124,7 +133,8 @@
         <li class="nav-item">
             <a class="nav-link" href="{{ route('expenses.index') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M448 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V96c0-35.35-28.65-64-64-64zM64 64h384c17.64 0 32 14.36 32 32v64H32V96c0-17.64 14.36-32 32-32zm384 384H64c-17.64 0-32-14.36-32-32V192h448v224c0 17.64-14.36 32-32 32zM128 256h128v32H128v-32zm0 64h256v32H128v-32zm0 64h256v32H128v-32z"/>
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M448 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V96c0-35.35-28.65-64-64-64zM64 64h384c17.64 0 32 14.36 32 32v64H32V96c0-17.64 14.36-32 32-32zm384 384H64c-17.64 0-32-14.36-32-32V192h448v224c0 17.64-14.36 32-32 32zM128 256h128v32H128v-32zm0 64h256v32H128v-32zm0 64h256v32H128v-32z" />
                 </svg>
                 Expenses
             </a>
@@ -132,13 +142,14 @@
         <li class="nav-item">
             <a class="nav-link" href="{{ route('maintenance-bills.index') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M448 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V96c0-35.35-28.65-64-64-64zM64 64h384c17.64 0 32 14.36 32 32v64H32V96c0-17.64 14.36-32 32-32zm384 384H64c-17.64 0-32-14.36-32-32V192h448v224c0 17.64-14.36 32-32 32zM128 256h128v32H128v-32zm0 64h256v32H128v-32zm0 64h256v32H128v-32z"/>
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M448 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V96c0-35.35-28.65-64-64-64zM64 64h384c17.64 0 32 14.36 32 32v64H32V96c0-17.64 14.36-32 32-32zm384 384H64c-17.64 0-32-14.36-32-32V192h448v224c0 17.64-14.36 32-32 32zM128 256h128v32H128v-32zm0 64h256v32H128v-32zm0 64h256v32H128v-32z" />
                 </svg>
                 Maintenance Bills
             </a>
         </li>
     </ul>
-    <div class="sidebar-footer border-top d-none d-md-flex">
+    {{-- <div class="sidebar-footer border-top d-none d-md-flex">
         <button class="sidebar-toggler" type="button" data-coreui-toggle="unfoldable"></button>
-    </div>
+    </div> --}}
 </div>

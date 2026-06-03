@@ -8,7 +8,8 @@ class ResidentController extends Controller
 {
     public function index(\App\DataTables\ResidentsDataTable $dataTable)
     {
-        return $dataTable->render('residents.index');
+        $blocks = \App\Models\Block::all();
+        return $dataTable->render('residents.index', compact('blocks'));
     }
 
     public function create()
@@ -35,6 +36,43 @@ class ResidentController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Resident created successfully.',
+        ]);
+    }
+
+    public function edit(\App\Models\Resident $resident)
+    {
+        $blocks = \App\Models\Block::all();
+        $flats = \App\Models\Flat::all();
+        $users = \App\Models\User::all();
+        return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
+    }
+
+    public function update(\Illuminate\Http\Request $request, \App\Models\Resident $resident)
+    {
+        $validatedData = $request->validate([
+            'block_id' => 'required|exists:blocks,id',
+            'flat_id' => 'required|exists:flats,id',
+            'type' => 'required|string|in:owner,rental',
+            'user_id' => 'required|exists:users,id',
+            'move_in_date' => 'required|date',
+            'move_out_date' => 'nullable|date',
+        ]);
+
+        $resident->update($validatedData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Resident updated successfully.',
+        ]);
+    }
+
+    public function destroy(\App\Models\Resident $resident)
+    {
+        $resident->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Resident deleted successfully.',
         ]);
     }
 }
