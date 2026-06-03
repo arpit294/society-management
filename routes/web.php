@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
 
     // Flats
     Route::resource('flats', FlatController::class)->except(['show']);
+    Route::get('api/flats-by-block/{block_id}', [\App\Http\Controllers\ResidentController::class, 'getFlatsByBlock'])->name('api.flats-by-block');
 
     // Blocks
     Route::resource('blocks', BlockController::class)->except(['show']);

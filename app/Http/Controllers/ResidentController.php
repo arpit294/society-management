@@ -42,7 +42,7 @@ class ResidentController extends Controller
     public function edit(\App\Models\Resident $resident)
     {
         $blocks = \App\Models\Block::all();
-        $flats = \App\Models\Flat::all();
+        $flats = \App\Models\Flat::where('block_id', $resident->block_id)->get();
         $users = \App\Models\User::all();
         return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
     }
@@ -74,6 +74,12 @@ class ResidentController extends Controller
             'success' => true,
             'message' => 'Resident deleted successfully.',
         ]);
+    }
+
+    public function getFlatsByBlock($block_id)
+    {
+        $flats = \App\Models\Flat::where('block_id', $block_id)->get();
+        return response()->json($flats);
     }
 }
 
