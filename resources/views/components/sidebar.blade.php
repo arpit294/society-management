@@ -137,27 +137,6 @@
 
 
         <li class="nav-item">
-            <a class="nav-link" href="{{ route('expense-categories.index') }}">
-                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)"
-                        d="M480 288H256c-17.7 0-32 14.3-32 32v192c0 17.7 14.3 32 32 32h224c17.7 0 32-14.3 32-32V320c0-17.7-14.3-32-32-32zm-32 192H288V352h160v128zM192 0H32C14.3 0 0 14.3 0 32v160c0 17.7 14.3 32 32 32h160c17.7 0 32-14.3 32-32V32C224 14.3 209.7 0 192 0zm-32 160H64V64h96v96z" />
-                    <path fill="var(--ci-primary-color, currentcolor)"
-                        d="M480 0H256c-17.7 0-32 14.3-32 32v160c0 17.7 14.3 32 32 32h224c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32zm-32 160H288V64h160v96zM192 288H32c-17.7 0-32 14.3-32 32v160c0 17.7 14.3 32 32 32h160c17.7 0 32-14.3 32-32V320c0-17.7-14.3-32-32-32zm-32 160H64v-96h96v96z" />
-                </svg>
-                Expense Categories
-            </a>
-        </li>
-
-        <li class="nav-item">
-            <a class="nav-link" href="{{ route('expenses.index') }}">
-                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)"
-                        d="M448 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V96c0-35.35-28.65-64-64-64zM64 64h384c17.64 0 32 14.36 32 32v64H32V96c0-17.64 14.36-32 32-32zm384 384H64c-17.64 0-32-14.36-32-32V192h448v224c0 17.64-14.36 32-32 32zM128 256h128v32H128v-32zm0 64h256v32H128v-32zm0 64h256v32H128v-32z" />
-                </svg>
-                Expenses
-            </a>
-        </li>
-        <li class="nav-item">
             <a class="nav-link" href="{{ route('maintenance-bills.index') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)"
