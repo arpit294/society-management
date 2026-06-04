@@ -49,6 +49,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('complains', \App\Http\Controllers\ComplainController::class)->except(['show']);
 
     // Residents
+
     Route::resource('residents', \App\Http\Controllers\ResidentController::class)->except(['show']);
     // Expenses
     Route::resource('expenses', \App\Http\Controllers\ExpenseController::class)->except(['show']);
@@ -65,4 +66,4 @@ Route::middleware('auth')->group(function () {
     Route::post('maintenance-bills/{maintenanceBill}/update-status', [\App\Http\Controllers\MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
 });
 
-// 
+//
