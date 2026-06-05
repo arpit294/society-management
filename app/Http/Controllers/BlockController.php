@@ -4,24 +4,31 @@ namespace App\Http\Controllers;
 
 use App\DataTables\BlocksDataTable;
 use App\Models\Block;
+use App\Models\Flat;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class BlockController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the blocks.
+     *
+     * @return mixed
      */
     public function index(BlocksDataTable $dataTable)
     {
         $blocks = Block::withCount('flats')->get();
         $totalFlats = Block::sum('total_flats');
-        $totalActualFlats = \App\Models\Flat::count();
+        $totalActualFlats = Flat::count();
 
         return $dataTable->render('blocks.index', compact('blocks', 'totalFlats', 'totalActualFlats'));
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new block.
+     *
+     * @return View
      */
     public function create()
     {
@@ -29,7 +36,9 @@ class BlockController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created block in storage.
+     *
+     * @return JsonResponse
      */
     public function store(Request $request)
     {
@@ -48,7 +57,9 @@ class BlockController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing the specified block.
+     *
+     * @return View
      */
     public function edit(Block $block)
     {
@@ -56,7 +67,9 @@ class BlockController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified block in storage.
+     *
+     * @return JsonResponse
      */
     public function update(Request $request, Block $block)
     {
@@ -75,7 +88,9 @@ class BlockController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified block from storage.
+     *
+     * @return JsonResponse
      */
     public function destroy(Block $block)
     {
@@ -87,6 +102,5 @@ class BlockController extends Controller
         ]);
     }
 }
-
 
 //

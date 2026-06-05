@@ -8,8 +8,6 @@ use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
 class FlatsDatatables extends DataTable
@@ -17,7 +15,7 @@ class FlatsDatatables extends DataTable
     /**
      * Build the DataTable class.
      *
-     * @param QueryBuilder<Flat> $query Results from query() method.
+     * @param  QueryBuilder<Flat>  $query  Results from query() method.
      */
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
@@ -42,7 +40,8 @@ class FlatsDatatables extends DataTable
             })
             ->editColumn('status', function ($model) {
                 $class = strtolower($model->status) === 'occupied' ? 'bg-success' : 'bg-danger';
-                return '<span class="badge ' . $class . '">' . ucfirst($model->status) . '</span>';
+
+                return '<span class="badge '.$class.'">'.ucfirst($model->status).'</span>';
             })
             ->rawColumns(['status', 'action'])
             ->setRowId('id');
@@ -75,7 +74,7 @@ class FlatsDatatables extends DataTable
                 Button::make('pdf'),
                 Button::make('print'),
                 Button::make('reset'),
-                Button::make('reload')
+                Button::make('reload'),
             ]);
     }
 
@@ -106,6 +105,6 @@ class FlatsDatatables extends DataTable
      */
     protected function filename(): string
     {
-        return 'FlatsDatatables_' . date('YmdHis');
+        return 'FlatsDatatables_'.date('YmdHis');
     }
 }

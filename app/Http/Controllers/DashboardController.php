@@ -2,28 +2,34 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\Flat;
 use App\Models\Complain;
-use App\Models\MaintenanceBill;
 use App\Models\Expense;
-use Illuminate\Support\Facades\DB;
+use App\Models\Flat;
+use App\Models\MaintenanceBill;
+use App\Models\Resident;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    /**
+     * Display the dashboard view with statistics and chart data.
+     *
+     * @return View
+     */
     public function index()
     {
-        $totalResidents = User::count();
+        $totalResidents = Resident::whereNull('move_out_date')
+            ->orWhere('move_out_date', '>=', now()->startOfDay())
+            ->count();
         $totalFlats = Flat::count();
         $totalComplaints = Complain::count();
-        
+
         $totalRevenue = MaintenanceBill::where('status', 'paid')->sum('total_amount');
         $totalExpenses = Expense::sum('total_amount');
 
         // Revenue Chart Data (Current Year)
         $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        
+
         $monthlyRevenueDB = MaintenanceBill::where('maintenance_bills.status', 'paid')
             ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
             ->where('maintenances.year', date('Y'))
@@ -41,7 +47,7 @@ class DashboardController extends Controller
 
         $chartDataRevenue = [];
         $chartDataExpenses = [];
-        
+
         foreach ($months as $m) {
             $chartDataRevenue[] = $monthlyRevenueDB[$m] ?? 0;
             $chartDataExpenses[] = $monthlyExpensesDB[$m] ?? 0;

@@ -14848,3 +14848,168 @@ textarea.form-control-lg {
 }
 
 /*# sourceMappingURL=style.css.map */
+
+/* Styles extracted from authentication blade files (login.blade.php, register.blade.php) */
+.auth-page {
+    min-height: 100vh;
+    background: #f3f4f7;
+}
+.auth-card {
+    width: min(100%, 440px);
+}
+.login-card, .register-card {
+    background: #ffffff;
+    border: 1px solid #dbdfe6;
+    border-radius: 16px;
+    overflow: hidden;
+}
+.card-header {
+    background: #5856d6 !important;
+    border-bottom: 1px solid #5856d6;
+    padding: 25px;
+}
+.card-header h4, .card-header h3, .card-header p {
+    color: #fff;
+}
+.card-body {
+    padding: 35px;
+}
+.form-label {
+    color: #212631;
+    font-weight: 600;
+}
+.form-control, .form-select {
+    background: #ffffff;
+    border: 1px solid #dbdfe6;
+    color: #212631;
+    border-radius: 10px;
+    height: 48px;
+}
+.form-control::placeholder {
+    color: #6d7d9c;
+}
+.form-control:focus, .form-select:focus {
+    background: #ffffff;
+    color: #212631;
+    border-color: #5856d6;
+    box-shadow: 0 0 0 0.25rem rgba(88, 86, 214, 0.25);
+}
+.form-select option {
+    background: #ffffff;
+    color: #212631;
+}
+.btn-primary {
+    background: #5856d6;
+    color: #ffffff;
+    border: 1px solid #5856d6;
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-weight: 600;
+}
+.btn-primary:hover {
+    background: #4644b8;
+    border-color: #4644b8;
+    color: #ffffff;
+}
+.btn-outline-secondary {
+    border-radius: 10px;
+    padding: 10px 22px;
+    border: 1px solid #6d7d9c;
+    color: #212631;
+}
+.btn-outline-secondary:hover {
+    background: #e7eaee;
+    border-color: #6d7d9c;
+    color: #212631;
+}
+.text-muted {
+    color: #6d7d9c !important;
+}
+.text-muted a {
+    color: #5856d6 !important;
+    font-weight: 600;
+    text-decoration: none;
+}
+.invalid-feedback {
+    color: #e55353;
+}
+
+/* Styles extracted from maintenance_bills/invoice_pdf.blade.php */
+.invoice-pdf {
+    font-family: Arial, sans-serif;
+    color: #333;
+}
+.invoice-pdf .header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+.invoice-pdf .header h1 {
+    margin: 0;
+    color: #2c3e50;
+}
+.invoice-pdf .details-section {
+    width: 100%;
+    margin-bottom: 30px;
+    border-collapse: collapse;
+}
+.invoice-pdf .details-section td {
+    vertical-align: top;
+    width: 50%;
+}
+.invoice-pdf .details-box {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+}
+.invoice-pdf .details-box h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #34495e;
+    border-bottom: 2px solid #ecf0f1;
+    padding-bottom: 5px;
+}
+.invoice-pdf .table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+.invoice-pdf .table th, .invoice-pdf .table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+.invoice-pdf .table th {
+    background-color: #f2f2f2;
+    color: #333;
+}
+.invoice-pdf .table .text-right {
+    text-align: right;
+}
+.invoice-pdf .total-row {
+    font-weight: bold;
+    background-color: #f9f9f9;
+}
+.invoice-pdf .badge {
+    padding: 5px 10px;
+    border-radius: 3px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+.invoice-pdf .badge-paid { background-color: #28a745; }
+.invoice-pdf .badge-due { background-color: #dc3545; }
+.invoice-pdf .badge-pending { background-color: #ffc107; color: #212529; }
+.invoice-pdf .footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: #777;
+    border-top: 1px solid #ddd;
+    padding-top: 10px;
+    padding-bottom: 20px;
+}
