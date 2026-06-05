@@ -77,7 +77,6 @@ $(document).ready(function () {
             toggleUserResetBtn();
         });
 
-
     // $(document)
     // .off("change","usaers-filter-role")
     // .on("change", " #users-filter-role", function () {
@@ -192,7 +191,10 @@ $(document).ready(function () {
     $(document)
         .off("change", "#residents-filter-block")
         .on("change", "#residents-filter-block", function () {
-            if (window.LaravelDataTables && window.LaravelDataTables["residents-table"]) {
+            if (
+                window.LaravelDataTables &&
+                window.LaravelDataTables["residents-table"]
+            ) {
                 window.LaravelDataTables["residents-table"].ajax.reload();
             } else {
                 $("#residents-table").DataTable().ajax.reload();
@@ -206,7 +208,10 @@ $(document).ready(function () {
         .on("click", "#residents-filter-reset", function () {
             $("#residents-filter-block").val("");
 
-            if (window.LaravelDataTables && window.LaravelDataTables["residents-table"]) {
+            if (
+                window.LaravelDataTables &&
+                window.LaravelDataTables["residents-table"]
+            ) {
                 window.LaravelDataTables["residents-table"].ajax.reload();
             } else {
                 $("#residents-table").DataTable().ajax.reload();
@@ -309,29 +314,29 @@ $(document).ready(function () {
             });
         });
 
-        // $(document)
-        // .off("click","#btn-add-user")
-        // .on("click","#btn-add-user" , function () {
-        //     let url = $(this).data("url");
-        //     let title = $(this).data("title");
+    // $(document)
+    // .off("click","#btn-add-user")
+    // .on("click","#btn-add-user" , function () {
+    //     let url = $(this).data("url");
+    //     let title = $(this).data("title");
 
-        //     $.ajax({
-        //         type:"GET",
-        //         url : url,
+    //     $.ajax({
+    //         type:"GET",
+    //         url : url,
 
-        //         success: function (response){
-        //             $("#user-model-content").html(responce);
+    //         success: function (response){
+    //             $("#user-model-content").html(responce);
 
-        //             $("#user-modol-content . model-title").text(title);
+    //             $("#user-modol-content . model-title").text(title);
 
-        //             userModalInstance?.show();
-        //         },
+    //             userModalInstance?.show();
+    //         },
 
-        //         error: function() {
-        //             toastr.error("could not load form");
-        //         }
-        //     })
-        // })
+    //         error: function() {
+    //             toastr.error("could not load form");
+    //         }
+    //     })
+    // })
 
     // Edit User Form Open
     $(document)
@@ -489,9 +494,6 @@ $(document).ready(function () {
                 },
             });
         });
-
-
-
 
     // Edit Block Form Open
     $(document)
@@ -1154,8 +1156,13 @@ $(document).ready(function () {
 
                     if ($.fn.DataTable.isDataTable("#residents-table")) {
                         $("#residents-table").DataTable().ajax.reload();
-                    } else if (window.LaravelDataTables && window.LaravelDataTables['residents-table']) {
-                        window.LaravelDataTables['residents-table'].ajax.reload();
+                    } else if (
+                        window.LaravelDataTables &&
+                        window.LaravelDataTables["residents-table"]
+                    ) {
+                        window.LaravelDataTables[
+                            "residents-table"
+                        ].ajax.reload();
                     }
                 },
 
@@ -1216,10 +1223,21 @@ $(document).ready(function () {
                                     response.message || "Deleted successfully.",
                                 );
 
-                                if ($.fn.DataTable.isDataTable("#residents-table")) {
-                                    $("#residents-table").DataTable().ajax.reload();
-                                } else if (window.LaravelDataTables && window.LaravelDataTables['residents-table']) {
-                                    window.LaravelDataTables['residents-table'].ajax.reload();
+                                if (
+                                    $.fn.DataTable.isDataTable(
+                                        "#residents-table",
+                                    )
+                                ) {
+                                    $("#residents-table")
+                                        .DataTable()
+                                        .ajax.reload();
+                                } else if (
+                                    window.LaravelDataTables &&
+                                    window.LaravelDataTables["residents-table"]
+                                ) {
+                                    window.LaravelDataTables[
+                                        "residents-table"
+                                    ].ajax.reload();
                                 }
                             },
 
@@ -1245,28 +1263,28 @@ $(document).ready(function () {
     // Invoice Image Preview handler
     $(document)
         .off("change", "#expense-modal-content #invoice")
-        .on("change", "#expense-modal-content #invoice", function(event) {
+        .on("change", "#expense-modal-content #invoice", function (event) {
             const file = event.target.files[0];
             const previewContainer = $("#invoice-preview-container");
             const previewImg = $("#invoice-preview-img");
 
             if (file) {
                 // Check if file is an image
-                if (file.type.match('image.*')) {
+                if (file.type.match("image.*")) {
                     const reader = new FileReader();
-                    reader.onload = function(e) {
-                        previewImg.attr('src', e.target.result);
-                        previewContainer.removeClass('d-none');
-                    }
+                    reader.onload = function (e) {
+                        previewImg.attr("src", e.target.result);
+                        previewContainer.removeClass("d-none");
+                    };
                     reader.readAsDataURL(file);
                 } else {
                     // Hide preview if not an image (e.g. PDF)
-                    previewImg.attr('src', '');
-                    previewContainer.addClass('d-none');
+                    previewImg.attr("src", "");
+                    previewContainer.addClass("d-none");
                 }
             } else {
-                previewImg.attr('src', '');
-                previewContainer.addClass('d-none');
+                previewImg.attr("src", "");
+                previewContainer.addClass("d-none");
             }
         });
 
@@ -1352,8 +1370,13 @@ $(document).ready(function () {
 
                     if ($.fn.DataTable.isDataTable("#expenses-table")) {
                         $("#expenses-table").DataTable().ajax.reload();
-                    } else if (window.LaravelDataTables && window.LaravelDataTables['expenses-table']) {
-                        window.LaravelDataTables['expenses-table'].ajax.reload();
+                    } else if (
+                        window.LaravelDataTables &&
+                        window.LaravelDataTables["expenses-table"]
+                    ) {
+                        window.LaravelDataTables[
+                            "expenses-table"
+                        ].ajax.reload();
                     }
                 },
 
@@ -1415,10 +1438,21 @@ $(document).ready(function () {
                                     response.message || "Deleted successfully.",
                                 );
 
-                                if ($.fn.DataTable.isDataTable("#expenses-table")) {
-                                    $("#expenses-table").DataTable().ajax.reload();
-                                } else if (window.LaravelDataTables && window.LaravelDataTables['expenses-table']) {
-                                    window.LaravelDataTables['expenses-table'].ajax.reload();
+                                if (
+                                    $.fn.DataTable.isDataTable(
+                                        "#expenses-table",
+                                    )
+                                ) {
+                                    $("#expenses-table")
+                                        .DataTable()
+                                        .ajax.reload();
+                                } else if (
+                                    window.LaravelDataTables &&
+                                    window.LaravelDataTables["expenses-table"]
+                                ) {
+                                    window.LaravelDataTables[
+                                        "expenses-table"
+                                    ].ajax.reload();
                                 }
                             },
 
@@ -1433,11 +1467,16 @@ $(document).ready(function () {
                 });
         });
     // Expense Category Modal Variables
-    const expenseCategoryModalEl = document.getElementById("expense-category-modal");
-    const ExpenseCategoryModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const expenseCategoryModalEl = document.getElementById(
+        "expense-category-modal",
+    );
+    const ExpenseCategoryModalClass =
+        window.coreui?.Modal || window.bootstrap?.Modal;
     const expenseCategoryModalInstance =
         expenseCategoryModalEl && ExpenseCategoryModalClass
-            ? ExpenseCategoryModalClass.getOrCreateInstance(expenseCategoryModalEl)
+            ? ExpenseCategoryModalClass.getOrCreateInstance(
+                  expenseCategoryModalEl,
+              )
             : null;
 
     // Add Expense Category Form Open
@@ -1453,7 +1492,9 @@ $(document).ready(function () {
 
                 success: function (response) {
                     $("#expense-category-modal-content").html(response);
-                    $("#expense-category-modal-content .modal-title").text(title);
+                    $("#expense-category-modal-content .modal-title").text(
+                        title,
+                    );
                     expenseCategoryModalInstance?.show();
                 },
 
@@ -1466,25 +1507,31 @@ $(document).ready(function () {
     // Edit Expense Category Form Open
     $(document)
         .off("click", "#expense-categories-table .btn-edit-expense-category")
-        .on("click", "#expense-categories-table .btn-edit-expense-category", function () {
-            let url = $(this).data("url");
-            let title = $(this).data("title");
+        .on(
+            "click",
+            "#expense-categories-table .btn-edit-expense-category",
+            function () {
+                let url = $(this).data("url");
+                let title = $(this).data("title");
 
-            $.ajax({
-                type: "GET",
-                url: url,
+                $.ajax({
+                    type: "GET",
+                    url: url,
 
-                success: function (response) {
-                    $("#expense-category-modal-content").html(response);
-                    $("#expense-category-modal-content .modal-title").text(title);
-                    expenseCategoryModalInstance?.show();
-                },
+                    success: function (response) {
+                        $("#expense-category-modal-content").html(response);
+                        $("#expense-category-modal-content .modal-title").text(
+                            title,
+                        );
+                        expenseCategoryModalInstance?.show();
+                    },
 
-                error: function () {
-                    toastr.error("Could not load form.");
-                },
-            });
-        });
+                    error: function () {
+                        toastr.error("Could not load form.");
+                    },
+                });
+            },
+        );
 
     // Add/Edit Expense Category Form Submit
     $(document)
@@ -1520,10 +1567,19 @@ $(document).ready(function () {
 
                     expenseCategoryModalInstance?.hide();
 
-                    if ($.fn.DataTable.isDataTable("#expense-categories-table")) {
-                        $("#expense-categories-table").DataTable().ajax.reload();
-                    } else if (window.LaravelDataTables && window.LaravelDataTables['expense-categories-table']) {
-                        window.LaravelDataTables['expense-categories-table'].ajax.reload();
+                    if (
+                        $.fn.DataTable.isDataTable("#expense-categories-table")
+                    ) {
+                        $("#expense-categories-table")
+                            .DataTable()
+                            .ajax.reload();
+                    } else if (
+                        window.LaravelDataTables &&
+                        window.LaravelDataTables["expense-categories-table"]
+                    ) {
+                        window.LaravelDataTables[
+                            "expense-categories-table"
+                        ].ajax.reload();
                     }
                 },
 
@@ -1561,47 +1617,65 @@ $(document).ready(function () {
     // Delete Single Expense Category
     $(document)
         .off("click", "#expense-categories-table .btn-delete-expense-category")
-        .on("click", "#expense-categories-table .btn-delete-expense-category", function () {
-            let url = $(this).data("url");
+        .on(
+            "click",
+            "#expense-categories-table .btn-delete-expense-category",
+            function () {
+                let url = $(this).data("url");
 
-            swalWithBootstrapButtons
-                .fire({
-                    title: "Are you sure?",
-                    text: "This category will be deleted permanently!",
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonText: "Yes, delete!",
-                    cancelButtonText: "Cancel",
-                    reverseButtons: true,
-                })
-                .then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: url,
-                            type: "DELETE",
+                swalWithBootstrapButtons
+                    .fire({
+                        title: "Are you sure?",
+                        text: "This category will be deleted permanently!",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, delete!",
+                        cancelButtonText: "Cancel",
+                        reverseButtons: true,
+                    })
+                    .then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                url: url,
+                                type: "DELETE",
 
-                            success: function (response) {
-                                toastr.success(
-                                    response.message || "Deleted successfully.",
-                                );
+                                success: function (response) {
+                                    toastr.success(
+                                        response.message ||
+                                            "Deleted successfully.",
+                                    );
 
-                                if ($.fn.DataTable.isDataTable("#expense-categories-table")) {
-                                    $("#expense-categories-table").DataTable().ajax.reload();
-                                } else if (window.LaravelDataTables && window.LaravelDataTables['expense-categories-table']) {
-                                    window.LaravelDataTables['expense-categories-table'].ajax.reload();
-                                }
-                            },
+                                    if (
+                                        $.fn.DataTable.isDataTable(
+                                            "#expense-categories-table",
+                                        )
+                                    ) {
+                                        $("#expense-categories-table")
+                                            .DataTable()
+                                            .ajax.reload();
+                                    } else if (
+                                        window.LaravelDataTables &&
+                                        window.LaravelDataTables[
+                                            "expense-categories-table"
+                                        ]
+                                    ) {
+                                        window.LaravelDataTables[
+                                            "expense-categories-table"
+                                        ].ajax.reload();
+                                    }
+                                },
 
-                            error: function (xhr) {
-                                toastr.error(
-                                    xhr.responseJSON?.message ||
-                                        "Could not delete category.",
-                                );
-                            },
-                        });
-                    }
-                });
-        });
+                                error: function (xhr) {
+                                    toastr.error(
+                                        xhr.responseJSON?.message ||
+                                            "Could not delete category.",
+                                    );
+                                },
+                            });
+                        }
+                    });
+            },
+        );
 
     // Flat Type Modal Variables
     const flatTypeModalEl = document.getElementById("flat-type-modal");
@@ -1693,8 +1767,13 @@ $(document).ready(function () {
 
                     if ($.fn.DataTable.isDataTable("#flat-types-table")) {
                         $("#flat-types-table").DataTable().ajax.reload();
-                    } else if (window.LaravelDataTables && window.LaravelDataTables['flat-types-table']) {
-                        window.LaravelDataTables['flat-types-table'].ajax.reload();
+                    } else if (
+                        window.LaravelDataTables &&
+                        window.LaravelDataTables["flat-types-table"]
+                    ) {
+                        window.LaravelDataTables[
+                            "flat-types-table"
+                        ].ajax.reload();
                     }
                 },
 
@@ -1756,10 +1835,21 @@ $(document).ready(function () {
                                     response.message || "Deleted successfully.",
                                 );
 
-                                if ($.fn.DataTable.isDataTable("#flat-types-table")) {
-                                    $("#flat-types-table").DataTable().ajax.reload();
-                                } else if (window.LaravelDataTables && window.LaravelDataTables['flat-types-table']) {
-                                    window.LaravelDataTables['flat-types-table'].ajax.reload();
+                                if (
+                                    $.fn.DataTable.isDataTable(
+                                        "#flat-types-table",
+                                    )
+                                ) {
+                                    $("#flat-types-table")
+                                        .DataTable()
+                                        .ajax.reload();
+                                } else if (
+                                    window.LaravelDataTables &&
+                                    window.LaravelDataTables["flat-types-table"]
+                                ) {
+                                    window.LaravelDataTables[
+                                        "flat-types-table"
+                                    ].ajax.reload();
                                 }
                             },
 
@@ -1775,11 +1865,16 @@ $(document).ready(function () {
         });
 
     // Maintenance Bill Modal Variables
-    const maintenanceBillModalEl = document.getElementById("maintenance-bill-modal");
-    const MaintenanceBillModalClass = window.coreui?.Modal || window.bootstrap?.Modal;
+    const maintenanceBillModalEl = document.getElementById(
+        "maintenance-bill-modal",
+    );
+    const MaintenanceBillModalClass =
+        window.coreui?.Modal || window.bootstrap?.Modal;
     const maintenanceBillModalInstance =
         maintenanceBillModalEl && MaintenanceBillModalClass
-            ? MaintenanceBillModalClass.getOrCreateInstance(maintenanceBillModalEl)
+            ? MaintenanceBillModalClass.getOrCreateInstance(
+                  maintenanceBillModalEl,
+              )
             : null;
 
     // Add Maintenance Bill Form Open
@@ -1795,7 +1890,9 @@ $(document).ready(function () {
 
                 success: function (response) {
                     $("#maintenance-bill-modal-content").html(response);
-                    $("#maintenance-bill-modal-content .modal-title").text(title);
+                    $("#maintenance-bill-modal-content .modal-title").text(
+                        title,
+                    );
                     maintenanceBillModalInstance?.show();
                 },
 
@@ -1808,62 +1905,82 @@ $(document).ready(function () {
     // Edit Maintenance Bill Form Open
     $(document)
         .off("click", "#maintenance-bills-table .btn-edit-maintenance-bill")
-        .on("click", "#maintenance-bills-table .btn-edit-maintenance-bill", function () {
-            let url = $(this).data("url");
-            let title = $(this).data("title");
+        .on(
+            "click",
+            "#maintenance-bills-table .btn-edit-maintenance-bill",
+            function () {
+                let url = $(this).data("url");
+                let title = $(this).data("title");
 
-            $.ajax({
-                type: "GET",
-                url: url,
+                $.ajax({
+                    type: "GET",
+                    url: url,
 
-                success: function (response) {
-                    $("#maintenance-bill-modal-content").html(response);
-                    $("#maintenance-bill-modal-content .modal-title").text(title);
-                    maintenanceBillModalInstance?.show();
-                },
+                    success: function (response) {
+                        $("#maintenance-bill-modal-content").html(response);
+                        $("#maintenance-bill-modal-content .modal-title").text(
+                            title,
+                        );
+                        maintenanceBillModalInstance?.show();
+                    },
 
-                error: function () {
-                    toastr.error("Could not load form.");
-                },
-            });
-        });
+                    error: function () {
+                        toastr.error("Could not load form.");
+                    },
+                });
+            },
+        );
 
     // Auto-fill maintenance amount when flat is selected
-    $(document).on("change", "#maintenance-bill-ajax-form #flat_id", function () {
-        let selectedOption = $(this).find("option:selected");
-        let fee = selectedOption.data("maintenance-fee");
+    $(document).on(
+        "change",
+        "#maintenance-bill-ajax-form #flat_id",
+        function () {
+            let selectedOption = $(this).find("option:selected");
+            let fee = selectedOption.data("maintenance-fee");
 
-        if (fee !== undefined && fee !== "") {
-            $("#maintenance-bill-ajax-form #amount").val(parseFloat(fee).toFixed(2));
-        }
-    });
+            if (fee !== undefined && fee !== "") {
+                $("#maintenance-bill-ajax-form #amount").val(
+                    parseFloat(fee).toFixed(2),
+                );
+            }
+        },
+    );
 
     // Filter flats based on selected block
-    $(document).on("change", "#maintenance-bill-ajax-form #block_id", function () {
-        let blockId = $(this).val();
-        let flatSelect = $("#maintenance-bill-ajax-form #flat_id");
+    $(document).on(
+        "change",
+        "#maintenance-bill-ajax-form #block_id",
+        function () {
+            let blockId = $(this).val();
+            let flatSelect = $("#maintenance-bill-ajax-form #flat_id");
 
-        // Show/hide options based on data-block-id
-        flatSelect.find("option").each(function () {
-            let optionBlockId = $(this).data("block-id");
-            if (!optionBlockId || optionBlockId == blockId) {
-                $(this).show();
-            } else {
-                $(this).hide();
+            // Show/hide options based on data-block-id
+            flatSelect.find("option").each(function () {
+                let optionBlockId = $(this).data("block-id");
+                if (!optionBlockId || optionBlockId == blockId) {
+                    $(this).show();
+                } else {
+                    $(this).hide();
+                }
+            });
+
+            // Reset flat selection if current selection is hidden
+            if (flatSelect.find("option:selected").css("display") === "none") {
+                flatSelect.val("");
+                $("#maintenance-bill-ajax-form #amount").val("");
             }
-        });
-
-        // Reset flat selection if current selection is hidden
-        if (flatSelect.find("option:selected").css("display") === "none") {
-            flatSelect.val("");
-            $("#maintenance-bill-ajax-form #amount").val("");
-        }
-    });
+        },
+    );
 
     // Initialize flat filtering if block is already selected (e.g. in Edit mode)
-    $(document).on('shown.coreui.modal', '#maintenance-bill-modal', function () {
-        $("#maintenance-bill-ajax-form #block_id").trigger('change');
-    });
+    $(document).on(
+        "shown.coreui.modal",
+        "#maintenance-bill-modal",
+        function () {
+            $("#maintenance-bill-ajax-form #block_id").trigger("change");
+        },
+    );
 
     // Add/Edit Maintenance Bill Form Submit
     $(document)
@@ -1899,10 +2016,17 @@ $(document).ready(function () {
 
                     maintenanceBillModalInstance?.hide();
 
-                    if ($.fn.DataTable.isDataTable("#maintenance-bills-table")) {
+                    if (
+                        $.fn.DataTable.isDataTable("#maintenance-bills-table")
+                    ) {
                         $("#maintenance-bills-table").DataTable().ajax.reload();
-                    } else if (window.LaravelDataTables && window.LaravelDataTables['maintenance-bills-table']) {
-                        window.LaravelDataTables['maintenance-bills-table'].ajax.reload();
+                    } else if (
+                        window.LaravelDataTables &&
+                        window.LaravelDataTables["maintenance-bills-table"]
+                    ) {
+                        window.LaravelDataTables[
+                            "maintenance-bills-table"
+                        ].ajax.reload();
                     }
                 },
 
@@ -1940,141 +2064,195 @@ $(document).ready(function () {
     // Delete Single Maintenance Bill
     $(document)
         .off("click", "#maintenance-bills-table .btn-delete-maintenance-bill")
-        .on("click", "#maintenance-bills-table .btn-delete-maintenance-bill", function () {
-            let url = $(this).data("url");
+        .on(
+            "click",
+            "#maintenance-bills-table .btn-delete-maintenance-bill",
+            function () {
+                let url = $(this).data("url");
 
-            swalWithBootstrapButtons
-                .fire({
-                    title: "Are you sure?",
-                    text: "This bill will be deleted permanently!",
-                    icon: "warning",
-                    showCancelButton: true,
-                    confirmButtonText: "Yes, delete!",
-                    cancelButtonText: "Cancel",
-                    reverseButtons: true,
-                })
-                .then((result) => {
-                    if (result.isConfirmed) {
-                        $.ajax({
-                            url: url,
-                            type: "DELETE",
+                swalWithBootstrapButtons
+                    .fire({
+                        title: "Are you sure?",
+                        text: "This bill will be deleted permanently!",
+                        icon: "warning",
+                        showCancelButton: true,
+                        confirmButtonText: "Yes, delete!",
+                        cancelButtonText: "Cancel",
+                        reverseButtons: true,
+                    })
+                    .then((result) => {
+                        if (result.isConfirmed) {
+                            $.ajax({
+                                url: url,
+                                type: "DELETE",
 
-                            success: function (response) {
-                                toastr.success(
-                                    response.message || "Deleted successfully.",
-                                );
+                                success: function (response) {
+                                    toastr.success(
+                                        response.message ||
+                                            "Deleted successfully.",
+                                    );
 
-                                if ($.fn.DataTable.isDataTable("#maintenance-bills-table")) {
-                                    $("#maintenance-bills-table").DataTable().ajax.reload();
-                                } else if (window.LaravelDataTables && window.LaravelDataTables['maintenance-bills-table']) {
-                                    window.LaravelDataTables['maintenance-bills-table'].ajax.reload();
-                                }
-                            },
+                                    if (
+                                        $.fn.DataTable.isDataTable(
+                                            "#maintenance-bills-table",
+                                        )
+                                    ) {
+                                        $("#maintenance-bills-table")
+                                            .DataTable()
+                                            .ajax.reload();
+                                    } else if (
+                                        window.LaravelDataTables &&
+                                        window.LaravelDataTables[
+                                            "maintenance-bills-table"
+                                        ]
+                                    ) {
+                                        window.LaravelDataTables[
+                                            "maintenance-bills-table"
+                                        ].ajax.reload();
+                                    }
+                                },
 
-                            error: function (xhr) {
-                                toastr.error(
-                                    xhr.responseJSON?.message ||
-                                        "Could not delete bill.",
-                                );
-                            },
-                        });
-                    }
-                });
-        });
+                                error: function (xhr) {
+                                    toastr.error(
+                                        xhr.responseJSON?.message ||
+                                            "Could not delete bill.",
+                                    );
+                                },
+                            });
+                        }
+                    });
+            },
+        );
 
     // ==========================================
     // EXTRACTED FROM BLADE TEMPLATES
     // ==========================================
 
     // --- Dashboard Chart ---
-    if (document.getElementById('mainChart') && document.getElementById('dashboard-chart-data')) {
-        const chartDataEl = document.getElementById('dashboard-chart-data');
-        const months = JSON.parse(chartDataEl.getAttribute('data-months'));
-        const revenueData = JSON.parse(chartDataEl.getAttribute('data-revenue'));
-        const expenseData = JSON.parse(chartDataEl.getAttribute('data-expenses'));
+    if (
+        document.getElementById("mainChart") &&
+        document.getElementById("dashboard-chart-data")
+    ) {
+        const chartDataEl = document.getElementById("dashboard-chart-data");
+        const months = JSON.parse(chartDataEl.getAttribute("data-months"));
+        const revenueData = JSON.parse(
+            chartDataEl.getAttribute("data-revenue"),
+        );
+        const expenseData = JSON.parse(
+            chartDataEl.getAttribute("data-expenses"),
+        );
 
-        Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--cui-body-color') || '#8a93a2';
-        Chart.defaults.scale.grid.color = getComputedStyle(document.documentElement).getPropertyValue('--cui-border-color-translucent') || 'rgba(0,0,0,0.1)';
+        Chart.defaults.color =
+            getComputedStyle(document.documentElement).getPropertyValue(
+                "--cui-body-color",
+            ) || "#8a93a2";
+        Chart.defaults.scale.grid.color =
+            getComputedStyle(document.documentElement).getPropertyValue(
+                "--cui-border-color-translucent",
+            ) || "rgba(0,0,0,0.1)";
 
-        const mainChartCtx = document.getElementById('mainChart').getContext('2d');
+        const mainChartCtx = document
+            .getElementById("mainChart")
+            .getContext("2d");
         let mainChart = new Chart(mainChartCtx, {
-            type: 'bar',
+            type: "bar",
             data: {
                 labels: months,
                 datasets: [
                     {
-                        label: 'Revenue (Paid Bills)',
-                        backgroundColor: 'rgba(46, 184, 92, 0.8)',
-                        borderColor: 'rgba(46, 184, 92, 1)',
+                        label: "Revenue (Paid Bills)",
+                        backgroundColor: "rgba(46, 184, 92, 0.8)",
+                        borderColor: "rgba(46, 184, 92, 1)",
                         borderWidth: 1,
-                        data: revenueData
+                        data: revenueData,
                     },
                     {
-                        label: 'Society Expenses',
-                        backgroundColor: 'rgba(229, 83, 83, 0.8)',
-                        borderColor: 'rgba(229, 83, 83, 1)',
+                        label: "Society Expenses",
+                        backgroundColor: "rgba(229, 83, 83, 0.8)",
+                        borderColor: "rgba(229, 83, 83, 1)",
                         borderWidth: 1,
-                        data: expenseData
-                    }
-                ]
+                        data: expenseData,
+                    },
+                ],
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: { position: 'top' },
+                    legend: { position: "top" },
                     tooltip: {
                         callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) { label += ': '; }
+                            label: function (context) {
+                                let label = context.dataset.label || "";
+                                if (label) {
+                                    label += ": ";
+                                }
                                 if (context.parsed.y !== null) {
-                                    label += new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y);
+                                    label += new Intl.NumberFormat("en-US", {
+                                        style: "currency",
+                                        currency: "USD",
+                                    }).format(context.parsed.y);
                                 }
                                 return label;
-                            }
-                        }
-                    }
+                            },
+                        },
+                    },
                 },
                 scales: {
-                    y: { beginAtZero: true }
-                }
-            }
+                    y: { beginAtZero: true },
+                },
+            },
         });
 
         let statusChart = null;
-        if (document.getElementById('statusChart')) {
-            const statusChartCtx = document.getElementById('statusChart').getContext('2d');
-            const statusData = JSON.parse(chartDataEl.getAttribute('data-status'));
+        if (document.getElementById("statusChart")) {
+            const statusChartCtx = document
+                .getElementById("statusChart")
+                .getContext("2d");
+            const statusData = JSON.parse(
+                chartDataEl.getAttribute("data-status"),
+            );
             statusChart = new Chart(statusChartCtx, {
-                type: 'doughnut',
+                type: "doughnut",
                 data: {
-                    labels: ['Paid', 'Pending', 'Due'],
-                    datasets: [{
-                        data: [statusData.paid, statusData.pending, statusData.due],
-                        backgroundColor: [
-                            '#2eb85c', // success
-                            '#f9b115', // warning
-                            '#e55353'  // danger
-                        ],
-                        hoverOffset: 4
-                    }]
+                    labels: ["Paid", "Pending", "Due"],
+                    datasets: [
+                        {
+                            data: [
+                                statusData.paid,
+                                statusData.pending,
+                                statusData.due,
+                            ],
+                            backgroundColor: [
+                                "#2eb85c", // success
+                                "#f9b115", // warning
+                                "#e55353", // danger
+                            ],
+                            hoverOffset: 4,
+                        },
+                    ],
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom' }
+                        legend: { position: "bottom" },
                     },
-                    cutout: '70%'
-                }
+                    cutout: "70%",
+                },
             });
         }
 
-        document.documentElement.addEventListener('ColorSchemeChange', () => {
-            Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--cui-body-color') || '#8a93a2';
-            Chart.defaults.scale.grid.color = getComputedStyle(document.documentElement).getPropertyValue('--cui-border-color-translucent') || 'rgba(0,0,0,0.1)';
-            
+        document.documentElement.addEventListener("ColorSchemeChange", () => {
+            Chart.defaults.color =
+                getComputedStyle(document.documentElement).getPropertyValue(
+                    "--cui-body-color",
+                ) || "#8a93a2";
+            Chart.defaults.scale.grid.color =
+                getComputedStyle(document.documentElement).getPropertyValue(
+                    "--cui-border-color-translucent",
+                ) || "rgba(0,0,0,0.1)";
+
             if (mainChart) {
                 mainChart.update();
             }
@@ -2085,203 +2263,258 @@ $(document).ready(function () {
     }
 
     // --- Resident Type Dropdown Filtering ---
-    $(document).on('change', '#resident-type-select', function() {
+    $(document).on("change", "#resident-type-select", function () {
         const type = $(this).val();
-        const userSelect = $('#resident-user-select');
+        const userSelect = $("#resident-user-select");
         if (userSelect.length === 0) return;
-        
-        userSelect.val('');
 
-        userSelect.find('option').each(function() {
-            const role = $(this).attr('data-role');
+        userSelect.val("");
+
+        userSelect.find("option").each(function () {
+            const role = $(this).attr("data-role");
             if (!role) {
-                $(this).show().prop('disabled', false).prop('hidden', false);
+                $(this).show().prop("disabled", false).prop("hidden", false);
                 return;
             }
 
-            if (type === 'owner' && role === 'owner') {
-                $(this).show().prop('disabled', false).prop('hidden', false);
-            } else if (type === 'rental' && role === 'tenant') {
-                $(this).show().prop('disabled', false).prop('hidden', false);
+            if (type === "owner" && role === "owner") {
+                $(this).show().prop("disabled", false).prop("hidden", false);
+            } else if (type === "rental" && role === "tenant") {
+                $(this).show().prop("disabled", false).prop("hidden", false);
             } else {
-                $(this).hide().prop('disabled', true).prop('hidden', true);
+                $(this).hide().prop("disabled", true).prop("hidden", true);
             }
         });
     });
 
     // --- Maintenance Bill User Selection Auto-Fill ---
-    $(document).on('change', '#maintenance-bill-ajax-form #user_id', function() {
-        const userId = $(this).val();
-        if (!userId) {
-            $('#maintenance-bill-ajax-form #block_id').val('');
-            $('#maintenance-bill-ajax-form #flat_id').val('');
-            $('#maintenance-bill-ajax-form #amount').val('');
-            return;
-        }
+    $(document).on(
+        "change",
+        "#maintenance-bill-ajax-form #user_id",
+        function () {
+            const userId = $(this).val();
+            if (!userId) {
+                $("#maintenance-bill-ajax-form #block_id").val("");
+                $("#maintenance-bill-ajax-form #flat_id").val("");
+                $("#maintenance-bill-ajax-form #amount").val("");
+                return;
+            }
 
-        fetch(`/maintenance-bills/resident-info/${userId}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    $('#maintenance-bill-ajax-form #block_id').val(data.block_id);
-                    $('#maintenance-bill-ajax-form #flat_id').val(data.flat_id);
-                    $('#maintenance-bill-ajax-form #amount').val(data.amount);
-                } else {
-                    $('#maintenance-bill-ajax-form #block_id').val('');
-                    $('#maintenance-bill-ajax-form #flat_id').val('');
-                    $('#maintenance-bill-ajax-form #amount').val('');
-                }
-            })
-            .catch(error => console.error('Error fetching resident info:', error));
-    });
+            fetch(`/maintenance-bills/resident-info/${userId}`)
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        $("#maintenance-bill-ajax-form #block_id").val(
+                            data.block_id,
+                        );
+                        $("#maintenance-bill-ajax-form #flat_id").val(
+                            data.flat_id,
+                        );
+                        $("#maintenance-bill-ajax-form #amount").val(
+                            data.amount,
+                        );
+                    } else {
+                        $("#maintenance-bill-ajax-form #block_id").val("");
+                        $("#maintenance-bill-ajax-form #flat_id").val("");
+                        $("#maintenance-bill-ajax-form #amount").val("");
+                    }
+                })
+                .catch((error) =>
+                    console.error("Error fetching resident info:", error),
+                );
+        },
+    );
 
     // --- Maintenance Bill Status Update Form ---
-    $(document).on('change', '#flat-type-filter, #status-filter', function() {
-        if (window.LaravelDataTables && window.LaravelDataTables["maintenancedetails-table"]) {
+    $(document).on("change", "#flat-type-filter, #status-filter", function () {
+        if (
+            window.LaravelDataTables &&
+            window.LaravelDataTables["maintenancedetails-table"]
+        ) {
             window.LaravelDataTables["maintenancedetails-table"].ajax.reload();
         }
     });
 
-    $(document).on('submit', '.ajax-status-form', function(e) {
+    $(document).on("submit", ".ajax-status-form", function (e) {
         e.preventDefault();
         var form = $(this);
-        var url = form.attr('action');
+        var url = form.attr("action");
         var formData = form.serialize();
         var submitBtn = form.find('button[type="submit"]');
         var originalText = submitBtn.html();
-        
-        submitBtn.html('<i class="fa-solid fa-spinner fa-spin"></i>').prop('disabled', true);
+
+        submitBtn
+            .html('<i class="fa-solid fa-spinner fa-spin"></i>')
+            .prop("disabled", true);
 
         $.ajax({
-            type: 'POST',
+            type: "POST",
             url: url,
             data: formData,
-            success: function(response) {
+            success: function (response) {
                 if (response.success) {
-                    if (window.LaravelDataTables && window.LaravelDataTables["maintenancedetails-table"]) {
-                        window.LaravelDataTables["maintenancedetails-table"].ajax.reload(null, false);
+                    if (
+                        window.LaravelDataTables &&
+                        window.LaravelDataTables["maintenancedetails-table"]
+                    ) {
+                        window.LaravelDataTables[
+                            "maintenancedetails-table"
+                        ].ajax.reload(null, false);
                     }
-                    
-                    if (response.paidCount !== undefined && response.totalCount !== undefined) {
-                        $('#paid-count-display').text(response.paidCount + '/' + response.totalCount);
+
+                    if (
+                        response.paidCount !== undefined &&
+                        response.totalCount !== undefined
+                    ) {
+                        $("#paid-count-display").text(
+                            response.paidCount + "/" + response.totalCount,
+                        );
                     }
                     if (response.totalAmountExpected !== undefined) {
-                        $('#total-amount-display').text('$' + response.totalAmountExpected);
+                        $("#total-amount-display").text(
+                            "$" + response.totalAmountExpected,
+                        );
                     }
-                    
-                    if (typeof toastr !== 'undefined') {
+
+                    if (typeof toastr !== "undefined") {
                         toastr.success(response.message);
                     }
                 } else {
-                    if (typeof toastr !== 'undefined') {
-                        toastr.error(response.message || 'Error updating status');
+                    if (typeof toastr !== "undefined") {
+                        toastr.error(
+                            response.message || "Error updating status",
+                        );
                     }
                 }
             },
-            error: function(xhr) {
-                console.error('Error updating status', xhr);
-                if (typeof toastr !== 'undefined') {
-                    toastr.error('Error updating status');
+            error: function (xhr) {
+                console.error("Error updating status", xhr);
+                if (typeof toastr !== "undefined") {
+                    toastr.error("Error updating status");
                 }
             },
-            complete: function() {
-                submitBtn.html(originalText).prop('disabled', false);
-            }
+            complete: function () {
+                submitBtn.html(originalText).prop("disabled", false);
+            },
         });
     });
 
     // --- Auth Forms Validation ---
-    const authToastSource = document.getElementById('users-toast-source');
+    const authToastSource = document.getElementById("users-toast-source");
     if (authToastSource) {
-        const message = authToastSource.getAttribute('data-message');
-        const type = authToastSource.getAttribute('data-type') || 'success';
-        if (message && window.jQuery && typeof window.showToast === 'function') {
+        const message = authToastSource.getAttribute("data-message");
+        const type = authToastSource.getAttribute("data-type") || "success";
+        if (
+            message &&
+            window.jQuery &&
+            typeof window.showToast === "function"
+        ) {
             window.showToast(message, type);
         }
     }
 
-    $(document).on('click', '.toggle-password-btn', function() {
-        const input = $(this).closest('.input-group').find('input')[0];
-        if (input.type === 'password') {
-            input.type = 'text';
-            $(this).attr('aria-label', 'Hide password').attr('data-coreui-original-title', 'Hide password');
+    $(document).on("click", ".toggle-password-btn", function () {
+        const input = $(this).closest(".input-group").find("input")[0];
+        if (input.type === "password") {
+            input.type = "text";
+            $(this)
+                .attr("aria-label", "Hide password")
+                .attr("data-coreui-original-title", "Hide password");
         } else {
-            input.type = 'password';
-            $(this).attr('aria-label', 'Show password').attr('data-coreui-original-title', 'Show password');
+            input.type = "password";
+            $(this)
+                .attr("aria-label", "Show password")
+                .attr("data-coreui-original-title", "Show password");
         }
     });
 
-    $(document).on('submit', '#resetPasswordForm', function(e) {
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('new-password');
-        const confirmPasswordInput = document.getElementById('confirm-password');
+    $(document).on("submit", "#resetPasswordForm", function (e) {
+        const emailInput = document.getElementById("email");
+        const passwordInput = document.getElementById("new-password");
+        const confirmPasswordInput =
+            document.getElementById("confirm-password");
 
-        const emailError = document.getElementById('js-email-error');
-        const passwordError = document.getElementById('js-password-error');
-        const confirmPasswordError = document.getElementById('js-confirm-password-error');
+        const emailError = document.getElementById("js-email-error");
+        const passwordError = document.getElementById("js-password-error");
+        const confirmPasswordError = document.getElementById(
+            "js-confirm-password-error",
+        );
 
         let isValid = true;
 
-        [emailInput, passwordInput, confirmPasswordInput].forEach(input => {
-            if(!input) return;
-            input.classList.remove('is-invalid');
-            const bladeError = input.parentElement.querySelector('.invalid-feedback:not([id^="js-"])');
-            if (bladeError) bladeError.style.display = 'none';
+        [emailInput, passwordInput, confirmPasswordInput].forEach((input) => {
+            if (!input) return;
+            input.classList.remove("is-invalid");
+            const bladeError = input.parentElement.querySelector(
+                '.invalid-feedback:not([id^="js-"])',
+            );
+            if (bladeError) bladeError.style.display = "none";
         });
-        
-        [emailError, passwordError, confirmPasswordError].forEach(err => {
+
+        [emailError, passwordError, confirmPasswordError].forEach((err) => {
             if (err) {
-                err.style.display = 'none';
-                err.textContent = '';
+                err.style.display = "none";
+                err.textContent = "";
             }
         });
 
         if (emailInput && !emailInput.value.trim()) {
             isValid = false;
-            emailInput.classList.add('is-invalid');
-            if(emailError){
-                emailError.textContent = 'The email field is required.';
-                emailError.style.display = 'block';
+            emailInput.classList.add("is-invalid");
+            if (emailError) {
+                emailError.textContent = "The email field is required.";
+                emailError.style.display = "block";
             }
-        } else if (emailInput && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)) {
+        } else if (
+            emailInput &&
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailInput.value)
+        ) {
             isValid = false;
-            emailInput.classList.add('is-invalid');
-            if(emailError){
-                emailError.textContent = 'Please enter a valid email address.';
-                emailError.style.display = 'block';
+            emailInput.classList.add("is-invalid");
+            if (emailError) {
+                emailError.textContent = "Please enter a valid email address.";
+                emailError.style.display = "block";
             }
         }
 
         if (passwordInput && !passwordInput.value) {
             isValid = false;
-            passwordInput.classList.add('is-invalid');
-            if(passwordError){
-                passwordError.textContent = 'The password field is required.';
-                passwordError.style.display = 'block';
+            passwordInput.classList.add("is-invalid");
+            if (passwordError) {
+                passwordError.textContent = "The password field is required.";
+                passwordError.style.display = "block";
             }
         } else if (passwordInput && passwordInput.value.length < 5) {
             isValid = false;
-            passwordInput.classList.add('is-invalid');
-            if(passwordError){
-                passwordError.textContent = 'The password must be at least 5 characters.';
-                passwordError.style.display = 'block';
+            passwordInput.classList.add("is-invalid");
+            if (passwordError) {
+                passwordError.textContent =
+                    "The password must be at least 5 characters.";
+                passwordError.style.display = "block";
             }
         }
 
-        if (passwordInput && passwordInput.value && passwordInput.value.length >= 5 && confirmPasswordInput) {
+        if (
+            passwordInput &&
+            passwordInput.value &&
+            passwordInput.value.length >= 5 &&
+            confirmPasswordInput
+        ) {
             if (!confirmPasswordInput.value) {
                 isValid = false;
-                confirmPasswordInput.classList.add('is-invalid');
-                if(confirmPasswordError){
-                    confirmPasswordError.textContent = 'Please confirm your password.';
-                    confirmPasswordError.style.display = 'block';
+                confirmPasswordInput.classList.add("is-invalid");
+                if (confirmPasswordError) {
+                    confirmPasswordError.textContent =
+                        "Please confirm your password.";
+                    confirmPasswordError.style.display = "block";
                 }
             } else if (passwordInput.value !== confirmPasswordInput.value) {
                 isValid = false;
-                confirmPasswordInput.classList.add('is-invalid');
-                if(confirmPasswordError){
-                    confirmPasswordError.textContent = 'The password confirmation does not match.';
-                    confirmPasswordError.style.display = 'block';
+                confirmPasswordInput.classList.add("is-invalid");
+                if (confirmPasswordError) {
+                    confirmPasswordError.textContent =
+                        "The password confirmation does not match.";
+                    confirmPasswordError.style.display = "block";
                 }
             }
         }
@@ -2290,5 +2523,4 @@ $(document).ready(function () {
             e.preventDefault();
         }
     });
-
 });
