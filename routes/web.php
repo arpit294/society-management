@@ -69,8 +69,8 @@ Route::middleware('auth')->group(function () {
 
     // Maintenance Bills
     Route::get('maintenance-bills/resident-info/{user_id}', [MaintenanceBillController::class, 'getResidentInfo'])->name('maintenance-bills.resident-info');
+    Route::get('maintenance-bills/details/{id}', [MaintenanceBillController::class, 'details'])->name('maintenance-bills.details');
+    Route::get('maintenance-bills/download-invoice/{id}', [MaintenanceBillController::class, 'downloadInvoice'])->name('maintenance-bills.download-invoice');
     Route::resource('maintenance-bills', MaintenanceBillController::class);
     Route::post('maintenance-bills/{maintenanceBill}/update-status', [MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
 });
-
-//

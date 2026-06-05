@@ -19,7 +19,7 @@ class ResidentsDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
-            ->addColumn('block', function (Resident $resident) {
+            ->addColumn('block.block_name', function (Resident $resident) {
                 return $resident->block?->block_name;
             })
             ->addColumn('flat', function (Resident $resident) {
@@ -51,7 +51,15 @@ class ResidentsDataTable extends DataTable
      */
     public function query(Resident $model): QueryBuilder
     {
-        return $model->newQuery()->with(['block', 'flat', 'user']);
+        $query = $model->newQuery()->with(['block', 'flat', 'user']);
+
+        if (request()->has('block_name') && request('block_name') != '') {
+            $query->whereHas('block', function ($q) {
+                $q->where('block_name', request('block_name'));
+            });
+        }
+
+        return $query;
     }
 
     /**
@@ -62,7 +70,10 @@ class ResidentsDataTable extends DataTable
         return $this->builder()
             ->setTableId('residents-table')
             ->columns($this->getColumns())
-            ->minifiedAjax()
+            ->ajax([
+                'url' => '',
+                'data' => 'function(d) { d.block_name = $("#residents-filter-block").val(); }',
+            ])
             ->orderBy(1)
             ->selectStyleSingle()
             ->parameters([
@@ -77,7 +88,7 @@ class ResidentsDataTable extends DataTable
     {
         return [
             Column::make('id')->title('ID'),
-            Column::computed('block')->title('Block Name'),
+            Column::make('block.block_name')->title('Block Name'),
             Column::computed('flat')->title('Flat No'),
             Column::computed('user')->title('User Name'),
             Column::make('type')->title('Type'),

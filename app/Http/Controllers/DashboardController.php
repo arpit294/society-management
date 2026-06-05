@@ -6,13 +6,21 @@ use App\Models\Complain;
 use App\Models\Expense;
 use App\Models\Flat;
 use App\Models\MaintenanceBill;
-use App\Models\User;
+use App\Models\Resident;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
+    /**
+     * Display the dashboard view with statistics and chart data.
+     *
+     * @return View
+     */
     public function index()
     {
-        $totalResidents = User::count();
+        $totalResidents = Resident::whereNull('move_out_date')
+            ->orWhere('move_out_date', '>=', now()->startOfDay())
+            ->count();
         $totalFlats = Flat::count();
         $totalComplaints = Complain::count();
 

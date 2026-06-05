@@ -60,6 +60,10 @@ class MaintenanceDetailsDataTable extends DataTable
                     $html .= '</form>';
                 }
 
+                if ($bill->status === 'paid') {
+                    $html .= '<a href="'.route('maintenance-bills.details', $bill->id).'" class="btn btn-sm btn-outline-info text-nowrap ms-1">View</a>';
+                }
+
                 return $html;
             })
             ->rawColumns(['total_cost', 'status', 'action'])
@@ -73,7 +77,19 @@ class MaintenanceDetailsDataTable extends DataTable
      */
     public function query(MaintenanceBill $model): QueryBuilder
     {
-        return $model->newQuery()->with(['user', 'flat.block', 'flat.flatType'])->where('maintenance_id', $this->id);
+        $query = $model->newQuery()->with(['user', 'flat.block', 'flat.flatType'])->where('maintenance_id', $this->id);
+
+        if (request()->has('flat_type_id') && request('flat_type_id') != '') {
+            $query->whereHas('flat', function ($q) {
+                $q->where('flat_type_id', request('flat_type_id'));
+            });
+        }
+
+        if (request()->has('status_filter') && request('status_filter') != '') {
+            $query->where('status', request('status_filter'));
+        }
+
+        return $query;
     }
 
     /**
@@ -84,8 +100,13 @@ class MaintenanceDetailsDataTable extends DataTable
         return $this->builder()
             ->setTableId('maintenancedetails-table')
             ->columns($this->getColumns())
-            ->minifiedAjax()
-            ->orderBy(0, 'asc')
+            ->ajax([
+                'data' => 'function(d) { 
+                            d.flat_type_id = $("#flat-type-filter").val(); 
+                            d.status_filter = $("#status-filter").val();
+                        }',
+            ])
+            ->orderBy(4, 'asc')
             ->selectStyleSingle();
     }
 
@@ -95,12 +116,12 @@ class MaintenanceDetailsDataTable extends DataTable
     public function getColumns(): array
     {
         return [
-            Column::make('apartment')->title('Block & Flat No.'),
-            Column::make('flat_type')->title('Flat Type'),
-            Column::make('resident')->title('Resident'),
-            Column::make('total_cost')->title('Total Cost'),
+            Column::computed('apartment')->title('Block & Flat No.'),
+            Column::computed('flat_type')->title('Flat Type'),
+            Column::computed('resident')->title('Resident'),
+            Column::computed('total_cost')->title('Total Cost'),
             Column::make('status')->title('Status')->addClass('text-center'),
-            Column::make('payment_date')->title('Payment Date')->addClass('text-center'),
+            Column::computed('payment_date')->title('Payment Date')->addClass('text-center'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

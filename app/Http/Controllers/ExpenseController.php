@@ -7,10 +7,17 @@ use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\MaintenanceBill;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class ExpenseController extends Controller
 {
+    /**
+     * Display a listing of expenses.
+     *
+     * @return mixed
+     */
     public function index(ExpensesDataTable $dataTable)
     {
         $totalExpenses = Expense::sum('total_amount');
@@ -24,6 +31,11 @@ class ExpenseController extends Controller
         return $dataTable->render('expenses.index', compact('totalExpenses', 'thisMonthExpenses', 'totalInvoices', 'totalMaintenanceIncome', 'categories'));
     }
 
+    /**
+     * Show the form for creating a new expense.
+     *
+     * @return View
+     */
     public function create()
     {
         $users = User::all();
@@ -32,6 +44,11 @@ class ExpenseController extends Controller
         return view('expenses.create', compact('users', 'categories'));
     }
 
+    /**
+     * Store a newly created expense in storage.
+     *
+     * @return JsonResponse
+     */
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -57,6 +74,11 @@ class ExpenseController extends Controller
         ]);
     }
 
+    /**
+     * Show the form for editing the specified expense.
+     *
+     * @return View
+     */
     public function edit(Expense $expense)
     {
         $users = User::all();
@@ -65,6 +87,11 @@ class ExpenseController extends Controller
         return view('expenses.edit', compact('expense', 'users', 'categories'));
     }
 
+    /**
+     * Update the specified expense in storage.
+     *
+     * @return JsonResponse
+     */
     public function update(Request $request, Expense $expense)
     {
         $validatedData = $request->validate([
@@ -94,6 +121,11 @@ class ExpenseController extends Controller
         ]);
     }
 
+    /**
+     * Remove the specified expense from storage.
+     *
+     * @return JsonResponse
+     */
     public function destroy(Expense $expense)
     {
         if ($expense->invoice && file_exists(public_path('uploads/invoices/'.$expense->invoice))) {

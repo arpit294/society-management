@@ -4,24 +4,45 @@ namespace App\Http\Controllers;
 
 use App\DataTables\MaintenanceBillsDataTable;
 use App\DataTables\MaintenanceDetailsDataTable;
+use App\Models\FlatType;
 use App\Models\Maintenance;
 use App\Models\MaintenanceBill;
 use App\Models\Resident;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class MaintenanceBillController extends Controller
 {
+    /**
+     * Display a listing of maintenance bills.
+     *
+     * @return mixed
+     */
     public function index(MaintenanceBillsDataTable $dataTable)
     {
         return $dataTable->render('maintenance_bills.index');
     }
 
+    /**
+     * Show the form for creating new maintenance bills.
+     *
+     * @return View
+     */
     public function create()
     {
         return view('maintenance_bills.create');
     }
 
+    /**
+     * Store new maintenance bills in storage.
+     *
+     * @return JsonResponse
+     */
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -81,13 +102,26 @@ class MaintenanceBillController extends Controller
         }
     }
 
+    /**
+     * Show the specified maintenance record and its bills.
+     *
+     * @param  int  $id
+     * @return mixed
+     */
     public function show(MaintenanceDetailsDataTable $dataTable, $id)
     {
         $maintenance = Maintenance::with(['maintenanceBills.user', 'maintenanceBills.flat'])->findOrFail($id);
+        $flatTypes = FlatType::all();
 
-        return $dataTable->with('id', $id)->render('maintenance_bills.show', compact('maintenance'));
+        return $dataTable->with('id', $id)->render('maintenance_bills.show', compact('maintenance', 'flatTypes'));
     }
 
+    /**
+     * Remove the specified maintenance record from storage.
+     *
+     * @param  int  $id
+     * @return JsonResponse
+     */
     public function destroy($id)
     {
         $maintenance = Maintenance::findOrFail($id);
@@ -99,6 +133,12 @@ class MaintenanceBillController extends Controller
         ]);
     }
 
+    /**
+     * Update the status of a specific maintenance bill.
+     *
+     * @param  int  $id
+     * @return JsonResponse|RedirectResponse
+     */
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
@@ -141,5 +181,34 @@ class MaintenanceBillController extends Controller
         }
 
         return redirect()->back()->with('success', 'Status updated successfully.');
+    }
+
+    /**
+     * Show the details of a specific maintenance bill.
+     *
+     * @param  int  $id
+     * @return View
+     */
+    public function details($id)
+    {
+        $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
+
+        return view('maintenance_bills.details', compact('bill'));
+    }
+
+    /**
+     * Download the invoice PDF for a specific maintenance bill.
+     *
+     * @param  int  $id
+     * @return Response
+     */
+    public function downloadInvoice($id)
+    {
+        $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
+        $pdf = Pdf::loadView('maintenance_bills.invoice_pdf', compact('bill'));
+
+        $fileName = 'invoice_'.($bill->flat->block->block_name ?? '').'-'.($bill->flat->flat_no ?? '').'_'.$bill->maintenance->month.'_'.$bill->maintenance->year.'.pdf';
+
+        return $pdf->download($fileName);
     }
 }

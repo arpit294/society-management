@@ -6,13 +6,17 @@ use App\DataTables\FlatsDatatables;
 use App\Models\Block;
 use App\Models\Flat;
 use App\Models\FlatType;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
 
 class FlatController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of flats.
+     *
+     * @return mixed
      */
     public function index(FlatsDatatables $dataTable)
     {
@@ -20,7 +24,9 @@ class FlatController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new flat.
+     *
+     * @return View
      */
     public function create()
     {
@@ -31,7 +37,9 @@ class FlatController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created flat in storage.
+     *
+     * @return JsonResponse
      */
     public function store(Request $request)
     {
@@ -62,7 +70,9 @@ class FlatController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing the specified flat.
+     *
+     * @return View
      */
     public function edit(Flat $flat)
     {
@@ -73,7 +83,9 @@ class FlatController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified flat in storage.
+     *
+     * @return JsonResponse
      */
     public function update(Request $request, Flat $flat)
     {
@@ -104,7 +116,9 @@ class FlatController extends Controller
     }
 
     /**
-     * Remove the specified flat from id
+     * Remove the specified flat from storage.
+     *
+     * @return JsonResponse
      */
     public function destroy(Flat $flat)
     {
