@@ -118,4 +118,29 @@
     </div>
 </form>
 
+<script>
+    document.getElementById('user_id').addEventListener('change', function() {
+        const userId = this.value;
+        if (!userId) {
+            document.getElementById('block_id').value = '';
+            document.getElementById('flat_id').value = '';
+            document.getElementById('amount').value = '';
+            return;
+        }
 
+        fetch(`/maintenance-bills/resident-info/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('block_id').value = data.block_id;
+                    document.getElementById('flat_id').value = data.flat_id;
+                    document.getElementById('amount').value = data.amount;
+                } else {
+                    document.getElementById('block_id').value = '';
+                    document.getElementById('flat_id').value = '';
+                    document.getElementById('amount').value = '';
+                }
+            })
+            .catch(error => console.error('Error fetching resident info:', error));
+    });
+</script>

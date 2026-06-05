@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('flats', function (Blueprint $table) {
             $table->dropColumn(['flat_type', 'maintenance_amount']);
             $table->unsignedBigInteger('flat_type_id')->nullable()->after('floor_no');
-
+            
             // If you want to add foreign key constraint:
             // $table->foreign('flat_type_id')->references('id')->on('flat_types')->onDelete('set null');
         });

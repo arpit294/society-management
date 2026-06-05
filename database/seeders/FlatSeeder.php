@@ -2,10 +2,11 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
 use App\Models\Block;
 use App\Models\Flat;
 use App\Models\FlatType;
-use Illuminate\Database\Seeder;
 
 class FlatSeeder extends Seeder
 {
@@ -19,7 +20,6 @@ class FlatSeeder extends Seeder
 
         if (empty($flatTypes)) {
             $this->command->info('No flat types found. Please create some flat types first.');
-
             return;
         }
 
@@ -31,7 +31,7 @@ class FlatSeeder extends Seeder
 
             for ($floor = 1; $floor <= $totalFloors; $floor++) {
                 for ($i = 1; $i <= $flatsPerFloor; $i++) {
-                    $flatNo = sprintf('%d%02d', $floor, $i);
+                    $flatNo = sprintf("%d%02d", $floor, $i);
 
                     Flat::create([
                         'block_id' => $block->id,

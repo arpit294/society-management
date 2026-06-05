@@ -2,12 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\Flat;
-use App\Models\Resident;
-use App\Models\User;
-use Faker\Factory as Faker;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use App\Models\User;
+use App\Models\Resident;
+use App\Models\Flat;
 use Illuminate\Support\Facades\Hash;
+use Faker\Factory as Faker;
 
 class UserResidentSeeder extends Seeder
 {
@@ -23,8 +24,8 @@ class UserResidentSeeder extends Seeder
         foreach ($flats as $flat) {
             // Create user
             $user = User::create([
-                'name' => 'Resident '.$flat->block->block_name.'-'.$flat->flat_no,
-                'email' => strtolower($flat->block->block_name.$flat->flat_no.'@example.com'),
+                'name' => 'Resident ' . $flat->block->block_name . '-' . $flat->flat_no,
+                'email' => strtolower($flat->block->block_name . $flat->flat_no . '@example.com'),
                 'phone' => $faker->numerify('##########'),
                 'role' => 'owner',
                 'password' => $password,

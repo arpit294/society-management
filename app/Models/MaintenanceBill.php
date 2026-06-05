@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -39,7 +38,7 @@ class MaintenanceBill extends Model
             return 'paid';
         }
 
-        if ($this->maintenance && $this->maintenance->due_date && Carbon::parse($this->maintenance->due_date)->endOfDay()->isPast()) {
+        if ($this->maintenance && $this->maintenance->due_date && \Carbon\Carbon::parse($this->maintenance->due_date)->endOfDay()->isPast()) {
             return 'due';
         }
 
@@ -49,12 +48,12 @@ class MaintenanceBill extends Model
     public function getPenaltyAmountAttribute($value)
     {
         if ($this->attributes['status'] === 'paid' || $value > 0) {
-            return (float) $value;
+            return (float)$value;
         }
 
-        if ($this->maintenance && $this->maintenance->due_date && Carbon::parse($this->maintenance->due_date)->endOfDay()->isPast()) {
+        if ($this->maintenance && $this->maintenance->due_date && \Carbon\Carbon::parse($this->maintenance->due_date)->endOfDay()->isPast()) {
             if ($this->flat && $this->flat->flatType) {
-                return (float) $this->flat->flatType->penalty_per_day;
+                return (float)$this->flat->flatType->penalty_per_day; 
             }
         }
 
@@ -64,12 +63,11 @@ class MaintenanceBill extends Model
     public function getTotalAmountAttribute($value)
     {
         if ($this->attributes['status'] === 'paid') {
-            return (float) $value;
+            return (float)$value;
         }
 
-        $baseAmount = (float) $this->amount;
+        $baseAmount = (float)$this->amount;
         $penalty = $this->getPenaltyAmountAttribute($this->attributes['penalty_amount']);
-
         return $baseAmount + $penalty;
     }
 
