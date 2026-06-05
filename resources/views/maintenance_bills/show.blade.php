@@ -61,6 +61,27 @@
     </div>
 </div>
 
+<div class="row mb-3">
+    <div class="col-md-3">
+        <label for="flat-type-filter" class="form-label">Filter by Flat Type</label>
+        <select id="flat-type-filter" class="form-select">
+            <option value="">All Flat Types</option>
+            @foreach($flatTypes as $flatType)
+                <option value="{{ $flatType->id }}">{{ $flatType->name }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="status-filter" class="form-label">Filter by Status</label>
+        <select id="status-filter" class="form-select">
+            <option value="">All Statuses</option>
+            <option value="paid">Paid</option>
+            <option value="due">Due</option>
+            <option value="pending">Pending</option>
+        </select>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-12">
         <div class="card">
@@ -75,57 +96,5 @@
 
 @push('scripts')
     {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
-    <script>
-        $(document).ready(function() {
-            $(document).on('submit', '.ajax-status-form', function(e) {
-                e.preventDefault();
-                var form = $(this);
-                var url = form.attr('action');
-                var formData = form.serialize();
-                var submitBtn = form.find('button[type="submit"]');
-                var originalText = submitBtn.html();
-                
-                submitBtn.html('<i class="fa-solid fa-spinner fa-spin"></i>').prop('disabled', true);
-
-                $.ajax({
-                    type: 'POST',
-                    url: url,
-                    data: formData,
-                    success: function(response) {
-                        if (response.success) {
-                            if (window.LaravelDataTables && window.LaravelDataTables["maintenancedetails-table"]) {
-                                window.LaravelDataTables["maintenancedetails-table"].ajax.reload(null, false);
-                            }
-                            
-                            // Update summary cards
-                            if (response.paidCount !== undefined && response.totalCount !== undefined) {
-                                $('#paid-count-display').text(response.paidCount + '/' + response.totalCount);
-                            }
-                            if (response.totalAmountExpected !== undefined) {
-                                $('#total-amount-display').text('$' + response.totalAmountExpected);
-                            }
-                            
-                            if (typeof toastr !== 'undefined') {
-                                toastr.success(response.message);
-                            }
-                        } else {
-                            if (typeof toastr !== 'undefined') {
-                                toastr.error(response.message || 'Error updating status');
-                            }
-                        }
-                    },
-                    error: function(xhr) {
-                        console.error('Error updating status', xhr);
-                        if (typeof toastr !== 'undefined') {
-                            toastr.error('Error updating status');
-                        }
-                    },
-                    complete: function() {
-                        submitBtn.html(originalText).prop('disabled', false);
-                    }
-                });
-            });
-        });
-    </script>
 @endpush
 </x-user-page>

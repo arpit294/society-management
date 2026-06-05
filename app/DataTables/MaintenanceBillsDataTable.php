@@ -3,12 +3,11 @@
 namespace App\DataTables;
 
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Yajra\DataTables\QueryDataTable;
-use Yajra\DataTables\Html\Builder as HtmlBuilder;
-use Yajra\DataTables\Html\Button;
-use Yajra\DataTables\Html\Column;
-use Yajra\DataTables\Services\DataTable;
 use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\Html\Builder as HtmlBuilder;
+use Yajra\DataTables\Html\Column;
+use Yajra\DataTables\QueryDataTable;
+use Yajra\DataTables\Services\DataTable;
 
 class MaintenanceBillsDataTable extends DataTable
 {
@@ -16,9 +15,10 @@ class MaintenanceBillsDataTable extends DataTable
     {
         return (new QueryDataTable($query))
             ->addColumn('action', function ($row) {
-                $viewBtn = '<a href="' . route('maintenance-bills.show', $row->id) . '" class="btn btn-sm btn-info me-1"><i class="fa-solid fa-eye"></i> View</a>';
-                $deleteBtn = '<button type="button" class="btn btn-sm btn-danger btn-delete-maintenance-bill" data-url="' . route('maintenance-bills.destroy', $row->id) . '"><i class="fa-solid fa-trash"></i> Delete</button>';
-                return $viewBtn . $deleteBtn;
+                $viewBtn = '<a href="'.route('maintenance-bills.show', $row->id).'" class="btn btn-sm btn-info me-1"><i class="fa-solid fa-eye"></i> View</a>';
+                $deleteBtn = '<button type="button" class="btn btn-sm btn-danger btn-delete-maintenance-bill" data-url="'.route('maintenance-bills.destroy', $row->id).'"><i class="fa-solid fa-trash"></i> Delete</button>';
+
+                return $viewBtn.$deleteBtn;
             })
             ->editColumn('month', function ($row) {
                 return $row->month;
@@ -30,6 +30,7 @@ class MaintenanceBillsDataTable extends DataTable
                 if ($row->status === 'published') {
                     return '<span class="badge bg-success">Published</span>';
                 }
+
                 return '<span class="badge bg-secondary">Draft</span>';
             })
             ->rawColumns(['action', 'status'])
@@ -76,6 +77,6 @@ class MaintenanceBillsDataTable extends DataTable
 
     protected function filename(): string
     {
-        return 'MaintenanceBills_' . date('YmdHis');
+        return 'MaintenanceBills_'.date('YmdHis');
     }
 }

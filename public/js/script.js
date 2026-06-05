@@ -54,7 +54,11 @@ $(document).ready(function () {
         }
     }
 
-    // Toggle User Reset Button Visibility
+    /**
+     * Toggles the visibility of the reset button for user filters.
+     * Checks if either the role or status filter has a selected value,
+     * and shows/hides the reset button column accordingly.
+     */
     function toggleUserResetBtn() {
         if ($("#users-filter-role").val() || $("#users-filter-status").val()) {
             $("#users-filter-reset-col").removeClass("d-none");
@@ -108,7 +112,11 @@ $(document).ready(function () {
             toggleUserResetBtn();
         });
 
-    // Toggle Flat Reset Button Visibility
+    /**
+     * Toggles the visibility of the reset button for flat filters.
+     * Checks if either the type or status filter has a selected value,
+     * and shows/hides the reset button column accordingly.
+     */
     function toggleFlatResetBtn() {
         if ($("#flats-filter-type").val() || $("#flats-filter-status").val()) {
             $("#flats-filter-reset-col").removeClass("d-none");
@@ -168,6 +176,10 @@ $(document).ready(function () {
             toggleFlatResetBtn();
         });
 
+    /**
+     * Toggles the visibility of the reset button for resident filters.
+     * Shows the reset button if a block filter is selected, otherwise hides it.
+     */
     function toggleResidentResetBtn() {
         if ($("#residents-filter-block").val()) {
             $("#residents-filter-reset-col").removeClass("d-none");
@@ -180,12 +192,11 @@ $(document).ready(function () {
     $(document)
         .off("change", "#residents-filter-block")
         .on("change", "#residents-filter-block", function () {
-            let blockValue = $(this).val();
-            $("#residents-table")
-                .DataTable()
-                .column("block.block_name:name")
-                .search(blockValue)
-                .draw();
+            if (window.LaravelDataTables && window.LaravelDataTables["residents-table"]) {
+                window.LaravelDataTables["residents-table"].ajax.reload();
+            } else {
+                $("#residents-table").DataTable().ajax.reload();
+            }
             toggleResidentResetBtn();
         });
 
@@ -195,12 +206,18 @@ $(document).ready(function () {
         .on("click", "#residents-filter-reset", function () {
             $("#residents-filter-block").val("");
 
-            let dt = $("#residents-table").DataTable();
-            dt.column("block.block_name:name").search("");
-            dt.draw();
+            if (window.LaravelDataTables && window.LaravelDataTables["residents-table"]) {
+                window.LaravelDataTables["residents-table"].ajax.reload();
+            } else {
+                $("#residents-table").DataTable().ajax.reload();
+            }
             toggleResidentResetBtn();
         });
 
+    /**
+     * Toggles the visibility of the reset button for maintenance bills filters.
+     * Shows the reset button if a status filter is selected, otherwise hides it.
+     */
     function toggleMaintenanceBillsResetBtn() {
         if ($("#maintenance-bills-filter-status").val()) {
             $("#maintenance-bills-filter-reset-col").removeClass("d-none");
@@ -232,6 +249,10 @@ $(document).ready(function () {
             toggleMaintenanceBillsResetBtn();
         });
 
+    /**
+     * Toggles the visibility of the reset button for expenses filters.
+     * Shows the reset button if a category filter is selected, otherwise hides it.
+     */
     function toggleExpensesResetBtn() {
         if ($("#expenses-filter-category").val()) {
             $("#expenses-filter-reset-col").removeClass("d-none");
@@ -837,8 +858,16 @@ $(document).ready(function () {
             : null;
 
     // Toggle Complain Reset Button Visibility
+    /**
+     * Toggles the visibility of the reset button for complain filters.
+     * Shows the reset button if either the category or status filter has a selected value,
+     * otherwise hides it.
+     */
     function toggleComplainResetBtn() {
-        if ($("#complains-filter-category").val()) {
+        if (
+            $("#complains-filter-category").val() ||
+            $("#complains-filter-status").val()
+        ) {
             $("#complains-filter-reset-col").removeClass("d-none");
         } else {
             $("#complains-filter-reset-col").addClass("d-none");
@@ -1968,7 +1997,7 @@ $(document).ready(function () {
         Chart.defaults.scale.grid.color = getComputedStyle(document.documentElement).getPropertyValue('--cui-border-color-translucent') || 'rgba(0,0,0,0.1)';
 
         const mainChartCtx = document.getElementById('mainChart').getContext('2d');
-        new Chart(mainChartCtx, {
+        let mainChart = new Chart(mainChartCtx, {
             type: 'bar',
             data: {
                 labels: months,
@@ -2013,10 +2042,11 @@ $(document).ready(function () {
             }
         });
 
+        let statusChart = null;
         if (document.getElementById('statusChart')) {
             const statusChartCtx = document.getElementById('statusChart').getContext('2d');
             const statusData = JSON.parse(chartDataEl.getAttribute('data-status'));
-            new Chart(statusChartCtx, {
+            statusChart = new Chart(statusChartCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Paid', 'Pending', 'Due'],
@@ -2040,6 +2070,18 @@ $(document).ready(function () {
                 }
             });
         }
+
+        document.documentElement.addEventListener('ColorSchemeChange', () => {
+            Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--cui-body-color') || '#8a93a2';
+            Chart.defaults.scale.grid.color = getComputedStyle(document.documentElement).getPropertyValue('--cui-border-color-translucent') || 'rgba(0,0,0,0.1)';
+            
+            if (mainChart) {
+                mainChart.update();
+            }
+            if (statusChart) {
+                statusChart.update();
+            }
+        });
     }
 
     // --- Resident Type Dropdown Filtering ---
@@ -2094,6 +2136,12 @@ $(document).ready(function () {
     });
 
     // --- Maintenance Bill Status Update Form ---
+    $(document).on('change', '#flat-type-filter, #status-filter', function() {
+        if (window.LaravelDataTables && window.LaravelDataTables["maintenancedetails-table"]) {
+            window.LaravelDataTables["maintenancedetails-table"].ajax.reload();
+        }
+    });
+
     $(document).on('submit', '.ajax-status-form', function(e) {
         e.preventDefault();
         var form = $(this);

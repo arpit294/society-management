@@ -3,12 +3,12 @@
 namespace App\DataTables;
 
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Yajra\DataTables\QueryDataTable;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
+use Yajra\DataTables\QueryDataTable;
 use Yajra\DataTables\Services\DataTable;
-use Illuminate\Support\Facades\DB;
 
 class FlatTypesDataTable extends DataTable
 {
@@ -20,15 +20,16 @@ class FlatTypesDataTable extends DataTable
                 return $row->created_at ? date('d-m-Y h:i A', strtotime($row->created_at)) : '-';
             })
             ->editColumn('maintenance_fee', function ($row) {
-                return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">$' . number_format($row->maintenance_fee, 2) . '</span>';
+                return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">$'.number_format($row->maintenance_fee, 2).'</span>';
             })
             ->editColumn('penalty_per_day', function ($row) {
-                return '<span class="badge bg-danger text-white fw-bold px-3 py-2 fs-6">$' . number_format($row->penalty_per_day, 2) . '</span>';
+                return '<span class="badge bg-danger text-white fw-bold px-3 py-2 fs-6">$'.number_format($row->penalty_per_day, 2).'</span>';
             })
             ->editColumn('status', function ($row) {
                 if ($row->status === 'active') {
                     return '<span class="badge bg-success">Active</span>';
                 }
+
                 return '<span class="badge bg-secondary">Inactive</span>';
             })
             ->rawColumns(['action', 'status', 'maintenance_fee', 'penalty_per_day'])
@@ -44,7 +45,7 @@ class FlatTypesDataTable extends DataTable
                 'maintenance_fee',
                 'penalty_per_day',
                 'status',
-                'created_at'
+                'created_at',
             ]);
 
         return $query;
@@ -64,7 +65,7 @@ class FlatTypesDataTable extends DataTable
                 Button::make('pdf'),
                 Button::make('print'),
                 Button::make('reset'),
-                Button::make('reload')
+                Button::make('reload'),
             ]);
     }
 
@@ -88,6 +89,6 @@ class FlatTypesDataTable extends DataTable
 
     protected function filename(): string
     {
-        return 'FlatTypes_' . date('YmdHis');
+        return 'FlatTypes_'.date('YmdHis');
     }
 }

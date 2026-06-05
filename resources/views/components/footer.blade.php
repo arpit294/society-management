@@ -1,11 +1,4 @@
 <footer class="footer px-4">
-    <div>
-        <a href="https://coreui.io">CoreUI</a>
-        <a href="https://coreui.io/product/free-bootstrap-admin-template/">Bootstrap Admin Template</a>
-        &copy; 2026 creativeLabs.
-    </div>
-    <div class="ms-auto">
-        Powered by&nbsp;
-        <a href="https://coreui.io/bootstrap/docs/">CoreUI UI Components</a>
-    </div>
+    <div><a href="#" class="text-decoration-none text-info fw-semibold">Society Management System</a> &copy; {{ date('Y') }}.</div>
+    <div class="ms-auto">Created by&nbsp;<a href="https://www.linkedin.com/in/arpit-vadhiyari-86a315293" target="_blank" class="text-decoration-none text-info fw-semibold">Arpit Vadhiyari</a></div>
 </footer>

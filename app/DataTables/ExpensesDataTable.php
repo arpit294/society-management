@@ -3,12 +3,12 @@
 namespace App\DataTables;
 
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Yajra\DataTables\QueryDataTable;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
+use Yajra\DataTables\QueryDataTable;
 use Yajra\DataTables\Services\DataTable;
-use Illuminate\Support\Facades\DB;
 
 class ExpensesDataTable extends DataTable
 {
@@ -20,20 +20,21 @@ class ExpensesDataTable extends DataTable
                 return $row->created_at ? date('d-m-Y h:i A', strtotime($row->created_at)) : '-';
             })
             ->editColumn('total_amount', function ($row) {
-                return '<span class="badge bg-success fw-bold px-3 py-2 fs-6">$' . number_format($row->total_amount, 2) . '</span>';
+                return '<span class="badge bg-success fw-bold px-3 py-2 fs-6">$'.number_format($row->total_amount, 2).'</span>';
             })
             ->editColumn('invoice', function ($row) {
                 if ($row->invoice) {
-                    $url = asset('uploads/invoices/' . $row->invoice);
+                    $url = asset('uploads/invoices/'.$row->invoice);
                     $ext = strtolower(pathinfo($row->invoice, PATHINFO_EXTENSION));
 
                     if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
-                        return '<a href="' . $url . '" target="_blank"><img src="' . $url . '" alt="Invoice" class="img-thumbnail" style="height: 50px; width: 50px; object-fit: cover;"></a>';
+                        return '<a href="'.$url.'" target="_blank"><img src="'.$url.'" alt="Invoice" class="img-thumbnail" style="height: 50px; width: 50px; object-fit: cover;"></a>';
                     } else {
                         // For PDF or others
-                        return '<a href="' . $url . '" target="_blank" class="btn btn-sm btn-outline-info"><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>';
+                        return '<a href="'.$url.'" target="_blank" class="btn btn-sm btn-outline-info"><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>';
                     }
                 }
+
                 return '<span class="text-muted"><i class="fa-solid fa-minus"></i></span>';
             })
 
@@ -57,7 +58,7 @@ class ExpensesDataTable extends DataTable
                 'users.name as user_name',
                 'expenses.total_amount',
                 'expenses.invoice',
-                'expenses.created_at'
+                'expenses.created_at',
             ]);
 
         return $query;
@@ -77,7 +78,7 @@ class ExpensesDataTable extends DataTable
                 Button::make('pdf'),
                 Button::make('print'),
                 Button::make('reset'),
-                Button::make('reload')
+                Button::make('reload'),
             ]);
     }
 
@@ -102,10 +103,6 @@ class ExpensesDataTable extends DataTable
 
     protected function filename(): string
     {
-        return 'Expenses_' . date('YmdHis');
+        return 'Expenses_'.date('YmdHis');
     }
 }
-
-
-
-

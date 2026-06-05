@@ -8,8 +8,6 @@ use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
 class UsersDataTable extends DataTable
@@ -17,7 +15,7 @@ class UsersDataTable extends DataTable
     /**
      * Build the DataTable class.
      *
-     * @param QueryBuilder<User> $query Results from query() method.
+     * @param  QueryBuilder<User>  $query  Results from query() method.
      */
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
@@ -31,7 +29,8 @@ class UsersDataTable extends DataTable
             ->addColumn('action', 'users.action')
             ->editColumn('status', function (User $user) {
                 $class = $user->status === 'active' ? 'bg-success' : 'bg-danger';
-                return '<span class="badge ' . $class . '">' . ucfirst($user->status) . '</span>';
+
+                return '<span class="badge '.$class.'">'.ucfirst($user->status).'</span>';
             })
             ->editColumn('created_at', function (User $user) {
                 return $user->created_at?->format('d-m-Y h:i A');
@@ -67,7 +66,7 @@ class UsersDataTable extends DataTable
                 Button::make('pdf'),
                 Button::make('print'),
                 Button::make('reset'),
-                Button::make('reload')
+                Button::make('reload'),
             ]);
     }
 
@@ -103,6 +102,6 @@ class UsersDataTable extends DataTable
      */
     protected function filename(): string
     {
-        return 'Users_' . date('YmdHis');
+        return 'Users_'.date('YmdHis');
     }
 }

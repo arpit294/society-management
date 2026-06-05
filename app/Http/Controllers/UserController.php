@@ -6,13 +6,18 @@ use App\DataTables\UsersDataTable;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class UserController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of users.
      * Uses Yajra DataTables to handle AJAX rendering automatically.
+     *
+     * @return mixed
      */
     public function index(UsersDataTable $dataTable)
     {
@@ -20,7 +25,9 @@ class UserController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new user.
+     *
+     * @return View|RedirectResponse
      */
     public function create()
     {
@@ -35,7 +42,9 @@ class UserController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created user in storage.
+     *
+     * @return JsonResponse|RedirectResponse
      */
     public function store(StoreUserRequest $request)
     {
@@ -54,7 +63,9 @@ class UserController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing the specified user.
+     *
+     * @return View|RedirectResponse
      */
     public function edit(User $user)
     {
@@ -69,14 +80,16 @@ class UserController extends Controller
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified user in storage.
+     *
+     * @return JsonResponse|RedirectResponse
      */
     public function update(UpdateUserRequest $request, User $user)
     {
         $validatedData = $request->validated();
 
-        // TRICKY: If the user didn't type a new password in the edit form, 
-        // we remove 'password' from the array so we don't accidentally overwrite 
+        // TRICKY: If the user didn't type a new password in the edit form,
+        // we remove 'password' from the array so we don't accidentally overwrite
         // their current password with an empty string!
         // (Note: Hashing is handled automatically by the 'hashed' cast in the User model)
         if (empty($validatedData['password'])) {
@@ -98,7 +111,9 @@ class UserController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified user from storage.
+     *
+     * @return JsonResponse|RedirectResponse
      */
     public function destroy(Request $request, User $user)
     {
@@ -109,6 +124,7 @@ class UserController extends Controller
                     'message' => 'You cannot delete your own account.',
                 ], 403);
             }
+
             return redirect()
                 ->route('users.index')
                 ->with('error', 'You cannot delete your own account.');
@@ -129,5 +145,4 @@ class UserController extends Controller
             ->route('users.index')
             ->with('success', 'User deleted successfully.');
     }
-
 }
