@@ -9,17 +9,11 @@ use Illuminate\View\View;
 
 class RegisterController extends Controller
 {
-    /**
-     * Show the registration form.
-     */
     public function create(): View
     {
         return view('authentication.register');
     }
 
-    /**
-     * Handle an incoming registration request.
-     */
     public function store(RegisterRequest $request): RedirectResponse
     {
         User::create($request->validated());

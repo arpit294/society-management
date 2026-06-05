@@ -54,11 +54,7 @@ $(document).ready(function () {
         }
     }
 
-    /**
-     * Toggles the visibility of the reset button for user filters.
-     * Checks if either the role or status filter has a selected value,
-     * and shows/hides the reset button column accordingly.
-     */
+    // Toggle User Reset Button Visibility
     function toggleUserResetBtn() {
         if ($("#users-filter-role").val() || $("#users-filter-status").val()) {
             $("#users-filter-reset-col").removeClass("d-none");
@@ -111,11 +107,7 @@ $(document).ready(function () {
             toggleUserResetBtn();
         });
 
-    /**
-     * Toggles the visibility of the reset button for flat filters.
-     * Checks if either the type or status filter has a selected value,
-     * and shows/hides the reset button column accordingly.
-     */
+    // Toggle Flat Reset Button Visibility
     function toggleFlatResetBtn() {
         if ($("#flats-filter-type").val() || $("#flats-filter-status").val()) {
             $("#flats-filter-reset-col").removeClass("d-none");
@@ -175,10 +167,6 @@ $(document).ready(function () {
             toggleFlatResetBtn();
         });
 
-    /**
-     * Toggles the visibility of the reset button for resident filters.
-     * Shows the reset button if a block filter is selected, otherwise hides it.
-     */
     function toggleResidentResetBtn() {
         if ($("#residents-filter-block").val()) {
             $("#residents-filter-reset-col").removeClass("d-none");
@@ -219,10 +207,6 @@ $(document).ready(function () {
             toggleResidentResetBtn();
         });
 
-    /**
-     * Toggles the visibility of the reset button for maintenance bills filters.
-     * Shows the reset button if a status filter is selected, otherwise hides it.
-     */
     function toggleMaintenanceBillsResetBtn() {
         if ($("#maintenance-bills-filter-status").val()) {
             $("#maintenance-bills-filter-reset-col").removeClass("d-none");
@@ -254,10 +238,6 @@ $(document).ready(function () {
             toggleMaintenanceBillsResetBtn();
         });
 
-    /**
-     * Toggles the visibility of the reset button for expenses filters.
-     * Shows the reset button if a category filter is selected, otherwise hides it.
-     */
     function toggleExpensesResetBtn() {
         if ($("#expenses-filter-category").val()) {
             $("#expenses-filter-reset-col").removeClass("d-none");
@@ -860,16 +840,8 @@ $(document).ready(function () {
             : null;
 
     // Toggle Complain Reset Button Visibility
-    /**
-     * Toggles the visibility of the reset button for complain filters.
-     * Shows the reset button if either the category or status filter has a selected value,
-     * otherwise hides it.
-     */
     function toggleComplainResetBtn() {
-        if (
-            $("#complains-filter-category").val() ||
-            $("#complains-filter-status").val()
-        ) {
+        if ($("#complains-filter-category").val()) {
             $("#complains-filter-reset-col").removeClass("d-none");
         } else {
             $("#complains-filter-reset-col").addClass("d-none");

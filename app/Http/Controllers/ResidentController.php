@@ -2,49 +2,25 @@
 
 namespace App\Http\Controllers;
 
-use App\DataTables\ResidentsDataTable;
-use App\Models\Block;
-use App\Models\Flat;
-use App\Models\Resident;
-use App\Models\User;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
 class ResidentController extends Controller
 {
-    /**
-     * Display a listing of residents.
-     *
-     * @return mixed
-     */
-    public function index(ResidentsDataTable $dataTable)
+    public function index(\App\DataTables\ResidentsDataTable $dataTable)
     {
-        $blocks = Block::all();
-
+        $blocks = \App\Models\Block::all();
         return $dataTable->render('residents.index', compact('blocks'));
     }
 
-    /**
-     * Show the form for creating a new resident.
-     *
-     * @return View
-     */
     public function create()
     {
-        $blocks = Block::all();
-        $flats = Flat::all();
-        $users = User::all();
-
+        $blocks = \App\Models\Block::all();
+        $flats = \App\Models\Flat::all();
+        $users = \App\Models\User::all();
         return view('residents.create', compact('blocks', 'flats', 'users'));
     }
 
-    /**
-     * Store a newly created resident in storage.
-     *
-     * @return JsonResponse
-     */
-    public function store(Request $request)
+    public function store(\Illuminate\Http\Request $request)
     {
         $validatedData = $request->validate([
             'block_id' => 'required|exists:blocks,id',
@@ -55,7 +31,7 @@ class ResidentController extends Controller
             'move_out_date' => 'nullable|date',
         ]);
 
-        Resident::create($validatedData);
+        \App\Models\Resident::create($validatedData);
 
         return response()->json([
             'success' => true,
@@ -63,26 +39,15 @@ class ResidentController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resident.
-     *
-     * @return View
-     */
-    public function edit(Resident $resident)
+    public function edit(\App\Models\Resident $resident)
     {
-        $blocks = Block::all();
-        $flats = Flat::where('block_id', $resident->block_id)->get();
-        $users = User::all();
-
+        $blocks = \App\Models\Block::all();
+        $flats = \App\Models\Flat::where('block_id', $resident->block_id)->get();
+        $users = \App\Models\User::all();
         return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
     }
 
-    /**
-     * Update the specified resident in storage.
-     *
-     * @return JsonResponse
-     */
-    public function update(Request $request, Resident $resident)
+    public function update(\Illuminate\Http\Request $request, \App\Models\Resident $resident)
     {
         $validatedData = $request->validate([
             'block_id' => 'required|exists:blocks,id',
@@ -101,12 +66,7 @@ class ResidentController extends Controller
         ]);
     }
 
-    /**
-     * Remove the specified resident from storage.
-     *
-     * @return JsonResponse
-     */
-    public function destroy(Resident $resident)
+    public function destroy(\App\Models\Resident $resident)
     {
         $resident->delete();
 
@@ -116,16 +76,10 @@ class ResidentController extends Controller
         ]);
     }
 
-    /**
-     * Get flats by block ID.
-     *
-     * @param  int  $block_id
-     * @return JsonResponse
-     */
     public function getFlatsByBlock($block_id)
     {
-        $flats = Flat::where('block_id', $block_id)->get();
-
+        $flats = \App\Models\Flat::where('block_id', $block_id)->get();
         return response()->json($flats);
     }
 }
+

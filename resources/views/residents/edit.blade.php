@@ -57,20 +57,12 @@
 
             <div class="col-md-6">
                 <label class="form-label">Move In Date</label>
-<<<<<<< HEAD
                 <input type="date" name="move_in_date" class="form-control" value="{{ $resident->move_in_date ? \Carbon\Carbon::parse($resident->move_in_date)->format('Y-m-d') : '' }}">
-=======
-                <input type="date" name="move_in_date" class="form-control" value="{{ $resident->move_in_date ? $resident->move_in_date->format('Y-m-d') : '' }}">
->>>>>>> 5b0068f1ee95b41d004294bc1026be3c22013584
             </div>
 
             <div class="col-md-6">
                 <label class="form-label">Move Out Date</label>
-<<<<<<< HEAD
                 <input type="date" name="move_out_date" class="form-control" value="{{ $resident->move_out_date ? \Carbon\Carbon::parse($resident->move_out_date)->format('Y-m-d') : '' }}">
-=======
-                <input type="date" name="move_out_date" class="form-control" value="{{ $resident->move_out_date ? $resident->move_out_date->format('Y-m-d') : '' }}">
->>>>>>> 5b0068f1ee95b41d004294bc1026be3c22013584
             </div>
         </div>
     </div>

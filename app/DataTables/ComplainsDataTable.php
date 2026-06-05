@@ -3,12 +3,12 @@
 namespace App\DataTables;
 
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\QueryDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use Yajra\DataTables\QueryDataTable;
 use Yajra\DataTables\Services\DataTable;
+use \Illuminate\Support\Facades\DB;
 
 class ComplainsDataTable extends DataTable
 {
@@ -30,8 +30,7 @@ class ComplainsDataTable extends DataTable
                 } else {
                     $class = 'bg-warning';
                 }
-
-                return '<span class="badge '.$class.'">'.ucfirst($row->status).'</span>';
+                return '<span class="badge ' . $class . '">' . ucfirst($row->status) . '</span>';
             })
             ->rawColumns(['status', 'action'])
             ->setRowId('id');
@@ -47,7 +46,7 @@ class ComplainsDataTable extends DataTable
                 'complains.category',
                 'users.name as user_name',
                 'complains.status',
-                'complains.created_at',
+                'complains.created_at'
             ]);
 
         return $query;
@@ -67,7 +66,7 @@ class ComplainsDataTable extends DataTable
                 Button::make('pdf'),
                 Button::make('print'),
                 Button::make('reset'),
-                Button::make('reload'),
+                Button::make('reload')
             ]);
     }
 
@@ -91,6 +90,6 @@ class ComplainsDataTable extends DataTable
 
     protected function filename(): string
     {
-        return 'Complains_'.date('YmdHis');
+        return 'Complains_' . date('YmdHis');
     }
 }

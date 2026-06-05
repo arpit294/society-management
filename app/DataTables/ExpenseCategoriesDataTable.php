@@ -3,12 +3,12 @@
 namespace App\DataTables;
 
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Support\Facades\DB;
+use Yajra\DataTables\QueryDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use Yajra\DataTables\QueryDataTable;
 use Yajra\DataTables\Services\DataTable;
+use Illuminate\Support\Facades\DB;
 
 class ExpenseCategoriesDataTable extends DataTable
 {
@@ -23,7 +23,6 @@ class ExpenseCategoriesDataTable extends DataTable
                 if ($row->status === 'active') {
                     return '<span class="badge bg-success">Active</span>';
                 }
-
                 return '<span class="badge bg-secondary">Inactive</span>';
             })
             ->rawColumns(['action', 'status'])
@@ -38,7 +37,7 @@ class ExpenseCategoriesDataTable extends DataTable
                 'title',
                 'slug',
                 'status',
-                'created_at',
+                'created_at'
             ]);
 
         return $query;
@@ -58,7 +57,7 @@ class ExpenseCategoriesDataTable extends DataTable
                 Button::make('pdf'),
                 Button::make('print'),
                 Button::make('reset'),
-                Button::make('reload'),
+                Button::make('reload')
             ]);
     }
 
@@ -81,6 +80,6 @@ class ExpenseCategoriesDataTable extends DataTable
 
     protected function filename(): string
     {
-        return 'ExpenseCategories_'.date('YmdHis');
+        return 'ExpenseCategories_' . date('YmdHis');
     }
 }
