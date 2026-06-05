@@ -6,10 +6,7 @@ use App\Models\Resident;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
-use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
 use Yajra\DataTables\Services\DataTable;
 
 class ResidentsDataTable extends DataTable
@@ -17,7 +14,7 @@ class ResidentsDataTable extends DataTable
     /**
      * Build the DataTable class.
      *
-     * @param QueryBuilder<Resident> $query Results from query() method.
+     * @param  QueryBuilder<Resident>  $query  Results from query() method.
      */
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
@@ -63,14 +60,14 @@ class ResidentsDataTable extends DataTable
     public function html(): HtmlBuilder
     {
         return $this->builder()
-                    ->setTableId('residents-table')
-                    ->columns($this->getColumns())
-                    ->minifiedAjax()
-                    ->orderBy(1)
-                    ->selectStyleSingle()
-                    ->parameters([
-                        'dom' => '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
-                    ]);
+            ->setTableId('residents-table')
+            ->columns($this->getColumns())
+            ->minifiedAjax()
+            ->orderBy(1)
+            ->selectStyleSingle()
+            ->parameters([
+                'dom' => '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-6"i><"col-sm-12 col-md-6"p>>',
+            ]);
     }
 
     /**
@@ -88,10 +85,10 @@ class ResidentsDataTable extends DataTable
             Column::make('move_out_date')->title('Move Out'),
             Column::make('created_at')->title('Created At'),
             Column::computed('action')
-                  ->exportable(false)
-                  ->printable(false)
-                  ->width(120)
-                  ->addClass('text-center'),
+                ->exportable(false)
+                ->printable(false)
+                ->width(120)
+                ->addClass('text-center'),
         ];
     }
 
@@ -100,6 +97,6 @@ class ResidentsDataTable extends DataTable
      */
     protected function filename(): string
     {
-        return 'Residents_' . date('YmdHis');
+        return 'Residents_'.date('YmdHis');
     }
 }

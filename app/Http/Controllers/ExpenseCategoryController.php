@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\ExpenseCategory;
 use App\DataTables\ExpenseCategoriesDataTable;
+use App\Models\ExpenseCategory;
+use Illuminate\Http\Request;
 
 class ExpenseCategoryController extends Controller
 {

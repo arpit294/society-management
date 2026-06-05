@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DataTables\BlocksDataTable;
 use App\Models\Block;
+use App\Models\Flat;
 use Illuminate\Http\Request;
 
 class BlockController extends Controller
@@ -15,7 +16,7 @@ class BlockController extends Controller
     {
         $blocks = Block::withCount('flats')->get();
         $totalFlats = Block::sum('total_flats');
-        $totalActualFlats = \App\Models\Flat::count();
+        $totalActualFlats = Flat::count();
 
         return $dataTable->render('blocks.index', compact('blocks', 'totalFlats', 'totalActualFlats'));
     }
@@ -87,6 +88,5 @@ class BlockController extends Controller
         ]);
     }
 }
-
 
 //

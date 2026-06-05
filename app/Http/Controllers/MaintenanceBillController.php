@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\MaintenanceBill;
-use App\Models\Maintenance;
-use App\Models\Resident;
 use App\DataTables\MaintenanceBillsDataTable;
+use App\DataTables\MaintenanceDetailsDataTable;
+use App\Models\Maintenance;
+use App\Models\MaintenanceBill;
+use App\Models\Resident;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class MaintenanceBillController extends Controller
@@ -38,13 +39,15 @@ class MaintenanceBillController extends Controller
 
             // Fetch all active residents
             $activeResidents = Resident::with('flat.flatType')
-                ->where(function($query) {
+                ->where(function ($query) {
                     $query->whereNull('move_out_date')
-                          ->orWhere('move_out_date', '>=', now()->startOfDay());
+                        ->orWhere('move_out_date', '>=', now()->startOfDay());
                 })->get();
 
             foreach ($activeResidents as $resident) {
-                if (!$resident->flat || !$resident->flat->flatType) continue;
+                if (! $resident->flat || ! $resident->flat->flatType) {
+                    continue;
+                }
 
                 $amount = $resident->flat->flatType->maintenance_fee;
 
@@ -70,16 +73,18 @@ class MaintenanceBillController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error generating maintenance: ' . $e->getMessage()
+                'message' => 'Error generating maintenance: '.$e->getMessage(),
             ], 500);
         }
     }
 
-    public function show(\App\DataTables\MaintenanceDetailsDataTable $dataTable, $id)
+    public function show(MaintenanceDetailsDataTable $dataTable, $id)
     {
         $maintenance = Maintenance::with(['maintenanceBills.user', 'maintenanceBills.flat'])->findOrFail($id);
+
         return $dataTable->with('id', $id)->render('maintenance_bills.show', compact('maintenance'));
     }
 
@@ -97,7 +102,7 @@ class MaintenanceBillController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:paid,due,pending'
+            'status' => 'required|in:paid,due,pending',
         ]);
 
         $maintenanceBill = MaintenanceBill::findOrFail($id);
@@ -131,7 +136,7 @@ class MaintenanceBillController extends Controller
                 'message' => 'Status updated successfully.',
                 'paidCount' => $paidCount,
                 'totalCount' => $totalCount,
-                'totalAmountExpected' => number_format($totalAmountExpected, 2)
+                'totalAmountExpected' => number_format($totalAmountExpected, 2),
             ]);
         }
 

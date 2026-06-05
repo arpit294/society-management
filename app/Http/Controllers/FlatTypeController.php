@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\FlatType;
 use App\DataTables\FlatTypesDataTable;
+use App\Models\FlatType;
+use Illuminate\Http\Request;
 
 class FlatTypeController extends Controller
 {
@@ -43,7 +43,7 @@ class FlatTypeController extends Controller
     public function update(Request $request, FlatType $flatType)
     {
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255|unique:flat_types,name,' . $flatType->id,
+            'name' => 'required|string|max:255|unique:flat_types,name,'.$flatType->id,
             'maintenance_fee' => 'required|numeric|min:0',
             'penalty_per_day' => 'required|numeric|min:0',
             'status' => 'required|in:active,inactive',

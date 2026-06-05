@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands;
 
+use App\Models\MaintenanceBill;
+use App\Models\Resident;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -22,7 +24,7 @@ class GenerateMonthlyBills extends Command
 
         $this->info("Starting generation of maintenance bills for {$currentMonthName} {$currentYear}...");
 
-        $activeResidents = \App\Models\Resident::with(['flat.flatType'])
+        $activeResidents = Resident::with(['flat.flatType'])
             ->whereNull('move_out_date')
             ->orWhere('move_out_date', '>=', now()->startOfMonth())
             ->get();
@@ -31,18 +33,18 @@ class GenerateMonthlyBills extends Command
 
         foreach ($activeResidents as $resident) {
             // Check if bill already exists for this flat for the current month and year
-            $billExists = \App\Models\MaintenanceBill::where('flat_id', $resident->flat_id)
+            $billExists = MaintenanceBill::where('flat_id', $resident->flat_id)
                 ->where('month', $currentMonthName)
                 ->where('year', $currentYear)
                 ->exists();
 
-            if (!$billExists) {
-                $maintenanceFee = $resident->flat && $resident->flat->flatType 
-                    ? $resident->flat->flatType->maintenance_fee 
+            if (! $billExists) {
+                $maintenanceFee = $resident->flat && $resident->flat->flatType
+                    ? $resident->flat->flatType->maintenance_fee
                     : 0;
 
                 if ($maintenanceFee > 0) {
-                    \App\Models\MaintenanceBill::create([
+                    MaintenanceBill::create([
                         'block_id' => $resident->block_id,
                         'user_id' => $resident->user_id,
                         'flat_id' => $resident->flat_id,

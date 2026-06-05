@@ -1859,7 +1859,7 @@ $(document).ready(function () {
 
             $.ajax({
                 url: formAction,
-                method: "POST", // Handle via spoofing
+                method: "POST", 
                 data: formData,
                 processData: false,
                 contentType: false,
@@ -2047,7 +2047,7 @@ $(document).ready(function () {
         const type = $(this).val();
         const userSelect = $('#resident-user-select');
         if (userSelect.length === 0) return;
-        
+
         userSelect.val('');
 
         userSelect.find('option').each(function() {
@@ -2101,7 +2101,7 @@ $(document).ready(function () {
         var formData = form.serialize();
         var submitBtn = form.find('button[type="submit"]');
         var originalText = submitBtn.html();
-        
+
         submitBtn.html('<i class="fa-solid fa-spinner fa-spin"></i>').prop('disabled', true);
 
         $.ajax({
@@ -2113,14 +2113,14 @@ $(document).ready(function () {
                     if (window.LaravelDataTables && window.LaravelDataTables["maintenancedetails-table"]) {
                         window.LaravelDataTables["maintenancedetails-table"].ajax.reload(null, false);
                     }
-                    
+
                     if (response.paidCount !== undefined && response.totalCount !== undefined) {
                         $('#paid-count-display').text(response.paidCount + '/' + response.totalCount);
                     }
                     if (response.totalAmountExpected !== undefined) {
                         $('#total-amount-display').text('$' + response.totalAmountExpected);
                     }
-                    
+
                     if (typeof toastr !== 'undefined') {
                         toastr.success(response.message);
                     }
@@ -2180,7 +2180,7 @@ $(document).ready(function () {
             const bladeError = input.parentElement.querySelector('.invalid-feedback:not([id^="js-"])');
             if (bladeError) bladeError.style.display = 'none';
         });
-        
+
         [emailError, passwordError, confirmPasswordError].forEach(err => {
             if (err) {
                 err.style.display = 'none';

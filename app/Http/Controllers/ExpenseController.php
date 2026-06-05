@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\Expense;
-use App\Models\User;
-use App\Models\ExpenseCategory;
 use App\DataTables\ExpensesDataTable;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
+use App\Models\MaintenanceBill;
+use App\Models\User;
+use Illuminate\Http\Request;
 
 class ExpenseController extends Controller
 {
@@ -14,10 +15,10 @@ class ExpenseController extends Controller
     {
         $totalExpenses = Expense::sum('total_amount');
         $thisMonthExpenses = Expense::whereMonth('created_at', date('m'))
-                                    ->whereYear('created_at', date('Y'))
-                                    ->sum('total_amount');
+            ->whereYear('created_at', date('Y'))
+            ->sum('total_amount');
         $totalInvoices = Expense::whereNotNull('invoice')->count();
-        $totalMaintenanceIncome = \App\Models\MaintenanceBill::where('status', 'paid')->sum('total_amount');
+        $totalMaintenanceIncome = MaintenanceBill::where('status', 'paid')->sum('total_amount');
         $categories = ExpenseCategory::all();
 
         return $dataTable->render('expenses.index', compact('totalExpenses', 'thisMonthExpenses', 'totalInvoices', 'totalMaintenanceIncome', 'categories'));
@@ -27,6 +28,7 @@ class ExpenseController extends Controller
     {
         $users = User::all();
         $categories = ExpenseCategory::where('status', 'active')->get();
+
         return view('expenses.create', compact('users', 'categories'));
     }
 
@@ -42,7 +44,7 @@ class ExpenseController extends Controller
 
         if ($request->hasFile('invoice')) {
             $file = $request->file('invoice');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = time().'_'.$file->getClientOriginalName();
             $file->move(public_path('uploads/invoices'), $filename);
             $validatedData['invoice'] = $filename;
         }
@@ -59,6 +61,7 @@ class ExpenseController extends Controller
     {
         $users = User::all();
         $categories = ExpenseCategory::where('status', 'active')->get();
+
         return view('expenses.edit', compact('expense', 'users', 'categories'));
     }
 
@@ -74,11 +77,11 @@ class ExpenseController extends Controller
 
         if ($request->hasFile('invoice')) {
             // Delete old file if exists
-            if ($expense->invoice && file_exists(public_path('uploads/invoices/' . $expense->invoice))) {
-                unlink(public_path('uploads/invoices/' . $expense->invoice));
+            if ($expense->invoice && file_exists(public_path('uploads/invoices/'.$expense->invoice))) {
+                unlink(public_path('uploads/invoices/'.$expense->invoice));
             }
             $file = $request->file('invoice');
-            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = time().'_'.$file->getClientOriginalName();
             $file->move(public_path('uploads/invoices'), $filename);
             $validatedData['invoice'] = $filename;
         }
@@ -93,8 +96,8 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense)
     {
-        if ($expense->invoice && file_exists(public_path('uploads/invoices/' . $expense->invoice))) {
-            unlink(public_path('uploads/invoices/' . $expense->invoice));
+        if ($expense->invoice && file_exists(public_path('uploads/invoices/'.$expense->invoice))) {
+            unlink(public_path('uploads/invoices/'.$expense->invoice));
         }
         $expense->delete();
 
@@ -104,6 +107,3 @@ class ExpenseController extends Controller
         ]);
     }
 }
-
-
-

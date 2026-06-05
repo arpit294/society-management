@@ -1,11 +1,18 @@
 <?php
 
 use App\Http\Controllers\BlockController;
-use App\Http\Controllers\ForgotPasswordController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\RegisterController;
-use App\Http\Controllers\LoginController;
+use App\Http\Controllers\ComplainController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ExpenseCategoryController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\FlatController;
+use App\Http\Controllers\FlatTypeController;
+use App\Http\Controllers\ForgotPasswordController;
+use App\Http\Controllers\LoginController;
+use App\Http\Controllers\MaintenanceBillController;
+use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\ResidentController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -30,8 +37,8 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard', [\App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard.alias');
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard.alias');
 
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
 
@@ -40,30 +47,30 @@ Route::middleware('auth')->group(function () {
 
     // Flats
     Route::resource('flats', FlatController::class)->except(['show']);
-    Route::get('api/flats-by-block/{block_id}', [\App\Http\Controllers\ResidentController::class, 'getFlatsByBlock'])->name('api.flats-by-block');
+    Route::get('api/flats-by-block/{block_id}', [ResidentController::class, 'getFlatsByBlock'])->name('api.flats-by-block');
 
     // Blocks
     Route::resource('blocks', BlockController::class)->except(['show']);
 
     // Complains
-    Route::resource('complains', \App\Http\Controllers\ComplainController::class)->except(['show']);
+    Route::resource('complains', ComplainController::class)->except(['show']);
 
     // Residents
 
-    Route::resource('residents', \App\Http\Controllers\ResidentController::class)->except(['show']);
+    Route::resource('residents', ResidentController::class)->except(['show']);
     // Expenses
-    Route::resource('expenses', \App\Http\Controllers\ExpenseController::class)->except(['show']);
+    Route::resource('expenses', ExpenseController::class)->except(['show']);
 
     // Expense Categories
-    Route::resource('expense-categories', \App\Http\Controllers\ExpenseCategoryController::class)->except(['show']);
+    Route::resource('expense-categories', ExpenseCategoryController::class)->except(['show']);
 
     // Flat Types
-    Route::resource('flat-types', \App\Http\Controllers\FlatTypeController::class)->except(['show']);
+    Route::resource('flat-types', FlatTypeController::class)->except(['show']);
 
     // Maintenance Bills
-    Route::get('maintenance-bills/resident-info/{user_id}', [\App\Http\Controllers\MaintenanceBillController::class, 'getResidentInfo'])->name('maintenance-bills.resident-info');
-    Route::resource('maintenance-bills', \App\Http\Controllers\MaintenanceBillController::class);
-    Route::post('maintenance-bills/{maintenanceBill}/update-status', [\App\Http\Controllers\MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
+    Route::get('maintenance-bills/resident-info/{user_id}', [MaintenanceBillController::class, 'getResidentInfo'])->name('maintenance-bills.resident-info');
+    Route::resource('maintenance-bills', MaintenanceBillController::class);
+    Route::post('maintenance-bills/{maintenanceBill}/update-status', [MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
 });
 
 //
