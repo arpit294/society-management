@@ -8,6 +8,7 @@ use App\Models\Maintenance;
 use App\Models\Resident;
 use App\DataTables\MaintenanceBillsDataTable;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class MaintenanceBillController extends Controller
 {
@@ -195,5 +196,22 @@ class MaintenanceBillController extends Controller
         }
 
         return redirect()->back()->with('success', 'Status updated successfully.');
+    }
+
+    public function details($id)
+    {
+        $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
+
+        return view('maintenance_bills.details', compact('bill'));
+    }
+
+    public function downloadInvoice($id)
+    {
+        $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
+        $pdf = Pdf::loadView('maintenance_bills.invoice_pdf', compact('bill'));
+
+        $fileName = 'invoice_'.($bill->flat->block->block_name ?? '').'-'.($bill->flat->flat_no ?? '').'_'.$bill->maintenance->month.'_'.$bill->maintenance->year.'.pdf';
+
+        return $pdf->download($fileName);
     }
 }
