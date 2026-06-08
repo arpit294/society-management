@@ -94,6 +94,65 @@ class MaintenanceBillController extends Controller
         ]);
     }
 
+    public function edit($id)
+    {
+        $maintenanceBill = MaintenanceBill::findOrFail($id);
+        $blocks = \App\Models\Block::all();
+        $flats = \App\Models\Flat::with('flatType')->where('block_id', $maintenanceBill->block_id)->get();
+        $users = \App\Models\User::all();
+        return view('maintenance_bills.edit', compact('maintenanceBill', 'blocks', 'flats', 'users'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $maintenanceBill = MaintenanceBill::findOrFail($id);
+
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'block_id' => 'required|exists:blocks,id',
+            'flat_id' => 'required|exists:flats,id',
+            'amount' => 'required|numeric|min:0',
+            'status' => 'required|in:paid,due,pending',
+        ]);
+
+        $data = $request->only([
+            'user_id',
+            'block_id',
+            'flat_id',
+            'amount',
+            'status',
+        ]);
+
+        if ($request->status === 'paid' && $maintenanceBill->getRawOriginal('status') !== 'paid') {
+            $data['paid_at'] = now();
+            // Lock in the penalty and total amount
+            $data['penalty_amount'] = $maintenanceBill->penalty_amount;
+            $data['total_amount'] = $request->amount + $maintenanceBill->penalty_amount;
+        } elseif ($request->status !== 'paid') {
+            $data['paid_at'] = null;
+            $data['penalty_amount'] = 0;
+            $data['total_amount'] = $request->amount;
+        }
+
+        $maintenanceBill->update($data);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Maintenance bill updated successfully.',
+        ]);
+    }
+
+    public function destroyIndividual($id)
+    {
+        $bill = MaintenanceBill::findOrFail($id);
+        $bill->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Maintenance bill deleted successfully.',
+        ]);
+    }
+
     public function updateStatus(Request $request, $id)
     {
         $request->validate([

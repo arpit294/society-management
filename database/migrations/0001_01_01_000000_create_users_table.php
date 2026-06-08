@@ -18,14 +18,13 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->enum('role', ['owner', 'rental', 'security', 'committee_member'])->nullable();
             $table->string('password')->nullable();
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('aadhar_id')->nullable();
             $table->enum('status', ['active', 'inactive'])->nullable();
             $table->rememberToken();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();
         });
-
-
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();

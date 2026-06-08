@@ -1092,6 +1092,34 @@ $(document).ready(function () {
             });
         });
 
+    // Filter flats based on selected block in Resident form
+    $(document).on("change", "#resident-ajax-form select[name='block_id']", function () {
+        let blockId = $(this).val();
+        let flatSelect = $("#resident-ajax-form select[name='flat_id']");
+
+        if (!blockId) {
+            flatSelect.html('<option value="">Select Flat</option>');
+            return;
+        }
+
+        flatSelect.html('<option value="">Loading...</option>');
+
+        $.ajax({
+            url: `/api/flats-by-block/${blockId}`,
+            type: "GET",
+            success: function (data) {
+                let html = '<option value="">Select Flat</option>';
+                data.forEach(function (flat) {
+                    html += `<option value="${flat.id}">${flat.flat_no}</option>`;
+                });
+                flatSelect.html(html);
+            },
+            error: function () {
+                flatSelect.html('<option value="">Error loading flats</option>');
+            }
+        });
+    });
+
     // Add/Edit Resident Form Submit
     $(document)
         .off("submit", "#resident-ajax-form")
@@ -1876,10 +1904,10 @@ $(document).ready(function () {
 
     // Edit Maintenance Bill Form Open
     $(document)
-        .off("click", "#maintenance-bills-table .btn-edit-maintenance-bill")
+        .off("click", ".btn-edit-maintenance-bill")
         .on(
             "click",
-            "#maintenance-bills-table .btn-edit-maintenance-bill",
+            ".btn-edit-maintenance-bill",
             function () {
                 let url = $(this).data("url");
                 let title = $(this).data("title");
@@ -2095,6 +2123,44 @@ $(document).ready(function () {
                     });
             },
         );
+
+    // Delete Individual Maintenance Bill
+    $(document)
+        .off("click", ".btn-delete-individual-bill")
+        .on("click", ".btn-delete-individual-bill", function () {
+            let url = $(this).data("url");
+
+            swalWithBootstrapButtons
+                .fire({
+                    title: "Are you sure?",
+                    text: "This resident's bill will be deleted permanently!",
+                    icon: "warning",
+                    showCancelButton: true,
+                    confirmButtonText: "Yes, delete!",
+                    cancelButtonText: "Cancel",
+                    reverseButtons: true,
+                })
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        $.ajax({
+                            url: url,
+                            type: "DELETE",
+                            data: {
+                                _token: $('meta[name="csrf-token"]').attr('content')
+                            },
+                            success: function (response) {
+                                toastr.success(response.message || "Deleted successfully.");
+                                if (window.LaravelDataTables && window.LaravelDataTables["maintenancedetails-table"]) {
+                                    window.LaravelDataTables["maintenancedetails-table"].ajax.reload(null, false);
+                                }
+                            },
+                            error: function (xhr) {
+                                toastr.error(xhr.responseJSON?.message || "Could not delete bill.");
+                            },
+                        });
+                    }
+                });
+        });
 
     // ==========================================
     // EXTRACTED FROM BLADE TEMPLATES

@@ -46,27 +46,22 @@
             </div>
 
             <div class="col-md-6 mb-3">
-                <label for="month" class="form-label">Month <span class="text-danger">*</span></label>
-                <select class="form-select" id="month" name="month" required>
-                    <option value="">Select Month</option>
-                    @foreach(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as $m)
-                        <option value="{{ $m }}" {{ $maintenanceBill->month == $m ? 'selected' : '' }}>{{ $m }}</option>
-                    @endforeach
-                </select>
+                <label for="month" class="form-label">Month</label>
+                <input type="text" class="form-control" id="month" name="month" readonly disabled value="{{ $maintenanceBill->maintenance->month }}">
             </div>
             <div class="col-md-6 mb-3">
-                <label for="year" class="form-label">Year <span class="text-danger">*</span></label>
-                <input type="number" class="form-control" id="year" name="year" required value="{{ $maintenanceBill->year }}" min="2000">
+                <label for="year" class="form-label">Year</label>
+                <input type="number" class="form-control" id="year" name="year" readonly disabled value="{{ $maintenanceBill->maintenance->year }}">
             </div>
 
             <div class="col-md-6 mb-3">
-                <label for="generated_date" class="form-label">Generated Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" id="generated_date" name="generated_date" required value="{{ $maintenanceBill->generated_date ? $maintenanceBill->generated_date->format('Y-m-d') : '' }}">
+                <label for="generated_date" class="form-label">Generated Date</label>
+                <input type="date" class="form-control" id="generated_date" name="generated_date" readonly disabled value="{{ $maintenanceBill->generated_date ? $maintenanceBill->generated_date->format('Y-m-d') : '' }}">
             </div>
 
             <div class="col-md-6 mb-3">
-                <label for="due_date" class="form-label">Due Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" id="due_date" name="due_date" required value="{{ $maintenanceBill->due_date ? $maintenanceBill->due_date->format('Y-m-d') : '' }}">
+                <label for="due_date" class="form-label">Due Date</label>
+                <input type="date" class="form-control" id="due_date" name="due_date" readonly disabled value="{{ $maintenanceBill->maintenance->due_date ? \Carbon\Carbon::parse($maintenanceBill->maintenance->due_date)->format('Y-m-d') : '' }}">
             </div>
 
             <div class="col-md-12 mb-3">
@@ -82,7 +77,7 @@
                                 <td>Late Days (Calculated):</td>
                                 <td class="text-end fw-bold">
                                     @php
-                                        $dueDate = $maintenanceBill->due_date ? $maintenanceBill->due_date->startOfDay() : null;
+                                        $dueDate = $maintenanceBill->maintenance->due_date ? \Carbon\Carbon::parse($maintenanceBill->maintenance->due_date)->startOfDay() : null;
                                         $endDate = $maintenanceBill->status === 'paid' && $maintenanceBill->paid_at ? $maintenanceBill->paid_at->startOfDay() : now()->startOfDay();
                                         $lateDays = ($dueDate && $endDate->gt($dueDate)) ? $dueDate->diffInDays($endDate) : 0;
                                     @endphp
