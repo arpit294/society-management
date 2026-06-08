@@ -117,8 +117,8 @@
             <div class="card text-white bg-info h-100">
                 <div class="card-body pb-3 d-flex justify-content-between align-items-start">
                     <div>
-                        <div class="fs-4 fw-semibold">{{ $totalActualFlats }} Flats</div>
-                        <div>Total Created</div>
+                        <div class="fs-4 fw-semibold">{{ $totalOccupiedFlats }} Flats</div>
+                        <div>Total Occupied</div>
                     </div>
                 </div>
             </div>
@@ -134,7 +134,7 @@
                 <div class="card text-white {{ $bgColors[$loop->index % count($bgColors)] }} h-100">
                     <div class="card-body pb-3 d-flex justify-content-between align-items-start">
                         <div>
-                            <div class="fs-4 fw-semibold">{{ $block->flats_count }}/{{ $block->total_flats }} Flats</div>
+                            <div class="fs-4 fw-semibold">{{ $block->occupied_flats_count }}/{{ $block->total_flats }} Flats</div>
                             <div>Block {{ $block->block_name }}</div>
                         </div>
                     </div>

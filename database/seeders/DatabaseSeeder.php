@@ -3,23 +3,35 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Flat;
+use App\Models\Resident;
+use App\Models\MaintenanceBill;
+use App\Models\Maintenance;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
      * Seed the application's database.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Truncate tables to ensure a clean slate
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        MaintenanceBill::truncate();
+        Maintenance::truncate();
+        Resident::truncate();
+        Flat::truncate();
+        
+        // Delete dummy resident users but preserve the primary admin/test accounts
+        User::where('id', '>', 1)->delete();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // Run seeders
+        $this->call([
+            FlatSeeder::class,
+            UserResidentSeeder::class,
         ]);
     }
 }

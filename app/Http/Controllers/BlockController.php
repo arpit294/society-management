@@ -13,11 +13,17 @@ class BlockController extends Controller
      */
     public function index(BlocksDataTable $dataTable)
     {
-        $blocks = Block::withCount('flats')->get();
+        $blocks = Block::withCount([
+            'flats',
+            'flats as occupied_flats_count' => function ($query) {
+                $query->where('status', 'occupied');
+            }
+        ])->get();
         $totalFlats = Block::sum('total_flats');
         $totalActualFlats = \App\Models\Flat::count();
+        $totalOccupiedFlats = \App\Models\Flat::where('status', 'occupied')->count();
 
-        return $dataTable->render('blocks.index', compact('blocks', 'totalFlats', 'totalActualFlats'));
+        return $dataTable->render('blocks.index', compact('blocks', 'totalFlats', 'totalActualFlats', 'totalOccupiedFlats'));
     }
 
     /**
@@ -79,7 +85,16 @@ class BlockController extends Controller
      */
     public function destroy(Block $block)
     {
-        $block->delete();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($block) {
+            // Delete related maintenance bills
+            \App\Models\MaintenanceBill::where('block_id', $block->id)->delete();
+            
+            // Delete related flats (this will cascade delete residents in DB via foreign key constraints)
+            \App\Models\Flat::where('block_id', $block->id)->delete();
+            
+            // Delete the block itself
+            $block->delete();
+        });
 
         return response()->json([
             'success' => true,

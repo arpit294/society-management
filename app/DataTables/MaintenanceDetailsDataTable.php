@@ -60,9 +60,8 @@ class MaintenanceDetailsDataTable extends DataTable
                     $html .= '</form>';
                 }
                 if ($bill->status === 'paid') {
-                    $html .= '<a href="'.route('maintenance-bills.details', $bill->id).'" class="btn btn-sm btn-outline-info text-nowrap">View</a>';
+                    $html .= '<a href="'.route('maintenance-bills.details', $bill->id).'" class="btn btn-sm btn-outline-primary text-nowrap"><i class="fa-solid fa-eye me-1"></i> View</a>';
                 }
-                $html .= '<button type="button" class="btn btn-sm btn-outline-danger btn-delete-individual-bill" data-url="'.route('maintenance-bills.destroy-individual', $bill->id).'">Delete</button>';
                 $html .= '</div>';
 
                 return $html;

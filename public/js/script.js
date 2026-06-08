@@ -532,6 +532,10 @@ $(document).ready(function () {
                     if ($.fn.DataTable.isDataTable("#blocks-table")) {
                         $("#blocks-table").DataTable().ajax.reload();
                     }
+
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 800);
                 },
 
                 error: function (xhr) {
@@ -601,6 +605,10 @@ $(document).ready(function () {
                                         .DataTable()
                                         .ajax.reload();
                                 }
+
+                                setTimeout(function () {
+                                    window.location.reload();
+                                }, 800);
                             },
 
                             error: function (xhr) {
