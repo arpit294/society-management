@@ -11,8 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('flat_types', function (Blueprint $table) {
-            $table->decimal('penalty_amount', 10, 2)->default(0)->after('maintenance_fee');
+        Schema::create('settings', function (Blueprint $table) {
+            $table->id();
+            $table->string('key')->unique();
+            $table->text('value')->nullable();
+            $table->timestamps();
         });
     }
 
@@ -21,8 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('flat_types', function (Blueprint $table) {
-            $table->dropColumn('penalty_amount');
-        });
+        Schema::dropIfExists('settings');
     }
 };

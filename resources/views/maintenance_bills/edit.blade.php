@@ -40,7 +40,7 @@
             <div class="col-md-6 mb-3">
                 <label for="amount" class="form-label">Amount <span class="text-danger">*</span></label>
                 <div class="input-group">
-                    <span class="input-group-text">$</span>
+                    <span class="input-group-text">₹</span>
                     <input type="number" step="0.01" class="form-control" id="amount" name="amount" required value="{{ $maintenanceBill->amount }}">
                 </div>
             </div>
@@ -71,7 +71,7 @@
                         <table class="table table-sm table-borderless mb-0">
                             <tr>
                                 <td>Maintenance:</td>
-                                <td class="text-end fw-bold">${{ number_format($maintenanceBill->amount, 2) }}</td>
+                                <td class="text-end fw-bold">₹{{ number_format($maintenanceBill->amount, 2) }}</td>
                             </tr>
                             <tr>
                                 <td>Late Days (Calculated):</td>
@@ -86,11 +86,11 @@
                             </tr>
                             <tr>
                                 <td>Penalty Applied:</td>
-                                <td class="text-end fw-bold text-danger">${{ number_format($maintenanceBill->penalty_amount, 2) }}</td>
+                                <td class="text-end fw-bold text-danger">₹{{ number_format($maintenanceBill->penalty_amount, 2) }}</td>
                             </tr>
                             <tr class="border-top border-dark">
                                 <td class="fw-bold">Total Amount:</td>
-                                <td class="text-end fw-bold text-success fs-5">${{ number_format($maintenanceBill->total_amount, 2) }}</td>
+                                <td class="text-end fw-bold text-success fs-5">₹{{ number_format($maintenanceBill->total_amount, 2) }}</td>
                             </tr>
                         </table>
                     </div>

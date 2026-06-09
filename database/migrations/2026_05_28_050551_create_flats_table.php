@@ -16,8 +16,7 @@ return new class extends Migration
     $table->unsignedBigInteger('block_id')->nullable();
     $table->string('flat_no');
     $table->string('floor_no');
-    $table->string('flat_type');
-    $table->decimal('maintenance_amount', 10, 2);
+    $table->unsignedBigInteger('flat_type_id')->nullable();
     $table->string('status');
     $table->timestamps();
 });

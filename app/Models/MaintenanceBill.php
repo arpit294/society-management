@@ -52,9 +52,19 @@ class MaintenanceBill extends Model
         }
 
         if ($this->maintenance && $this->maintenance->due_date && \Carbon\Carbon::parse($this->maintenance->due_date)->endOfDay()->isPast()) {
-            if ($this->flat && $this->flat->flatType) {
-                return (float)$this->flat->flatType->penalty_per_day; 
+            $baseAmount = (float)$this->amount;
+            $billingCycle = $this->maintenance->billing_cycle ?? 'monthly';
+            $percentage = 0;
+            
+            if ($billingCycle === 'monthly') {
+                $percentage = (float)setting('penalty_monthly_percent', 5);
+            } elseif ($billingCycle === 'quarterly') {
+                $percentage = (float)setting('penalty_quarterly_percent', 10);
+            } elseif ($billingCycle === 'yearly') {
+                $percentage = (float)setting('penalty_yearly_percent', 15);
             }
+            
+            return $baseAmount * ($percentage / 100);
         }
 
         return 0.00;

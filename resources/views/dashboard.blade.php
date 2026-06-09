@@ -63,7 +63,7 @@
                         <div class="card text-white bg-success h-100">
                             <div class="card-body pb-3 d-flex justify-content-between align-items-start">
                                 <div>
-                                    <div class="fs-4 fw-semibold">${{ number_format($totalRevenue, 2) }}</div>
+                                    <div class="fs-4 fw-semibold">₹{{ number_format($totalRevenue, 2) }}</div>
                                     <div class="text-uppercase fw-bold small">Total Revenue</div>
                                 </div>
                                 <div class="fs-1 opacity-50">

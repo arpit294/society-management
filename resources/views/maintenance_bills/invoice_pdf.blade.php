@@ -8,6 +8,7 @@
 <body>
     <div class="invoice-pdf">
         <div class="header">
+            <h2>{{ setting('society_name', 'Society Name') }}</h2>
             <h1>Maintenance Invoice</h1>
             <p>Billing Period: {{ $bill->maintenance->month }} {{ $bill->maintenance->year }}</p>
         </div>
@@ -65,23 +66,23 @@
             <tbody>
                 <tr>
                     <td>Base Maintenance Fee</td>
-                    <td class="text-right">${{ number_format($bill->amount, 2) }}</td>
+                    <td class="text-right">{{ setting('currency_symbol', '$') }}{{ number_format($bill->amount, 2) }}</td>
                 </tr>
                 @if($bill->penalty_amount > 0)
                 <tr>
                     <td>Penalty Amount (Late Fee)</td>
-                    <td class="text-right">${{ number_format($bill->penalty_amount, 2) }}</td>
+                    <td class="text-right">{{ setting('currency_symbol', '$') }}{{ number_format($bill->penalty_amount, 2) }}</td>
                 </tr>
                 @endif
                 <tr class="total-row">
                     <td>Total Amount</td>
-                    <td class="text-right">${{ number_format($bill->total_amount, 2) }}</td>
+                    <td class="text-right">{{ setting('currency_symbol', '$') }}{{ number_format($bill->total_amount, 2) }}</td>
                 </tr>
             </tbody>
         </table>
 
         <div class="footer">
-            <p>Thank you for your payment.<br>If you have any questions concerning this invoice, please contact the society management.</p>
+            <p>{{ setting('invoice_notes', 'Thank you for your payment. If you have any questions concerning this invoice, please contact the society management.') }}</p>
         </div>
     </div>
 </body>

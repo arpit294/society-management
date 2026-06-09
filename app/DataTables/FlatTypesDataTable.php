@@ -22,16 +22,13 @@ class FlatTypesDataTable extends DataTable
             ->editColumn('maintenance_fee', function ($row) {
                 return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">$' . number_format($row->maintenance_fee, 2) . '</span>';
             })
-            ->editColumn('penalty_per_day', function ($row) {
-                return '<span class="badge bg-danger text-white fw-bold px-3 py-2 fs-6">$' . number_format($row->penalty_per_day, 2) . '</span>';
-            })
             ->editColumn('status', function ($row) {
                 if ($row->status === 'active') {
                     return '<span class="badge bg-success">Active</span>';
                 }
                 return '<span class="badge bg-secondary">Inactive</span>';
             })
-            ->rawColumns(['action', 'status', 'maintenance_fee', 'penalty_per_day'])
+            ->rawColumns(['action', 'status', 'maintenance_fee'])
             ->setRowId('id');
     }
 
@@ -42,7 +39,6 @@ class FlatTypesDataTable extends DataTable
                 'id',
                 'name',
                 'maintenance_fee',
-                'penalty_per_day',
                 'status',
                 'created_at'
             ]);
@@ -79,7 +75,6 @@ class FlatTypesDataTable extends DataTable
                 ->addClass('text-center'),
             Column::make('name')->data('name')->name('name'),
             Column::make('maintenance_fee')->data('maintenance_fee')->name('maintenance_fee')->title('Maintenance Fee'),
-            Column::make('penalty_per_day')->data('penalty_per_day')->name('penalty_per_day')->title('Late Penalty'),
             Column::make('status')->data('status')->name('status'),
             Column::make('created_at')->data('created_at')->name('created_at')->title('Created At'),
             Column::computed('action')->orderable(false)->searchable(false)->width(120),

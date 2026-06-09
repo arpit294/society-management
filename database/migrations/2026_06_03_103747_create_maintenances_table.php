@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('month');
             $table->integer('year');
+            $table->enum('billing_cycle', ['monthly', 'quarterly', 'yearly'])->default('monthly');
             $table->date('due_date');
             $table->decimal('total_additional_cost', 10, 2)->default(0);
             $table->enum('status', ['draft', 'published'])->default('draft');

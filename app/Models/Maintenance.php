@@ -12,6 +12,7 @@ class Maintenance extends Model
     protected $fillable = [
         'month',
         'year',
+        'billing_cycle',
         'due_date',
         'total_additional_cost',
         'status',

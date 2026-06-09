@@ -66,6 +66,9 @@ Route::middleware('auth')->group(function () {
     Route::get('maintenance-bills/download-invoice/{id}', [\App\Http\Controllers\MaintenanceBillController::class, 'downloadInvoice'])->name('maintenance-bills.download-invoice');
     Route::resource('maintenance-bills', \App\Http\Controllers\MaintenanceBillController::class);
     Route::post('maintenance-bills/{maintenanceBill}/update-status', [\App\Http\Controllers\MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
-});
 
+    // Settings
+    Route::get('settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
+    Route::post('settings', [\App\Http\Controllers\SettingController::class, 'store'])->name('settings.store');
+});
 // 

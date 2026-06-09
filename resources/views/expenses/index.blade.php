@@ -4,7 +4,7 @@
         <div class="card text-white bg-primary">
             <div class="card-body pb-0 d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-semibold">${{ number_format($totalExpenses, 2) }}</div>
+                    <div class="fs-4 fw-semibold">₹{{ number_format($totalExpenses, 2) }}</div>
                     <div>Total Expenses</div>
                 </div>
             </div>
@@ -15,7 +15,7 @@
         <div class="card text-white bg-info">
             <div class="card-body pb-0 d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-semibold">${{ number_format($thisMonthExpenses, 2) }}</div>
+                    <div class="fs-4 fw-semibold">₹{{ number_format($thisMonthExpenses, 2) }}</div>
                     <div>This Month</div>
                 </div>
             </div>
@@ -37,7 +37,7 @@
         <div class="card text-white bg-success">
             <div class="card-body pb-0 d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-semibold">${{ number_format($totalMaintenanceIncome, 2) }}</div>
+                    <div class="fs-4 fw-semibold">₹{{ number_format($totalMaintenanceIncome, 2) }}</div>
                     <div>Maintenance Income</div>
                 </div>
             </div>

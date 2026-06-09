@@ -30,7 +30,7 @@ class MaintenanceDetailsDataTable extends DataTable
                 return $bill->user ? $bill->user->name : '-';
             })
             ->addColumn('total_cost', function ($bill) {
-                return '<span class="fw-bold">$'.number_format($bill->total_amount, 2).'</span>';
+                return '<span class="fw-bold">₹'.number_format($bill->total_amount, 2).'</span>';
             })
             ->addColumn('status', function ($bill) {
                 if ($bill->status === 'paid') {
