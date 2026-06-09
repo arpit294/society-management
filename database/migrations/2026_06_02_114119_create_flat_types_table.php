@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name')->unique();
             $table->decimal('maintenance_fee', 10, 2)->default(0);
+            $table->decimal('penalty_per_day', 10, 2)->default(0);
             $table->text('description')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();

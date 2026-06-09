@@ -66,6 +66,10 @@ Route::middleware('auth')->group(function () {
     Route::get('maintenance-bills/download-invoice/{id}', [\App\Http\Controllers\MaintenanceBillController::class, 'downloadInvoice'])->name('maintenance-bills.download-invoice');
     Route::resource('maintenance-bills', \App\Http\Controllers\MaintenanceBillController::class);
     Route::post('maintenance-bills/{maintenanceBill}/update-status', [\App\Http\Controllers\MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
+    // Prepayments
+    Route::get('prepayments', [\App\Http\Controllers\PrepaymentController::class, 'index'])->name('prepayments.index');
+    Route::get('prepayments/create', [\App\Http\Controllers\PrepaymentController::class, 'create'])->name('prepayments.create');
+    Route::post('prepayments', [\App\Http\Controllers\PrepaymentController::class, 'store'])->name('prepayments.store');
 });
 
 // 

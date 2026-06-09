@@ -13,14 +13,15 @@ return new class extends Migration
     {
         Schema::create('maintenance_bills', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('block_id')->nullable();
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('flat_id');
             $table->decimal('amount', 10, 2);
-            $table->decimal('late_fee', 10, 2)->default(0);
+            $table->decimal('penalty_amount', 10, 2)->default(0);
             $table->decimal('total_amount', 10, 2);
             $table->string('month');
             $table->integer('year');
-            $table->date('due_date');
+            $table->date('due_date')->nullable();
             $table->date('generated_date');
             $table->timestamp('paid_at')->nullable();
             $table->string('payment_method')->nullable();

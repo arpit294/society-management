@@ -49,7 +49,21 @@ class MaintenanceBillController extends Controller
 
                 $amount = $resident->flat->flatType->maintenance_fee;
 
-                MaintenanceBill::create([
+                // Check for unused prepayment
+                $prepayment = \App\Models\PrepaidMaintenance::where('flat_id', $resident->flat_id)
+                    ->where('status', 'unused')
+                    ->whereRaw('months_used < months')
+                    ->first();
+
+                $status = 'due';
+                $paidAt = null;
+
+                if ($prepayment) {
+                    $status = 'paid';
+                    $paidAt = now();
+                }
+
+                $bill = MaintenanceBill::create([
                     'maintenance_id' => $maintenance->id,
                     'user_id' => $resident->user_id,
                     'flat_id' => $resident->flat_id,
@@ -58,8 +72,18 @@ class MaintenanceBillController extends Controller
                     'penalty_amount' => 0,
                     'total_amount' => $amount,
                     'generated_date' => now(),
-                    'status' => 'due',
+                    'status' => $status,
+                    'paid_at' => $paidAt,
                 ]);
+
+                if ($prepayment) {
+                    $monthsUsed = $prepayment->months_used + 1;
+                    $prepayment->update([
+                        'months_used' => $monthsUsed,
+                        'status' => ($monthsUsed >= $prepayment->months) ? 'used' : 'unused',
+                        'maintenance_bill_id' => $bill->id // Tracks the latest bill id for reference
+                    ]);
+                }
             }
 
             DB::commit();

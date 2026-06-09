@@ -12,15 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('flats', function (Blueprint $table) {
-    $table->id();
-    $table->unsignedBigInteger('block_id')->nullable();
-    $table->string('flat_no');
-    $table->string('floor_no');
-    $table->string('flat_type');
-    $table->decimal('maintenance_amount', 10, 2);
-    $table->string('status');
-    $table->timestamps();
-});
+            $table->id();
+            $table->unsignedBigInteger('block_id')->nullable();
+            $table->string('flat_no');
+            $table->string('floor_no');
+            $table->unsignedBigInteger('flat_type_id')->nullable();
+            $table->string('status');
+            $table->timestamps();
+        });
     }
 
 
