@@ -62,7 +62,8 @@ class PrepaymentController extends Controller
                 'user_id' => $resident->user_id,
                 'flat_id' => $resident->flat_id,
                 'month' => $currentDate->format('F'),
-                'year' => $currentDate->year,
+
+          'year' => $currentDate->year,
                 'end_month' => $endDate->format('F'),
                 'end_year' => $endDate->year,
                 'months' => $numberOfMonths,
