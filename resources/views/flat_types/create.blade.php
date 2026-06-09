@@ -14,7 +14,7 @@
             <div class="col-md-6 mb-3">
                 <label for="maintenance_fee" class="form-label">Maintenance Fee <span class="text-danger">*</span></label>
                 <div class="input-group">
-                    <span class="input-group-text">$</span>
+                    <span class="input-group-text">₹</span>
                     <input type="number" step="0.01" class="form-control" id="maintenance_fee" name="maintenance_fee" required placeholder="0.00">
                 </div>
             </div>

@@ -20,7 +20,7 @@ class ExpensesDataTable extends DataTable
                 return $row->created_at ? date('d-m-Y h:i A', strtotime($row->created_at)) : '-';
             })
             ->editColumn('total_amount', function ($row) {
-                return '<span class="badge bg-success fw-bold px-3 py-2 fs-6">$' . number_format($row->total_amount, 2) . '</span>';
+                return '<span class="badge bg-success fw-bold px-3 py-2 fs-6">₹' . number_format($row->total_amount, 2) . '</span>';
             })
             ->editColumn('invoice', function ($row) {
                 if ($row->invoice) {

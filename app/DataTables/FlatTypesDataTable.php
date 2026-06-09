@@ -20,7 +20,7 @@ class FlatTypesDataTable extends DataTable
                 return $row->created_at ? date('d-m-Y h:i A', strtotime($row->created_at)) : '-';
             })
             ->editColumn('maintenance_fee', function ($row) {
-                return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">$' . number_format($row->maintenance_fee, 2) . '</span>';
+                return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">₹' . number_format($row->maintenance_fee, 2) . '</span>';
             })
             ->editColumn('status', function ($row) {
                 if ($row->status === 'active') {

@@ -43,7 +43,7 @@
         <div class="card text-white bg-warning h-100">
             <div class="card-body pb-3 d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-semibold">${{ number_format($maintenance->total_additional_cost, 2) }}</div>
+                    <div class="fs-4 fw-semibold">₹{{ number_format($maintenance->total_additional_cost, 2) }}</div>
                     <div>Total Additional Cost</div>
                 </div>
             </div>
@@ -53,7 +53,7 @@
         <div class="card text-white bg-info h-100">
             <div class="card-body pb-3 d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-semibold" id="total-amount-display">${{ number_format($maintenance->maintenanceBills->sum('total_amount'), 2) }}</div>
+                    <div class="fs-4 fw-semibold" id="total-amount-display">₹{{ number_format($maintenance->maintenanceBills->sum('total_amount'), 2) }}</div>
                     <div>Total Amount Expected</div>
                 </div>
             </div>
