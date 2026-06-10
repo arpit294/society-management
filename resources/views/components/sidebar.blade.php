@@ -116,27 +116,7 @@
                 Residents
             </a>
         </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('expense-categories*') ? 'active' : '' }}" href="{{ route('expense-categories.index') }}">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                        <path fill="var(--ci-primary-color, currentcolor)" d="M344 0H488c13.3 0 24 10.7 24 24V168c0 9.7-3.8 19-10.5 25.9L245.9 449.5c-14.3 14.3-37.5 14.3-51.8 0L35.5 291c-14.3-14.3-14.3-37.5 0-51.8L291.1 10.5C298 3.8 307.3 0 317 0H344zM400 144a32 32 0 1 0 0-64 32 32 0 1 0 0 64z"/>
-                    </svg>
-                    Expense Categories
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {{ request()->is('expenses*') ? 'active' : '' }}" href="{{ route('expenses.index') }}">
-                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512">
-                        <path fill="var(--ci-primary-color, currentcolor)" d="M64 0C28.7 0 0 28.7 0 64V448c0 35.3 28.7 64 64 64H320c35.3 0 64-28.7 64-64V160H256c-17.7 0-32-14.3-32-32V0H64zM256 0V128H384L256 0zM176 160h32c8.8 0 16 7.2 16 16v16h16c17.7 0 32 14.3 32 32v16c0 17.7-14.3 32-32 32H192v24h48c26.5 0 48 21.5 48 48v16c0 26.5-21.5 48-48 48H224v16c0 8.8-7.2 16-16 16H176c-8.8 0-16-7.2-16-16V400H144c-17.7 0-32-14.3-32-32V352c0-17.7 14.3-32 32-32h48V296H144c-26.5 0-48-21.5-48-48V232c0-26.5 21.5-48 48-48h16V176c0-8.8 7.2-16 16-16z"/>
-                    </svg>
-                    Expenses
-                </a>
-            </li>
-
-
-
-
-        <li class="nav-group {{ request()->is('maintenance-bills*') || request()->is('prepayments*') ? 'show' : '' }}">
+        <li class="nav-group {{ request()->is('maintenance-bills*') || request()->is('prepayments*') || request()->is('expense-categories*') || request()->is('expenses*') ? 'show' : '' }}">
             <a class="nav-link nav-group-toggle" href="#">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)"
@@ -149,6 +129,18 @@
                     <a class="nav-link {{ request()->is('maintenance-bills*') || request()->is('prepayments*') ? 'active' : '' }}" href="{{ route('maintenance-bills.index') }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         Payments
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->is('expense-categories*') ? 'active' : '' }}" href="{{ route('expense-categories.index') }}">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Expense Categories
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->is('expenses*') ? 'active' : '' }}" href="{{ route('expenses.index') }}">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Expenses
                     </a>
                 </li>
             </ul>

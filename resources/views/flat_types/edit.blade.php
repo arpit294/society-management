@@ -15,15 +15,7 @@
             <div class="col-md-4 mb-3">
                 <label for="owner_maintenance_fee" class="form-label">Owner Fee <span class="text-danger">*</span></label>
                 <div class="input-group">
-<<<<<<< HEAD
                     <span class="input-group-text">₹</span>
-                    <input type="number" step="0.01" class="form-control" id="maintenance_fee" name="maintenance_fee" value="{{ $flatType->maintenance_fee }}" required>
-                </div>
-            </div>
-            
-            <div class="col-md-6 mb-3">
-=======
-                    <span class="input-group-text">$</span>
                     <input type="number" step="0.01" class="form-control" id="owner_maintenance_fee" name="owner_maintenance_fee" value="{{ $flatType->owner_maintenance_fee }}" required>
                 </div>
             </div>
@@ -31,7 +23,7 @@
             <div class="col-md-4 mb-3">
                 <label for="rental_maintenance_fee" class="form-label">Rental Fee <span class="text-danger">*</span></label>
                 <div class="input-group">
-                    <span class="input-group-text">$</span>
+                    <span class="input-group-text">₹</span>
                     <input type="number" step="0.01" class="form-control" id="rental_maintenance_fee" name="rental_maintenance_fee" value="{{ $flatType->rental_maintenance_fee }}" required>
                 </div>
             </div>
@@ -39,14 +31,13 @@
             <div class="col-md-4 mb-3">
                 <label for="penalty_per_day" class="form-label">Late Penalty <span class="text-danger">*</span></label>
                 <div class="input-group">
-                    <span class="input-group-text">$</span>
+                    <span class="input-group-text">₹</span>
                     <input type="number" step="0.01" class="form-control" id="penalty_per_day" name="penalty_per_day" value="{{ $flatType->penalty_per_day }}" required>
                 </div>
             </div>
 
 
             <div class="col-md-12 mb-3">
->>>>>>> main
                 <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
                 <select class="form-select" id="status" name="status" required>
                     <option value="active" {{ $flatType->status == 'active' ? 'selected' : '' }}>Active</option>

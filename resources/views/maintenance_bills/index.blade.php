@@ -5,7 +5,7 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Payments</h4>
                 <div>
-                    <a href="{{ route('prepayments.create') }}" class="btn btn-secondary me-2">
+                    <a href="{{ route('prepayments.create') }}" class="btn btn-primary me-2">
                         <i class="fa-solid fa-plus me-1"></i> Add Prepayment
                     </a>
                     <button type="button" class="btn btn-primary" id="btn-add-maintenance-bill"

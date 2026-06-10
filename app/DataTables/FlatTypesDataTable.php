@@ -19,10 +19,6 @@ class FlatTypesDataTable extends DataTable
             ->editColumn('created_at', function ($row) {
                 return $row->created_at ? date('d-m-Y h:i A', strtotime($row->created_at)) : '-';
             })
-<<<<<<< HEAD
-            ->editColumn('maintenance_fee', function ($row) {
-                return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">₹' . number_format($row->maintenance_fee, 2) . '</span>';
-=======
             ->editColumn('owner_maintenance_fee', function ($row) {
                 return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">$' . number_format($row->owner_maintenance_fee, 2) . '</span>';
             })
@@ -31,7 +27,6 @@ class FlatTypesDataTable extends DataTable
             })
             ->editColumn('penalty_per_day', function ($row) {
                 return '<span class="badge bg-danger text-white fw-bold px-3 py-2 fs-6">$' . number_format($row->penalty_per_day, 2) . '</span>';
->>>>>>> main
             })
             ->editColumn('status', function ($row) {
                 if ($row->status === 'active') {
@@ -39,11 +34,7 @@ class FlatTypesDataTable extends DataTable
                 }
                 return '<span class="badge bg-secondary">Inactive</span>';
             })
-<<<<<<< HEAD
-            ->rawColumns(['action', 'status', 'maintenance_fee'])
-=======
             ->rawColumns(['action', 'status', 'owner_maintenance_fee', 'rental_maintenance_fee', 'penalty_per_day'])
->>>>>>> main
             ->setRowId('id');
     }
 
@@ -53,13 +44,9 @@ class FlatTypesDataTable extends DataTable
             ->select([
                 'id',
                 'name',
-<<<<<<< HEAD
-                'maintenance_fee',
-=======
                 'owner_maintenance_fee',
                 'rental_maintenance_fee',
                 'penalty_per_day',
->>>>>>> main
                 'status',
                 'created_at'
             ]);
@@ -95,13 +82,9 @@ class FlatTypesDataTable extends DataTable
                 ->width(60)
                 ->addClass('text-center'),
             Column::make('name')->data('name')->name('name'),
-<<<<<<< HEAD
-            Column::make('maintenance_fee')->data('maintenance_fee')->name('maintenance_fee')->title('Maintenance Fee'),
-=======
             Column::make('owner_maintenance_fee')->data('owner_maintenance_fee')->name('owner_maintenance_fee')->title('Owner Fee'),
             Column::make('rental_maintenance_fee')->data('rental_maintenance_fee')->name('rental_maintenance_fee')->title('Rental Fee'),
             Column::make('penalty_per_day')->data('penalty_per_day')->name('penalty_per_day')->title('Late Penalty'),
->>>>>>> main
             Column::make('status')->data('status')->name('status'),
             Column::make('created_at')->data('created_at')->name('created_at')->title('Created At'),
             Column::computed('action')->orderable(false)->searchable(false)->width(120),
