@@ -53,7 +53,7 @@ class MaintenanceBill extends Model
 
         if ($this->maintenance && $this->maintenance->due_date && \Carbon\Carbon::parse($this->maintenance->due_date)->endOfDay()->isPast()) {
             if ($this->flat && $this->flat->flatType) {
-                return (float)$this->flat->flatType->penalty_per_day; 
+                return (float)$this->flat->flatType->penalty_per_day;
             }
         }
 
@@ -91,3 +91,5 @@ class MaintenanceBill extends Model
         return $this->belongsTo(Block::class);
     }
 }
+
+// 

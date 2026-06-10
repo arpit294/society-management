@@ -12,7 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('flat_types', function (Blueprint $table) {
-            $table->decimal('penalty_amount', 10, 2)->default(0)->after('maintenance_fee');
+            $table->renameColumn('maintenance_fee', 'owner_maintenance_fee');
+        });
+
+        Schema::table('flat_types', function (Blueprint $table) {
+            $table->decimal('rental_maintenance_fee', 10, 2)->default(0)->after('owner_maintenance_fee');
         });
     }
 
@@ -22,7 +26,11 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('flat_types', function (Blueprint $table) {
-            $table->dropColumn('penalty_amount');
+            $table->dropColumn('rental_maintenance_fee');
+        });
+
+        Schema::table('flat_types', function (Blueprint $table) {
+            $table->renameColumn('owner_maintenance_fee', 'maintenance_fee');
         });
     }
 };

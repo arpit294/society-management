@@ -23,6 +23,8 @@ return new class extends Migration
                 'Common Facilities',
                 'other'
             ]);
+            $table->enum('status', ['pending', 'in-progress', 'resolved'])->default('pending');
+            $table->text('resolution_notes')->nullable();
             $table->timestamps();
         });
     }
