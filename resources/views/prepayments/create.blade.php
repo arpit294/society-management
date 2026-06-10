@@ -69,9 +69,9 @@
                             <input type="text" name="transaction_id" id="transaction_id" class="form-control" value="{{ old('transaction_id') }}">
                         </div>
 
-                        <div class="mb-3">
-                            <label for="payment_slip" class="form-label">Payment Slip Screenshot <span class="text-danger">*</span></label>
-                            <input type="file" name="payment_slip" id="payment_slip" class="form-control" accept="image/*">
+                        <div class="col-md-12 mb-3">
+                            <label for="payment_slip" class="form-label">Payment Slip (Required for UPI)</label>
+                            <input type="file" name="payment_slip" id="payment_slip" class="dropify" accept="image/*" data-height="150">
                         </div>
                     </div>
 
@@ -87,6 +87,10 @@
 </x-user-page>
 
 <script>
+    $(document).ready(function() {
+        $('.dropify').dropify();
+    });
+
     document.addEventListener('DOMContentLoaded', function() {
         const paymentMethodSelect = document.getElementById('payment_method');
         const upiDetails = document.getElementById('upi-details');

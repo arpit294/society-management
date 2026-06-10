@@ -28,18 +28,13 @@
                 <select class="form-select" id="user_id" name="user_id" required>
                     <option value="">Select User</option>
                     @foreach ($users as $user)
-                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                        <option value="{{ $user->id }}">{{ $user->resident_details }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="col-md-12 mb-3">
                 <label for="invoice" class="form-label">Invoice (Optional)</label>
-                <input type="file" class="form-control" id="invoice" name="invoice" accept=".jpg,.jpeg,.png,.pdf">
-                <!-- Image Preview Container -->
-                <div id="invoice-preview-container" class="mt-3 d-none">
-                    <p class="mb-1 text-muted small">Invoice Preview:</p>
-                    <img id="invoice-preview-img" src="" alt="Preview" class="img-thumbnail" style="max-height: 200px; width: auto;">
-                </div>
+                <input type="file" class="dropify" id="invoice" name="invoice" accept=".jpg,.jpeg,.png,.pdf" data-height="200">
             </div>
         </div>
     </div>
@@ -48,3 +43,8 @@
         <button type="submit" class="btn btn-primary">Save Expense</button>
     </div>
 </form>
+<script>
+    $(document).ready(function() {
+        $('#invoice').dropify();
+    });
+</script>

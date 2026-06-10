@@ -49,7 +49,7 @@
                     <option value="">Select User</option>
                     @foreach ($users as $user)
                         <option value="{{ $user->id }}" data-role="{{ $user->role }}" {{ $resident->user_id == $user->id ? 'selected' : '' }}>
-                            {{ $user->name }} ({{ $user->role }})
+                            {{ $user->resident_details }}
                         </option>
                     @endforeach
                 </select>

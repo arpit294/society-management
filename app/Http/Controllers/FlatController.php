@@ -7,6 +7,7 @@ use App\Models\Block;
 use App\Models\Flat;
 use App\Models\FlatType;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class FlatController extends Controller
 {
@@ -23,14 +24,14 @@ class FlatController extends Controller
      */
     public function create()
     {
+        // Get all blocks and flat types to populate the dropdowns in the form
         $blocks = Block::all();
+        // Only get active flat types for the dropdown
         $flatTypes = FlatType::where('status', 'active')->get();
         return view('flats.create', compact('blocks', 'flatTypes'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Store a newly created resource in storage.
     public function store(Request $request)
     {
         $validatedData = $request->validate([
@@ -43,9 +44,9 @@ class FlatController extends Controller
 
         // Check if a block is selected and ensure the provided floor_no does not exceed the block's total_floor
         if (!empty($validatedData['block_id'])) {
-            $block = \App\Models\Block::find($validatedData['block_id']);
+            $block = Block::find($validatedData['block_id']);
             if ($block && $validatedData['floor_no'] > $block->total_floor) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.']
                 ]);
             }
@@ -82,11 +83,11 @@ class FlatController extends Controller
             'status' => 'required|string|max:255',
         ]);
 
-        // Check if a block is selected and ensure the provided floor_no does not exceed the block's total_floor
+        // Check the selected floor number is valid or not based on block table
         if (!empty($validatedData['block_id'])) {
             $block = Block::find($validatedData['block_id']);
             if ($block && $validatedData['floor_no'] > $block->total_floor) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
+                throw ValidationException::withMessages([
                     'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.']
                 ]);
             }

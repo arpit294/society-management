@@ -21,11 +21,6 @@
                 <input type="number" class="form-control" id="year" name="year" required value="{{ date('Y') }}" min="2000">
             </div>
 
-            <div class="col-md-6 mb-3">
-                <label for="due_date" class="form-label">Payment Due Date <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" id="due_date" name="due_date" required>
-            </div>
-
 
             <div class="col-md-12 mb-3">
                 <label for="status" class="form-label">Status <span class="text-danger">*</span></label>

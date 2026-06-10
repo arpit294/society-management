@@ -32,6 +32,7 @@
     <link href="{{ asset('vendors/@coreui/chartjs/css/coreui-chartjs.css') }}" rel="stylesheet">
     @stack('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.2/css/dropify.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 
@@ -50,7 +51,13 @@
     <script src="{{ asset('vendors/chart.js/js/chart.umd.js') }}"></script>
     <script src="{{ asset('vendors/@coreui/chartjs/js/coreui-chartjs.js') }}"></script>
     <script src="{{ asset('vendors/@coreui/utils/js/index.js') }}"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.2/js/dropify.min.js"></script>
     {{-- <script src="{{ asset('js/main.js') }}"></script> --}}
+    <script>
+        $(document).ready(function() {
+            $('input[type="file"]').dropify();
+        });
+    </script>
         @stack('scripts')
 </body>
 

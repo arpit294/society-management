@@ -28,13 +28,7 @@
                 </div>
             </div>
             
-            <div class="col-md-4 mb-3">
-                <label for="penalty_per_day" class="form-label">Late Penalty <span class="text-danger">*</span></label>
-                <div class="input-group">
-                    <span class="input-group-text">₹</span>
-                    <input type="number" step="0.01" class="form-control" id="penalty_per_day" name="penalty_per_day" value="{{ $flatType->penalty_per_day }}" required>
-                </div>
-            </div>
+
 
 
             <div class="col-md-12 mb-3">

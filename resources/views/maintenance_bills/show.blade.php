@@ -84,6 +84,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            $('.dropify').dropify();
             const paymentMethodSelect = document.getElementById('bill_payment_method');
             const upiDetails = document.getElementById('bill-upi-details');
             const paymentSlip = document.getElementById('bill_payment_slip');
@@ -164,7 +165,7 @@
                         </div>
                         <div class="mb-3">
                             <label for="bill_payment_slip" class="form-label">Payment Slip Screenshot <span class="text-danger">*</span></label>
-                            <input type="file" name="payment_slip" id="bill_payment_slip" class="form-control" accept="image/*">
+                            <input type="file" name="payment_slip" id="bill_payment_slip" class="dropify" accept="image/*" data-height="150">
                         </div>
                     </div>
                 </div>

@@ -24,7 +24,6 @@ class FlatTypeController extends Controller
             'name' => 'required|string|max:255|unique:flat_types,name',
             'owner_maintenance_fee' => 'required|numeric|min:0',
             'rental_maintenance_fee' => 'required|numeric|min:0',
-            'penalty_per_day' => 'required|numeric|min:0',
             'status' => 'required|in:active,inactive',
         ]);
 
@@ -47,7 +46,6 @@ class FlatTypeController extends Controller
             'name' => 'required|string|max:255|unique:flat_types,name,' . $flatType->id,
             'owner_maintenance_fee' => 'required|numeric|min:0',
             'rental_maintenance_fee' => 'required|numeric|min:0',
-            'penalty_per_day' => 'required|numeric|min:0',
             'status' => 'required|in:active,inactive',
         ]);
 

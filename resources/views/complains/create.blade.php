@@ -39,7 +39,7 @@
                 <select name="user_id" class="form-select">
                     <option value="">Select User</option>
                     @foreach ($users as $user)
-                        <option value="{{ $user->id }}" @selected(old('user_id') == $user->id)>{{ $user->name }} ({{ $user->email }})</option>
+                        <option value="{{ $user->id }}" @selected(old('user_id') == $user->id)>{{ $user->resident_details }}</option>
                     @endforeach
                 </select>
                 @error('user_id')

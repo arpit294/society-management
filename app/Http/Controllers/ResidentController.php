@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\DataTables\ResidentsDataTable;
+use App\Models\Block;
+use App\Models\Flat;
+use App\Models\Resident;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ResidentController extends Controller
 {
-    public function index(\App\DataTables\ResidentsDataTable $dataTable)
+    public function index(ResidentsDataTable $dataTable)
     {
         $blocks = \App\Models\Block::all();
         return $dataTable->render('residents.index', compact('blocks'));
@@ -14,9 +19,9 @@ class ResidentController extends Controller
 
     public function create()
     {
-        $blocks = \App\Models\Block::all();
-        $flats = \App\Models\Flat::all();
-        $users = \App\Models\User::all();
+        $blocks = Block::all();
+        $flats = Flat::all();
+        $users = User::all();
         return view('residents.create', compact('blocks', 'flats', 'users'));
     }
 
@@ -31,7 +36,7 @@ class ResidentController extends Controller
             'move_out_date' => 'nullable|date',
         ]);
 
-        \App\Models\Resident::create($validatedData);
+        Resident::create($validatedData);
 
         return response()->json([
             'success' => true,
@@ -39,15 +44,15 @@ class ResidentController extends Controller
         ]);
     }
 
-    public function edit(\App\Models\Resident $resident)
+    public function edit(Resident $resident)
     {
-        $blocks = \App\Models\Block::all();
-        $flats = \App\Models\Flat::where('block_id', $resident->block_id)->get();
-        $users = \App\Models\User::all();
+        $blocks = Block::all();
+        $flats = Flat::where('block_id', $resident->block_id)->get();
+        $users = User::all();
         return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
     }
 
-    public function update(\Illuminate\Http\Request $request, \App\Models\Resident $resident)
+    public function update(Request $request, Resident $resident)
     {
         $validatedData = $request->validate([
             'block_id' => 'required|exists:blocks,id',
@@ -66,7 +71,7 @@ class ResidentController extends Controller
         ]);
     }
 
-    public function destroy(\App\Models\Resident $resident)
+    public function destroy(Resident $resident)
     {
         $resident->delete();
 
@@ -78,8 +83,7 @@ class ResidentController extends Controller
 
     public function getFlatsByBlock($block_id)
     {
-        $flats = \App\Models\Flat::where('block_id', $block_id)->get();
+        $flats = Flat::where('block_id', $block_id)->get();
         return response()->json($flats);
     }
 }
-

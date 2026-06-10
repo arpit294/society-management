@@ -7,6 +7,10 @@ use App\Models\MaintenanceBill;
 use App\Models\Maintenance;
 use App\Models\Resident;
 use App\DataTables\MaintenanceBillsDataTable;
+use App\Models\Block;
+use App\Models\Flat;
+use App\Models\PrepaidMaintenance;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -14,7 +18,7 @@ class MaintenanceBillController extends Controller
 {
     public function index(MaintenanceBillsDataTable $dataTable)
     {
-        $prepayments = \App\Models\PrepaidMaintenance::with(['user', 'flat.block'])
+        $prepayments = PrepaidMaintenance::with(['user', 'flat.block'])
             ->where('status', 'unused')
             ->orderBy('year')
             ->orderBy('month')
@@ -33,9 +37,12 @@ class MaintenanceBillController extends Controller
         $validatedData = $request->validate([
             'month' => 'required|string|max:50',
             'year' => 'required|integer|min:2000',
-            'due_date' => 'required|date',
             'status' => 'required|in:draft,published',
         ]);
+        // Calculate due date based on configurable penalty due days (default to 15 days if not set)
+        $dueDays = (int)setting('penalty_due_days', 15);
+        // Store the due date in the maintenance table, but it can also be calculated dynamically in the accessor if you prefer
+        $validatedData['due_date'] = now()->addDays($dueDays)->format('Y-m-d');
 
         DB::beginTransaction();
 
@@ -49,16 +56,17 @@ class MaintenanceBillController extends Controller
                     $query->whereNull('move_out_date')
                           ->orWhere('move_out_date', '>=', now()->startOfDay());
                 })->get();
-
+            // Loop through each resident and create individual maintenance bills
             foreach ($activeResidents as $resident) {
                 if (!$resident->flat || !$resident->flat->flatType) continue;
 
-                $amount = $resident->type === 'owner' 
-                    ? $resident->flat->flatType->owner_maintenance_fee 
+                // Determine the maintenance amount based on resident type and flat type
+                $amount = $resident->type === 'owner'
+                    ? $resident->flat->flatType->owner_maintenance_fee
                     : $resident->flat->flatType->rental_maintenance_fee;
 
                 // Check for unused prepayment
-                $prepayment = \App\Models\PrepaidMaintenance::where('flat_id', $resident->flat_id)
+                $prepayment = PrepaidMaintenance::where('flat_id', $resident->flat_id)
                     ->where('status', 'unused')
                     ->whereRaw('months_used < months')
                     ->first();
@@ -71,6 +79,7 @@ class MaintenanceBillController extends Controller
                     $paidAt = now();
                 }
 
+                // Create the maintenance bill for the resident
                 $bill = MaintenanceBill::create([
                     'maintenance_id' => $maintenance->id,
                     'user_id' => $resident->user_id,
@@ -84,6 +93,7 @@ class MaintenanceBillController extends Controller
                     'paid_at' => $paidAt,
                 ]);
 
+                // If a prepayment exists, update it to reflect the usage of one month of prepayment
                 if ($prepayment) {
                     $monthsUsed = $prepayment->months_used + 1;
                     $prepayment->update([
@@ -100,7 +110,7 @@ class MaintenanceBillController extends Controller
                 'success' => true,
                 'message' => 'Maintenance records generated successfully.',
             ]);
-
+        // Catch any exceptions that occur during the process and roll back the transaction
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
@@ -112,12 +122,14 @@ class MaintenanceBillController extends Controller
 
     public function show(\App\DataTables\MaintenanceDetailsDataTable $dataTable, $id)
     {
+        // Show maintenance details along with all associated bills
         $maintenance = Maintenance::with(['maintenanceBills.user', 'maintenanceBills.flat'])->findOrFail($id);
         return $dataTable->with('id', $id)->render('maintenance_bills.show', compact('maintenance'));
     }
 
     public function destroy($id)
     {
+        // Delete the entire maintenance record along with all associated bills
         $maintenance = Maintenance::findOrFail($id);
         $maintenance->delete();
 
@@ -129,10 +141,11 @@ class MaintenanceBillController extends Controller
 
     public function edit($id)
     {
+        // Show form to edit individual maintenance bill
         $maintenanceBill = MaintenanceBill::findOrFail($id);
-        $blocks = \App\Models\Block::all();
-        $flats = \App\Models\Flat::with('flatType')->where('block_id', $maintenanceBill->block_id)->get();
-        $users = \App\Models\User::all();
+        $blocks = Block::all();
+        $flats = Flat::with('flatType')->where('block_id', $maintenanceBill->block_id)->get();
+        $users = User::all();
         return view('maintenance_bills.edit', compact('maintenanceBill', 'blocks', 'flats', 'users'));
     }
 
@@ -155,10 +168,17 @@ class MaintenanceBillController extends Controller
             'amount',
             'status',
         ]);
-
+        // If status is being updated to paid, set the paid_at timestamp and lock in penalty and total amounts
         if ($request->status === 'paid' && $maintenanceBill->getRawOriginal('status') !== 'paid') {
             $data['paid_at'] = now();
-            // Lock in the penalty and total amount
+
+            // ---------------------------------------------------------
+            // COMPLEX LOGIC: Locking in Dynamic Amounts
+            // Because penalties are calculated dynamically based on today's date,
+            // we must explicitly freeze the penalty and total amount in the DB
+            // the moment it is paid. Otherwise, if someone views the paid bill
+            // 6 months later, it would calculate new penalties on the paid bill.
+            // ---------------------------------------------------------
             $data['penalty_amount'] = $maintenanceBill->penalty_amount;
             $data['total_amount'] = $request->amount + $maintenanceBill->penalty_amount;
         } elseif ($request->status !== 'paid') {
@@ -196,7 +216,7 @@ class MaintenanceBillController extends Controller
         ]);
 
         $maintenanceBill = MaintenanceBill::findOrFail($id);
-
+         // If status is being updated to paid, set the paid_at timestamp and lock in penalty and total amounts
         if ($request->status === 'paid' && $maintenanceBill->status !== 'paid') {
             // Read dynamic amounts BEFORE changing status to paid, so accessors calculate correctly
             $lockedPenalty = $maintenanceBill->penalty_amount;
@@ -206,7 +226,7 @@ class MaintenanceBillController extends Controller
             $maintenanceBill->paid_at = now();
             $maintenanceBill->payment_method = $request->payment_method;
             $maintenanceBill->transaction_id = $request->transaction_id;
-            
+
             if ($request->hasFile('payment_slip')) {
                 $maintenanceBill->payment_slip = $request->file('payment_slip')->store('payment_slips', 'public');
             }
@@ -242,6 +262,7 @@ class MaintenanceBillController extends Controller
         return redirect()->back()->with('success', 'Status updated successfully.');
     }
 
+    // Additional method to fetch resident info based on user ID, useful for dynamic form updates when creating/editing bills
     public function details($id)
     {
         $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
@@ -249,6 +270,7 @@ class MaintenanceBillController extends Controller
         return view('maintenance_bills.details', compact('bill'));
     }
 
+    // Method to download invoice as PDF
     public function downloadInvoice($id)
     {
         $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
@@ -259,20 +281,22 @@ class MaintenanceBillController extends Controller
         return $pdf->download($fileName);
     }
 
+
+    // API endpoint to fetch resident info based on user ID, used for dynamic form updates when creating/editing bills
     public function getResidentInfo($userId)
     {
-        $resident = \App\Models\Resident::with('flat.flatType')
+        $resident = Resident::with('flat.flatType')
             ->where('user_id', $userId)
             ->where(function($query) {
                 $query->whereNull('move_out_date')
                       ->orWhere('move_out_date', '>=', now()->startOfDay());
             })->first();
-
+    // This method is used to dynamically fetch the maintenance amount and related info when a user is selected in the bill creation/edit form
         if ($resident && $resident->flat && $resident->flat->flatType) {
-            $amount = $resident->type === 'owner' 
-                ? $resident->flat->flatType->owner_maintenance_fee 
+            $amount = $resident->type === 'owner'
+                ? $resident->flat->flatType->owner_maintenance_fee
                 : $resident->flat->flatType->rental_maintenance_fee;
-                
+
             return response()->json([
                 'success' => true,
                 'block_id' => $resident->block_id,

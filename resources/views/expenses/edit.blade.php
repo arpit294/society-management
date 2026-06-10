@@ -29,23 +29,13 @@
                 <select class="form-select" id="user_id" name="user_id" required>
                     <option value="">Select User</option>
                     @foreach ($users as $user)
-                        <option value="{{ $user->id }}" {{ $expense->user_id == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                        <option value="{{ $user->id }}" {{ $expense->user_id == $user->id ? 'selected' : '' }}>{{ $user->resident_details }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="col-md-12 mb-3">
                 <label for="invoice" class="form-label">Invoice (Optional)</label>
-                <input type="file" class="form-control" id="invoice" name="invoice" accept=".jpg,.jpeg,.png,.pdf">
-                <!-- Image Preview Container -->
-                <div id="invoice-preview-container" class="mt-3 d-none">
-                    <p class="mb-1 text-muted small">New Invoice Preview:</p>
-                    <img id="invoice-preview-img" src="" alt="Preview" class="img-thumbnail" style="max-height: 200px; width: auto;">
-                </div>
-                @if($expense->invoice)
-                    <div class="mt-2" id="current-invoice-container">
-                        <a href="{{ asset('uploads/invoices/'.$expense->invoice) }}" target="_blank">View Current Invoice</a>
-                    </div>
-                @endif
+                <input type="file" class="dropify" id="invoice" name="invoice" accept=".jpg,.jpeg,.png,.pdf" data-default-file="{{ $expense->invoice ? asset('uploads/invoices/'.$expense->invoice) : '' }}" data-height="200">
             </div>
         </div>
     </div>
@@ -54,3 +44,8 @@
         <button type="submit" class="btn btn-primary">Update Expense</button>
     </div>
 </form>
+<script>
+    $(document).ready(function() {
+        $('#invoice').dropify();
+    });
+</script>

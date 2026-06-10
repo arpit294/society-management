@@ -71,9 +71,9 @@ class ExpenseController extends Controller
             'category_id' => 'required|exists:expense_categories,id',
             'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
         ]);
-
+        // Delete old file if exists
         if ($request->hasFile('invoice')) {
-            // Delete old file if exists
+
             if ($expense->invoice && file_exists(public_path('uploads/invoices/' . $expense->invoice))) {
                 unlink(public_path('uploads/invoices/' . $expense->invoice));
             }
@@ -93,6 +93,7 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense)
     {
+        // Delete  invoice file if exists
         if ($expense->invoice && file_exists(public_path('uploads/invoices/' . $expense->invoice))) {
             unlink(public_path('uploads/invoices/' . $expense->invoice));
         }
