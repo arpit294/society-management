@@ -25,6 +25,7 @@
                                 <th>Period</th>
                                 <th>Usage</th>
                                 <th>Amount</th>
+                                <th>Payment</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -41,11 +42,20 @@
                                     </td>
                                     <td>{{ $prepayment->months_used }} / {{ $prepayment->months }} used</td>
                                     <td>{{ number_format($prepayment->amount_paid, 2) }}</td>
+                                    <td>
+                                        Mode: {{ ucfirst($prepayment->payment_method) ?? 'N/A' }}<br>
+                                        @if($prepayment->payment_method === 'upi')
+                                            Txn: {{ $prepayment->transaction_id ?? 'N/A' }}<br>
+                                            @if($prepayment->payment_slip)
+                                                <a href="{{ asset('storage/' . $prepayment->payment_slip) }}" target="_blank">Slip</a>
+                                            @endif
+                                        @endif
+                                    </td>
                                     <td><span class="badge bg-success">{{ $prepayment->status }}</span></td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center">No unused prepayments found.</td>
+                                    <td colspan="7" class="text-center">No unused prepayments found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

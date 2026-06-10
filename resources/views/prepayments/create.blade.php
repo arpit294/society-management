@@ -19,7 +19,7 @@
                     </div>
                 @endif
 
-                <form action="{{ route('prepayments.store') }}" method="POST">
+                <form action="{{ route('prepayments.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <div class="mb-3">
                         <label for="resident_id" class="form-label">Resident</label>
@@ -54,6 +54,27 @@
                         </div>
                     </div>
 
+                    <div class="mb-3">
+                        <label for="payment_method" class="form-label">Payment Mode <span class="text-danger">*</span></label>
+                        <select name="payment_method" id="payment_method" class="form-select" required>
+                            <option value="">Select Mode</option>
+                            <option value="cash" {{ old('payment_method') == 'cash' ? 'selected' : '' }}>Cash</option>
+                            <option value="upi" {{ old('payment_method') == 'upi' ? 'selected' : '' }}>UPI</option>
+                        </select>
+                    </div>
+
+                    <div id="upi-details" class="d-none">
+                        <div class="mb-3">
+                            <label for="transaction_id" class="form-label">Transaction ID (Optional)</label>
+                            <input type="text" name="transaction_id" id="transaction_id" class="form-control" value="{{ old('transaction_id') }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="payment_slip" class="form-label">Payment Slip Screenshot <span class="text-danger">*</span></label>
+                            <input type="file" name="payment_slip" id="payment_slip" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+
                     <div class="d-flex justify-content-end">
                         <a href="{{ route('maintenance-bills.index') }}" class="btn btn-secondary me-2">Cancel</a>
                         <button type="submit" class="btn btn-primary">Process Prepayment</button>
@@ -64,3 +85,24 @@
     </div>
 </div>
 </x-user-page>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentMethodSelect = document.getElementById('payment_method');
+        const upiDetails = document.getElementById('upi-details');
+        const paymentSlip = document.getElementById('payment_slip');
+
+        function toggleUpiDetails() {
+            if (paymentMethodSelect.value === 'upi') {
+                upiDetails.classList.remove('d-none');
+                paymentSlip.setAttribute('required', 'required');
+            } else {
+                upiDetails.classList.add('d-none');
+                paymentSlip.removeAttribute('required');
+            }
+        }
+
+        paymentMethodSelect.addEventListener('change', toggleUpiDetails);
+        toggleUpiDetails(); // Initial state
+    });
+</script>

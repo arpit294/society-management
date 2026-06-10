@@ -40,7 +40,10 @@ class PrepaymentController extends Controller
             'resident_id' => 'required|exists:residents,id',
             'months' => 'required|integer|min:1|max:12',
             'start_month' => 'required|string',
-            'start_year' => 'required|integer'
+            'start_year' => 'required|integer',
+            'payment_method' => 'required|in:cash,upi',
+            'transaction_id' => 'nullable|string',
+            'payment_slip' => 'required_if:payment_method,upi|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $resident = Resident::with(['user', 'flat.flatType'])->findOrFail($request->resident_id);
@@ -49,12 +52,19 @@ class PrepaymentController extends Controller
             return redirect()->back()->with('error', 'Resident does not have a flat assigned with a valid flat type.');
         }
 
-        $monthlyFee = $resident->flat->flatType->maintenance_fee;
+        $monthlyFee = $resident->type === 'owner' 
+            ? $resident->flat->flatType->owner_maintenance_fee 
+            : $resident->flat->flatType->rental_maintenance_fee;
         $numberOfMonths = $request->months;
 
         DB::beginTransaction();
 
         try {
+            $paymentSlipPath = null;
+            if ($request->hasFile('payment_slip')) {
+                $paymentSlipPath = $request->file('payment_slip')->store('payment_slips', 'public');
+            }
+
             $currentDate = Carbon::createFromDate($request->start_year, Carbon::parse($request->start_month)->month, 1);
             $endDate = $currentDate->copy()->addMonths($numberOfMonths - 1);
 
@@ -62,14 +72,16 @@ class PrepaymentController extends Controller
                 'user_id' => $resident->user_id,
                 'flat_id' => $resident->flat_id,
                 'month' => $currentDate->format('F'),
-
-          'year' => $currentDate->year,
+                'year' => $currentDate->year,
                 'end_month' => $endDate->format('F'),
                 'end_year' => $endDate->year,
                 'months' => $numberOfMonths,
                 'months_used' => 0,
                 'amount_paid' => $monthlyFee * $numberOfMonths,
                 'status' => 'unused',
+                'payment_method' => $request->payment_method,
+                'transaction_id' => $request->transaction_id,
+                'payment_slip' => $paymentSlipPath,
             ]);
 
             DB::commit();

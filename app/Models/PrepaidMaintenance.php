@@ -18,6 +18,9 @@ class PrepaidMaintenance extends Model
         'amount_paid',
         'status',
         'maintenance_bill_id',
+        'payment_method',
+        'transaction_id',
+        'payment_slip',
     ];
 
     public function user()

@@ -44,7 +44,14 @@
                         <strong>Generated Date:</strong> {{ $bill->generated_date ? $bill->generated_date->format('d M, Y') : 'N/A' }}<br>
                         <strong>Due Date:</strong> {{ $bill->maintenance->due_date ? \Carbon\Carbon::parse($bill->maintenance->due_date)->format('d M, Y') : 'N/A' }}<br>
                         @if($bill->status === 'paid')
-                        <strong>Paid At:</strong> {{ $bill->paid_at ? $bill->paid_at->format('d M, Y h:i A') : 'N/A' }}
+                        <strong>Paid At:</strong> {{ $bill->paid_at ? $bill->paid_at->format('d M, Y h:i A') : 'N/A' }}<br>
+                        <strong>Payment Mode:</strong> {{ ucfirst($bill->payment_method) ?? 'N/A' }}<br>
+                        @if($bill->payment_method === 'upi')
+                            <strong>Transaction ID:</strong> {{ $bill->transaction_id ?? 'N/A' }}<br>
+                            @if($bill->payment_slip)
+                                <strong>Payment Slip:</strong> <a href="{{ asset('storage/' . $bill->payment_slip) }}" target="_blank">View Screenshot</a>
+                            @endif
+                        @endif
                         @endif
                     </div>
                 </div>

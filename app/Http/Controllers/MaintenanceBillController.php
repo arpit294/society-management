@@ -189,7 +189,10 @@ class MaintenanceBillController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:paid,due,pending'
+            'status' => 'required|in:paid,due,pending',
+            'payment_method' => 'required_if:status,paid|in:cash,upi',
+            'transaction_id' => 'nullable|string',
+            'payment_slip' => 'required_if:payment_method,upi|image|mimes:jpeg,png,jpg|max:2048'
         ]);
 
         $maintenanceBill = MaintenanceBill::findOrFail($id);
@@ -201,6 +204,12 @@ class MaintenanceBillController extends Controller
 
             $maintenanceBill->status = 'paid';
             $maintenanceBill->paid_at = now();
+            $maintenanceBill->payment_method = $request->payment_method;
+            $maintenanceBill->transaction_id = $request->transaction_id;
+            
+            if ($request->hasFile('payment_slip')) {
+                $maintenanceBill->payment_slip = $request->file('payment_slip')->store('payment_slips', 'public');
+            }
 
             // Lock in the dynamically calculated amounts
             $maintenanceBill->penalty_amount = $lockedPenalty;
@@ -208,6 +217,9 @@ class MaintenanceBillController extends Controller
         } elseif ($request->status !== 'paid') {
             $maintenanceBill->status = $request->status;
             $maintenanceBill->paid_at = null;
+            $maintenanceBill->payment_method = null;
+            $maintenanceBill->transaction_id = null;
+            $maintenanceBill->payment_slip = null;
         }
 
         $maintenanceBill->save();

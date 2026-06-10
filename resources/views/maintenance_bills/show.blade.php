@@ -75,5 +75,106 @@
 
 @push('scripts')
     {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
+    <script>
+        function openPayModal(billId) {
+            var form = document.getElementById('payForm');
+            form.action = '/maintenance-bills/' + billId + '/update-status';
+            var modal = new coreui.Modal(document.getElementById('payModal'));
+            modal.show();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const paymentMethodSelect = document.getElementById('bill_payment_method');
+            const upiDetails = document.getElementById('bill-upi-details');
+            const paymentSlip = document.getElementById('bill_payment_slip');
+
+            paymentMethodSelect.addEventListener('change', function() {
+                if (this.value === 'upi') {
+                    upiDetails.classList.remove('d-none');
+                    paymentSlip.setAttribute('required', 'required');
+                } else {
+                    upiDetails.classList.add('d-none');
+                    paymentSlip.removeAttribute('required');
+                }
+            });
+
+            const payForm = document.getElementById('payForm');
+            payForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                let formData = new FormData(this);
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        var modal = coreui.Modal.getInstance(document.getElementById('payModal'));
+                        modal.hide();
+                        payForm.reset();
+                        upiDetails.classList.add('d-none');
+                        
+                        $('#maintenancedetails-table').DataTable().ajax.reload();
+                        document.getElementById('paid-count-display').innerText = data.paidCount + '/' + data.totalCount;
+                        document.getElementById('total-amount-display').innerText = '₹' + data.totalAmountExpected;
+                    } else {
+                        let msg = data.message || 'Error updating status';
+                        if(data.errors) {
+                            msg += '\n' + Object.values(data.errors).join('\n');
+                        }
+                        alert(msg);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error updating status');
+                });
+            });
+        });
+    </script>
 @endpush
+
+<!-- Pay Modal -->
+<div class="modal fade" id="payModal" tabindex="-1" aria-labelledby="payModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="payForm" method="POST" enctype="multipart/form-data">
+                @csrf
+                <input type="hidden" name="status" value="paid">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="payModalLabel">Pay Maintenance Bill</h5>
+                    <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="bill_payment_method" class="form-label">Payment Mode <span class="text-danger">*</span></label>
+                        <select name="payment_method" id="bill_payment_method" class="form-select" required>
+                            <option value="">Select Mode</option>
+                            <option value="cash">Cash</option>
+                            <option value="upi">UPI</option>
+                        </select>
+                    </div>
+                    <div id="bill-upi-details" class="d-none">
+                        <div class="mb-3">
+                            <label for="bill_transaction_id" class="form-label">Transaction ID (Optional)</label>
+                            <input type="text" name="transaction_id" id="bill_transaction_id" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label for="bill_payment_slip" class="form-label">Payment Slip Screenshot <span class="text-danger">*</span></label>
+                            <input type="file" name="payment_slip" id="bill_payment_slip" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 </x-user-page>

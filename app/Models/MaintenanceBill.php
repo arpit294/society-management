@@ -20,6 +20,7 @@ class MaintenanceBill extends Model
         'paid_at',
         'payment_method',
         'transaction_id',
+        'payment_slip',
         'status',
         'block_id',
         'dynamic_penalty_amount',
