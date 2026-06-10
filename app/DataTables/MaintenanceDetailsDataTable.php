@@ -136,7 +136,7 @@ class MaintenanceDetailsDataTable extends DataTable
             Column::make('total_cost')->title('Total Cost'),
             Column::make('status')->title('Status')->addClass('text-center'),
             Column::make('payment_date')->title('Payment Date')->addClass('text-center'),
-            Column::make('payment_slip')->title('Payment Slip')->addClass('text-center')->orderable(false)->searchable(false),
+            Column::make('payment_slip')->title('Payment Mode')->addClass('text-center')->orderable(false)->searchable(false),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)
