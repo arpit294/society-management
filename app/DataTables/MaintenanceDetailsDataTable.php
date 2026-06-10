@@ -45,9 +45,13 @@ class MaintenanceDetailsDataTable extends DataTable
                 return $bill->paid_at ? Carbon::parse($bill->paid_at)->format('d-m-Y') : '--';
             })
             ->addColumn('payment_slip', function ($bill) {
-                if ($bill->status === 'paid' && $bill->payment_method === 'upi' && $bill->payment_slip) {
-                    $url = asset('storage/' . $bill->payment_slip);
-                    return '<a href="'.$url.'" target="_blank" class="btn btn-sm btn-outline-info text-nowrap"><i class="fa-solid fa-image me-1"></i> Slip</a>';
+                if ($bill->status === 'paid') {
+                    if ($bill->payment_method === 'cash') {
+                        return '<span class="badge bg-secondary">Cash</span>';
+                    } elseif ($bill->payment_method === 'upi' && $bill->payment_slip) {
+                        $url = asset('storage/' . $bill->payment_slip);
+                        return '<a href="'.$url.'" target="_blank" class="btn btn-sm btn-outline-info text-nowrap"><i class="fa-solid fa-image me-1"></i> Slip</a>';
+                    }
                 }
                 return '--';
             })
