@@ -74,7 +74,7 @@ class PrepaymentController extends Controller
 
             DB::commit();
 
-            return redirect()->route('prepayments.index')->with('success', 'Prepayment recorded successfully for ' . $numberOfMonths . ' months.');
+            return redirect()->route('maintenance-bills.index')->with('success', 'Prepayment recorded successfully for ' . $numberOfMonths . ' months.');
 
         } catch (\Exception $e) {
             DB::rollBack();

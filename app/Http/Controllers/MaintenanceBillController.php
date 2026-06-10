@@ -14,7 +14,13 @@ class MaintenanceBillController extends Controller
 {
     public function index(MaintenanceBillsDataTable $dataTable)
     {
-        return $dataTable->render('maintenance_bills.index');
+        $prepayments = \App\Models\PrepaidMaintenance::with(['user', 'flat.block'])
+            ->where('status', 'unused')
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+
+        return $dataTable->render('maintenance_bills.index', compact('prepayments'));
     }
 
     public function create()

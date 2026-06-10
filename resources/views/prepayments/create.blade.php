@@ -55,7 +55,7 @@
                     </div>
 
                     <div class="d-flex justify-content-end">
-                        <a href="{{ route('prepayments.index') }}" class="btn btn-secondary me-2">Cancel</a>
+                        <a href="{{ route('maintenance-bills.index') }}" class="btn btn-secondary me-2">Cancel</a>
                         <button type="submit" class="btn btn-primary">Process Prepayment</button>
                     </div>
                 </form>

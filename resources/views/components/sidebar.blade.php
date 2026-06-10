@@ -146,15 +146,9 @@
             </a>
             <ul class="nav-group-items">
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('maintenance-bills*') ? 'active' : '' }}" href="{{ route('maintenance-bills.index') }}">
+                    <a class="nav-link {{ request()->is('maintenance-bills*') || request()->is('prepayments*') ? 'active' : '' }}" href="{{ route('maintenance-bills.index') }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                        Maintenance Bills
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('prepayments*') ? 'active' : '' }}" href="{{ route('prepayments.index') }}">
-                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                        Prepayments
+                        Payments
                     </a>
                 </li>
             </ul>
