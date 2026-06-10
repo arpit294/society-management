@@ -44,14 +44,17 @@ class MaintenanceDetailsDataTable extends DataTable
             ->addColumn('payment_date', function ($bill) {
                 return $bill->paid_at ? Carbon::parse($bill->paid_at)->format('d-m-Y') : '--';
             })
+            ->addColumn('payment_slip', function ($bill) {
+                if ($bill->status === 'paid' && $bill->payment_method === 'upi' && $bill->payment_slip) {
+                    $url = asset('storage/' . $bill->payment_slip);
+                    return '<a href="'.$url.'" target="_blank" class="btn btn-sm btn-outline-info text-nowrap"><i class="fa-solid fa-image me-1"></i> Slip</a>';
+                }
+                return '--';
+            })
             ->addColumn('action', function ($bill) {
                 $html = '<div class="d-flex gap-1 justify-content-center">';
                 if ($bill->status !== 'paid') {
-                    $html .= '<form action="'.route('maintenance-bills.update-status', $bill->id).'" method="POST" class="d-inline ajax-status-form">';
-                    $html .= csrf_field();
-                    $html .= '<input type="hidden" name="status" value="paid">';
-                    $html .= '<button type="submit" class="btn btn-sm btn-outline-success text-nowrap">Pay</button>';
-                    $html .= '</form>';
+                    $html .= '<button type="button" class="btn btn-sm btn-outline-success text-nowrap" onclick="openPayModal('.$bill->id.')">Pay</button>';
                 } else {
                     $html .= '<form action="'.route('maintenance-bills.update-status', $bill->id).'" method="POST" class="d-inline ajax-status-form">';
                     $html .= csrf_field();
@@ -66,7 +69,7 @@ class MaintenanceDetailsDataTable extends DataTable
 
                 return $html;
             })
-            ->rawColumns(['total_cost', 'status', 'action'])
+            ->rawColumns(['total_cost', 'status', 'payment_slip', 'action'])
             ->filterColumn('resident', function($query, $keyword) {
                 $query->whereHas('user', function($q) use ($keyword) {
                     $q->where('name', 'like', "%{$keyword}%");
@@ -129,6 +132,7 @@ class MaintenanceDetailsDataTable extends DataTable
             Column::make('total_cost')->title('Total Cost'),
             Column::make('status')->title('Status')->addClass('text-center'),
             Column::make('payment_date')->title('Payment Date')->addClass('text-center'),
+            Column::make('payment_slip')->title('Payment Slip')->addClass('text-center')->orderable(false)->searchable(false),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)
