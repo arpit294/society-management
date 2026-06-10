@@ -55,7 +55,7 @@ class MaintenanceBill extends Model
             $baseAmount = (float)$this->amount;
             $billingCycle = $this->maintenance->billing_cycle ?? 'monthly';
             $percentage = 0;
-            
+
             if ($billingCycle === 'monthly') {
                 $percentage = (float)setting('penalty_monthly_percent', 5);
             } elseif ($billingCycle === 'quarterly') {
@@ -63,7 +63,7 @@ class MaintenanceBill extends Model
             } elseif ($billingCycle === 'yearly') {
                 $percentage = (float)setting('penalty_yearly_percent', 15);
             }
-            
+
             return $baseAmount * ($percentage / 100);
         }
 
@@ -101,3 +101,5 @@ class MaintenanceBill extends Model
         return $this->belongsTo(Block::class);
     }
 }
+
+//

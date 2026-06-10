@@ -50,7 +50,11 @@
                     <option value="">Select Flat Type</option>
                     @foreach ($flatTypes as $type)
                         <option value="{{ $type->id }}" {{ old('flat_type_id', $flat->flat_type_id) == $type->id ? 'selected' : '' }}>
+<<<<<<< HEAD
                             {{ $type->name }} (₹{{ number_format($type->maintenance_fee, 2) }})
+=======
+                            {{ $type->name }} (${{ number_format($type->owner_maintenance_fee, 2) }})
+>>>>>>> main
                         </option>
                     @endforeach
                 </select>

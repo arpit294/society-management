@@ -14,7 +14,13 @@ class MaintenanceBillController extends Controller
 {
     public function index(MaintenanceBillsDataTable $dataTable)
     {
-        return $dataTable->render('maintenance_bills.index');
+        $prepayments = \App\Models\PrepaidMaintenance::with(['user', 'flat.block'])
+            ->where('status', 'unused')
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+
+        return $dataTable->render('maintenance_bills.index', compact('prepayments'));
     }
 
     public function create()
@@ -47,9 +53,25 @@ class MaintenanceBillController extends Controller
             foreach ($activeResidents as $resident) {
                 if (!$resident->flat || !$resident->flat->flatType) continue;
 
-                $amount = $resident->flat->flatType->maintenance_fee;
+                $amount = $resident->type === 'owner' 
+                    ? $resident->flat->flatType->owner_maintenance_fee 
+                    : $resident->flat->flatType->rental_maintenance_fee;
 
-                MaintenanceBill::create([
+                // Check for unused prepayment
+                $prepayment = \App\Models\PrepaidMaintenance::where('flat_id', $resident->flat_id)
+                    ->where('status', 'unused')
+                    ->whereRaw('months_used < months')
+                    ->first();
+
+                $status = 'due';
+                $paidAt = null;
+
+                if ($prepayment) {
+                    $status = 'paid';
+                    $paidAt = now();
+                }
+
+                $bill = MaintenanceBill::create([
                     'maintenance_id' => $maintenance->id,
                     'user_id' => $resident->user_id,
                     'flat_id' => $resident->flat_id,
@@ -58,8 +80,18 @@ class MaintenanceBillController extends Controller
                     'penalty_amount' => 0,
                     'total_amount' => $amount,
                     'generated_date' => now(),
-                    'status' => 'due',
+                    'status' => $status,
+                    'paid_at' => $paidAt,
                 ]);
+
+                if ($prepayment) {
+                    $monthsUsed = $prepayment->months_used + 1;
+                    $prepayment->update([
+                        'months_used' => $monthsUsed,
+                        'status' => ($monthsUsed >= $prepayment->months) ? 'used' : 'unused',
+                        'maintenance_bill_id' => $bill->id // Tracks the latest bill id for reference
+                    ]);
+                }
             }
 
             DB::commit();
@@ -213,5 +245,29 @@ class MaintenanceBillController extends Controller
         $fileName = 'invoice_'.($bill->flat->block->block_name ?? '').'-'.($bill->flat->flat_no ?? '').'_'.$bill->maintenance->month.'_'.$bill->maintenance->year.'.pdf';
 
         return $pdf->download($fileName);
+    }
+
+    public function getResidentInfo($userId)
+    {
+        $resident = \App\Models\Resident::with('flat.flatType')
+            ->where('user_id', $userId)
+            ->where(function($query) {
+                $query->whereNull('move_out_date')
+                      ->orWhere('move_out_date', '>=', now()->startOfDay());
+            })->first();
+
+        if ($resident && $resident->flat && $resident->flat->flatType) {
+            $amount = $resident->type === 'owner' 
+                ? $resident->flat->flatType->owner_maintenance_fee 
+                : $resident->flat->flatType->rental_maintenance_fee;
+                
+            return response()->json([
+                'success' => true,
+                'block_id' => $resident->block_id,
+                'flat_id' => $resident->flat_id,
+                'amount' => $amount
+            ]);
+        }
+        return response()->json(['success' => false]);
     }
 }
