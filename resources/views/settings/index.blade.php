@@ -39,18 +39,6 @@
                         </div>
                     </div>
 
-                    <h5 class="mb-3">Billing & Finances</h5>
-                    <div class="row mb-4">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Currency Symbol</label>
-                            <input type="text" name="currency_symbol" class="form-control" value="{{ $settings['currency_symbol'] ?? '₹' }}" placeholder="e.g. ₹ or $">
-                        </div>
-                        <div class="col-md-12 mb-3">
-                            <label class="form-label">Invoice Footer Notes</label>
-                            <textarea name="invoice_notes" class="form-control" rows="3">{{ $settings['invoice_notes'] ?? 'Thank you for your timely payment!' }}</textarea>
-                            <div class="form-text">These notes will appear at the bottom of generated PDF invoices.</div>
-                        </div>
-                    </div>
 
                     <h5 class="mb-3">Late Penalty Percentages</h5>
                     <div class="row mb-4">
