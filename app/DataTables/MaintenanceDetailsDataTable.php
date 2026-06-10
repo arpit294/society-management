@@ -67,6 +67,30 @@ class MaintenanceDetailsDataTable extends DataTable
                 return $html;
             })
             ->rawColumns(['total_cost', 'status', 'action'])
+            ->filterColumn('resident', function($query, $keyword) {
+                $query->whereHas('user', function($q) use ($keyword) {
+                    $q->where('name', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('flat_type', function($query, $keyword) {
+                $query->whereHas('flat.flatType', function($q) use ($keyword) {
+                    $q->where('name', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('apartment', function($query, $keyword) {
+                $query->whereHas('flat', function($q) use ($keyword) {
+                    $q->where('flat_no', 'like', "%{$keyword}%")
+                      ->orWhereHas('block', function($q2) use ($keyword) {
+                          $q2->where('block_name', 'like', "%{$keyword}%");
+                      });
+                });
+            })
+            ->filterColumn('total_cost', function($query, $keyword) {
+                $query->where('total_amount', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('payment_date', function($query, $keyword) {
+                // Ignore payment date search or convert formatting
+            })
             ->setRowId('id');
     }
 

@@ -38,7 +38,7 @@ class GenerateMonthlyBills extends Command
 
             if (!$billExists) {
                 $maintenanceFee = $resident->flat && $resident->flat->flatType 
-                    ? $resident->flat->flatType->maintenance_fee 
+                    ? ($resident->type === 'owner' ? $resident->flat->flatType->owner_maintenance_fee : $resident->flat->flatType->rental_maintenance_fee)
                     : 0;
 
                 if ($maintenanceFee > 0) {
