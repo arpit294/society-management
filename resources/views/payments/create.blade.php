@@ -153,6 +153,13 @@
         } catch (e) {
             console.log("Dropify not loaded.");
         }
+
+        // Initialize Select2 for Resident Dropdown
+        $('#resident_id').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Select Resident',
+            width: '100%'
+        });
     });
 </script>
 </x-user-page>

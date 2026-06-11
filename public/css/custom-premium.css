@@ -298,21 +298,22 @@ option {
     border-radius: 0.5rem;
 }
 
-[data-coreui-theme=dark] .select2-results__option {
-    color: var(--cui-body-color);
-    background-color: transparent;
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option {
+    color: var(--cui-body-color) !important;
+    background-color: transparent !important;
 }
 
-[data-coreui-theme=dark] .select2-results__option--selected, 
-[data-coreui-theme=dark] .select2-results__option[aria-selected="true"] {
-    background-color: rgba(139, 92, 246, 0.2);
-    color: var(--cui-primary);
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option--selected, 
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option[aria-selected="true"] {
+    background-color: rgba(139, 92, 246, 0.2) !important;
+    color: var(--cui-primary) !important;
 }
 
-[data-coreui-theme=dark] .select2-results__option--highlighted,
-[data-coreui-theme=dark] .select2-results__option--highlighted.select2-results__option--selectable {
-    background-color: var(--cui-primary);
-    color: #fff !important;
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option--highlighted,
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option--highlighted.select2-results__option--selectable,
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option.select2-results__option--highlighted {
+    background-color: var(--cui-primary) !important;
+    color: #ffffff !important;
 }
 
 /* Global Select2 container styling */
