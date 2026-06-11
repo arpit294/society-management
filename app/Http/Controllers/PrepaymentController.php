@@ -31,7 +31,27 @@ class PrepaymentController extends Controller
             ->orWhere('move_out_date', '>=', now()->startOfDay())
             ->get();
 
-        return view('prepayments.create', compact('residents'));
+        $residentFees = [];
+        foreach ($residents as $resident) {
+            if ($resident->flat && $resident->flat->flatType) {
+                $residentFees[$resident->id] = $resident->type === 'owner'
+                    ? $resident->flat->flatType->owner_maintenance_fee
+                    : $resident->flat->flatType->rental_maintenance_fee;
+            } else {
+                $residentFees[$resident->id] = 0;
+            }
+        }
+
+        $discountSettings = [
+            'apply_discount' => setting('apply_discount', '1'),
+            'type' => setting('discount_type', 'percentage'),
+            'yearly_value' => (float)setting('discount_yearly_value', setting('discount_yearly_percent', 10)),
+            'half_yearly_value' => (float)setting('discount_half_yearly_value', setting('discount_half_yearly_percent', 0)),
+            'quarterly_value' => (float)setting('discount_quarterly_value', setting('discount_quarterly_percent', 5)),
+            'monthly_value' => (float)setting('discount_monthly_value', setting('discount_monthly_percent', 0)),
+        ];
+
+        return view('prepayments.create', compact('residents', 'residentFees', 'discountSettings'));
     }
 
     public function store(Request $request)
@@ -74,12 +94,14 @@ class PrepaymentController extends Controller
 
             // ---------------------------------------------------------
             // COMPLEX LOGIC: Prepayment Discount Calculation
-            // We reward users for paying in advance (quarterly/yearly).
+            // We reward users for paying in advance (quarterly/half-yearly/yearly).
             // We pull the tiered discount values from the dynamic global settings.
             // ---------------------------------------------------------
             if ($applyDiscount === '1') {
                 if ($numberOfMonths >= 12) {
                     $discountValue = (float)setting('discount_yearly_value', setting('discount_yearly_percent', 10));
+                } elseif ($numberOfMonths >= 6) {
+                    $discountValue = (float)setting('discount_half_yearly_value', setting('discount_half_yearly_percent', 0));
                 } elseif ($numberOfMonths >= 3) {
                     $discountValue = (float)setting('discount_quarterly_value', setting('discount_quarterly_percent', 5));
                 } else {
