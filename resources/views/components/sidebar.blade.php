@@ -116,7 +116,7 @@
                 Residents
             </a>
         </li>
-        <li class="nav-group {{ request()->is('maintenance-bills*') || request()->is('prepayments*') || request()->is('expense-categories*') || request()->is('expenses*') ? 'show' : '' }}">
+        <li class="nav-group {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('expense-categories*') || request()->is('expenses*') ? 'show' : '' }}">
             <a class="nav-link nav-group-toggle" href="#">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)"
@@ -126,7 +126,7 @@
             </a>
             <ul class="nav-group-items">
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('maintenance-bills*') || request()->is('prepayments*') ? 'active' : '' }}" href="{{ route('maintenance-bills.index') }}">
+                    <a class="nav-link {{ request()->is('maintenance-bills*') || request()->is('payments*') ? 'active' : '' }}" href="{{ route('maintenance-bills.index') }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         Payments
                     </a>

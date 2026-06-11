@@ -18,107 +18,34 @@ class MaintenanceBillController extends Controller
 {
     public function index(MaintenanceBillsDataTable $dataTable)
     {
-        $prepayments = PrepaidMaintenance::with(['user', 'flat.block'])
-            ->where('status', 'unused')
-            ->orderBy('year')
-            ->orderBy('month')
-            ->get();
-
-        return $dataTable->render('maintenance_bills.index', compact('prepayments'));
-    }
-
-    public function create()
-    {
-        return view('maintenance_bills.create');
-    }
-
-    public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'month' => 'required|string|max:50',
-            'year' => 'required|integer|min:2000',
-            'status' => 'required|in:draft,published',
-        ]);
-        // Calculate due date based on configurable penalty due days (default to 15 days if not set)
-        $dueDays = (int)setting('penalty_due_days', 15);
-        // Store the due date in the maintenance table, but it can also be calculated dynamically in the accessor if you prefer
-        $validatedData['due_date'] = now()->addDays($dueDays)->format('Y-m-d');
-
-        DB::beginTransaction();
-
-        try {
-            // Create Master Maintenance
-            $maintenance = Maintenance::create($validatedData);
-
-            // Fetch all active residents
-            $activeResidents = Resident::with('flat.flatType')
-                ->where(function($query) {
-                    $query->whereNull('move_out_date')
-                          ->orWhere('move_out_date', '>=', now()->startOfDay());
-                })->get();
-            // Loop through each resident and create individual maintenance bills
-            foreach ($activeResidents as $resident) {
-                if (!$resident->flat || !$resident->flat->flatType) continue;
-
-                // Determine the maintenance amount based on resident type and flat type
-                $amount = $resident->type === 'owner'
-                    ? $resident->flat->flatType->owner_maintenance_fee
-                    : $resident->flat->flatType->rental_maintenance_fee;
-
-                // Check for unused prepayment
-                $prepayment = PrepaidMaintenance::where('flat_id', $resident->flat_id)
-                    ->where('status', 'unused')
-                    ->whereRaw('months_used < months')
-                    ->first();
-
-                $status = 'due';
-                $paidAt = null;
-
-                if ($prepayment) {
-                    $status = 'paid';
-                    $paidAt = now();
-                }
-
-                // Create the maintenance bill for the resident
-                $bill = MaintenanceBill::create([
-                    'maintenance_id' => $maintenance->id,
-                    'user_id' => $resident->user_id,
-                    'flat_id' => $resident->flat_id,
-                    'block_id' => $resident->block_id,
-                    'amount' => $amount,
-                    'penalty_amount' => 0,
-                    'total_amount' => $amount,
-                    'generated_date' => now(),
-                    'status' => $status,
-                    'paid_at' => $paidAt,
-                ]);
-
-                // If a prepayment exists, update it to reflect the usage of one month of prepayment
-                if ($prepayment) {
-                    $monthsUsed = $prepayment->months_used + 1;
-                    $prepayment->update([
-                        'months_used' => $monthsUsed,
-                        'status' => ($monthsUsed >= $prepayment->months) ? 'used' : 'unused',
-                        'maintenance_bill_id' => $bill->id // Tracks the latest bill id for reference
-                    ]);
-                }
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Maintenance records generated successfully.',
-            ]);
-        // Catch any exceptions that occur during the process and roll back the transaction
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Error generating maintenance: ' . $e->getMessage()
-            ], 500);
+        $totalCollected = MaintenanceBill::where('status', 'paid')->sum('total_amount');
+        $cashCollected = MaintenanceBill::where('status', 'paid')->where('payment_method', 'CASH')->sum('total_amount');
+        $upiCollected = MaintenanceBill::where('status', 'paid')->where('payment_method', 'UPI')->sum('total_amount');
+        
+        $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        $monthlyRevenueDB = MaintenanceBill::where('maintenance_bills.status', 'paid')
+            ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
+            ->where('maintenances.year', date('Y'))
+            ->selectRaw('maintenances.month, sum(maintenance_bills.total_amount) as total')
+            ->groupBy('maintenances.month')
+            ->pluck('total', 'month')
+            ->toArray();
+            
+        $chartDataRevenue = [];
+        foreach ($months as $m) {
+            $chartDataRevenue[] = $monthlyRevenueDB[$m] ?? 0;
         }
+
+        return $dataTable->render('maintenance_bills.index', compact(
+            'totalCollected',
+            'cashCollected',
+            'upiCollected',
+            'months',
+            'chartDataRevenue'
+        ));
     }
+
+
 
     public function show(\App\DataTables\MaintenanceDetailsDataTable $dataTable, $id)
     {
@@ -129,71 +56,22 @@ class MaintenanceBillController extends Controller
 
     public function destroy($id)
     {
-        // Delete the entire maintenance record along with all associated bills
-        $maintenance = Maintenance::findOrFail($id);
-        $maintenance->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Maintenance record deleted successfully.',
-        ]);
-    }
-
-    public function edit($id)
-    {
-        // Show form to edit individual maintenance bill
-        $maintenanceBill = MaintenanceBill::findOrFail($id);
-        $blocks = Block::all();
-        $flats = Flat::with('flatType')->where('block_id', $maintenanceBill->block_id)->get();
-        $users = User::all();
-        return view('maintenance_bills.edit', compact('maintenanceBill', 'blocks', 'flats', 'users'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $maintenanceBill = MaintenanceBill::findOrFail($id);
-
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'block_id' => 'required|exists:blocks,id',
-            'flat_id' => 'required|exists:flats,id',
-            'amount' => 'required|numeric|min:0',
-            'status' => 'required|in:paid,due,pending',
-        ]);
-
-        $data = $request->only([
-            'user_id',
-            'block_id',
-            'flat_id',
-            'amount',
-            'status',
-        ]);
-        // If status is being updated to paid, set the paid_at timestamp and lock in penalty and total amounts
-        if ($request->status === 'paid' && $maintenanceBill->getRawOriginal('status') !== 'paid') {
-            $data['paid_at'] = now();
-
-            // ---------------------------------------------------------
-            // COMPLEX LOGIC: Locking in Dynamic Amounts
-            // Because penalties are calculated dynamically based on today's date,
-            // we must explicitly freeze the penalty and total amount in the DB
-            // the moment it is paid. Otherwise, if someone views the paid bill
-            // 6 months later, it would calculate new penalties on the paid bill.
-            // ---------------------------------------------------------
-            $data['penalty_amount'] = $maintenanceBill->penalty_amount;
-            $data['total_amount'] = $request->amount + $maintenanceBill->penalty_amount;
-        } elseif ($request->status !== 'paid') {
-            $data['paid_at'] = null;
-            $data['penalty_amount'] = 0;
-            $data['total_amount'] = $request->amount;
+        $bills = MaintenanceBill::where('batch_id', $id)->get();
+        if ($bills->isEmpty()) {
+            $bills = MaintenanceBill::where('id', $id)->get();
         }
 
-        $maintenanceBill->update($data);
+        foreach ($bills as $bill) {
+            $bill->delete();
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Maintenance bill updated successfully.',
+            'message' => 'Payment deleted successfully.',
         ]);
     }
+
+
 
     public function destroyIndividual($id)
     {

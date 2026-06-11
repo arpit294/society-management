@@ -12,6 +12,7 @@ class MaintenanceBill extends Model
 
     protected $fillable = [
         'maintenance_id',
+        'batch_id',
         'user_id',
         'flat_id',
         'amount',
@@ -101,11 +102,15 @@ class MaintenanceBill extends Model
 
     public function getTotalAmountAttribute($value)
     {
-        if ($this->attributes['status'] === 'paid') {
+        $status = $this->attributes['status'] ?? null;
+        
+        // If status is paid OR if status is not loaded (e.g. grouped queries), 
+        // trust the raw value provided by the database.
+        if ($status === 'paid' || $status === null) {
             return (float)$value;
         }
 
-        $baseAmount = (float)$this->amount;
+        $baseAmount = (float)($this->attributes['amount'] ?? 0);
         $penalty = $this->getPenaltyAmountAttribute($this->attributes['penalty_amount'] ?? 0);
         return $baseAmount + $penalty;
     }

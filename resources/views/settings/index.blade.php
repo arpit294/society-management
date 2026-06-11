@@ -88,15 +88,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Monthly Package</label>
-                                <div class="input-group">
-                                    <input type="number" step="0.01" name="penalty_monthly_value" class="form-control text-end"
-                                        value="{{ $settings['penalty_monthly_value'] ?? ($settings['penalty_monthly_percent'] ?? '0') }}">
-                                    <span class="input-group-text penalty-suffix">%</span>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Quarterly (3 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_quarterly_value" class="form-control text-end"
@@ -104,7 +96,7 @@
                                     <span class="input-group-text penalty-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Half-Yearly (6 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_half_yearly_value" class="form-control text-end"
@@ -112,7 +104,7 @@
                                     <span class="input-group-text penalty-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Yearly (12 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_yearly_value" class="form-control text-end"
@@ -148,15 +140,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Monthly Package</label>
-                                <div class="input-group">
-                                    <input type="number" step="0.01" name="discount_monthly_value" class="form-control text-end"
-                                        value="{{ $settings['discount_monthly_value'] ?? ($settings['discount_monthly_percent'] ?? '0') }}">
-                                    <span class="input-group-text discount-suffix">%</span>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Quarterly (3 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_quarterly_value" class="form-control text-end"
@@ -164,7 +148,7 @@
                                     <span class="input-group-text discount-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Half-Yearly (6 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_half_yearly_value" class="form-control text-end"
@@ -172,7 +156,7 @@
                                     <span class="input-group-text discount-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Yearly (12 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_yearly_value" class="form-control text-end"
@@ -196,7 +180,6 @@
             document.addEventListener('DOMContentLoaded', function() {
                 const applyPenaltyToggle = document.getElementById('apply_penalty');
                 const penaltyValueInputs = [
-                    document.querySelector('input[name="penalty_monthly_value"]'),
                     document.querySelector('input[name="penalty_quarterly_value"]'),
                     document.querySelector('input[name="penalty_half_yearly_value"]'),
                     document.querySelector('input[name="penalty_yearly_value"]'),
@@ -207,7 +190,6 @@
                 const discountTypeSelect = document.getElementById('discount_type');
                 const applyDiscountToggle = document.getElementById('apply_discount');
                 const discountInputs = [
-                    document.querySelector('input[name="discount_monthly_value"]'),
                     document.querySelector('input[name="discount_quarterly_value"]'),
                     document.querySelector('input[name="discount_half_yearly_value"]'),
                     document.querySelector('input[name="discount_yearly_value"]')

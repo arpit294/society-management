@@ -58,16 +58,16 @@ class MaintenanceDetailsDataTable extends DataTable
             ->addColumn('action', function ($bill) {
                 $html = '<div class="d-flex gap-1 justify-content-center">';
                 if ($bill->status !== 'paid') {
-                    $html .= '<button type="button" class="btn btn-sm btn-outline-success text-nowrap" onclick="openPayModal('.$bill->id.')">Pay</button>';
+                    $html .= '<button type="button" class="btn btn-sm btn-outline-success text-nowrap" onclick="openPayModal('.$bill->id.')" data-coreui-toggle="tooltip" title="Pay"><i class="fa-solid fa-money-bill-wave"></i></button>';
                 } else {
                     $html .= '<form action="'.route('maintenance-bills.update-status', $bill->id).'" method="POST" class="d-inline ajax-status-form">';
                     $html .= csrf_field();
                     $html .= '<input type="hidden" name="status" value="due">';
-                    $html .= '<button type="submit" class="btn btn-sm btn-outline-danger text-nowrap">Due</button>';
+                    $html .= '<button type="submit" class="btn btn-sm btn-outline-danger text-nowrap" data-coreui-toggle="tooltip" title="Mark as Due"><i class="fa-solid fa-times-circle"></i></button>';
                     $html .= '</form>';
                 }
                 if ($bill->status === 'paid') {
-                    $html .= '<a href="'.route('maintenance-bills.details', $bill->id).'" class="btn btn-sm btn-outline-primary text-nowrap"><i class="fa-solid fa-eye me-1"></i> View</a>';
+                    $html .= '<a href="'.route('maintenance-bills.details', $bill->id).'" class="btn btn-sm btn-outline-primary text-nowrap" data-coreui-toggle="tooltip" title="View"><i class="fa-solid fa-eye"></i></a>';
                 }
                 $html .= '</div>';
 

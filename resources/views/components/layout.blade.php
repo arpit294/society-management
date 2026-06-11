@@ -23,8 +23,6 @@
     <!-- Main styles for this application-->
     <link href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}" rel="stylesheet">
     
-    <!-- Custom Premium Styles -->
-    <link href="{{ asset('css/custom-premium.css') }}?v={{ filemtime(public_path('css/custom-premium.css')) }}" rel="stylesheet">
     <!-- We use those styles to show code examples, you should remove them in your application.-->
     <link href="{{ asset('css/examples.css') }}" rel="stylesheet">
     <script src="{{ asset('js/config.js') }}"></script>
@@ -33,7 +31,16 @@
     @stack('styles')
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.2/css/dropify.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Custom Premium Styles (Highest Specificity) -->
+    <link href="{{ asset('css/custom-premium.css') }}?v={{ filemtime(public_path('css/custom-premium.css')) }}" rel="stylesheet">
+    
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 
 <body>
@@ -52,10 +59,19 @@
     <script src="{{ asset('vendors/@coreui/chartjs/js/coreui-chartjs.js') }}"></script>
     <script src="{{ asset('vendors/@coreui/utils/js/index.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.2/js/dropify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     {{-- <script src="{{ asset('js/main.js') }}"></script> --}}
     <script>
         $(document).ready(function() {
             $('input[type="file"]').dropify();
+
+            @if(session('success'))
+                toastr.success("{{ session('success') }}");
+            @endif
+            @if(session('error'))
+                toastr.error("{{ session('error') }}");
+            @endif
         });
     </script>
         @stack('scripts')

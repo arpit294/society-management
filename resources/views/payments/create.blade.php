@@ -4,7 +4,7 @@
         <div class="card border-0 shadow-sm rounded-3">
             <div class="card-header border-bottom-0 pt-4 pb-0 px-4">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0 fw-bold">Record Maintenance Prepayment</h4>
+                    <h4 class="mb-0 fw-bold">Record Maintenance Payment</h4>
                     <a href="{{ route('maintenance-bills.index') }}" class="btn-close text-reset" aria-label="Close"></a>
                 </div>
                 <hr>
@@ -23,7 +23,7 @@
                     </div>
                 @endif
 
-                <form action="{{ route('prepayments.store') }}" method="POST" enctype="multipart/form-data" id="prepayment-form">
+                <form action="{{ route('payments.store') }}" method="POST" enctype="multipart/form-data" id="prepayment-form">
                     @csrf
                     <!-- Hidden inputs required by controller -->
                     <input type="hidden" name="months" id="hidden_months" value="0">
@@ -77,25 +77,32 @@
 
                     <!-- Totals Row -->
                     <div class="row mb-4">
-                        <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="col-md-3 mb-3 mb-md-0">
                             <label class="form-label fw-semibold text-muted small text-uppercase">Subtotal</label>
                             <div class="input-group">
                                 <span class="input-group-text border-end-0">₹</span>
                                 <input type="text" id="subtotal" class="form-control border-start-0 ps-0" readonly value="0.00">
                             </div>
                         </div>
-                        <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="col-md-3 mb-3 mb-md-0">
+                            <label class="form-label fw-semibold text-muted small text-uppercase">Penalty Amount</label>
+                            <div class="input-group">
+                                <span class="input-group-text text-danger border-end-0">₹</span>
+                                <input type="number" step="0.01" name="penalty_amount" id="penalty_amount" class="form-control text-danger border-start-0 ps-0" value="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3 mb-md-0">
                             <label class="form-label fw-semibold text-muted small text-uppercase">Discount Applied</label>
                             <div class="input-group">
                                 <span class="input-group-text text-success border-end-0">₹</span>
-                                <input type="text" id="discount_applied" class="form-control text-success border-start-0 ps-0" readonly value="0.00">
+                                <input type="number" step="0.01" name="discount_amount" id="discount_applied" class="form-control text-success border-start-0 ps-0" value="0.00">
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label fw-semibold text-muted small text-uppercase">Total Amount</label>
                             <div class="input-group">
-                                <span class="input-group-text text-primary border-end-0 fw-bold">₹</span>
-                                <input type="text" id="total_amount" class="form-control text-primary border-start-0 ps-0 fw-bold" readonly value="0.00">
+                                <span class="input-group-text bg-primary-subtle text-primary border-primary-subtle border-end-0 fw-bold">₹</span>
+                                <input type="text" name="total_amount" id="total_amount" class="form-control bg-primary-subtle text-primary border-primary-subtle border-start-0 ps-0 fw-bold" readonly value="0.00">
                             </div>
                         </div>
                     </div>
@@ -120,13 +127,7 @@
                         </div>
                     </div>
 
-                    <!-- Status -->
-                    <div class="mb-4">
-                        <label for="status" class="form-label fw-semibold text-muted small text-uppercase">Status</label>
-                        <select id="status" class="form-select" disabled>
-                            <option value="paid" selected>Paid</option>
-                        </select>
-                    </div>
+
 
                     <!-- Submit Button -->
                     <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-3 d-flex justify-content-center align-items-center" id="submit-btn" disabled>
@@ -139,118 +140,18 @@
 </div>
 
 <script>
-    // Data injected from controller
-    const residentFees = @json($residentFees);
-    const discountSettings = @json($discountSettings);
+    // Global variables for script.js
+    window.residentFees = @json($residentFees);
+    window.discountSettings = @json($discountSettings);
+    window.penaltySettings = @json($penaltySettings);
     
-    let currentMonthlyFee = 0;
-
     $(document).ready(function() {
-        if ($('.dropify').length > 0) {
-            $('.dropify').dropify();
-        }
-
-        const paymentMethodSelect = document.getElementById('payment_method');
-        const upiDetails = document.getElementById('upi-details');
-        const paymentSlip = document.getElementById('payment_slip');
-        
-        function toggleUpiDetails() {
-            if (paymentMethodSelect.value === 'upi') {
-                upiDetails.classList.remove('d-none');
-                paymentSlip.setAttribute('required', 'required');
-            } else {
-                upiDetails.classList.add('d-none');
-                paymentSlip.removeAttribute('required');
+        try {
+            if ($('.dropify').length > 0) {
+                $('.dropify').dropify();
             }
-        }
-        paymentMethodSelect.addEventListener('change', toggleUpiDetails);
-        toggleUpiDetails();
-
-        // Resident Change Handler
-        $('#resident_id').on('change', function() {
-            const resId = $(this).val();
-            if (resId && residentFees[resId]) {
-                currentMonthlyFee = parseFloat(residentFees[resId]);
-                $('#display_monthly_fee').text(currentMonthlyFee.toFixed(2));
-                $('#display_monthly_total').text(currentMonthlyFee.toFixed(2));
-                $('#maintenance-fees-section').slideDown();
-            } else {
-                currentMonthlyFee = 0;
-                $('#maintenance-fees-section').slideUp();
-            }
-            calculateTotals();
-        });
-
-        // Date Change Handler
-        $('#start_date, #end_date').on('change', calculateTotals);
-
-        function calculateTotals() {
-            const startDateVal = $('#start_date').val();
-            const endDateVal = $('#end_date').val();
-            
-            let months = 0;
-            
-            if (startDateVal && endDateVal) {
-                const start = new Date(startDateVal);
-                const end = new Date(endDateVal);
-                
-                if (end >= start) {
-                    months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
-                    
-                    // Populate hidden fields for form submission
-                    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-                    $('#hidden_start_month').val(monthNames[start.getMonth()]);
-                    $('#hidden_start_year').val(start.getFullYear());
-                } else {
-                    months = 0;
-                }
-            }
-            
-            $('#calculated_duration').val(`${months} Month(s)`);
-            $('#hidden_months').val(months);
-
-            if (months > 0 && currentMonthlyFee > 0) {
-                const subtotal = currentMonthlyFee * months;
-                
-                let discountValue = 0;
-                if (discountSettings.apply_discount == '1') {
-                    if (months >= 12) {
-                        discountValue = discountSettings.yearly_value;
-                    } else if (months >= 6) {
-                        discountValue = discountSettings.half_yearly_value;
-                    } else if (months >= 3) {
-                        discountValue = discountSettings.quarterly_value;
-                    } else {
-                        discountValue = discountSettings.monthly_value;
-                    }
-                }
-                
-                let discountAmount = 0;
-                if (discountSettings.type === 'fixed') {
-                    discountAmount = discountValue;
-                } else {
-                    discountAmount = subtotal * (discountValue / 100);
-                }
-
-                const totalAmount = subtotal - discountAmount;
-
-                $('#subtotal').val(subtotal.toFixed(2));
-                $('#discount_applied').val(discountAmount.toFixed(2));
-                $('#total_amount').val(totalAmount.toFixed(2));
-                
-                // Max months check
-                if (months > 12) {
-                    $('#submit-btn').prop('disabled', true);
-                    alert('You can prepay for a maximum of 12 months.');
-                } else {
-                    $('#submit-btn').prop('disabled', false);
-                }
-            } else {
-                $('#subtotal').val('0.00');
-                $('#discount_applied').val('0.00');
-                $('#total_amount').val('0.00');
-                $('#submit-btn').prop('disabled', true);
-            }
+        } catch (e) {
+            console.log("Dropify not loaded.");
         }
     });
 </script>

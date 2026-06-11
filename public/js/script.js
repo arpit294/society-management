@@ -208,7 +208,7 @@ $(document).ready(function () {
         });
 
     function toggleMaintenanceBillsResetBtn() {
-        if ($("#maintenance-bills-filter-status").val()) {
+        if ($("#maintenance-bills-filter-method").val()) {
             $("#maintenance-bills-filter-reset-col").removeClass("d-none");
         } else {
             $("#maintenance-bills-filter-reset-col").addClass("d-none");
@@ -216,13 +216,13 @@ $(document).ready(function () {
     }
 
     $(document)
-        .off("change", "#maintenance-bills-filter-status")
-        .on("change", "#maintenance-bills-filter-status", function () {
-            let statusValue = $(this).val();
+        .off("change", "#maintenance-bills-filter-method")
+        .on("change", "#maintenance-bills-filter-method", function () {
+            let methodValue = $(this).val();
             $("#maintenance-bills-table")
                 .DataTable()
-                .column("status:name")
-                .search(statusValue)
+                .column("payment_method:name")
+                .search(methodValue)
                 .draw();
             toggleMaintenanceBillsResetBtn();
         });
@@ -230,10 +230,10 @@ $(document).ready(function () {
     $(document)
         .off("click", "#maintenance-bills-filter-reset")
         .on("click", "#maintenance-bills-filter-reset", function () {
-            $("#maintenance-bills-filter-status").val("");
+            $("#maintenance-bills-filter-method").val("");
 
             let dt = $("#maintenance-bills-table").DataTable();
-            dt.column("status:name").search("");
+            dt.column("payment_method:name").search("");
             dt.draw();
             toggleMaintenanceBillsResetBtn();
         });
@@ -2200,23 +2200,48 @@ $(document).ready(function () {
         const mainChartCtx = document
             .getElementById("mainChart")
             .getContext("2d");
+            
+        let gradientRevenue = mainChartCtx.createLinearGradient(0, 0, 0, 400);
+        gradientRevenue.addColorStop(0, 'rgba(99, 102, 241, 0.5)'); // Indigo
+        gradientRevenue.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
+        let gradientExpense = mainChartCtx.createLinearGradient(0, 0, 0, 400);
+        gradientExpense.addColorStop(0, 'rgba(239, 68, 68, 0.5)'); // Red
+        gradientExpense.addColorStop(1, 'rgba(239, 68, 68, 0.0)');
+
         let mainChart = new Chart(mainChartCtx, {
-            type: "bar",
+            type: "line",
             data: {
                 labels: months,
                 datasets: [
                     {
                         label: "Revenue (Paid Bills)",
-                        backgroundColor: "rgba(46, 184, 92, 0.8)",
-                        borderColor: "rgba(46, 184, 92, 1)",
-                        borderWidth: 1,
+                        backgroundColor: gradientRevenue,
+                        borderColor: "#6366f1",
+                        borderWidth: 3,
+                        pointBackgroundColor: "#6366f1",
+                        pointBorderColor: "#fff",
+                        pointHoverBackgroundColor: "#fff",
+                        pointHoverBorderColor: "#6366f1",
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4,
                         data: revenueData,
                     },
                     {
                         label: "Society Expenses",
-                        backgroundColor: "rgba(229, 83, 83, 0.8)",
-                        borderColor: "rgba(229, 83, 83, 1)",
-                        borderWidth: 1,
+                        backgroundColor: gradientExpense,
+                        borderColor: "#ef4444",
+                        borderWidth: 3,
+                        pointBackgroundColor: "#ef4444",
+                        pointBorderColor: "#fff",
+                        pointHoverBackgroundColor: "#fff",
+                        pointHoverBorderColor: "#ef4444",
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true,
+                        tension: 0.4,
                         data: expenseData,
                     },
                 ],
@@ -2224,9 +2249,24 @@ $(document).ready(function () {
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
                 plugins: {
-                    legend: { position: "top" },
+                    legend: { 
+                        position: "top",
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 20
+                        }
+                    },
                     tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titlePadding: 10,
+                        bodyPadding: 10,
+                        cornerRadius: 8,
                         callbacks: {
                             label: function (context) {
                                 let label = context.dataset.label || "";
@@ -2234,9 +2274,9 @@ $(document).ready(function () {
                                     label += ": ";
                                 }
                                 if (context.parsed.y !== null) {
-                                    label += new Intl.NumberFormat("en-US", {
+                                    label += new Intl.NumberFormat("en-IN", {
                                         style: "currency",
-                                        currency: "USD",
+                                        currency: "INR",
                                     }).format(context.parsed.y);
                                 }
                                 return label;
@@ -2245,7 +2285,13 @@ $(document).ready(function () {
                     },
                 },
                 scales: {
-                    y: { beginAtZero: true },
+                    y: { 
+                        beginAtZero: true,
+                        grid: { borderDash: [4, 4] }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
                 },
             },
         });
@@ -2270,11 +2316,12 @@ $(document).ready(function () {
                                 statusData.due,
                             ],
                             backgroundColor: [
-                                "#2eb85c", // success
-                                "#f9b115", // warning
-                                "#e55353", // danger
+                                "#10b981", // Emerald (Paid)
+                                "#f59e0b", // Amber (Pending)
+                                "#ef4444", // Red (Due)
                             ],
-                            hoverOffset: 4,
+                            borderWidth: 0,
+                            hoverOffset: 10,
                         },
                     ],
                 },
@@ -2282,9 +2329,19 @@ $(document).ready(function () {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: "bottom" },
+                        legend: { 
+                            position: "bottom",
+                            labels: {
+                                padding: 20,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
                     },
-                    cutout: "70%",
+                    cutout: "75%",
+                    layout: {
+                        padding: 10
+                    }
                 },
             });
         }
@@ -2325,7 +2382,7 @@ $(document).ready(function () {
 
             if (type === "owner" && role === "owner") {
                 $(this).show().prop("disabled", false).prop("hidden", false);
-            } else if (type === "rental" && role === "tenant") {
+            } else if (type === "rental" && role === "rental") {
                 $(this).show().prop("disabled", false).prop("hidden", false);
             } else {
                 $(this).hide().prop("disabled", true).prop("hidden", true);
@@ -2569,4 +2626,215 @@ $(document).ready(function () {
             e.preventDefault();
         }
     });
+
+    // ==========================================
+    // Prepayment / Payment Form Logic
+    // ==========================================
+    if ($('#prepayment-form').length > 0) {
+        
+        if ($('#resident_id').length > 0 && typeof $.fn.select2 !== 'undefined') {
+            $('#resident_id').select2({
+                theme: 'bootstrap-5',
+                placeholder: "Select Resident",
+                width: '100%'
+            });
+        }
+
+        if (typeof flatpickr !== 'undefined') {
+            flatpickr("#start_date", {
+                dateFormat: "Y-m-d",
+                onChange: function(selectedDates, dateStr, instance) {
+                    $('#start_date').val(dateStr);
+                    calculatePaymentTotals();
+                }
+            });
+            flatpickr("#end_date", {
+                dateFormat: "Y-m-d",
+                onChange: function(selectedDates, dateStr, instance) {
+                    $('#end_date').val(dateStr);
+                    calculatePaymentTotals();
+                }
+            });
+        }
+
+        let currentMonthlyFee = 0;
+
+        function toggleUpiDetails() {
+            const paymentMethod = $('#payment_method').val();
+            const upiDetails = $('#upi-details');
+            const paymentSlip = $('#payment_slip');
+            
+            if (paymentMethod === 'upi') {
+                upiDetails.removeClass('d-none');
+                paymentSlip.attr('required', 'required');
+            } else {
+                upiDetails.addClass('d-none');
+                paymentSlip.removeAttr('required');
+            }
+        }
+
+        $(document).on('change', '#payment_method', toggleUpiDetails);
+        toggleUpiDetails();
+
+        function calculatePaymentTotals() {
+            const startDateVal = $('#start_date').val();
+            const endDateVal = $('#end_date').val();
+            
+            let months = 0;
+            
+            if (startDateVal && endDateVal) {
+                const start = new Date(startDateVal);
+                const end = new Date(endDateVal);
+                
+                if (end >= start) {
+                    const diffTime = Math.abs(end - start);
+                    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                    months = Math.round(diffDays / 30.44); // 30.44 is average days in a month
+                    if (months < 1) months = 1;
+                    
+                    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                    $('#hidden_start_month').val(monthNames[start.getMonth()]);
+                    $('#hidden_start_year').val(start.getFullYear());
+                } else {
+                    months = 0;
+                }
+            }
+            
+            $('#calculated_duration').val(`${months} Month(s)`);
+            $('#hidden_months').val(months);
+
+            if (months > 0 && currentMonthlyFee > 0 && window.discountSettings) {
+                const subtotal = currentMonthlyFee * months;
+                const startDate = startDateVal;
+                
+                // Calculate split of months
+                let pastMonthsCount = 0;
+                let futureMonthsCount = 0;
+                
+                if (startDate) {
+                    const start = new Date(startDate);
+                    const now = new Date();
+                    pastMonthsCount = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
+                    
+                    if (pastMonthsCount < 0) pastMonthsCount = 0;
+                    if (pastMonthsCount > months) pastMonthsCount = months;
+                    
+                    futureMonthsCount = months - pastMonthsCount;
+                } else {
+                    futureMonthsCount = months;
+                }
+
+                let arrearsAmount = pastMonthsCount * currentMonthlyFee;
+                let advanceAmount = futureMonthsCount * currentMonthlyFee;
+
+                // Penalty Calculation (on past months)
+                let penaltyValue = 0;
+                if (window.penaltySettings && window.penaltySettings.apply_penalty == '1' && pastMonthsCount > 0) {
+                    if (pastMonthsCount >= 12 && window.penaltySettings.yearly_value > 0) {
+                        penaltyValue = window.penaltySettings.yearly_value;
+                    } else if (pastMonthsCount >= 6 && window.penaltySettings.half_yearly_value > 0) {
+                        penaltyValue = window.penaltySettings.half_yearly_value;
+                    } else if (pastMonthsCount >= 3 && window.penaltySettings.quarterly_value > 0) {
+                        penaltyValue = window.penaltySettings.quarterly_value;
+                    }
+                }
+
+                let penaltyAmount = 0;
+                if (penaltyValue > 0) {
+                    if (window.penaltySettings.type === 'fixed') {
+                        penaltyAmount = parseFloat(penaltyValue);
+                    } else {
+                        penaltyAmount = arrearsAmount * (parseFloat(penaltyValue) / 100);
+                    }
+                }
+
+                // Discount Calculation (on future months)
+                let discountValue = 0;
+                const applyDiscount = window.discountSettings ? window.discountSettings.apply_discount : '0';
+                if ((applyDiscount === '1' || applyDiscount === 'true' || applyDiscount === 'on') && futureMonthsCount > 0) {
+                    if (futureMonthsCount >= 12 && window.discountSettings.yearly_value > 0) {
+                        discountValue = window.discountSettings.yearly_value;
+                    } else if (futureMonthsCount >= 6 && window.discountSettings.half_yearly_value > 0) {
+                        discountValue = window.discountSettings.half_yearly_value;
+                    } else if (futureMonthsCount >= 3 && window.discountSettings.quarterly_value > 0) {
+                        discountValue = window.discountSettings.quarterly_value;
+                    }
+                }
+                
+                let discountAmount = 0;
+                if (discountValue > 0) {
+                    if (window.discountSettings.type === 'fixed') {
+                        discountAmount = parseFloat(discountValue);
+                    } else {
+                        discountAmount = advanceAmount * (parseFloat(discountValue) / 100);
+                    }
+                }
+
+                $('#penalty_amount').val(penaltyAmount.toFixed(2));
+                $('#discount_applied').val(discountAmount.toFixed(2));
+
+                let totalAmount = subtotal + penaltyAmount - discountAmount;
+                totalAmount = Math.max(0, totalAmount);
+
+                $('#subtotal').val(subtotal.toFixed(2));
+                $('#discount_applied').val(discountAmount.toFixed(2));
+                $('#total_amount').val(totalAmount.toFixed(2));
+                
+                if (months > 12) {
+                    $('#submit-btn').prop('disabled', true);
+                    alert('You can pay for a maximum of 12 months.');
+                } else {
+                    $('#submit-btn').prop('disabled', false);
+                }
+            } else {
+                $('#subtotal').val('0.00');
+                $('#discount_applied').val('0.00');
+                
+                let manualPenalty = parseFloat($('#penalty_amount').val()) || 0;
+                $('#total_amount').val(Math.max(0, manualPenalty).toFixed(2));
+                
+                // Only disable if no fee is selected or invalid months
+                if (months <= 0 || currentMonthlyFee <= 0) {
+                    $('#submit-btn').prop('disabled', true);
+                } else {
+                    $('#submit-btn').prop('disabled', false);
+                }
+            }
+        }
+
+        $(document).on('input', '#discount_applied, #penalty_amount', function() {
+            const subtotal = parseFloat($('#subtotal').val()) || 0;
+            const discount = parseFloat($('#discount_applied').val()) || 0;
+            const penalty = parseFloat($('#penalty_amount').val()) || 0;
+            let total = subtotal + penalty - discount;
+            total = Math.max(0, total);
+            $('#total_amount').val(total.toFixed(2));
+        });
+
+        $(document).on('change', '#resident_id', function() {
+            const resId = $(this).val();
+            
+            if (resId && window.residentFees && typeof window.residentFees[resId] !== 'undefined') {
+                currentMonthlyFee = parseFloat(window.residentFees[resId]) || 0;
+                $('#display_monthly_fee').text(currentMonthlyFee.toFixed(2));
+                $('#display_monthly_total').text(currentMonthlyFee.toFixed(2));
+                $('#maintenance-fees-section').slideDown();
+            } else {
+                currentMonthlyFee = 0;
+                $('#maintenance-fees-section').slideUp();
+            }
+            calculatePaymentTotals();
+        });
+
+        $(document).on('change input blur', '#start_date, #end_date', calculatePaymentTotals);
+
+        // Trigger on load for pre-filled values
+        setTimeout(function() {
+            if ($('#resident_id').val()) {
+                $('#resident_id').trigger('change');
+            } else {
+                calculatePaymentTotals();
+            }
+        }, 100);
+    }
 });
