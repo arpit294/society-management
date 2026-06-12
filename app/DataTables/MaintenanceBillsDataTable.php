@@ -86,8 +86,8 @@ class MaintenanceBillsDataTable extends DataTable
                 \Illuminate\Support\Facades\DB::raw('SUM(maintenance_bills.discount_amount) as discount_amount'),
                 \Illuminate\Support\Facades\DB::raw('SUM(maintenance_bills.total_amount) as total_amount'),
                 \Illuminate\Support\Facades\DB::raw('COUNT(maintenance_bills.id) as months_count'),
-                \Illuminate\Support\Facades\DB::raw('(SELECT CONCAT(month, " ", year) FROM maintenances WHERE id = MIN(maintenance_bills.maintenance_id)) as start_month'),
-                \Illuminate\Support\Facades\DB::raw('(SELECT CONCAT(month, " ", year) FROM maintenances WHERE id = MAX(maintenance_bills.maintenance_id)) as end_month')
+                \Illuminate\Support\Facades\DB::raw('(SELECT CONCAT(m.month, " ", m.year) FROM maintenances m JOIN maintenance_bills mb ON mb.maintenance_id = m.id WHERE mb.batch_id = maintenance_bills.batch_id ORDER BY m.due_date ASC LIMIT 1) as start_month'),
+                \Illuminate\Support\Facades\DB::raw('(SELECT CONCAT(m.month, " ", m.year) FROM maintenances m JOIN maintenance_bills mb ON mb.maintenance_id = m.id WHERE mb.batch_id = maintenance_bills.batch_id ORDER BY m.due_date DESC LIMIT 1) as end_month')
             ])
             ->with(['user', 'flat', 'block'])
             ->groupBy(

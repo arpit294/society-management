@@ -2200,7 +2200,7 @@ $(document).ready(function () {
         const mainChartCtx = document
             .getElementById("mainChart")
             .getContext("2d");
-            
+
         let gradientRevenue = mainChartCtx.createLinearGradient(0, 0, 0, 400);
         gradientRevenue.addColorStop(0, 'rgba(99, 102, 241, 0.5)'); // Indigo
         gradientRevenue.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
@@ -2254,7 +2254,7 @@ $(document).ready(function () {
                     intersect: false,
                 },
                 plugins: {
-                    legend: { 
+                    legend: {
                         position: "top",
                         labels: {
                             usePointStyle: true,
@@ -2285,7 +2285,7 @@ $(document).ready(function () {
                     },
                 },
                 scales: {
-                    y: { 
+                    y: {
                         beginAtZero: true,
                         grid: { borderDash: [4, 4] }
                     },
@@ -2296,6 +2296,7 @@ $(document).ready(function () {
             },
         });
 
+        // Status Doughnut Chart
         let statusChart = null;
         if (document.getElementById("statusChart")) {
             const statusChartCtx = document
@@ -2329,7 +2330,7 @@ $(document).ready(function () {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { 
+                        legend: {
                             position: "bottom",
                             labels: {
                                 padding: 20,
@@ -2631,7 +2632,7 @@ $(document).ready(function () {
     // Prepayment / Payment Form Logic
     // ==========================================
     if ($('#prepayment-form').length > 0) {
-        
+
         if ($('#resident_id').length > 0 && typeof $.fn.select2 !== 'undefined') {
             $('#resident_id').select2({
                 theme: 'bootstrap-5',
@@ -2663,7 +2664,7 @@ $(document).ready(function () {
             const paymentMethod = $('#payment_method').val();
             const upiDetails = $('#upi-details');
             const paymentSlip = $('#payment_slip');
-            
+
             if (paymentMethod === 'upi') {
                 upiDetails.removeClass('d-none');
                 paymentSlip.attr('required', 'required');
@@ -2679,19 +2680,19 @@ $(document).ready(function () {
         function calculatePaymentTotals() {
             const startDateVal = $('#start_date').val();
             const endDateVal = $('#end_date').val();
-            
+
             let months = 0;
-            
+
             if (startDateVal && endDateVal) {
                 const start = new Date(startDateVal);
                 const end = new Date(endDateVal);
-                
+
                 if (end >= start) {
                     const diffTime = Math.abs(end - start);
                     const diffDays = diffTime / (1000 * 60 * 60 * 24);
                     months = Math.round(diffDays / 30.44); // 30.44 is average days in a month
                     if (months < 1) months = 1;
-                    
+
                     const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
                     $('#hidden_start_month').val(monthNames[start.getMonth()]);
                     $('#hidden_start_year').val(start.getFullYear());
@@ -2699,26 +2700,26 @@ $(document).ready(function () {
                     months = 0;
                 }
             }
-            
+
             $('#calculated_duration').val(`${months} Month(s)`);
             $('#hidden_months').val(months);
 
             if (months > 0 && currentMonthlyFee > 0 && window.discountSettings) {
                 const subtotal = currentMonthlyFee * months;
                 const startDate = startDateVal;
-                
+
                 // Calculate split of months
                 let pastMonthsCount = 0;
                 let futureMonthsCount = 0;
-                
+
                 if (startDate) {
                     const start = new Date(startDate);
                     const now = new Date();
                     pastMonthsCount = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth());
-                    
+
                     if (pastMonthsCount < 0) pastMonthsCount = 0;
                     if (pastMonthsCount > months) pastMonthsCount = months;
-                    
+
                     futureMonthsCount = months - pastMonthsCount;
                 } else {
                     futureMonthsCount = months;
@@ -2760,7 +2761,7 @@ $(document).ready(function () {
                         discountValue = window.discountSettings.quarterly_value;
                     }
                 }
-                
+
                 let discountAmount = 0;
                 if (discountValue > 0) {
                     if (window.discountSettings.type === 'fixed') {
@@ -2779,7 +2780,7 @@ $(document).ready(function () {
                 $('#subtotal').val(subtotal.toFixed(2));
                 $('#discount_applied').val(discountAmount.toFixed(2));
                 $('#total_amount').val(totalAmount.toFixed(2));
-                
+
                 if (months > 12) {
                     $('#submit-btn').prop('disabled', true);
                     alert('You can pay for a maximum of 12 months.');
@@ -2789,10 +2790,10 @@ $(document).ready(function () {
             } else {
                 $('#subtotal').val('0.00');
                 $('#discount_applied').val('0.00');
-                
+
                 let manualPenalty = parseFloat($('#penalty_amount').val()) || 0;
                 $('#total_amount').val(Math.max(0, manualPenalty).toFixed(2));
-                
+
                 // Only disable if no fee is selected or invalid months
                 if (months <= 0 || currentMonthlyFee <= 0) {
                     $('#submit-btn').prop('disabled', true);
@@ -2813,7 +2814,7 @@ $(document).ready(function () {
 
         $(document).on('change', '#resident_id', function() {
             const resId = $(this).val();
-            
+
             if (resId && window.residentFees && typeof window.residentFees[resId] !== 'undefined') {
                 currentMonthlyFee = parseFloat(window.residentFees[resId]) || 0;
                 $('#display_monthly_fee').text(currentMonthlyFee.toFixed(2));
