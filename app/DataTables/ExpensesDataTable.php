@@ -16,6 +16,9 @@ class ExpensesDataTable extends DataTable
     {
         return (new QueryDataTable($query))
             ->addColumn('action', 'expenses.action')
+            ->editColumn('expense_date', function ($row) {
+                return $row->expense_date ? date('M Y', strtotime($row->expense_date)) : '-';
+            })
             ->editColumn('created_at', function ($row) {
                 return $row->created_at ? date('d-m-Y h:i A', strtotime($row->created_at)) : '-';
             })
@@ -40,6 +43,12 @@ class ExpensesDataTable extends DataTable
             ->filterColumn('category_name', function ($query, $keyword) {
                 $query->where('expense_categories.title', 'like', "%{$keyword}%");
             })
+            ->filterColumn('user_name', function ($query, $keyword) {
+                $query->where('users.name', 'like', "%{$keyword}%");
+            })
+            ->filterColumn('expense_date', function ($query, $keyword) {
+                $query->whereRaw("DATE_FORMAT(expenses.expense_date, '%b %Y') like ?", ["%{$keyword}%"]);
+            })
             ->rawColumns(['action', 'invoice', 'total_amount'])
             ->setRowId('id');
     }
@@ -57,6 +66,7 @@ class ExpensesDataTable extends DataTable
                 'users.name as user_name',
                 'expenses.total_amount',
                 'expenses.invoice',
+                'expenses.expense_date',
                 'expenses.created_at'
             ]);
 
@@ -93,6 +103,7 @@ class ExpensesDataTable extends DataTable
             Column::make('title')->data('title')->name('expenses.title'),
             Column::make('category_name')->data('category_name')->name('expense_categories.title')->title('Category'),
             Column::make('user_name')->data('user_name')->name('users.name')->title('User'),
+            Column::make('expense_date')->data('expense_date')->name('expenses.expense_date')->title('Expense Month'),
             Column::make('total_amount')->data('total_amount')->name('expenses.total_amount')->title('Amount'),
             Column::make('invoice')->data('invoice')->name('expenses.invoice')->title('Invoice'),
             Column::make('created_at')->data('created_at')->name('expenses.created_at')->title('Created At'),

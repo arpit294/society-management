@@ -18,10 +18,7 @@
                     @endforeach
                 </select>
             </div>
-            <div class="filter-col" style="min-width: 220px;">
-                <label class="form-label mb-1" for="residents-filter-flat">Filter by Flat No</label>
-                <input type="text" id="residents-filter-flat" class="form-control" style="max-width: 320px;" placeholder="e.g. 101">
-            </div>
+
             <div class="filter-col d-none" id="residents-filter-reset-col" style="min-width: 200px;">
                 <button type="button" id="residents-filter-reset" class="btn btn-outline-secondary w-100">
                     Reset filters

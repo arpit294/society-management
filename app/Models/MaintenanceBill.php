@@ -6,6 +6,16 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string $status
+ * @property float $penalty_amount
+ * @property float $total_amount
+ * @property float $discount_amount
+ * @property \Carbon\Carbon|null $paid_at
+ * @property string|null $payment_method
+ * @property string|null $transaction_id
+ * @property string|null $payment_slip
+ */
 class MaintenanceBill extends Model
 {
     use HasFactory;
@@ -103,13 +113,13 @@ class MaintenanceBill extends Model
     public function getTotalAmountAttribute($value)
     {
         $status = $this->attributes['status'] ?? null;
-        
-        // If status is paid OR if status is not loaded (e.g. grouped queries), 
+
+        // If status is paid OR if status is not loaded (e.g. grouped queries),
         // trust the raw value provided by the database.
         if ($status === 'paid' || $status === null) {
             return (float)$value;
         }
-
+    
         $baseAmount = (float)($this->attributes['amount'] ?? 0);
         $penalty = $this->getPenaltyAmountAttribute($this->attributes['penalty_amount'] ?? 0);
         return $baseAmount + $penalty;
@@ -135,5 +145,3 @@ class MaintenanceBill extends Model
         return $this->belongsTo(Block::class);
     }
 }
-
-//

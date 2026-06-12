@@ -15,7 +15,7 @@
                 <div class="row g-4 mb-4">
                     <!-- Flats Card -->
                     <div class="col-sm-6 col-xl-3">
-                        <div class="card dash-card card-flats h-100">
+                        <div class="card dash-card card-flats h-100 shadow-sm border-0">
                             <div class="card-body d-flex justify-content-between align-items-start">
                                 <div>
                                     <div class="fs-4 fw-bold">{{ $totalFlats }}</div>
@@ -30,7 +30,7 @@
                     
                     <!-- Residents Card -->
                     <div class="col-sm-6 col-xl-3">
-                        <div class="card dash-card card-residents h-100">
+                        <div class="card dash-card card-residents h-100 shadow-sm border-0">
                             <div class="card-body d-flex justify-content-between align-items-start">
                                 <div>
                                     <div class="fs-4 fw-bold">{{ $totalResidents }}</div>
@@ -45,7 +45,7 @@
 
                     <!-- Complaints Card -->
                     <div class="col-sm-6 col-xl-3">
-                        <div class="card dash-card card-complaints h-100">
+                        <div class="card dash-card card-complaints h-100 shadow-sm border-0">
                             <div class="card-body d-flex justify-content-between align-items-start">
                                 <div>
                                     <div class="fs-4 fw-bold">{{ $totalComplaints }}</div>
@@ -60,7 +60,7 @@
 
                     <!-- Revenue Card -->
                     <div class="col-sm-6 col-xl-3">
-                        <div class="card dash-card card-revenue h-100">
+                        <div class="card dash-card card-revenue h-100 shadow-sm border-0">
                             <div class="card-body d-flex justify-content-between align-items-start">
                                 <div>
                                     <div class="fs-4 fw-bold">₹{{ number_format($totalRevenue, 2) }}</div>

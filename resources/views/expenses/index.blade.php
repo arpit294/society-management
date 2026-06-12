@@ -1,47 +1,62 @@
 <x-user-page>
-<div class="row mb-4">
+<div class="row g-4 mb-4">
+    <!-- Total Expenses Card -->
     <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-primary">
-            <div class="card-body pb-0 d-flex justify-content-between align-items-start">
+        <div class="card dash-card card-complaints h-100 shadow-sm border-0">
+            <div class="card-body d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-semibold">₹{{ number_format($totalExpenses, 2) }}</div>
-                    <div>Total Expenses</div>
+                    <div class="fs-4 fw-bold">₹{{ number_format($totalExpenses, 2) }}</div>
+                    <div class="text-uppercase fw-semibold small opacity-75">Total Expenses</div>
+                </div>
+                <div class="fs-1">
+                    <i class="fas fa-money-bill-wave"></i>
                 </div>
             </div>
-            <div class="c-chart-wrapper mt-3 mx-3" style="height:40px;"></div>
         </div>
     </div>
+    
+    <!-- This Month Expenses Card -->
     <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-info">
-            <div class="card-body pb-0 d-flex justify-content-between align-items-start">
+        <div class="card dash-card card-residents h-100 shadow-sm border-0">
+            <div class="card-body d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-semibold">₹{{ number_format($thisMonthExpenses, 2) }}</div>
-                    <div>This Month</div>
+                    <div class="fs-4 fw-bold">₹{{ number_format($thisMonthExpenses, 2) }}</div>
+                    <div class="text-uppercase fw-semibold small opacity-75">This Month</div>
+                </div>
+                <div class="fs-1">
+                    <i class="fas fa-calendar-alt"></i>
                 </div>
             </div>
-            <div class="c-chart-wrapper mt-3 mx-3" style="height:40px;"></div>
         </div>
     </div>
+    
+    <!-- Total Invoices Card -->
     <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-warning">
-            <div class="card-body pb-0 d-flex justify-content-between align-items-start">
+        <div class="card dash-card card-flats h-100 shadow-sm border-0">
+            <div class="card-body d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-semibold">{{ $totalInvoices }}</div>
-                    <div>Total Invoices</div>
+                    <div class="fs-4 fw-bold">{{ $totalInvoices }}</div>
+                    <div class="text-uppercase fw-semibold small opacity-75">Total Invoices</div>
+                </div>
+                <div class="fs-1">
+                    <i class="fas fa-file-invoice-dollar"></i>
                 </div>
             </div>
-            <div class="c-chart-wrapper mt-3 mx-3" style="height:40px;"></div>
         </div>
     </div>
+    
+    <!-- Maintenance Income Card -->
     <div class="col-sm-6 col-lg-3">
-        <div class="card text-white bg-success">
-            <div class="card-body pb-0 d-flex justify-content-between align-items-start">
+        <div class="card dash-card card-revenue h-100 shadow-sm border-0">
+            <div class="card-body d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-semibold">₹{{ number_format($totalMaintenanceIncome, 2) }}</div>
-                    <div>Maintenance Income</div>
+                    <div class="fs-4 fw-bold">₹{{ number_format($totalMaintenanceIncome, 2) }}</div>
+                    <div class="text-uppercase fw-semibold small opacity-75">Maintenance Income</div>
+                </div>
+                <div class="fs-1">
+                    <i class="fas fa-chart-line"></i>
                 </div>
             </div>
-            <div class="c-chart-wrapper mt-3 mx-3" style="height:40px;"></div>
         </div>
     </div>
 </div>
@@ -61,10 +76,19 @@
                     <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
                         <div class="filter-col" style="min-width: 220px;">
                             <label class="form-label mb-1" for="expenses-filter-category">Filter by Category</label>
-                            <select id="expenses-filter-category" class="form-select" style="max-width: 320px;">
+                            <select id="expenses-filter-category" class="form-select select2-filter" style="max-width: 320px;">
                                 <option value="">All Categories</option>
                                 @foreach($categories as $category)
                                     <option value="{{ $category->title }}">{{ $category->title }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="filter-col" style="min-width: 220px;">
+                            <label class="form-label mb-1" for="expenses-filter-user">Filter by User</label>
+                            <select id="expenses-filter-user" class="form-select select2-filter" style="max-width: 320px;">
+                                <option value="">All Users</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->name }}">{{ $user->name }}</option>
                                 @endforeach
                             </select>
                         </div>

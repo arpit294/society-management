@@ -88,7 +88,15 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Monthly (1 Month)</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" name="penalty_monthly_value" class="form-control text-end"
+                                        value="{{ $settings['penalty_monthly_value'] ?? ($settings['penalty_monthly_percent'] ?? '2') }}">
+                                    <span class="input-group-text penalty-suffix">%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Quarterly (3 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_quarterly_value" class="form-control text-end"
@@ -96,7 +104,7 @@
                                     <span class="input-group-text penalty-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Half-Yearly (6 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_half_yearly_value" class="form-control text-end"
@@ -104,7 +112,7 @@
                                     <span class="input-group-text penalty-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Yearly (12 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_yearly_value" class="form-control text-end"
@@ -140,7 +148,15 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Monthly (1 Month)</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.01" name="discount_monthly_value" class="form-control text-end"
+                                        value="{{ $settings['discount_monthly_value'] ?? ($settings['discount_monthly_percent'] ?? '2') }}">
+                                    <span class="input-group-text discount-suffix">%</span>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Quarterly (3 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_quarterly_value" class="form-control text-end"
@@ -148,7 +164,7 @@
                                     <span class="input-group-text discount-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Half-Yearly (6 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_half_yearly_value" class="form-control text-end"
@@ -156,7 +172,7 @@
                                     <span class="input-group-text discount-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-4 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Yearly (12 Months)</label>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_yearly_value" class="form-control text-end"
@@ -175,78 +191,4 @@
         </div>
     </div>
 
-    @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const applyPenaltyToggle = document.getElementById('apply_penalty');
-                const penaltyValueInputs = [
-                    document.querySelector('input[name="penalty_quarterly_value"]'),
-                    document.querySelector('input[name="penalty_half_yearly_value"]'),
-                    document.querySelector('input[name="penalty_yearly_value"]'),
-                    document.querySelector('input[name="penalty_due_days"]')
-                ];
-
-                const penaltyTypeSelect = document.getElementById('penalty_type');
-                const discountTypeSelect = document.getElementById('discount_type');
-                const applyDiscountToggle = document.getElementById('apply_discount');
-                const discountInputs = [
-                    document.querySelector('input[name="discount_quarterly_value"]'),
-                    document.querySelector('input[name="discount_half_yearly_value"]'),
-                    document.querySelector('input[name="discount_yearly_value"]')
-                ];
-
-                function togglePenaltyFields() {
-                    const isChecked = applyPenaltyToggle.checked;
-                    penaltyValueInputs.forEach(input => {
-                        if (input) input.disabled = !isChecked;
-                    });
-                    if (penaltyTypeSelect) penaltyTypeSelect.disabled = !isChecked;
-                }
-
-                function toggleDiscountFields() {
-                    const isChecked = applyDiscountToggle.checked;
-                    discountInputs.forEach(input => {
-                        if (input) input.disabled = !isChecked;
-                    });
-                    if (discountTypeSelect) discountTypeSelect.disabled = !isChecked;
-                }
-
-                function updatePenaltyLabels() {
-                    const isFixed = penaltyTypeSelect.value === 'fixed';
-                    const suffix = isFixed ? '₹' : '%';
-                    document.querySelectorAll('.penalty-suffix').forEach(el => {
-                        el.innerText = suffix;
-                    });
-                }
-
-                function updateDiscountLabels() {
-                    const isFixed = discountTypeSelect.value === 'fixed';
-                    const suffix = isFixed ? '₹' : '%';
-                    document.querySelectorAll('.discount-suffix').forEach(el => {
-                        el.innerText = suffix;
-                    });
-                }
-
-                if (applyPenaltyToggle) {
-                    applyPenaltyToggle.addEventListener('change', togglePenaltyFields);
-                    togglePenaltyFields(); // Run on load
-                }
-
-                if (applyDiscountToggle) {
-                    applyDiscountToggle.addEventListener('change', toggleDiscountFields);
-                    toggleDiscountFields(); // Run on load
-                }
-
-                if (penaltyTypeSelect) {
-                    penaltyTypeSelect.addEventListener('change', updatePenaltyLabels);
-                    updatePenaltyLabels();
-                }
-
-                if (discountTypeSelect) {
-                    discountTypeSelect.addEventListener('change', updateDiscountLabels);
-                    updateDiscountLabels();
-                }
-            });
-        </script>
-    @endpush
 </x-user-page>

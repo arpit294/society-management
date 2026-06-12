@@ -19,8 +19,9 @@ class ExpenseController extends Controller
         $totalInvoices = Expense::whereNotNull('invoice')->count();
         $totalMaintenanceIncome = \App\Models\MaintenanceBill::where('status', 'paid')->sum('total_amount');
         $categories = ExpenseCategory::all();
+        $users = User::all();
 
-        return $dataTable->render('expenses.index', compact('totalExpenses', 'thisMonthExpenses', 'totalInvoices', 'totalMaintenanceIncome', 'categories'));
+        return $dataTable->render('expenses.index', compact('totalExpenses', 'thisMonthExpenses', 'totalInvoices', 'totalMaintenanceIncome', 'categories', 'users'));
     }
 
     public function create()
@@ -32,9 +33,14 @@ class ExpenseController extends Controller
 
     public function store(Request $request)
     {
+        if ($request->has('expense_date') && strlen($request->expense_date) === 7) {
+            $request->merge(['expense_date' => $request->expense_date . '-01']);
+        }
+
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'total_amount' => 'required|numeric|min:0',
+            'expense_date' => 'required|date',
             'user_id' => 'required|exists:users,id',
             'category_id' => 'required|exists:expense_categories,id',
             'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
@@ -64,9 +70,14 @@ class ExpenseController extends Controller
 
     public function update(Request $request, Expense $expense)
     {
+        if ($request->has('expense_date') && strlen($request->expense_date) === 7) {
+            $request->merge(['expense_date' => $request->expense_date . '-01']);
+        }
+
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'total_amount' => 'required|numeric|min:0',
+            'expense_date' => 'required|date',
             'user_id' => 'required|exists:users,id',
             'category_id' => 'required|exists:expense_categories,id',
             'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',

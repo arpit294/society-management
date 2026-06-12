@@ -16,7 +16,7 @@ class DashboardController extends Controller
     {
         $totalResidents = User::count();
         $totalFlats = Flat::count();
-        $totalComplaints = Complain::count();
+        $totalComplaints = Complain::where('status', '!=', 'resolved')->count();
         
         $totalRevenue = MaintenanceBill::where('status', 'paid')->sum('total_amount');
         $totalExpenses = Expense::sum('total_amount');
@@ -75,6 +75,7 @@ class DashboardController extends Controller
             });
 
         $recentComplaints = Complain::with('user')
+            ->where('status', '!=', 'resolved')
             ->latest()
             ->take(5)
             ->get()

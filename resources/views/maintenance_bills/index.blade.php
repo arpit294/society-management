@@ -72,9 +72,9 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Payments</h4>
                 <div>
-                    <a href="{{ route('payments.create') }}" class="btn btn-primary me-2">
+                    <button type="button" data-url="{{ route('maintenance-bills.create') }}" id="btn-record-payment" class="btn btn-primary me-2">
                         <i class="fa-solid fa-plus me-1"></i> Record Payment
-                    </a>
+                    </button>
                 </div>
             </div>
             <div class="card-body">
@@ -83,8 +83,37 @@
                 <div class="mb-3">
                     <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
                         <div class="filter-col" style="min-width: 220px;">
+                            <label class="form-label mb-1" for="maintenance-bills-filter-block">Filter by Block</label>
+                            <select id="maintenance-bills-filter-block" class="form-select select2-filter" style="width: 100%;">
+                                <option value="">All Blocks</option>
+                                @foreach($blocks as $block)
+                                    <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="filter-col" style="min-width: 280px;">
+                            <label class="form-label mb-1" for="maintenance-bills-filter-resident">Filter by Resident</label>
+                            <select id="maintenance-bills-filter-resident" class="form-select select2-filter" style="width: 100%;">
+                                <option value="">All Residents</option>
+                                @foreach($residents as $resident)
+                                    <option value="{{ $resident->user->name ?? '' }}">
+                                        {{ $resident->user->name ?? 'Unknown' }} ({{ $resident->flat->block->block_name ?? '' }} - {{ $resident->flat->flat_no ?? '' }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="filter-col" style="min-width: 150px;">
+                            <label class="form-label mb-1" for="maintenance-bills-filter-year">Filter by Year</label>
+                            <select id="maintenance-bills-filter-year" class="form-select select2-filter" style="width: 100%;">
+                                <option value="">All Years</option>
+                                @foreach($years as $year)
+                                    <option value="{{ $year }}">{{ $year }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="filter-col" style="min-width: 220px;">
                             <label class="form-label mb-1" for="maintenance-bills-filter-method">Filter by Method</label>
-                            <select id="maintenance-bills-filter-method" class="form-select" style="max-width: 320px;">
+                            <select id="maintenance-bills-filter-method" class="form-select select2-filter" style="width: 100%;">
                                 <option value="">All Methods</option>
                                 <option value="cash">CASH</option>
                                 <option value="upi">UPI</option>
@@ -117,92 +146,5 @@
 
 @push('scripts')
     {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const chartDataEl = document.getElementById("payments-chart-data");
-            if (chartDataEl) {
-                const months = JSON.parse(chartDataEl.getAttribute("data-months"));
-                const revenueData = JSON.parse(chartDataEl.getAttribute("data-revenue"));
-
-                const ctx = document.getElementById("paymentsChart").getContext("2d");
-                
-                let gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                gradient.addColorStop(0, 'rgba(46, 184, 92, 0.5)'); // Green
-                gradient.addColorStop(1, 'rgba(46, 184, 92, 0.0)');
-
-                new Chart(ctx, {
-                    type: "line",
-                    data: {
-                        labels: months,
-                        datasets: [
-                            {
-                                label: "Monthly Collections",
-                                backgroundColor: gradient,
-                                borderColor: "#2eb85c",
-                                borderWidth: 3,
-                                pointBackgroundColor: "#2eb85c",
-                                pointBorderColor: "#fff",
-                                pointHoverBackgroundColor: "#fff",
-                                pointHoverBorderColor: "#2eb85c",
-                                pointRadius: 4,
-                                pointHoverRadius: 6,
-                                fill: true,
-                                tension: 0.4,
-                                data: revenueData,
-                            }
-                        ],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        interaction: {
-                            mode: 'index',
-                            intersect: false,
-                        },
-                        plugins: {
-                            legend: { 
-                                position: "top",
-                                labels: {
-                                    usePointStyle: true,
-                                    pointStyle: 'circle',
-                                    padding: 20
-                                }
-                            },
-                            tooltip: {
-                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                                titlePadding: 10,
-                                bodyPadding: 10,
-                                cornerRadius: 8,
-                                callbacks: {
-                                    label: function (context) {
-                                        let label = context.dataset.label || "";
-                                        if (label) {
-                                            label += ": ";
-                                        }
-                                        if (context.parsed.y !== null) {
-                                            label += new Intl.NumberFormat("en-IN", {
-                                                style: "currency",
-                                                currency: "INR",
-                                            }).format(context.parsed.y);
-                                        }
-                                        return label;
-                                    },
-                                },
-                            },
-                        },
-                        scales: {
-                            y: { 
-                                beginAtZero: true,
-                                grid: { borderDash: [4, 4] }
-                            },
-                            x: {
-                                grid: { display: false }
-                            }
-                        },
-                    },
-                });
-            }
-        });
-    </script>
 @endpush
 </x-user-page>

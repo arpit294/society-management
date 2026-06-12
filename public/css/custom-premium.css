@@ -325,3 +325,41 @@ option {
 .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
     line-height: 2.25rem;
 }
+
+/* Flatpickr Premium Theme Customization */
+[data-coreui-theme=dark] .flatpickr-calendar {
+    background: var(--cui-tertiary-bg) !important;
+    border: 1px solid var(--cui-border-color) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    border-radius: 0.75rem !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-calendar.arrowTop:before,
+[data-coreui-theme=dark] .flatpickr-calendar.arrowTop:after {
+    border-bottom-color: var(--cui-tertiary-bg) !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-calendar.arrowBottom:before,
+[data-coreui-theme=dark] .flatpickr-calendar.arrowBottom:after {
+    border-top-color: var(--cui-tertiary-bg) !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-months .flatpickr-month {
+    background: transparent !important;
+    color: var(--cui-body-color) !important;
+    fill: var(--cui-body-color) !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-monthSelect-theme-dark .flatpickr-monthSelect-month,
+[data-coreui-theme=dark] .flatpickr-monthSelect-month {
+    color: var(--cui-body-color) !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-monthSelect-month:hover {
+    background: rgba(139, 92, 246, 0.15) !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-monthSelect-month.selected {
+    background: var(--cui-primary) !important;
+    color: #fff !important;
+}

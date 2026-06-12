@@ -15,8 +15,14 @@ class MaintenanceBillsDataTable extends DataTable
     {
         return (new EloquentDataTable($query))
             ->addColumn('action', function ($row) {
+                // If payment is paid, we can download invoice
+                $downloadBtn = '';
+                if ($row->status === 'paid') {
+                    $downloadBtn = '<a href="' . route('maintenance-bills.download-invoice', $row->batch_id) . '" class="btn btn-sm btn-outline-info me-1" data-coreui-toggle="tooltip" title="Download Invoice"><i class="fa-solid fa-download"></i></a>';
+                }
+                
                 $deleteBtn = '<button type="button" class="btn btn-sm btn-outline-danger btn-delete-maintenance-bill" data-url="' . route('maintenance-bills.destroy', $row->batch_id) . '" data-coreui-toggle="tooltip" title="Delete Payment Batch"><i class="fa-solid fa-trash"></i></button>';
-                return '<div class="d-flex justify-content-center">' . $deleteBtn . '</div>';
+                return '<div class="d-flex justify-content-center align-items-center">' . $downloadBtn . $deleteBtn . '</div>';
             })
             ->addColumn('resident', function ($row) {
                 return $row->user ? $row->user->name : 'N/A';
@@ -58,7 +64,10 @@ class MaintenanceBillsDataTable extends DataTable
             })
             ->filterColumn('flat', function($query, $keyword) {
                 $query->whereHas('flat', function($q) use ($keyword) {
-                    $q->where('flat_no', 'like', "%{$keyword}%");
+                    $q->where('flat_no', 'like', "%{$keyword}%")
+                      ->orWhereHas('block', function($q2) use ($keyword) {
+                          $q2->where('block_name', 'like', "%{$keyword}%");
+                      });
                 });
             })
             ->filterColumn('month_year', function($query, $keyword) {

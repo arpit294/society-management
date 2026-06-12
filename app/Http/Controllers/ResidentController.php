@@ -20,9 +20,8 @@ class ResidentController extends Controller
     public function create()
     {
         $blocks = Block::all();
-        $flats = Flat::all();
-        $users = User::all();
-        return view('residents.create', compact('blocks', 'flats', 'users'));
+        $users = User::with(['resident.flat.block'])->get();
+        return view('residents.create', compact('blocks', 'users'));
     }
 
     public function store(\Illuminate\Http\Request $request)
@@ -48,7 +47,7 @@ class ResidentController extends Controller
     {
         $blocks = Block::all();
         $flats = Flat::where('block_id', $resident->block_id)->get();
-        $users = User::all();
+        $users = User::with(['resident.flat.block'])->get();
         return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
     }
 
