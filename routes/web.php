@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\FlatController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -73,5 +74,9 @@ Route::middleware('auth')->group(function () {
     // Settings
     Route::get('settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [\App\Http\Controllers\SettingController::class, 'store'])->name('settings.store');
+
+    // Reports
+    Route::get('reports/maintenance/export', [ReportController::class, 'exportReport'])->name('reports.maintenance.export');
+    Route::get('reports/maintenance', [ReportController::class, 'maintenanceReport'])->name('reports.maintenance');
 });
 //

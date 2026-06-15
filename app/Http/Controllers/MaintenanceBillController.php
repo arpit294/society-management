@@ -53,8 +53,8 @@ class MaintenanceBillController extends Controller
             foreach ($activeResidents as $resident) {
                 if (!$resident->flat || !$resident->flat->flatType) continue;
 
-                $amount = $resident->type === 'owner' 
-                    ? $resident->flat->flatType->owner_maintenance_fee 
+                $amount = $resident->type === 'owner'
+                    ? $resident->flat->flatType->owner_maintenance_fee
                     : $resident->flat->flatType->rental_maintenance_fee;
 
                 // Check for unused prepayment
@@ -249,7 +249,7 @@ class MaintenanceBillController extends Controller
 
     public function getResidentInfo($userId)
     {
-        $resident = \App\Models\Resident::with('flat.flatType')
+        $resident = Resident::with('flat.flatType')
             ->where('user_id', $userId)
             ->where(function($query) {
                 $query->whereNull('move_out_date')
@@ -257,10 +257,10 @@ class MaintenanceBillController extends Controller
             })->first();
 
         if ($resident && $resident->flat && $resident->flat->flatType) {
-            $amount = $resident->type === 'owner' 
-                ? $resident->flat->flatType->owner_maintenance_fee 
+            $amount = $resident->type === 'owner'
+                ? $resident->flat->flatType->owner_maintenance_fee
                 : $resident->flat->flatType->rental_maintenance_fee;
-                
+
             return response()->json([
                 'success' => true,
                 'block_id' => $resident->block_id,
