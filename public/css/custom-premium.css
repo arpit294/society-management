@@ -72,12 +72,67 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
     font-weight: 600;
 }
 
-/* Dashboard Top Cards Overrides */
-.card.bg-primary { background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important; border: none; color: white !important;}
-.card.bg-info { background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important; border: none; color: white !important;}
-.card.bg-warning { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important; border: none; color: white !important;}
-.card.bg-danger { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important; border: none; color: white !important;}
-.card.bg-success { background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important; border: none; color: white !important;}
+/* Dashboard Top Cards Premium Glassmorphism */
+.dash-card {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    z-index: 1;
+    color: white !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+/* Glowing orb effect inside the card */
+.dash-card::after {
+    content: '';
+    position: absolute;
+    top: -30%;
+    right: -10%;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.25);
+    filter: blur(30px);
+    z-index: -1;
+    pointer-events: none;
+}
+
+.dash-card.card-flats {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.85) 0%, rgba(79, 70, 229, 0.95) 100%) !important;
+    box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.4);
+}
+.dash-card.card-residents {
+    background: linear-gradient(135deg, rgba(14, 165, 233, 0.85) 0%, rgba(2, 132, 199, 0.95) 100%) !important;
+    box-shadow: 0 10px 25px -5px rgba(14, 165, 233, 0.4);
+}
+.dash-card.card-complaints {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.85) 0%, rgba(220, 38, 38, 0.95) 100%) !important;
+    box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4);
+}
+.dash-card.card-revenue {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.85) 0%, rgba(5, 150, 105, 0.95) 100%) !important;
+    box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4);
+}
+
+.dash-card .card-body {
+    padding: 1.75rem 1.5rem !important;
+    z-index: 2;
+}
+
+.dash-card .fs-1 {
+    opacity: 0.4 !important;
+    transform: scale(1.4) translate(-5px, 5px);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: absolute;
+    right: 1.5rem;
+    bottom: 1rem;
+}
+
+.dash-card:hover .fs-1 {
+    transform: scale(1.7) translate(-10px, 5px) rotate(-10deg);
+    opacity: 0.6 !important;
+}
 
 /* 4. Buttons (Micro-interactions) */
 .btn {
@@ -212,4 +267,99 @@ option {
 /* Miscellaneous */
 .wrapper {
     background-color: var(--cui-tertiary-bg);
+}
+
+/* 9. Select2 Dark Theme Customization */
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-selection,
+[data-coreui-theme=dark] .select2-container--bootstrap-5.select2-container--focus .select2-selection,
+[data-coreui-theme=dark] .select2-container--bootstrap-5.select2-container--open .select2-selection {
+    background-color: transparent;
+    border-color: var(--cui-border-color);
+    color: var(--cui-body-color);
+}
+
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+    color: var(--cui-body-color);
+}
+
+[data-coreui-theme=dark] .select2-dropdown {
+    background-color: #1e293b; 
+    background-color: var(--cui-card-bg);
+    border-color: var(--cui-border-color);
+    backdrop-filter: blur(12px);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+}
+
+[data-coreui-theme=dark] .select2-search__field {
+    background-color: rgba(15, 23, 42, 0.5) !important;
+    border-color: var(--cui-border-color) !important;
+    color: var(--cui-body-color) !important;
+    border-radius: 0.5rem;
+}
+
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option {
+    color: var(--cui-body-color) !important;
+    background-color: transparent !important;
+}
+
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option--selected, 
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option[aria-selected="true"] {
+    background-color: rgba(139, 92, 246, 0.2) !important;
+    color: var(--cui-primary) !important;
+}
+
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option--highlighted,
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option--highlighted.select2-results__option--selectable,
+[data-coreui-theme=dark] .select2-container--bootstrap-5 .select2-results__option.select2-results__option--highlighted {
+    background-color: var(--cui-primary) !important;
+    color: #ffffff !important;
+}
+
+/* Global Select2 container styling */
+.select2-container--bootstrap-5 .select2-selection {
+    border-radius: 0.75rem !important;
+    min-height: 2.75rem;
+}
+
+.select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+    line-height: 2.25rem;
+}
+
+/* Flatpickr Premium Theme Customization */
+[data-coreui-theme=dark] .flatpickr-calendar {
+    background: var(--cui-tertiary-bg) !important;
+    border: 1px solid var(--cui-border-color) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    border-radius: 0.75rem !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-calendar.arrowTop:before,
+[data-coreui-theme=dark] .flatpickr-calendar.arrowTop:after {
+    border-bottom-color: var(--cui-tertiary-bg) !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-calendar.arrowBottom:before,
+[data-coreui-theme=dark] .flatpickr-calendar.arrowBottom:after {
+    border-top-color: var(--cui-tertiary-bg) !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-months .flatpickr-month {
+    background: transparent !important;
+    color: var(--cui-body-color) !important;
+    fill: var(--cui-body-color) !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-monthSelect-theme-dark .flatpickr-monthSelect-month,
+[data-coreui-theme=dark] .flatpickr-monthSelect-month {
+    color: var(--cui-body-color) !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-monthSelect-month:hover {
+    background: rgba(139, 92, 246, 0.15) !important;
+}
+
+[data-coreui-theme=dark] .flatpickr-monthSelect-month.selected {
+    background: var(--cui-primary) !important;
+    color: #fff !important;
 }

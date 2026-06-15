@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 
 class ForgotPasswordController extends Controller
 {
+    // Show the form for requesting a password reset link.
     public function submit(ForgotPasswordRequest $request)
     {
         $status = Password::sendResetLink(
@@ -22,7 +23,7 @@ class ForgotPasswordController extends Controller
             ? back()->with(['status' => __($status)])
             : back()->withErrors(['email' => __($status)]);
     }
-
+    // Show the form for resetting the password
     public function reset(ResetPasswordRequest $request)
     {
         $status = Password::reset(

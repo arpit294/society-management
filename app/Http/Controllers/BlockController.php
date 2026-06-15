@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\DataTables\BlocksDataTable;
 use App\Models\Block;
+use App\Models\Flat;
+use App\Models\MaintenanceBill;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class BlockController extends Controller
 {
@@ -20,8 +23,8 @@ class BlockController extends Controller
             }
         ])->get();
         $totalFlats = Block::sum('total_flats');
-        $totalActualFlats = \App\Models\Flat::count();
-        $totalOccupiedFlats = \App\Models\Flat::where('status', 'occupied')->count();
+        $totalActualFlats = Flat::count();
+        $totalOccupiedFlats = Flat::where('status', 'occupied')->count();
 
         return $dataTable->render('blocks.index', compact('blocks', 'totalFlats', 'totalActualFlats', 'totalOccupiedFlats'));
     }
@@ -53,9 +56,7 @@ class BlockController extends Controller
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
+    //  Show the form for editing the specified resource.
     public function edit(Block $block)
     {
         return view('blocks.edit', compact('block'));
@@ -85,13 +86,13 @@ class BlockController extends Controller
      */
     public function destroy(Block $block)
     {
-        \Illuminate\Support\Facades\DB::transaction(function () use ($block) {
+        DB::transaction(function () use ($block) {
             // Delete related maintenance bills
-            \App\Models\MaintenanceBill::where('block_id', $block->id)->delete();
-            
+            MaintenanceBill::where('block_id', $block->id)->delete();
+
             // Delete related flats (this will cascade delete residents in DB via foreign key constraints)
-            \App\Models\Flat::where('block_id', $block->id)->delete();
-            
+            Flat::where('block_id', $block->id)->delete();
+
             // Delete the block itself
             $block->delete();
         });

@@ -43,6 +43,21 @@ class ResidentsDataTable extends DataTable
             ->editColumn('type', function (Resident $resident) {
                 return ucfirst($resident->type);
             })
+            ->filterColumn('block', function($query, $keyword) {
+                $query->whereHas('block', function($q) use ($keyword) {
+                    $q->where('block_name', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('flat', function($query, $keyword) {
+                $query->whereHas('flat', function($q) use ($keyword) {
+                    $q->where('flat_no', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('user', function($query, $keyword) {
+                $query->whereHas('user', function($q) use ($keyword) {
+                    $q->where('name', 'like', "%{$keyword}%");
+                });
+            })
             ->addColumn('action', 'residents.action')
             ->setRowId('id');
     }
@@ -80,9 +95,9 @@ class ResidentsDataTable extends DataTable
     {
         return [
             Column::make('id')->title('ID'),
-            Column::computed('block')->title('Block Name'),
-            Column::computed('flat')->title('Flat No'),
-            Column::computed('user')->title('User Name'),
+            Column::make('block')->title('Block Name')->orderable(false),
+            Column::make('flat')->title('Flat No')->orderable(false),
+            Column::make('user')->title('User Name')->orderable(false),
             Column::make('type')->title('Type'),
             Column::make('move_in_date')->title('Move In'),
             Column::make('move_out_date')->title('Move Out'),

@@ -1,11 +1,8 @@
 <footer class="footer px-4">
     <div>
-        <a href="https://coreui.io">CoreUI</a>
-        <a href="https://coreui.io/product/free-bootstrap-admin-template/">Bootstrap Admin Template</a>
-        &copy; 2026 creativeLabs.
+        <strong>Society Management System</strong> &copy; {{ date('Y') }}. All rights reserved.
     </div>
     <div class="ms-auto">
-        Powered by&nbsp;
-        <a href="https://coreui.io/bootstrap/docs/">CoreUI UI Components</a>
+        Designed for <strong>SMP</strong>
     </div>
 </footer>

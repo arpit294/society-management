@@ -14,11 +14,13 @@ class Expense extends Model
         'total_amount',
         'user_id',
         'category_id',
+        'expense_date',
         'invoice',
     ];
 
     public function user()
     {
+        
         return $this->belongsTo(User::class);
     }
 

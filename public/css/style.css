@@ -14847,4 +14847,111 @@ textarea.form-control-lg {
   }
 }
 
+
+/* Auth Pages Styles */
+.auth-page {
+  min-height: 100vh;
+  background: #f3f4f7;
+}
+
+.auth-card {
+  width: min(100%, 440px);
+}
+
+.login-card, .register-card {
+  background: #ffffff;
+  border: 1px solid #dbdfe6;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.login-card .card-header, .register-card .card-header {
+  background: #5856d6 !important;
+  border-bottom: 1px solid #5856d6;
+}
+
+.login-card .card-header {
+  padding: 25px;
+}
+
+.login-card .card-header h4, .login-card .card-header p,
+.register-card .card-header h3, .register-card .card-header p {
+  color: #fff;
+}
+
+.login-card .card-body {
+  padding: 35px;
+}
+
+.login-card .form-label, .register-card .form-label {
+  color: #212631;
+  font-weight: 600;
+}
+
+.login-card .form-control, .register-card .form-control, .register-card .form-select {
+  background: #ffffff;
+  border: 1px solid #dbdfe6;
+  color: #212631;
+  border-radius: 10px;
+  height: 48px;
+}
+
+.login-card .form-control::placeholder, .register-card .form-control::placeholder {
+  color: #6d7d9c;
+}
+
+.login-card .form-control:focus, .register-card .form-control:focus, .register-card .form-select:focus {
+  background: #ffffff;
+  color: #212631;
+  border-color: #5856d6;
+  box-shadow: 0 0 0 0.25rem rgba(88, 86, 214, 0.25);
+}
+
+.register-card .form-select option {
+  background: #ffffff;
+  color: #212631;
+}
+
+.login-card .btn-primary, .register-card .btn-primary {
+  background: #5856d6;
+  color: #ffffff;
+  border: 1px solid #5856d6;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-weight: 600;
+}
+
+.login-card .btn-primary:hover, .register-card .btn-primary:hover {
+  background: #4644b8;
+  border-color: #4644b8;
+  color: #ffffff;
+}
+
+.register-card .btn-outline-secondary {
+  border-radius: 10px;
+  padding: 10px 22px;
+  border: 1px solid #6d7d9c;
+  color: #212631;
+}
+
+.register-card .btn-outline-secondary:hover {
+  background: #e7eaee;
+  border-color: #6d7d9c;
+  color: #212631;
+}
+
+.login-card .text-muted, .register-card .text-muted {
+  color: #6d7d9c !important;
+}
+
+.login-card .text-muted a, .register-card .text-muted a {
+  color: #5856d6 !important;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-card .invalid-feedback, .register-card .invalid-feedback {
+  color: #e55353;
+}
+
 /*# sourceMappingURL=style.css.map */

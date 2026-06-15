@@ -32,7 +32,7 @@ class UpdateUserRequest extends FormRequest
             'phone' => 'required|string|max:20',
             'role' => [
                 'required',
-                Rule::in(['owner', 'rental', 'security', 'committee_member']),
+                Rule::in(['owner', 'rental', 'security', 'committee_member', 'secretary']),
             ],
             'password' => 'nullable|string|min:6',
             'aadhar_id' => 'required|string|max:20',

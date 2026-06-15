@@ -1,7 +1,7 @@
 <div class="d-flex gap-2 justify-content-center">
     <button type="button" class="btn btn-sm btn-outline-primary btn-edit-user" data-url="{{ route('users.edit', $id, false) }}"
-        data-title="Edit User">Edit</button>
+        data-coreui-toggle="tooltip" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
 
     <button type="button" class="btn btn-sm btn-outline-danger btn-delete-user" data-url="{{ route('users.destroy', $id, false) }}"
-        data-id="{{ $id }}">Delete</button>
+        data-id="{{ $id }}" data-coreui-toggle="tooltip" title="Delete"><i class="fa-solid fa-trash"></i></button>
 </div>

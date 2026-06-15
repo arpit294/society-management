@@ -16,23 +16,7 @@ class ExpenseCategory extends Model
         'status',
     ];
 
-    // Automatically generate slug from title if not provided
-    public static function boot()
-    {
-        parent::boot();
 
-        static::creating(function ($category) {
-            if (empty($category->slug)) {
-                $category->slug = Str::slug($category->title);
-            }
-        });
-
-        static::updating(function ($category) {
-            if (empty($category->slug)) {
-                $category->slug = Str::slug($category->title);
-            }
-        });
-    }
 
     public function expenses()
     {

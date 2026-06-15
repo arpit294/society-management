@@ -18,6 +18,7 @@ class LoginController extends Controller
 
     public function store(LoginRequest $request): RedirectResponse
     {
+        // Attempt to authenticate the user with the provided credentials
         if (! Auth::attempt($request->validated())) {
             throw ValidationException::withMessages([
                 'email' => 'The provided credentials do not match our records.',
@@ -32,8 +33,9 @@ class LoginController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         Auth::logout();
-
+        // Invalidate the session and regenerate the CSRF token to prevent session fixation attacks
         $request->session()->invalidate();
+        // Regenerate the CSRF token to ensure the old token cannot be used after logout
         $request->session()->regenerateToken();
 
         return redirect()->route('login')->with('success', 'Logged out successfully.');

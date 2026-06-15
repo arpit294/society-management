@@ -7,174 +7,226 @@ use App\Models\MaintenanceBill;
 use App\Models\Maintenance;
 use App\Models\Resident;
 use App\DataTables\MaintenanceBillsDataTable;
+use App\Models\Block;
+use App\Models\Flat;
+use App\Models\PrepaidMaintenance;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use App\Http\Requests\StoreMaintenanceBillRequest;
+use App\Http\Requests\UpdateMaintenanceBillStatusRequest;
+use Illuminate\Database\Eloquent\Builder;
 
 class MaintenanceBillController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     *
+     * @param  \App\DataTables\MaintenanceBillsDataTable  $dataTable
+     * @return \Illuminate\Http\Response
+     */
     public function index(MaintenanceBillsDataTable $dataTable)
     {
-        $prepayments = \App\Models\PrepaidMaintenance::with(['user', 'flat.block'])
-            ->where('status', 'unused')
-            ->orderBy('year')
-            ->orderBy('month')
-            ->get();
+        $totalCollected = MaintenanceBill::where('status', 'paid')->sum('total_amount');
+        $cashCollected = MaintenanceBill::where('status', 'paid')->where('payment_method', 'CASH')->sum('total_amount');
+        $upiCollected = MaintenanceBill::where('status', 'paid')->where('payment_method', 'UPI')->sum('total_amount');
 
-        return $dataTable->render('maintenance_bills.index', compact('prepayments'));
+        $months = [
+            'January', 'February', 'March', 'April', 'May', 'June',
+            'July', 'August', 'September', 'October', 'November', 'December'
+        ];
+
+        $monthlyRevenueDB = MaintenanceBill::query()
+            ->where('maintenance_bills.status', 'paid')
+            ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
+            ->where('maintenances.year', Carbon::now()->year)
+            ->selectRaw('maintenances.month, SUM(maintenance_bills.total_amount) as total')
+            ->groupBy('maintenances.month')
+            ->pluck('total', 'month')
+            ->toArray();
+
+        $chartDataRevenue = array_map(function ($month) use ($monthlyRevenueDB) {
+            return $monthlyRevenueDB[$month] ?? 0;
+        }, $months);
+
+        $blocks = Block::orderBy('block_name')->get();
+        $residents = Resident::with(['user', 'flat.block'])->get()->sortBy(function($resident) {
+            return $resident->user->name ?? '';
+        });
+        $dbYears = Maintenance::select('year')->distinct()->pluck('year')->toArray();
+        $currentYear = \Carbon\Carbon::now()->year;
+        $rangeYears = range(2024, $currentYear + 1);
+        $years = collect(array_merge($dbYears, $rangeYears))->unique()->sortDesc()->values();
+
+        return $dataTable->render('maintenance_bills.index', compact(
+            'totalCollected',
+            'cashCollected',
+            'upiCollected',
+            'months',
+            'chartDataRevenue',
+            'blocks',
+            'residents',
+            'years'
+        ));
     }
 
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
     public function create()
     {
-        return view('maintenance_bills.create');
+        $residents = Resident::with(['user', 'flat.flatType', 'block'])
+            ->where(function (Builder $query) {
+                $query->whereNull('move_out_date')
+                    ->orWhere('move_out_date', '>=', Carbon::now()->startOfDay());
+            })
+            ->get();
+
+        $residentFees = $residents->mapWithKeys(function ($resident) {
+            $fee = 0;
+            if ($resident->flat && $resident->flat->flatType) {
+                $fee = ($resident->type === 'owner')
+                    ? $resident->flat->flatType->owner_maintenance_fee
+                    : $resident->flat->flatType->rental_maintenance_fee;
+            }
+            return [$resident->id => $fee];
+        });
+
+        $discountSettings = $this->getSettingValues('discount');
+        $penaltySettings = $this->getSettingValues('penalty');
+
+        return view('maintenance_bills.create', compact('residents', 'residentFees', 'discountSettings', 'penaltySettings'));
     }
 
-    public function store(Request $request)
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \App\Http\Requests\StoreMaintenanceBillRequest  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(StoreMaintenanceBillRequest $request)
     {
-        $validatedData = $request->validate([
-            'month' => 'required|string|max:50',
-            'year' => 'required|integer|min:2000',
-            'due_date' => 'required|date',
-            'status' => 'required|in:draft,published',
-        ]);
-
         DB::beginTransaction();
 
         try {
-            // Create Master Maintenance
-            $maintenance = Maintenance::create($validatedData);
+            $resident = Resident::with(['user', 'flat.flatType'])->findOrFail($request->resident_id);
 
-            // Fetch all active residents
-            $activeResidents = Resident::with('flat.flatType')
-                ->where(function($query) {
-                    $query->whereNull('move_out_date')
-                          ->orWhere('move_out_date', '>=', now()->startOfDay());
-                })->get();
+            if (!$resident->flat || !$resident->flat->flatType) {
+                throw new \Exception('Resident does not have a flat assigned with a valid flat type.');
+            }
 
-            foreach ($activeResidents as $resident) {
-                if (!$resident->flat || !$resident->flat->flatType) continue;
+            $monthlyFee = ($resident->type === 'owner')
+                ? $resident->flat->flatType->owner_maintenance_fee
+                : $resident->flat->flatType->rental_maintenance_fee;
+            $numberOfMonths = $request->months;
 
-                $amount = $resident->type === 'owner'
-                    ? $resident->flat->flatType->owner_maintenance_fee
-                    : $resident->flat->flatType->rental_maintenance_fee;
+            $paymentSlipPath = null;
+            if ($request->hasFile('payment_slip')) {
+                $paymentSlipPath = $request->file('payment_slip')->store('payment_slips', 'public');
+            }
 
-                // Check for unused prepayment
-                $prepayment = \App\Models\PrepaidMaintenance::where('flat_id', $resident->flat_id)
-                    ->where('status', 'unused')
-                    ->whereRaw('months_used < months')
-                    ->first();
+            $currentDate = Carbon::createFromDate($request->start_year, Carbon::parse($request->start_month)->month, 1);
 
-                $status = 'due';
-                $paidAt = null;
+            list($totalPenaltyAmount, $totalDiscountAmount) = $this->calculatePenaltyAndDiscount(
+                $request, $monthlyFee, $numberOfMonths, $currentDate
+            );
 
-                if ($prepayment) {
-                    $status = 'paid';
-                    $paidAt = now();
-                }
+            $amountPerMonth = $monthlyFee + ($totalPenaltyAmount / $numberOfMonths) - ($totalDiscountAmount / $numberOfMonths);
+            $amountPerMonth = max(0, $amountPerMonth); // Ensure amount is not negative
 
-                $bill = MaintenanceBill::create([
-                    'maintenance_id' => $maintenance->id,
-                    'user_id' => $resident->user_id,
-                    'flat_id' => $resident->flat_id,
-                    'block_id' => $resident->block_id,
-                    'amount' => $amount,
-                    'penalty_amount' => 0,
-                    'total_amount' => $amount,
-                    'generated_date' => now(),
-                    'status' => $status,
-                    'paid_at' => $paidAt,
-                ]);
+            $batchId = uniqid('pay_');
 
-                if ($prepayment) {
-                    $monthsUsed = $prepayment->months_used + 1;
-                    $prepayment->update([
-                        'months_used' => $monthsUsed,
-                        'status' => ($monthsUsed >= $prepayment->months) ? 'used' : 'unused',
-                        'maintenance_bill_id' => $bill->id // Tracks the latest bill id for reference
-                    ]);
-                }
+            for ($i = 0; $i < $numberOfMonths; $i++) {
+                $loopDate = $currentDate->copy()->addMonths($i);
+                $monthStr = $loopDate->format('F');
+                $yearInt = $loopDate->year;
+
+                $maintenance = Maintenance::firstOrCreate(
+                    ['month' => $monthStr, 'year' => $yearInt],
+                    [
+                        'billing_cycle' => 'monthly',
+                        'due_date' => $loopDate->copy()->endOfMonth()->format('Y-m-d'),
+                        'total_additional_cost' => 0,
+                        'status' => 'published'
+                    ]
+                );
+
+                MaintenanceBill::updateOrCreate(
+                    [
+                        'maintenance_id' => $maintenance->id,
+                        'flat_id' => $resident->flat_id,
+                    ],
+                    [
+                        'batch_id' => $batchId,
+                        'user_id' => $resident->user_id,
+                        'block_id' => $resident->block_id,
+                        'amount' => $monthlyFee,
+                        'discount_amount' => $totalDiscountAmount / $numberOfMonths,
+                        'penalty_amount' => $totalPenaltyAmount / $numberOfMonths,
+                        'total_amount' => $amountPerMonth,
+                        'generated_date' => now(),
+                        'paid_at' => now(),
+                        'payment_method' => $request->payment_method,
+                        'transaction_id' => $request->transaction_id,
+                        'payment_slip' => $paymentSlipPath,
+                        'status' => 'paid',
+                    ]
+                );
             }
 
             DB::commit();
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Maintenance records generated successfully.',
-            ]);
+            $message = 'Payment recorded successfully for ' . $numberOfMonths . ' months.';
+            return $request->ajax()
+                ? response()->json(['success' => true, 'message' => $message])
+                : redirect()->route('maintenance-bills.index')->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json([
-                'success' => false,
-                'message' => 'Error generating maintenance: ' . $e->getMessage()
-            ], 500);
+            $message = 'Error recording payment: ' . $e->getMessage();
+            return $request->ajax()
+                ? response()->json(['success' => false, 'message' => $message], 500)
+                : redirect()->back()->with('error', $message);
         }
     }
 
-    public function show(\App\DataTables\MaintenanceDetailsDataTable $dataTable, $id)
-    {
-        $maintenance = Maintenance::with(['maintenanceBills.user', 'maintenanceBills.flat'])->findOrFail($id);
-        return $dataTable->with('id', $id)->render('maintenance_bills.show', compact('maintenance'));
-    }
-
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  string  $id  Can be batch_id or individual bill id
+     * @return \Illuminate\Http\Response
+     */
     public function destroy($id)
     {
-        $maintenance = Maintenance::findOrFail($id);
-        $maintenance->delete();
+        $bills = MaintenanceBill::where('batch_id', $id)->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Maintenance record deleted successfully.',
-        ]);
-    }
-
-    public function edit($id)
-    {
-        $maintenanceBill = MaintenanceBill::findOrFail($id);
-        $blocks = \App\Models\Block::all();
-        $flats = \App\Models\Flat::with('flatType')->where('block_id', $maintenanceBill->block_id)->get();
-        $users = \App\Models\User::all();
-        return view('maintenance_bills.edit', compact('maintenanceBill', 'blocks', 'flats', 'users'));
-    }
-
-    public function update(Request $request, $id)
-    {
-        $maintenanceBill = MaintenanceBill::findOrFail($id);
-
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'block_id' => 'required|exists:blocks,id',
-            'flat_id' => 'required|exists:flats,id',
-            'amount' => 'required|numeric|min:0',
-            'status' => 'required|in:paid,due,pending',
-        ]);
-
-        $data = $request->only([
-            'user_id',
-            'block_id',
-            'flat_id',
-            'amount',
-            'status',
-        ]);
-
-        if ($request->status === 'paid' && $maintenanceBill->getRawOriginal('status') !== 'paid') {
-            $data['paid_at'] = now();
-            // Lock in the penalty and total amount
-            $data['penalty_amount'] = $maintenanceBill->penalty_amount;
-            $data['total_amount'] = $request->amount + $maintenanceBill->penalty_amount;
-        } elseif ($request->status !== 'paid') {
-            $data['paid_at'] = null;
-            $data['penalty_amount'] = 0;
-            $data['total_amount'] = $request->amount;
+        if ($bills->isEmpty()) {
+            $bills = MaintenanceBill::where('id', $id)->get();
         }
 
-        $maintenanceBill->update($data);
+        if ($bills->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Bill(s) not found.'], 404);
+        }
+
+        foreach ($bills as $bill) {
+            $bill->delete();
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Maintenance bill updated successfully.',
+            'message' => 'Payment deleted successfully.',
         ]);
     }
 
+    /**
+     * Additional method to delete individual bill (not by batch), useful for correcting mistakes without deleting entire batch
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function destroyIndividual($id)
     {
         $bill = MaintenanceBill::findOrFail($id);
@@ -186,28 +238,60 @@ class MaintenanceBillController extends Controller
         ]);
     }
 
-    public function updateStatus(Request $request, $id)
+    /**
+     * Method to update payment status, with logic to lock in penalty and total amounts when marking as paid
+     *
+     * @param  \App\Http\Requests\UpdateMaintenanceBillStatusRequest  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updateStatus(UpdateMaintenanceBillStatusRequest $request, $id)
     {
-        $request->validate([
-            'status' => 'required|in:paid,due,pending'
-        ]);
-
         $maintenanceBill = MaintenanceBill::findOrFail($id);
 
         if ($request->status === 'paid' && $maintenanceBill->status !== 'paid') {
-            // Read dynamic amounts BEFORE changing status to paid, so accessors calculate correctly
-            $lockedPenalty = $maintenanceBill->penalty_amount;
-            $lockedTotal = $maintenanceBill->total_amount;
+            // Recalculate penalty and discount based on current date for accurate locking
+            $monthlyFee = ($maintenanceBill->resident->type === 'owner')
+                ? $maintenanceBill->flat->flatType->owner_maintenance_fee
+                : $maintenanceBill->flat->flatType->rental_maintenance_fee;
+
+            $currentDate = Carbon::createFromDate(
+                $maintenanceBill->maintenance->year,
+                Carbon::parse($maintenanceBill->maintenance->month)->month,
+                1
+            );
+
+            list($totalPenaltyAmount, $totalDiscountAmount) = $this->calculatePenaltyAndDiscount(
+                $request, $monthlyFee, 1, $currentDate, true // Calculate for single month, force recalculation
+            );
 
             $maintenanceBill->status = 'paid';
             $maintenanceBill->paid_at = now();
+            $maintenanceBill->payment_method = $request->payment_method;
+            $maintenanceBill->transaction_id = $request->transaction_id;
+
+            if ($request->hasFile('payment_slip')) {
+                $maintenanceBill->payment_slip = $request->file('payment_slip')->store('payment_slips', 'public');
+            }
 
             // Lock in the dynamically calculated amounts
-            $maintenanceBill->penalty_amount = $lockedPenalty;
-            $maintenanceBill->total_amount = $lockedTotal;
+            $maintenanceBill->penalty_amount = $totalPenaltyAmount;
+            $maintenanceBill->discount_amount = $totalDiscountAmount;
+            $maintenanceBill->total_amount = $monthlyFee + $totalPenaltyAmount - $totalDiscountAmount;
+
         } elseif ($request->status !== 'paid') {
             $maintenanceBill->status = $request->status;
             $maintenanceBill->paid_at = null;
+            $maintenanceBill->payment_method = null;
+            $maintenanceBill->transaction_id = null;
+            $maintenanceBill->payment_slip = null;
+            // When status is not paid, reset penalty/discount to 0 or original calculated if any
+            // This part might need more specific business logic based on how you want to handle unpaid bills
+            // For now, we'll just clear payment-related fields.
+            $maintenanceBill->penalty_amount = 0; // Or recalculate based on current date if bill becomes due again
+            $maintenanceBill->discount_amount = 0;
+            // total_amount would then be $monthlyFee + 0 - 0 = $monthlyFee
+            // This needs careful consideration based on desired behavior for non-paid bills.
         }
 
         $maintenanceBill->save();
@@ -230,6 +314,12 @@ class MaintenanceBillController extends Controller
         return redirect()->back()->with('success', 'Status updated successfully.');
     }
 
+    /**
+     * Display the specified resource details.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
     public function details($id)
     {
         $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
@@ -237,27 +327,53 @@ class MaintenanceBillController extends Controller
         return view('maintenance_bills.details', compact('bill'));
     }
 
+    /**
+     * Method to download invoice as PDF
+     *
+     * @param  string  $id  Can be batch_id or individual bill id
+     * @return \Illuminate\Http\Response
+     */
     public function downloadInvoice($id)
     {
-        $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
-        $pdf = Pdf::loadView('maintenance_bills.invoice_pdf', compact('bill'));
+        $bills = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])
+            ->where('batch_id', $id)
+            ->orderBy('id', 'asc')
+            ->get();
 
-        $fileName = 'invoice_'.($bill->flat->block->block_name ?? '').'-'.($bill->flat->flat_no ?? '').'_'.$bill->maintenance->month.'_'.$bill->maintenance->year.'.pdf';
+        if ($bills->isEmpty()) {
+            $bills = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])
+                ->where('id', $id)
+                ->get();
+            if ($bills->isEmpty()) {
+                abort(404);
+            }
+        }
+
+        $bill = $bills->first();
+        $pdf = Pdf::loadView('maintenance_bills.invoice_pdf', compact('bills', 'bill'));
+
+        $fileName = 'invoice_' . ($bill->flat->block->block_name ?? '') . '-' . ($bill->flat->flat_no ?? '') . '_' . now()->format('Ymd_His') . '.pdf';
 
         return $pdf->download($fileName);
     }
 
+    /**
+     * API endpoint to fetch resident info based on user ID, used for dynamic form updates when creating/editing bills
+     *
+     * @param  int  $userId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getResidentInfo($userId)
     {
         $resident = Resident::with('flat.flatType')
             ->where('user_id', $userId)
-            ->where(function($query) {
+            ->where(function (Builder $query) {
                 $query->whereNull('move_out_date')
-                      ->orWhere('move_out_date', '>=', now()->startOfDay());
+                    ->orWhere('move_out_date', '>=', Carbon::now()->startOfDay());
             })->first();
 
         if ($resident && $resident->flat && $resident->flat->flatType) {
-            $amount = $resident->type === 'owner'
+            $amount = ($resident->type === 'owner')
                 ? $resident->flat->flatType->owner_maintenance_fee
                 : $resident->flat->flatType->rental_maintenance_fee;
 
@@ -268,6 +384,114 @@ class MaintenanceBillController extends Controller
                 'amount' => $amount
             ]);
         }
-        return response()->json(['success' => false]);
+        return response()->json(['success' => false, 'message' => 'Resident not found or flat/flat type missing.']);
+    }
+
+    /**
+     * Helper to get setting values for discount or penalty.
+     *
+     * @param  string  $type  'discount' or 'penalty'
+     * @return array
+     */
+    private function getSettingValues(string $type): array
+    {
+        return [
+            "apply_{$type}" => setting("apply_{$type}", '1'),
+            'type' => setting("{$type}_type", 'percentage'),
+            'yearly_value' => (float)setting("{$type}_yearly_value", setting("{$type}_yearly_percent", ($type === 'penalty' ? 15 : 10))),
+            'half_yearly_value' => (float)setting("{$type}_half_yearly_value", setting("{$type}_half_yearly_percent", ($type === 'penalty' ? 10 : 0))),
+            'quarterly_value' => (float)setting("{$type}_quarterly_value", setting("{$type}_quarterly_percent", 5)),
+            'monthly_value' => (float)setting("{$type}_monthly_value", setting("{$type}_monthly_percent", 2)),
+        ];
+    }
+
+    /**
+     * Helper to calculate penalty and discount amounts.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  float  $monthlyFee
+     * @param  int  $numberOfMonths
+     * @param  \Carbon\Carbon  $startDate
+     * @param  bool  $forceRecalculation  If true, ignores request values and recalculates based on settings.
+     * @return array  [totalPenaltyAmount, totalDiscountAmount]
+     */
+    private function calculatePenaltyAndDiscount(
+        Request $request, float $monthlyFee, int $numberOfMonths, Carbon $startDate, bool $forceRecalculation = false
+    ): array
+    {
+        $now = Carbon::now()->startOfMonth();
+
+        // Calculate past and future months
+        $pastMonthsCount = 0;
+        $futureMonthsCount = $numberOfMonths;
+
+        if ($startDate->lt($now)) {
+            $pastMonthsCount = $now->diffInMonths($startDate);
+            if ($pastMonthsCount > $numberOfMonths) {
+                $pastMonthsCount = $numberOfMonths;
+            }
+            $futureMonthsCount = $numberOfMonths - $pastMonthsCount;
+        }
+
+        $arrearsAmount = $pastMonthsCount * $monthlyFee;
+        $advanceAmount = $futureMonthsCount * $monthlyFee;
+
+        $totalPenaltyAmount = 0;
+        if ($forceRecalculation || ($request->has('penalty_amount') && $request->filled('penalty_amount'))) {
+            $totalPenaltyAmount = (float)$request->penalty_amount;
+        } else {
+            $penaltySettings = $this->getSettingValues('penalty');
+            if ($penaltySettings['apply_penalty'] === '1' && $pastMonthsCount > 0) {
+                $penaltyValue = 0;
+                if ($pastMonthsCount >= 12) {
+                    $penaltyValue = $penaltySettings['yearly_value'];
+                } elseif ($pastMonthsCount >= 6) {
+                    $penaltyValue = $penaltySettings['half_yearly_value'];
+                } elseif ($pastMonthsCount >= 3) {
+                    $penaltyValue = $penaltySettings['quarterly_value'];
+                } elseif ($pastMonthsCount >= 1) {
+                    $penaltyValue = $penaltySettings['monthly_value'];
+                }
+
+                if ($penaltyValue > 0) {
+                    if ($penaltySettings['type'] === 'fixed') {
+                        $totalPenaltyAmount = $penaltyValue;
+                    } else {
+                        $totalPenaltyAmount = $arrearsAmount * ($penaltyValue / 100);
+                    }
+                }
+            }
+        }
+
+        $totalDiscountAmount = 0;
+        if ($forceRecalculation || ($request->has('discount_amount') && $request->filled('discount_amount'))) {
+            $totalDiscountAmount = (float)$request->discount_amount;
+        } else {
+            $discountSettings = $this->getSettingValues('discount');
+            $applyDiscount = $discountSettings['apply_discount'];
+
+            if (($applyDiscount === '1' || $applyDiscount === 'true' || $applyDiscount === 'on') && $futureMonthsCount > 0) {
+                $discountValue = 0;
+                if ($futureMonthsCount >= 12) {
+                    $discountValue = $discountSettings['yearly_value'];
+                } elseif ($futureMonthsCount >= 6) {
+                    $discountValue = $discountSettings['half_yearly_value'];
+                } elseif ($futureMonthsCount >= 3) {
+                    $discountValue = $discountSettings['quarterly_value'];
+                } elseif ($futureMonthsCount >= 1) {
+                    $discountValue = $discountSettings['monthly_value'];
+                }
+
+                if ($discountValue > 0) {
+                    if ($discountSettings['type'] === 'fixed') {
+                        $totalDiscountAmount = $discountValue;
+                    } else {
+                        $totalDiscountAmount = $advanceAmount * ($discountValue / 100);
+                    }
+                }
+            }
+        }
+
+        return [$totalPenaltyAmount, $totalDiscountAmount];
     }
 }

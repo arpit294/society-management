@@ -47,7 +47,7 @@ class ComplainController extends Controller
 
     public function edit(Complain $complain)
     {
-        $users = \App\Models\User::all();
+        $users = User::all();
         return view('complains.edit', compact('complain', 'users'));
     }
 

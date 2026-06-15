@@ -18,6 +18,7 @@
                     @endforeach
                 </select>
             </div>
+
             <div class="filter-col d-none" id="residents-filter-reset-col" style="min-width: 200px;">
                 <button type="button" id="residents-filter-reset" class="btn btn-outline-secondary w-100">
                     Reset filters

@@ -65,9 +65,8 @@ Route::middleware('auth')->group(function () {
     Route::delete('maintenance-bills/individual/{id}', [\App\Http\Controllers\MaintenanceBillController::class, 'destroyIndividual'])->name('maintenance-bills.destroy-individual');
     Route::get('maintenance-bills/details/{id}', [\App\Http\Controllers\MaintenanceBillController::class, 'details'])->name('maintenance-bills.details');
     Route::get('maintenance-bills/download-invoice/{id}', [\App\Http\Controllers\MaintenanceBillController::class, 'downloadInvoice'])->name('maintenance-bills.download-invoice');
-    Route::resource('maintenance-bills', \App\Http\Controllers\MaintenanceBillController::class);
+    Route::resource('maintenance-bills', \App\Http\Controllers\MaintenanceBillController::class)->only(['index', 'create', 'store', 'destroy']);
     Route::post('maintenance-bills/{maintenanceBill}/update-status', [\App\Http\Controllers\MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
-
     // Prepayments
     Route::resource('prepayments', \App\Http\Controllers\PrepaymentController::class)->only(['index', 'create', 'store']);
 

@@ -28,7 +28,7 @@ class StoreUserRequest extends FormRequest
             'phone' => 'required|string|max:10',
             'role' => [
                 'required',
-                Rule::in(['owner', 'rental', 'security', 'committee_member']),
+                Rule::in(['owner', 'rental', 'security', 'committee_member', 'secretary']),
             ],
             'password' => 'required|string|min:6',
             'aadhar_id' => 'required|string|max:20',
