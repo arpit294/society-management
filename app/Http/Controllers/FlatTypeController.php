@@ -22,13 +22,7 @@ class FlatTypeController extends Controller
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:flat_types,name',
-<<<<<<< HEAD
             'maintenance_fee' => 'required|numeric|min:0',
-=======
-            'owner_maintenance_fee' => 'required|numeric|min:0',
-            'rental_maintenance_fee' => 'required|numeric|min:0',
-            'penalty_per_day' => 'required|numeric|min:0',
->>>>>>> main
             'status' => 'required|in:active,inactive',
         ]);
 
@@ -49,13 +43,9 @@ class FlatTypeController extends Controller
     {
         $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:flat_types,name,' . $flatType->id,
-<<<<<<< HEAD
-            'maintenance_fee' => 'required|numeric|min:0',
-=======
             'owner_maintenance_fee' => 'required|numeric|min:0',
             'rental_maintenance_fee' => 'required|numeric|min:0',
             'penalty_per_day' => 'required|numeric|min:0',
->>>>>>> main
             'status' => 'required|in:active,inactive',
         ]);
 
