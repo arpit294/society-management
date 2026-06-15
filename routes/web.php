@@ -6,6 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\FlatController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -66,9 +67,15 @@ Route::middleware('auth')->group(function () {
     Route::get('maintenance-bills/download-invoice/{id}', [\App\Http\Controllers\MaintenanceBillController::class, 'downloadInvoice'])->name('maintenance-bills.download-invoice');
     Route::resource('maintenance-bills', \App\Http\Controllers\MaintenanceBillController::class)->only(['index', 'create', 'store', 'destroy']);
     Route::post('maintenance-bills/{maintenanceBill}/update-status', [\App\Http\Controllers\MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
+    // Prepayments
+    Route::resource('prepayments', \App\Http\Controllers\PrepaymentController::class)->only(['index', 'create', 'store']);
 
     // Settings
     Route::get('settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [\App\Http\Controllers\SettingController::class, 'store'])->name('settings.store');
+
+    // Reports
+    Route::get('reports/maintenance/export', [ReportController::class, 'exportReport'])->name('reports.maintenance.export');
+    Route::get('reports/maintenance', [ReportController::class, 'maintenanceReport'])->name('reports.maintenance');
 });
 //

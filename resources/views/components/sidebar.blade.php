@@ -116,7 +116,7 @@
                 Residents
             </a>
         </li>
-        <li class="nav-group {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('expense-categories*') || request()->is('expenses*') ? 'show' : '' }}">
+        <li class="nav-group {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('expense-categories*') || request()->is('expenses*') || request()->is('prepayments*') ? 'show' : '' }}">
             <a class="nav-link nav-group-toggle" href="#">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)"
@@ -126,7 +126,7 @@
             </a>
             <ul class="nav-group-items">
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('maintenance-bills*') || request()->is('payments*') ? 'active' : '' }}" href="{{ route('maintenance-bills.index') }}">
+                    <a class="nav-link {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('prepayments*') ? 'active' : '' }}" href="{{ route('maintenance-bills.index') }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         Payments
                     </a>
@@ -144,6 +144,15 @@
                     </a>
                 </li>
             </ul>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link {{ request()->routeIs('reports.maintenance') ? 'active' : '' }}" href="{{ route('reports.maintenance') }}">
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="var(--ci-primary-color, currentcolor)" d="M448 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V96c0-35.35-28.65-64-64-64zM64 64h384c17.64 0 32 14.36 32 32v64H32V96c0-17.64 14.36-32 32-32zm384 384H64c-17.64 0-32-14.36-32-32V192h448v224c0 17.64-14.36 32-32 32zM128 256h128v32H128v-32zm0 64h256v32H128v-32zm0 64h256v32H128v-32z" />
+                </svg>
+                Reports
+            </a>
         </li>
     </ul>
     {{-- <div class="sidebar-footer border-top d-none d-md-flex">

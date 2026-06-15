@@ -47,11 +47,28 @@ class DashboardController extends Controller
             $chartDataExpenses[] = $monthlyExpensesDB[$m] ?? 0;
         }
 
-        // Bill Status Doughnut Chart Data
+        // Bill Status Doughnut Chart Data (Based on Latest Maintenance)
+        $latestMaintenance = \App\Models\Maintenance::orderBy('year', 'desc')->orderBy('id', 'desc')->first();
+        $maintenanceId = $latestMaintenance ? $latestMaintenance->id : null;
+
+        $activeResidentsCount = \App\Models\Resident::where(function($query) {
+            $query->whereNull('move_out_date')
+                  ->orWhere('move_out_date', '>=', now()->startOfDay());
+        })->count();
+
+        $paidCount = 0;
+        if ($maintenanceId) {
+            $paidCount = MaintenanceBill::where('maintenance_id', $maintenanceId)
+                ->where('status', 'paid')
+                ->count();
+        }
+
+        $pendingCount = max(0, $activeResidentsCount - $paidCount);
+
         $billStatusData = [
-            'paid' => MaintenanceBill::where('status', 'paid')->count(),
-            'pending' => MaintenanceBill::where('status', 'pending')->count(),
-            'due' => MaintenanceBill::where('status', 'due')->count(),
+            'paid' => $paidCount,
+            'pending' => $pendingCount,
+            'due' => 0,
         ];
 
         // Fetch Recent Activities
