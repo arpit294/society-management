@@ -19,7 +19,7 @@
                 <label class="form-label mb-1" for="users-filter-role">Filter by Role</label>
                 <select id="users-filter-role" class="form-select" style="max-width: 320px;">
                     <option value="">All Roles</option>
-                    @foreach (['owner', 'rental', 'security', 'committee_member'] as $role)
+                    @foreach (['owner', 'rental', 'security', 'committee_member', 'secretary'] as $role)
                         <option value="{{ $role }}">{{ $role }}</option>
                     @endforeach
                 </select>

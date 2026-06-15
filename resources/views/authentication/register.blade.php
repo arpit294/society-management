@@ -87,7 +87,7 @@
 
                                         <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required>
                                             <option value="">Select role</option>
-                                            @foreach (['owner', 'rental', 'security', 'committee_member', 'secretary'] as $role)
+                                            @foreach (['owner', 'rental', 'security', 'committee_member'] as $role)
                                                 <option value="{{ $role }}" {{ old('role') == $role ? 'selected' : '' }}>
                                                     {{ ucfirst(str_replace('_', ' ', $role)) }}
                                                 </option>

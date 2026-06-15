@@ -19,14 +19,14 @@ class ExpenseController extends Controller
         $totalInvoices = Expense::whereNotNull('invoice')->count();
         $totalMaintenanceIncome = \App\Models\MaintenanceBill::where('status', 'paid')->sum('total_amount');
         $categories = ExpenseCategory::all();
-        $users = User::all();
+        $users = User::whereIn('role', ['secretary', 'committee_member'])->get();
 
         return $dataTable->render('expenses.index', compact('totalExpenses', 'thisMonthExpenses', 'totalInvoices', 'totalMaintenanceIncome', 'categories', 'users'));
     }
 
     public function create()
     {
-        $users = User::all();
+        $users = User::whereIn('role', ['secretary', 'committee_member'])->get();
         $categories = ExpenseCategory::where('status', 'active')->get();
         return view('expenses.create', compact('users', 'categories'));
     }
@@ -63,7 +63,7 @@ class ExpenseController extends Controller
 
     public function edit(Expense $expense)
     {
-        $users = User::all();
+        $users = User::whereIn('role', ['secretary', 'committee_member'])->get();
         $categories = ExpenseCategory::where('status', 'active')->get();
         return view('expenses.edit', compact('expense', 'users', 'categories'));
     }

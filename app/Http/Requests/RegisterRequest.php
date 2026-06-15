@@ -26,7 +26,7 @@ class RegisterRequest extends FormRequest
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:20',
-            'role' => ['required', Rule::in(['owner', 'rental', 'security', 'committee_member', 'secretary'])],
+            'role' => ['required', Rule::in(['owner', 'rental', 'security', 'committee_member'])],
             'aadhar_id' => 'required|string|max:20',
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'password' => 'required|string|min:6|confirmed',

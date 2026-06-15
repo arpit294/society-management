@@ -79,6 +79,20 @@ class UserController extends Controller
         // we remove 'password' from the array so we don't accidentally overwrite 
         // their current password with an empty string!
         // (Note: Hashing is handled automatically by the 'hashed' cast in the User model)
+        // Prevent removing the last secretary
+        if ($user->role === 'secretary' && $validatedData['role'] !== 'secretary') {
+            $secretaryCount = User::where('role', 'secretary')->count();
+            if ($secretaryCount <= 1) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You cannot remove the secretary role from the last remaining secretary.',
+                    ], 403);
+                }
+                return redirect()->back()->with('error', 'You cannot remove the secretary role from the last remaining secretary.');
+            }
+        }
+
         if (empty($validatedData['password'])) {
             unset($validatedData['password']);
         }
