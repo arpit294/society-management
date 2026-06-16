@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property float $penalty_amount
  * @property float $total_amount
  * @property float $discount_amount
- * @property \Carbon\Carbon|null $paid_at
+ * @property Carbon|null $paid_at
  * @property string|null $payment_method
  * @property string|null $transaction_id
  * @property string|null $payment_slip
@@ -90,11 +90,11 @@ class MaintenanceBill extends Model
             $penaltyValue = 0;
 
             // Fetch the appropriate penalty value based on billing cycle and global settings
-            if ($billingCycle === 'monthly') {
+            if ($billingCycle === 'monthly' && setting('penalty_monthly_enabled', '1') == '1') {
                 $penaltyValue = (float)setting('penalty_monthly_value', setting('penalty_monthly_percent', 5));
-            } elseif ($billingCycle === 'quarterly') {
+            } elseif ($billingCycle === 'quarterly' && setting('penalty_quarterly_enabled', '1') == '1') {
                 $penaltyValue = (float)setting('penalty_quarterly_value', setting('penalty_quarterly_percent', 10));
-            } elseif ($billingCycle === 'yearly') {
+            } elseif ($billingCycle === 'yearly' && setting('penalty_yearly_enabled', '1') == '1') {
                 $penaltyValue = (float)setting('penalty_yearly_value', setting('penalty_yearly_percent', 15));
             }
 
@@ -119,7 +119,7 @@ class MaintenanceBill extends Model
         if ($status === 'paid' || $status === null) {
             return (float)$value;
         }
-    
+
         $baseAmount = (float)($this->attributes['amount'] ?? 0);
         $penalty = $this->getPenaltyAmountAttribute($this->attributes['penalty_amount'] ?? 0);
         return $baseAmount + $penalty;

@@ -74,7 +74,7 @@
                     </div>
                 </div>
 
-                <!-- CHARTS ROW -->
+                <!-- CHARTS ROW 1 -->
                 <div class="row g-4 mb-4">
                     <!-- Main Chart: Revenue vs Expenses -->
                     <div class="col-lg-8">
@@ -92,10 +92,37 @@
                     <div class="col-lg-4">
                         <div class="card h-100 shadow-sm border-0">
                             <div class="card-header bg-transparent border-0 pt-4 pb-0">
-                                <h5 class="card-title mb-0 fw-bold">Bill Status Tracker</h5>
+                                <h5 class="card-title mb-0 fw-bold">Recent Maintenance Tracker</h5>
                             </div>
                             <div class="card-body d-flex justify-content-center align-items-center">
                                 <canvas id="statusChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHARTS ROW 2 -->
+                <div class="row g-4 mb-4">
+                    <!-- Expense Breakdown Chart -->
+                    <div class="col-lg-6">
+                        <div class="card h-100 shadow-sm border-0">
+                            <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                                <h5 class="card-title mb-0 fw-bold">Expense Breakdown ({{ date('Y') }})</h5>
+                            </div>
+                            <div class="card-body d-flex justify-content-center align-items-center" style="min-height: 300px;">
+                                <canvas id="expenseBreakdownChart" height="250"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Occupancy Rates Chart -->
+                    <div class="col-lg-6">
+                        <div class="card h-100 shadow-sm border-0">
+                            <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                                <h5 class="card-title mb-0 fw-bold">Occupancy Rates</h5>
+                            </div>
+                            <div class="card-body d-flex justify-content-center align-items-center" style="min-height: 300px;">
+                                <canvas id="occupancyChart" height="250"></canvas>
                             </div>
                         </div>
                     </div>
@@ -145,6 +172,9 @@
          data-months='{{ json_encode($months) }}' 
          data-revenue='{{ json_encode($chartDataRevenue) }}' 
          data-expenses='{{ json_encode($chartDataExpenses) }}'
-         data-status='{{ json_encode($billStatusData) }}'>
+         data-status='{{ json_encode($billStatusData) }}'
+         data-occupancy='{{ json_encode($occupancyData) }}'
+         data-expense-labels='{{ json_encode($expenseBreakdownLabels) }}'
+         data-expense-data='{{ json_encode($expenseBreakdownData) }}'>
     </div>
 </x-user-page>

@@ -6,7 +6,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\FlatController;
-use App\Http\Controllers\ReportController;
+
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
@@ -40,8 +40,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('users', UserController::class)->except(['show']);
 
     // Flats
-    Route::resource('flats', FlatController::class)->except(['show']);
+    Route::get('flats/{flat}/transfer', [FlatController::class, 'transferCreate'])->name('flats.transfer.create');
+    Route::post('flats/{flat}/transfer', [FlatController::class, 'transferStore'])->name('flats.transfer.store');
+    Route::resource('flats', FlatController::class);
     Route::get('api/flats-by-block/{block_id}', [\App\Http\Controllers\ResidentController::class, 'getFlatsByBlock'])->name('api.flats-by-block');
+    Route::get('api/flat-owner/{flat_id}', [\App\Http\Controllers\ResidentController::class, 'getFlatOwner'])->name('api.flat-owner');
 
     // Blocks
     Route::resource('blocks', BlockController::class)->except(['show']);
@@ -50,9 +53,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('complains', \App\Http\Controllers\ComplainController::class)->except(['show']);
 
     // Residents
+    Route::post('residents/import', [\App\Http\Controllers\ResidentController::class, 'import'])->name('residents.import');
+    Route::get('residents/import/template', [\App\Http\Controllers\ResidentController::class, 'downloadTemplate'])->name('residents.import.template');
     Route::resource('residents', \App\Http\Controllers\ResidentController::class)->except(['show']);
     // Expenses
     Route::resource('expenses', \App\Http\Controllers\ExpenseController::class)->except(['show']);
+
 
     // Expense Categories
     Route::resource('expense-categories', \App\Http\Controllers\ExpenseCategoryController::class)->except(['show']);
@@ -65,17 +71,25 @@ Route::middleware('auth')->group(function () {
     Route::delete('maintenance-bills/individual/{id}', [\App\Http\Controllers\MaintenanceBillController::class, 'destroyIndividual'])->name('maintenance-bills.destroy-individual');
     Route::get('maintenance-bills/details/{id}', [\App\Http\Controllers\MaintenanceBillController::class, 'details'])->name('maintenance-bills.details');
     Route::get('maintenance-bills/download-invoice/{id}', [\App\Http\Controllers\MaintenanceBillController::class, 'downloadInvoice'])->name('maintenance-bills.download-invoice');
+    Route::post('name-transfer-bills/{bill}/approve', [App\Http\Controllers\NameTransferBillController::class, 'approve'])->name('name-transfer-bills.approve');
+    Route::resource('name-transfer-bills', App\Http\Controllers\NameTransferBillController::class)->except(['create', 'store', 'show', 'edit']);
     Route::resource('maintenance-bills', \App\Http\Controllers\MaintenanceBillController::class)->only(['index', 'create', 'store', 'destroy']);
     Route::post('maintenance-bills/{maintenanceBill}/update-status', [\App\Http\Controllers\MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
-    // Prepayments
-    Route::resource('prepayments', \App\Http\Controllers\PrepaymentController::class)->only(['index', 'create', 'store']);
+
+    // Name Transfer Bills
+    Route::get('name-transfer-bills', [\App\Http\Controllers\NameTransferBillController::class, 'index'])->name('name-transfer-bills.index');
+    Route::post('name-transfer-bills/{bill}/update-status', [\App\Http\Controllers\NameTransferBillController::class, 'updateStatus'])->name('name-transfer-bills.update-status');
+    Route::delete('name-transfer-bills/{bill}', [\App\Http\Controllers\NameTransferBillController::class, 'destroy'])->name('name-transfer-bills.destroy');
+
 
     // Settings
     Route::get('settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [\App\Http\Controllers\SettingController::class, 'store'])->name('settings.store');
 
-    // Reports
-    Route::get('reports/maintenance/export', [ReportController::class, 'exportReport'])->name('reports.maintenance.export');
-    Route::get('reports/maintenance', [ReportController::class, 'maintenanceReport'])->name('reports.maintenance');
+
 });
-//
+
+
+
+
+// 

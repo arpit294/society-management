@@ -637,7 +637,7 @@
 //                     toastr.error("Could not load form.");
 //                 },
 //             });
-//         
+//
     // --- Migrated Blade Scripts ---
 
     // 1. Settings page logic
@@ -697,15 +697,7 @@
         updateDiscountLabels();
     }
 
-    // 2. Auth Pages Toast & Validation logic
-    const toastSource = document.getElementById('users-toast-source');
-    if (toastSource) {
-        const message = toastSource.getAttribute('data-message');
-        const type = toastSource.getAttribute('data-type') || 'success';
-        if (message && window.jQuery && typeof window.showToast === 'function') {
-            window.showToast(message, type);
-        }
-    }
+
 
     $(document).on('click', '.toggle-password-btn', function() {
         const input = $(this).closest('.input-group').find('input')[0];
@@ -735,7 +727,7 @@
             const bladeError = input.parentElement.querySelector('.invalid-feedback:not([id^="js-"])');
             if (bladeError) bladeError.style.display = 'none';
         });
-        
+
         [emailError, passwordError, confirmPasswordError].forEach(err => {
             if (err) {
                 err.style.display = 'none';
@@ -795,7 +787,7 @@
             const months = JSON.parse(paymentsChartDataEl.getAttribute("data-months"));
             const revenueData = JSON.parse(paymentsChartDataEl.getAttribute("data-revenue"));
             const ctx = document.getElementById("paymentsChart").getContext("2d");
-            
+
             let gradient = ctx.createLinearGradient(0, 0, 0, 400);
             gradient.addColorStop(0, 'rgba(46, 184, 92, 0.5)'); // Green
             gradient.addColorStop(1, 'rgba(46, 184, 92, 0.0)');
@@ -907,7 +899,7 @@
                 },
             });
 
-            // Status Doughnut Chart
+            // Status Doughnut Chart (Maintenance Tracker)
             let statusChart = null;
             if (document.getElementById("statusChart")) {
                 const statusChartCtx = document.getElementById("statusChart").getContext("2d");
@@ -915,29 +907,126 @@
                 statusChart = new Chart(statusChartCtx, {
                     type: "doughnut",
                     data: {
-                        labels: ["Paid", "Pending", "Due"],
+                        labels: ["Collected", "Pending"],
                         datasets: [
                             {
-                                data: [statusData.paid, statusData.pending, statusData.due],
-                                backgroundColor: ["#10b981", "#f59e0b", "#ef4444"],
+                                data: [statusData.paid, statusData.pending],
+                                backgroundColor: ["#10b981", "#f59e0b"],
                                 borderWidth: 0, hoverOffset: 10,
                             },
                         ],
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { position: "bottom", labels: { padding: 20, usePointStyle: true, pointStyle: "circle" } } },
+                        plugins: {
+                            legend: { position: "bottom", labels: { padding: 20, usePointStyle: true, pointStyle: "circle" } },
+                            tooltip: {
+                                backgroundColor: "rgba(15, 23, 42, 0.9)", titlePadding: 10, bodyPadding: 10, cornerRadius: 8,
+                                callbacks: {
+                                    label: function (context) {
+                                        let label = context.label || "";
+                                        if (label) label += ": ";
+                                        if (context.parsed !== null) label += new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(context.parsed);
+                                        return label;
+                                    },
+                                },
+                            },
+                        },
                         cutout: "75%", layout: { padding: 10 },
                     },
                 });
             }
-            
+
+            // Expense Breakdown Pie Chart
+            let expenseChart = null;
+            if (document.getElementById("expenseBreakdownChart")) {
+                const expenseChartCtx = document.getElementById("expenseBreakdownChart").getContext("2d");
+                const expenseLabels = JSON.parse(dashboardChartDataEl.getAttribute("data-expense-labels"));
+                const expenseData = JSON.parse(dashboardChartDataEl.getAttribute("data-expense-data"));
+
+                // Vibrant color palette for expense categories
+                const vibrantColors = ["#6366f1", "#ec4899", "#f59e0b", "#10b981", "#8b5cf6", "#ef4444", "#0ea5e9", "#14b8a6"];
+
+                expenseChart = new Chart(expenseChartCtx, {
+                    type: "pie",
+                    data: {
+                        labels: expenseLabels,
+                        datasets: [
+                            {
+                                data: expenseData,
+                                backgroundColor: vibrantColors,
+                                borderWidth: 0, hoverOffset: 10,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: "right", labels: { padding: 15, usePointStyle: true, pointStyle: "circle" } },
+                            tooltip: {
+                                backgroundColor: "rgba(15, 23, 42, 0.9)", titlePadding: 10, bodyPadding: 10, cornerRadius: 8,
+                                callbacks: {
+                                    label: function (context) {
+                                        let label = context.label || "";
+                                        if (label) label += ": ";
+                                        if (context.parsed !== null) label += new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(context.parsed);
+                                        return label;
+                                    },
+                                },
+                            },
+                        },
+                        layout: { padding: 10 },
+                    },
+                });
+            }
+
+            // Occupancy Rates Doughnut Chart
+            let occupancyChart = null;
+            if (document.getElementById("occupancyChart")) {
+                const occupancyChartCtx = document.getElementById("occupancyChart").getContext("2d");
+                const occupancyData = JSON.parse(dashboardChartDataEl.getAttribute("data-occupancy"));
+
+                occupancyChart = new Chart(occupancyChartCtx, {
+                    type: "doughnut",
+                    data: {
+                        labels: ["Occupied", "Empty"],
+                        datasets: [
+                            {
+                                data: [occupancyData.occupied, occupancyData.empty],
+                                backgroundColor: ["#3b82f6", "#e2e8f0"], // Blue for occupied, slate for empty
+                                borderWidth: 0, hoverOffset: 10,
+                            },
+                        ],
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: "bottom", labels: { padding: 20, usePointStyle: true, pointStyle: "circle" } },
+                            tooltip: {
+                                backgroundColor: "rgba(15, 23, 42, 0.9)", titlePadding: 10, bodyPadding: 10, cornerRadius: 8,
+                                callbacks: {
+                                    label: function (context) {
+                                        let label = context.label || "";
+                                        if (label) label += ": ";
+                                        if (context.parsed !== null) label += context.parsed + " Flats";
+                                        return label;
+                                    },
+                                },
+                            },
+                        },
+                        cutout: "65%", layout: { padding: 10 },
+                    },
+                });
+            }
+
             // Update charts on color scheme change
             document.documentElement.addEventListener("ColorSchemeChange", () => {
                 Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue("--cui-body-color") || "#8a93a2";
                 Chart.defaults.scale.grid.color = getComputedStyle(document.documentElement).getPropertyValue("--cui-border-color-translucent") || "rgba(0,0,0,0.1)";
                 if (mainChart) mainChart.update();
                 if (statusChart) statusChart.update();
+                if (expenseChart) expenseChart.update();
+                if (occupancyChart) occupancyChart.update();
             });
         }
     });
@@ -3256,7 +3345,6 @@
 
 
 //optimized and cleaned up version of the above code
-
 $(document).ready(function () {
     // SweetAlert Configuration
     const swalWithBootstrapButtons = Swal.mixin({
@@ -3310,16 +3398,7 @@ $(document).ready(function () {
     const maintenanceBillModalInstance = initializeModal("maintenance-bill-modal");
     const residentModalInstance = initializeModal("resident-modal");
 
-    // Toast Source Check
-    const toastSource = $("#users-toast-source");
-    if (toastSource.length && toastSource.data("message")) {
-        const type = toastSource.data("type") || "success";
-        if (type === "success") {
-            toastr.success(toastSource.data("message"));
-        } else {
-            toastr.error(toastSource.data("message"));
-        }
-    }
+
 
     // Generic function to toggle reset button visibility
     function toggleResetButton(filterId1, filterId2, resetColId) {
@@ -3364,33 +3443,34 @@ $(document).ready(function () {
     setupFilterReset("#users-filter-reset", "#users-filter-role", "#users-filter-status", "#users-table", 4, 5, "#users-filter-reset-col");
 
     // Flat Filters
-    setupFilterChange("#flats-filter-type", "#flats-table", "flat_type_id:name", "#flats-filter-reset-col", "#flats-filter-status");
-    setupFilterChange("#flats-filter-status", "#flats-table", "status:name", "#flats-filter-reset-col", "#flats-filter-type");
-    setupFilterReset("#flats-filter-reset", "#flats-filter-type", "#flats-filter-status", "#flats-table", "flat_type_id:name", "status:name", "#flats-filter-reset-col");
+    setupFilterChange("#flats-filter-block", "#flats-table", "block_id:name", "#flats-filter-reset-col", "#flats-filter-type", "#flats-filter-status");
+    setupFilterChange("#flats-filter-type", "#flats-table", "flat_type_id:name", "#flats-filter-reset-col", "#flats-filter-block", "#flats-filter-status");
+    setupFilterChange("#flats-filter-status", "#flats-table", "status:name", "#flats-filter-reset-col", "#flats-filter-block", "#flats-filter-type");
+
+    $("#flats-filter-reset").on("click", function() {
+        $("#flats-filter-block").val("").trigger('change.select2');
+        $("#flats-filter-type").val("").trigger('change.select2');
+        $("#flats-filter-status").val("").trigger('change.select2');
+        
+        const dt = $("#flats-table").DataTable();
+        dt.column("block_id:name").search("");
+        dt.column("flat_type_id:name").search("");
+        dt.column("status:name").search("");
+        dt.draw();
+        
+        $("#flats-filter-reset-col").addClass("d-none");
+    });
 
     // Resident Filters
-    $(document).on("change", "#residents-filter-block", function () {
-        const dataTable = window.LaravelDataTables && window.LaravelDataTables["residents-table"]
-            ? window.LaravelDataTables["residents-table"]
-            : $("#residents-table").DataTable();
-        dataTable.ajax.reload();
-        toggleResetButton("#residents-filter-block", null, "#residents-filter-reset-col");
-    });
-    $(document).on("click", "#residents-filter-reset", function () {
-        $("#residents-filter-block").val("");
-        const dataTable = window.LaravelDataTables && window.LaravelDataTables["residents-table"]
-            ? window.LaravelDataTables["residents-table"]
-            : $("#residents-table").DataTable();
-        dataTable.ajax.reload();
-        toggleResetButton("#residents-filter-block", null, "#residents-filter-reset-col");
-    });
+    setupFilterChange("#residents-filter-block", "#residents-table", "block:name", "#residents-filter-reset-col");
+    setupFilterReset("#residents-filter-reset", "#residents-filter-block", null, "#residents-table", "block:name", null, "#residents-filter-reset-col");
 
     // Maintenance Bills Filters
     setupFilterChange("#maintenance-bills-filter-method", "#maintenance-bills-table", "payment_method:name", "#maintenance-bills-filter-reset-col", "#maintenance-bills-filter-block");
     setupFilterChange("#maintenance-bills-filter-block", "#maintenance-bills-table", "flat:name", "#maintenance-bills-filter-reset-col", "#maintenance-bills-filter-resident");
     setupFilterChange("#maintenance-bills-filter-resident", "#maintenance-bills-table", "resident:name", "#maintenance-bills-filter-reset-col", "#maintenance-bills-filter-block");
     setupFilterChange("#maintenance-bills-filter-year", "#maintenance-bills-table", "month_year:name", "#maintenance-bills-filter-reset-col", "#maintenance-bills-filter-block");
-    
+
     $(document).on("click", "#maintenance-bills-filter-reset", function () {
         $("#maintenance-bills-filter-method").val("").trigger('change.select2');
         $("#maintenance-bills-filter-block").val("").trigger('change.select2');
@@ -3403,23 +3483,26 @@ $(document).ready(function () {
         dt.column("resident:name").search("");
         dt.column("month_year:name").search("");
         dt.draw();
-        
+
         $("#maintenance-bills-filter-reset-col").addClass("d-none");
     });
 
     // Expense Filters
-    setupFilterChange("#expenses-filter-category", "#expenses-table", "expense_categories.title:name", "#expenses-filter-reset-col", "#expenses-filter-user");
-    setupFilterChange("#expenses-filter-user", "#expenses-table", "users.name:name", "#expenses-filter-reset-col", "#expenses-filter-category");
+    setupFilterChange("#expenses-filter-category", "#expenses-table", "expense_categories.title:name", "#expenses-filter-reset-col", "#expenses-filter-user", "#expenses-filter-month");
+    setupFilterChange("#expenses-filter-user", "#expenses-table", "users.name:name", "#expenses-filter-reset-col", "#expenses-filter-category", "#expenses-filter-month");
+    setupFilterChange("#expenses-filter-month", "#expenses-table", "expenses.expense_date:name", "#expenses-filter-reset-col", "#expenses-filter-category", "#expenses-filter-user");
 
     $("#expenses-filter-reset").on("click", function() {
         $("#expenses-filter-category").val("").trigger('change.select2');
         $("#expenses-filter-user").val("").trigger('change.select2');
-        
+        $("#expenses-filter-month").val("");
+
         const dt = $("#expenses-table").DataTable();
         dt.column("expense_categories.title:name").search("");
         dt.column("users.name:name").search("");
+        dt.column("expenses.expense_date:name").search("");
         dt.draw();
-        
+
         $("#expenses-filter-reset-col").addClass("d-none");
     });
 
@@ -3670,6 +3753,29 @@ $(document).ready(function () {
         });
     });
 
+    // Handle flat change to fetch existing owner for rental
+    $(document).on("change", "#resident-ajax-form select[name='flat_id']", function () {
+        let flatId = $(this).val();
+        let ownerSelect = $("#resident-ajax-form select[name='owner_user_id']");
+
+        if (!flatId) {
+            ownerSelect.val("");
+            return;
+        }
+
+        $.ajax({
+            url: `/api/flat-owner/${flatId}`,
+            type: "GET",
+            success: function (data) {
+                if (data.has_owner && data.user_id) {
+                    ownerSelect.val(data.user_id);
+                } else {
+                    ownerSelect.val("");
+                }
+            }
+        });
+    });
+
     // Trigger block change on add/edit flat form open
     $(document).on("ajaxSuccess", function(event, xhr, settings) {
         if (settings.url.includes("flats/create") || (settings.url.includes("flats/") && settings.type === "GET")) {
@@ -3905,7 +4011,7 @@ $(document).ready(function () {
             // startDateVal is "YYYY-MM"
             const startParts = startDateVal.split('-');
             const endParts = endDateVal.split('-');
-            
+
             const startYear = parseInt(startParts[0]);
             const startMonth = parseInt(startParts[1]);
             const endYear = parseInt(endParts[0]);
@@ -3917,7 +4023,7 @@ $(document).ready(function () {
             if (end >= start) {
                 // Calculate precise month difference
                 months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth()) + 1;
-                
+
                 if (months < 1) months = 1;
 
                 const monthNames = [
@@ -3965,48 +4071,50 @@ $(document).ready(function () {
             let advanceAmount = futureMonthsCount * window.currentMonthlyFee;
 
             // Penalty Calculation (on past months)
-            let penaltyValue = 0;
+            let penaltyAmount = 0;
             if (
                 window.penaltySettings &&
                 window.penaltySettings.apply_penalty == "1" &&
                 pastMonthsCount > 0
             ) {
-                if (
-                    pastMonthsCount >= 12 &&
-                    window.penaltySettings.yearly_value > 0
-                ) {
-                    penaltyValue = window.penaltySettings.yearly_value;
-                } else if (
-                    pastMonthsCount >= 6 &&
-                    window.penaltySettings.half_yearly_value > 0
-                ) {
-                    penaltyValue = window.penaltySettings.half_yearly_value;
-                } else if (
-                    pastMonthsCount >= 3 &&
-                    window.penaltySettings.quarterly_value > 0
-                ) {
-                    penaltyValue = window.penaltySettings.quarterly_value;
-                } else if (
-                    pastMonthsCount >= 1 &&
-                    window.penaltySettings.monthly_value > 0
-                ) {
-                    penaltyValue = window.penaltySettings.monthly_value;
-                }
-            }
+                for (let i = 0; i < pastMonthsCount; i++) {
+                    let monthsLate = pastMonthsCount - i;
+                    let penaltyValue = 0;
+                    if (
+                        monthsLate >= 12 &&
+                        window.penaltySettings.yearly_enabled
+                    ) {
+                        penaltyValue = window.penaltySettings.yearly_value;
+                    } else if (
+                        monthsLate >= 6 &&
+                        window.penaltySettings.half_yearly_enabled
+                    ) {
+                        penaltyValue = window.penaltySettings.half_yearly_value;
+                    } else if (
+                        monthsLate >= 3 &&
+                        window.penaltySettings.quarterly_enabled
+                    ) {
+                        penaltyValue = window.penaltySettings.quarterly_value;
+                    } else if (
+                        monthsLate >= 1 &&
+                        window.penaltySettings.monthly_enabled
+                    ) {
+                        penaltyValue = window.penaltySettings.monthly_value;
+                    }
 
-            // Calculate penalty amount based on type
-            let penaltyAmount = 0;
-            if (penaltyValue > 0) {
-                if (window.penaltySettings.type === "fixed") {
-                    penaltyAmount = parseFloat(penaltyValue);
-                } else {
-                    penaltyAmount =
-                        arrearsAmount * (parseFloat(penaltyValue) / 100);
+                    if (penaltyValue > 0) {
+                        if (window.penaltySettings.type === "fixed") {
+                            penaltyAmount += parseFloat(penaltyValue);
+                        } else {
+                            penaltyAmount +=
+                                window.currentMonthlyFee * (parseFloat(penaltyValue) / 100);
+                        }
+                    }
                 }
             }
 
             // Discount Calculation (on future months)
-            let discountValue = 0;
+            let discountAmount = 0;
             const applyDiscount = window.discountSettings
                 ? window.discountSettings.apply_discount
                 : "0";
@@ -4016,36 +4124,39 @@ $(document).ready(function () {
                     applyDiscount === "on") &&
                 futureMonthsCount > 0
             ) {
-                if (
-                    futureMonthsCount >= 12 &&
-                    window.discountSettings.yearly_value > 0
-                ) {
-                    discountValue = window.discountSettings.yearly_value;
-                } else if (
-                    futureMonthsCount >= 6 &&
-                    window.discountSettings.half_yearly_value > 0
-                ) {
-                    discountValue = window.discountSettings.half_yearly_value;
-                } else if (
-                    futureMonthsCount >= 3 &&
-                    window.discountSettings.quarterly_value > 0
-                ) {
-                    discountValue = window.discountSettings.quarterly_value;
-                } else if (
-                    futureMonthsCount >= 1 &&
-                    window.discountSettings.monthly_value > 0
-                ) {
-                    discountValue = window.discountSettings.monthly_value;
-                }
-            }
+                for (let i = 0; i < futureMonthsCount; i++) {
+                    let monthsAdvance = i + 1;
+                    let discountValue = 0;
+                    if (
+                        monthsAdvance >= 12 &&
+                        window.discountSettings.yearly_enabled
+                    ) {
+                        discountValue = window.discountSettings.yearly_value;
+                    } else if (
+                        monthsAdvance >= 6 &&
+                        window.discountSettings.half_yearly_enabled
+                    ) {
+                        discountValue = window.discountSettings.half_yearly_value;
+                    } else if (
+                        monthsAdvance >= 3 &&
+                        window.discountSettings.quarterly_enabled
+                    ) {
+                        discountValue = window.discountSettings.quarterly_value;
+                    } else if (
+                        monthsAdvance >= 1 &&
+                        window.discountSettings.monthly_enabled
+                    ) {
+                        discountValue = window.discountSettings.monthly_value;
+                    }
 
-            let discountAmount = 0;
-            if (discountValue > 0) {
-                if (window.discountSettings.type === "fixed") {
-                    discountAmount = parseFloat(discountValue);
-                } else {
-                    discountAmount =
-                        advanceAmount * (parseFloat(discountValue) / 100);
+                    if (discountValue > 0) {
+                        if (window.discountSettings.type === "fixed") {
+                            discountAmount += parseFloat(discountValue);
+                        } else {
+                            discountAmount +=
+                                window.currentMonthlyFee * (parseFloat(discountValue) / 100);
+                        }
+                    }
                 }
             }
 
@@ -4055,14 +4166,14 @@ $(document).ready(function () {
 
             const totalAmount = (subtotal + penaltyAmount - discountAmount).toFixed(2);
             $("#total_amount").val(totalAmount);
-            
+
             $("#submit-btn").prop("disabled", false);
         } else {
             $("#subtotal").val((0).toFixed(2));
             $("#penalty_amount").val((0).toFixed(2));
             $("#discount_applied").val((0).toFixed(2));
             $("#total_amount").val((0).toFixed(2));
-            
+
             $("#submit-btn").prop("disabled", true);
         }
     };
@@ -4095,10 +4206,10 @@ $(document).ready(function () {
         const subtotal = parseFloat($("#subtotal").val()) || 0;
         const penalty = parseFloat($("#penalty_amount").val()) || 0;
         const discount = parseFloat($("#discount_applied").val()) || 0;
-        
+
         let total = subtotal + penalty - discount;
         if (total < 0) total = 0;
-        
+
         $("#total_amount").val(total.toFixed(2));
     });
 

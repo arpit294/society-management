@@ -27,6 +27,11 @@ class FlatsDatatables extends DataTable
                     $q->where('name', 'like', "%{$keyword}%");
                 });
             })
+            ->filterColumn('block_id', function ($query, $keyword) {
+                $query->whereHas('block', function ($q) use ($keyword) {
+                    $q->where('block_name', 'like', "%{$keyword}%");
+                });
+            })
             ->addColumn('action', 'flats.action')
             ->editColumn('block_id', function ($model) {
                 return $model->block ? $model->block->block_name : '-';
@@ -40,11 +45,17 @@ class FlatsDatatables extends DataTable
             ->editColumn('updated_at', function ($model) {
                 return $model->updated_at ? $model->updated_at->format('Y-m-d H:i:s') : '-';
             })
+            ->addColumn('owner_name', function ($model) {
+                return $model->owner && $model->owner->user ? $model->owner->user->name : '<span class="text-muted fst-italic">None</span>';
+            })
+            ->addColumn('tenant_name', function ($model) {
+                return $model->tenant && $model->tenant->user ? $model->tenant->user->name : '<span class="text-muted fst-italic">None</span>';
+            })
             ->editColumn('status', function ($model) {
                 $class = strtolower($model->status) === 'occupied' ? 'bg-success' : 'bg-danger';
                 return '<span class="badge ' . $class . '">' . ucfirst($model->status) . '</span>';
             })
-            ->rawColumns(['status', 'action'])
+            ->rawColumns(['status', 'action', 'owner_name', 'tenant_name'])
             ->setRowId('id');
     }
 
@@ -55,7 +66,7 @@ class FlatsDatatables extends DataTable
      */
     public function query(Flat $model): QueryBuilder
     {
-        return $model->newQuery()->with(['block', 'flatType']);
+        return $model->newQuery()->with(['block', 'flatType', 'owner.user', 'tenant.user']);
     }
 
     /**
@@ -91,6 +102,8 @@ class FlatsDatatables extends DataTable
             Column::make('floor_no'),
             Column::make('flat_type_id')->title('Flat Type'),
             Column::make('status'),
+            Column::make('owner_name')->title('Owner')->searchable(false)->orderable(false),
+            Column::make('tenant_name')->title('Tenant')->searchable(false)->orderable(false),
             Column::make('created_at'),
             Column::make('updated_at'),
             Column::computed('action')

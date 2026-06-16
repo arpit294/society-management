@@ -23,4 +23,19 @@ class Flat extends Model
     {
         return $this->belongsTo(FlatType::class, 'flat_type_id');
     }
+
+    public function residents()
+    {
+        return $this->hasMany(Resident::class);
+    }
+
+    public function owner()
+    {
+        return $this->hasOne(Resident::class)->where('type', 'owner')->latest();
+    }
+
+    public function tenant()
+    {
+        return $this->hasOne(Resident::class)->where('type', 'rental')->latest();
+    }
 }
