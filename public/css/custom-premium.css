@@ -363,3 +363,194 @@ option {
     background: var(--cui-primary) !important;
     color: #fff !important;
 }
+
+/* ==========================================================================
+   UI/UX Upgrades (Modals, Skeletons, Micro-animations, Dark Mode DataTables)
+   ========================================================================== */
+
+/* --- 1. Glassmorphism Modals & Dropdowns --- */
+.modal-content {
+    background-color: var(--cui-card-bg) !important;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.25rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.dropdown-menu {
+    background-color: var(--cui-card-bg) !important;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--cui-border-color);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    animation: fadeInDropdown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInDropdown {
+    from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* --- 2. DataTables Skeletons & Modernization --- */
+table.dataTable {
+    border-collapse: separate !important;
+    border-spacing: 0 0.5rem !important;
+    margin-top: 0.5rem !important;
+}
+
+.dataTables_processing {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: transparent !important;
+}
+
+/* Skeleton Loading Animation overlay */
+.dataTables_processing::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, 
+        rgba(99, 102, 241, 0.0) 0%, 
+        rgba(99, 102, 241, 0.05) 50%, 
+        rgba(99, 102, 241, 0.0) 100%);
+    background-size: 200% 100%;
+    animation: skeletonShimmer 1.5s infinite linear;
+    border-radius: 0.75rem;
+    z-index: 100;
+}
+
+@keyframes skeletonShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+[data-coreui-theme=dark] .dataTables_processing::before {
+    background: linear-gradient(90deg, 
+        rgba(139, 92, 246, 0.0) 0%, 
+        rgba(139, 92, 246, 0.1) 50%, 
+        rgba(139, 92, 246, 0.0) 100%);
+}
+
+/* --- 3. Action Buttons Micro-Animations --- */
+.btn-action, .btn-sm {
+    border-radius: 0.5rem !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-action:hover, .btn-sm:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    filter: brightness(1.15);
+}
+
+.btn-info { background: linear-gradient(135deg, #0ea5e9, #0284c7); border: none; color: white !important;}
+.btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); border: none; color: white !important;}
+.btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); border: none; }
+.btn-success { background: linear-gradient(135deg, #10b981, #059669); border: none; }
+.btn-secondary { background: linear-gradient(135deg, #64748b, #475569); border: none; color: white !important;}
+
+/* --- 4. Sleek Dark Mode DataTables Override --- */
+[data-coreui-theme=dark] table.dataTable thead th, 
+[data-coreui-theme=dark] table.dataTable thead td {
+    border-bottom: 1px solid var(--cui-border-color) !important;
+    color: #94a3b8 !important;
+    background-color: #0f172a !important;
+}
+
+[data-coreui-theme=dark] .dataTables_wrapper .dataTables_paginate .paginate_button {
+    background: transparent !important;
+    border: 1px solid var(--cui-border-color) !important;
+    color: var(--cui-body-color) !important;
+    border-radius: 0.5rem !important;
+    margin: 0 2px;
+}
+
+[data-coreui-theme=dark] .dataTables_wrapper .dataTables_paginate .paginate_button.current,
+[data-coreui-theme=dark] .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+    background: var(--cui-primary) !important;
+    color: white !important;
+    border-color: var(--cui-primary) !important;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
+}
+
+[data-coreui-theme=dark] .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: rgba(139, 92, 246, 0.2) !important;
+    color: var(--cui-primary) !important;
+}
+
+[data-coreui-theme=dark] .dataTables_wrapper .dataTables_length select,
+[data-coreui-theme=dark] .dataTables_wrapper .dataTables_filter input {
+    background-color: var(--cui-tertiary-bg);
+    border: 1px solid var(--cui-border-color);
+    color: var(--cui-body-color);
+    border-radius: 0.5rem;
+    padding: 0.4rem;
+}
+
+[data-coreui-theme=dark] table.dataTable.no-footer {
+    border-bottom: 1px solid var(--cui-border-color) !important;
+}
+
+/* --- 5. Premium Toastr Notifications (Theme Aware) --- */
+#toast-container > div {
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-radius: 1rem !important;
+    padding: 15px 15px 15px 50px !important;
+    font-family: 'Outfit', 'Inter', sans-serif !important;
+    opacity: 0.95 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#toast-container > div:hover {
+    opacity: 1 !important;
+    transform: translateY(-3px);
+}
+
+/* Light Theme Colors (Vibrant Glass) */
+#toast-container > div {
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.2) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+}
+#toast-container > div:hover {
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3) !important;
+}
+
+#toast-container > .toast-success { background: linear-gradient(135deg, rgba(16, 185, 129, 0.9) 0%, rgba(5, 150, 105, 0.95) 100%) !important; }
+#toast-container > .toast-error { background: linear-gradient(135deg, rgba(239, 68, 68, 0.9) 0%, rgba(220, 38, 38, 0.95) 100%) !important; }
+#toast-container > .toast-info { background: linear-gradient(135deg, rgba(14, 165, 233, 0.9) 0%, rgba(2, 132, 199, 0.95) 100%) !important; }
+#toast-container > .toast-warning { background: linear-gradient(135deg, rgba(245, 158, 11, 0.9) 0%, rgba(217, 119, 6, 0.95) 100%) !important; }
+
+/* Dark Theme Colors (Sleek Dark Glass with Neon Borders) */
+[data-coreui-theme=dark] #toast-container > div {
+    background: rgba(15, 23, 42, 0.85) !important; /* Deep dark slate */
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5) !important;
+}
+[data-coreui-theme=dark] #toast-container > div:hover {
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.7) !important;
+}
+
+[data-coreui-theme=dark] #toast-container > .toast-success { border-left: 4px solid #10b981 !important; }
+[data-coreui-theme=dark] #toast-container > .toast-error { border-left: 4px solid #ef4444 !important; }
+[data-coreui-theme=dark] #toast-container > .toast-info { border-left: 4px solid #0ea5e9 !important; }
+[data-coreui-theme=dark] #toast-container > .toast-warning { border-left: 4px solid #f59e0b !important; }
+
+/* Toast Text Styling */
+.toast-title {
+    font-weight: 600 !important;
+    font-size: 1.05rem !important;
+    margin-bottom: 4px !important;
+    letter-spacing: 0.2px;
+}
+
+.toast-message {
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+    opacity: 0.9;
+}
