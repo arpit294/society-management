@@ -1,0 +1,35 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('name_transfer_bills', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('flat_id')->constrained()->onDelete('cascade');
+            $table->foreignId('old_owner_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('new_owner_id')->constrained('users')->onDelete('cascade');
+            $table->decimal('amount', 10, 2)->default(0);
+            $table->enum('status', ['pending', 'paid', 'cancelled'])->default('pending');
+            $table->timestamp('paid_at')->nullable();
+            $table->string('payment_method')->nullable();
+            $table->string('payment_slip')->nullable();
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('name_transfer_bills');
+    }
+};

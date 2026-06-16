@@ -48,7 +48,10 @@ class ExpensesDataTable extends DataTable
                 $query->where('users.name', 'like', "%{$keyword}%");
             })
             ->filterColumn('expense_date', function ($query, $keyword) {
-                $query->whereRaw("DATE_FORMAT(expenses.expense_date, '%b %Y') like ?", ["%{$keyword}%"]);
+                $query->where(function($q) use ($keyword) {
+                    $q->whereRaw("DATE_FORMAT(expenses.expense_date, '%b %Y') like ?", ["%{$keyword}%"])
+                      ->orWhereRaw("DATE_FORMAT(expenses.expense_date, '%Y-%m') like ?", ["%{$keyword}%"]);
+                });
             })
             ->rawColumns(['action', 'invoice', 'total_amount'])
             ->setRowId('id');

@@ -40,4 +40,14 @@ class Resident extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function getIsOwnerAttribute()
+    {
+        return $this->type === 'owner';
+    }
+
+    public function getIsTenantAttribute()
+    {
+        return $this->type === 'rental';
+    }
 }

@@ -19,7 +19,7 @@
                     <div class="col-md-6">
                         <strong>Resident:</strong> {{ $bill->user->name ?? 'N/A' }}<br>
                         <strong>Email:</strong> {{ $bill->user->email ?? 'N/A' }}<br>
-                        <strong>Phone:</strong> {{ $bill->user->resident->phone_number ?? 'N/A' }}
+                        <strong>Phone:</strong> {{ $bill->user->phone ?? 'N/A' }}
                     </div>
                     <div class="col-md-6 text-md-end">
                         <strong>Block & Flat:</strong> {{ $bill->flat->block->block_name ?? '' }}-{{ $bill->flat->flat_no ?? '' }}<br>

@@ -17,6 +17,15 @@
     <div class="mb-3">
         <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
             <div class="filter-col" style="min-width: 220px;">
+                <label class="form-label mb-1" for="flats-filter-block">Filter by Block</label>
+                <select id="flats-filter-block" class="form-select" style="max-width: 320px;">
+                    <option value="">All Blocks</option>
+                    @foreach($blocks as $block)
+                        <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="filter-col" style="min-width: 220px;">
                 <label class="form-label mb-1" for="flats-filter-type">Filter by Flat Type</label>
                 <select id="flats-filter-type" class="form-select" style="max-width: 320px;">
                     <option value="">All Flat Types</option>
@@ -53,7 +62,39 @@
         </div>
     </div>
 
+    <div class="modal fade" id="flat-history-modal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content" id="flat-history-modal-content"></div>
+        </div>
+    </div>
+
     @push('scripts')
         {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
+        <script>
+            $(document).ready(function() {
+                $(document).on('click', '.btn-history-flat', function() {
+                    let url = $(this).data('url');
+                    $('#flat-history-modal-content').html('<div class="p-5 text-center"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted">Loading history...</div></div>');
+                    $('#flat-history-modal').modal('show');
+                    
+                    $.get(url, function(data) {
+                        $('#flat-history-modal-content').html(data);
+                    }).fail(function() {
+                        $('#flat-history-modal-content').html('<div class="p-4 text-center text-danger">Failed to load history. Please try again.</div>');
+                    });
+                });
+                $(document).on('click', '.btn-transfer-flat', function() {
+                    let url = $(this).data('url');
+                    $('#flat-modal-content').html('<div class="p-5 text-center"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted">Loading transfer form...</div></div>');
+                    $('#flat-modal').modal('show');
+                    
+                    $.get(url, function(data) {
+                        $('#flat-modal-content').html(data);
+                    }).fail(function() {
+                        $('#flat-modal-content').html('<div class="p-4 text-center text-danger">Failed to load transfer form. Please try again.</div>');
+                    });
+                });
+            });
+        </script>
     @endpush
 </x-user-page>

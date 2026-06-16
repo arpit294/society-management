@@ -75,6 +75,12 @@
             @if(session('error'))
                 toastr.error("{{ session('error') }}");
             @endif
+            @if(session('status'))
+                toastr.success("{{ session('status') }}");
+            @endif
+            @if($errors->any())
+                toastr.error("{{ $errors->first() }}");
+            @endif
         });
     </script>
         @stack('scripts')

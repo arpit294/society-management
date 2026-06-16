@@ -6,7 +6,12 @@ use App\DataTables\FlatsDatatables;
 use App\Models\Block;
 use App\Models\Flat;
 use App\Models\FlatType;
+use App\Models\NameTransferBill;
+use App\Models\Resident;
+use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class FlatController extends Controller
@@ -16,7 +21,8 @@ class FlatController extends Controller
      */
     public function index(FlatsDatatables $dataTable)
     {
-        return $dataTable->render('flats.index');
+        $blocks = Block::all();
+        return $dataTable->render('flats.index', compact('blocks'));
     }
 
     /**
@@ -59,6 +65,19 @@ class FlatController extends Controller
             'success' => true,
             'message' => 'Flat created successfully.',
         ]);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Flat $flat)
+    {
+        $history = Resident::with('user')
+            ->where('flat_id', $flat->id)
+            ->orderBy('move_in_date', 'desc')
+            ->get();
+
+        return view('flats.history', compact('flat', 'history'));
     }
 
     /**
@@ -114,5 +133,117 @@ class FlatController extends Controller
             'success' => true,
             'message' => 'Flat deleted successfully.',
         ]);
+    }
+
+    public function transferCreate(Flat $flat)
+    {
+        $currentOwner = Resident::with('user')
+            ->where('flat_id', $flat->id)
+            ->where('type', 'owner')
+            ->where(function ($q) {
+                $q->whereNull('move_out_date')
+                  ->orWhere('move_out_date', '>=', now()->startOfDay());
+            })
+            ->first();
+
+        // if there's no owner, they should just add an owner via Resident features
+        if (!$currentOwner) {
+            return response('<div class="p-4 text-center text-danger">This flat does not currently have an active owner to transfer from.</div>');
+        }
+
+        return view('flats.transfer', compact('flat', 'currentOwner'));
+    }
+
+    public function transferStore(Request $request, Flat $flat)
+    {
+        $validatedData = $request->validate([
+            'new_owner_name' => 'required|string|max:255',
+            'new_owner_email' => 'required|email',
+            'new_owner_phone' => 'nullable|string|max:20',
+            'new_owner_aadhar' => 'required|string|max:20',
+            'transfer_date' => 'required|date',
+            'payment_method' => 'required|in:pending,cash,upi',
+            'transaction_id' => 'nullable|string|max:255',
+            'payment_slip' => 'nullable|required_if:payment_method,upi|file|mimes:jpeg,png,jpg,pdf|max:2048',
+        ]);
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            // 1. End current owner's residency
+            $currentOwner = Resident::where('flat_id', $flat->id)
+                ->where('type', 'owner')
+                ->where(function ($q) {
+                    $q->whereNull('move_out_date')
+                      ->orWhere('move_out_date', '>=', now()->startOfDay());
+                })
+                ->first();
+
+            if (!$currentOwner) {
+                throw new \Exception('No active owner found.');
+            }
+
+            // 1. Create or find new user
+            $newUser = User::firstOrCreate(
+                ['email' => $validatedData['new_owner_email']],
+                [
+                    'name' => $validatedData['new_owner_name'],
+                    'phone' => $validatedData['new_owner_phone'],
+                    'aadhar_id' => $validatedData['new_owner_aadhar'],
+                    'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+                    'role' => 'owner',
+                    'status' => 'active'
+                ]
+            );
+
+            // 2. Generate Name Transfer Request (Bill)
+            $settings = Setting::pluck('value', 'key');
+            $fee = isset($settings['name_transfer_fee']) ? (float)$settings['name_transfer_fee'] : 0;
+
+            $status = $validatedData['payment_method'] === 'pending' ? 'pending' : 'paid';
+            if ($fee == 0) {
+                $status = 'paid'; // Automatically paid if no fee
+            }
+
+            $billData = [
+                'flat_id' => $flat->id,
+                'old_owner_id' => $currentOwner->user_id,
+                'new_owner_id' => $newUser->id,
+                'amount' => $fee,
+                'transfer_date' => $validatedData['transfer_date'],
+                'status' => $status,
+                'is_approved' => false,
+            ];
+
+            if ($status === 'paid' && $fee > 0) {
+                $billData['paid_at'] = now();
+                $billData['payment_method'] = $validatedData['payment_method'];
+
+                if ($validatedData['payment_method'] === 'upi') {
+                    $billData['transaction_id'] = $validatedData['transaction_id'] ?? null;
+
+                    if ($request->hasFile('payment_slip')) {
+                        $file = $request->file('payment_slip');
+                        $filename = time() . '_' . $file->getClientOriginalName();
+                        $file->move(public_path('uploads/invoices'), $filename);
+                        $billData['payment_slip'] = $filename;
+                    }
+                }
+            }
+
+            NameTransferBill::create($billData);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Ownership transferred successfully.',
+            ]);
+        } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json([
+                'success' => false,
+                'message' => 'Error transferring ownership: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

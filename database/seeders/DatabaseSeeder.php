@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
         Flat::truncate();
 
         // Delete dummy resident users but preserve the primary admin/test accounts
-        User::where('id', '>', 1)->delete();
+        User::whereNotIn('email', ['arpitvadhiyari11@gmail.com'])->delete();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         // Run seeders

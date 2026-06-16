@@ -35,12 +35,27 @@
             </div>
 
             <div class="col-md-6">
-                <label class="form-label">Resident Type</label>
-                <select name="type" id="resident-type-select" class="form-select">
+                <label class="form-label">Resident Type <span class="text-danger">*</span></label>
+                <select name="type" id="resident-type-select" class="form-select" onchange="document.getElementById('owner-details-section-edit').classList.toggle('d-none', this.value !== 'rental')">
                     <option value="">Select Type</option>
                     <option value="owner" {{ $resident->type == 'owner' ? 'selected' : '' }}>Owner</option>
                     <option value="rental" {{ $resident->type == 'rental' ? 'selected' : '' }}>Rental</option>
                 </select>
+            </div>
+
+            <div id="owner-details-section-edit" class="col-md-12 {{ $resident->type == 'rental' ? '' : 'd-none' }}">
+                <div class="card bg-light border-1">
+                    <div class="card-body p-3">
+                        <label for="owner_user_id" class="form-label mb-1">Owner of this Flat <span class="text-danger">*</span></label>
+                        <select class="form-select" id="owner_user_id" name="owner_user_id">
+                            <option value="">Select Owner</option>
+                            @foreach($users as $user)
+                                <option value="{{ $user->id }}">{{ $user->resident_details }}</option>
+                            @endforeach
+                        </select>
+                        <div class="form-text mb-0 mt-1"><i class="fas fa-info-circle"></i> If this apartment is rented out, you must assign an Owner. (If the flat already has an owner, you can skip this).</div>
+                    </div>
+                </div>
             </div>
 
             <div class="col-md-6">

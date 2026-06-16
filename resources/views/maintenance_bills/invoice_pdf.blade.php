@@ -256,7 +256,7 @@
                             {{ $bill->user->name ?? 'N/A' }}<br>
                             <span style="font-size: 13px; color: #666; font-weight: normal;">
                                 <strong>Email:</strong> {{ $bill->user->email ?? 'N/A' }}<br>
-                                <strong>Phone:</strong> {{ $bill->user->resident->phone_number ?? 'N/A' }}
+                                <strong>Phone:</strong> {{ $bill->user->phone ?? 'N/A' }}
                             </span>
                         </div>
                     </td>

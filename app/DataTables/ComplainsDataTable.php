@@ -40,12 +40,12 @@ class ComplainsDataTable extends DataTable
     public function query(): QueryBuilder
     {
         $query = DB::table('complains')
-            ->join('users', 'complains.user_id', '=', 'users.id')
+            ->leftJoin('users', 'complains.user_id', '=', 'users.id')
             ->select([
                 'complains.id',
                 'complains.subject',
                 'complains.category',
-                'users.name as user_name',
+                DB::raw('COALESCE(users.name, "Deleted User") as user_name'),
                 'complains.status',
                 'complains.created_at',
             ]);
