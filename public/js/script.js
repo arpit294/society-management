@@ -4071,48 +4071,50 @@ $(document).ready(function () {
             let advanceAmount = futureMonthsCount * window.currentMonthlyFee;
 
             // Penalty Calculation (on past months)
-            let penaltyValue = 0;
+            let penaltyAmount = 0;
             if (
                 window.penaltySettings &&
                 window.penaltySettings.apply_penalty == "1" &&
                 pastMonthsCount > 0
             ) {
-                if (
-                    pastMonthsCount >= 12 &&
-                    window.penaltySettings.yearly_value > 0
-                ) {
-                    penaltyValue = window.penaltySettings.yearly_value;
-                } else if (
-                    pastMonthsCount >= 6 &&
-                    window.penaltySettings.half_yearly_value > 0
-                ) {
-                    penaltyValue = window.penaltySettings.half_yearly_value;
-                } else if (
-                    pastMonthsCount >= 3 &&
-                    window.penaltySettings.quarterly_value > 0
-                ) {
-                    penaltyValue = window.penaltySettings.quarterly_value;
-                } else if (
-                    pastMonthsCount >= 1 &&
-                    window.penaltySettings.monthly_value > 0
-                ) {
-                    penaltyValue = window.penaltySettings.monthly_value;
-                }
-            }
+                for (let i = 0; i < pastMonthsCount; i++) {
+                    let monthsLate = pastMonthsCount - i;
+                    let penaltyValue = 0;
+                    if (
+                        monthsLate >= 12 &&
+                        window.penaltySettings.yearly_enabled
+                    ) {
+                        penaltyValue = window.penaltySettings.yearly_value;
+                    } else if (
+                        monthsLate >= 6 &&
+                        window.penaltySettings.half_yearly_enabled
+                    ) {
+                        penaltyValue = window.penaltySettings.half_yearly_value;
+                    } else if (
+                        monthsLate >= 3 &&
+                        window.penaltySettings.quarterly_enabled
+                    ) {
+                        penaltyValue = window.penaltySettings.quarterly_value;
+                    } else if (
+                        monthsLate >= 1 &&
+                        window.penaltySettings.monthly_enabled
+                    ) {
+                        penaltyValue = window.penaltySettings.monthly_value;
+                    }
 
-            // Calculate penalty amount based on type
-            let penaltyAmount = 0;
-            if (penaltyValue > 0) {
-                if (window.penaltySettings.type === "fixed") {
-                    penaltyAmount = parseFloat(penaltyValue);
-                } else {
-                    penaltyAmount =
-                        arrearsAmount * (parseFloat(penaltyValue) / 100);
+                    if (penaltyValue > 0) {
+                        if (window.penaltySettings.type === "fixed") {
+                            penaltyAmount += parseFloat(penaltyValue);
+                        } else {
+                            penaltyAmount +=
+                                window.currentMonthlyFee * (parseFloat(penaltyValue) / 100);
+                        }
+                    }
                 }
             }
 
             // Discount Calculation (on future months)
-            let discountValue = 0;
+            let discountAmount = 0;
             const applyDiscount = window.discountSettings
                 ? window.discountSettings.apply_discount
                 : "0";
@@ -4122,36 +4124,39 @@ $(document).ready(function () {
                     applyDiscount === "on") &&
                 futureMonthsCount > 0
             ) {
-                if (
-                    futureMonthsCount >= 12 &&
-                    window.discountSettings.yearly_value > 0
-                ) {
-                    discountValue = window.discountSettings.yearly_value;
-                } else if (
-                    futureMonthsCount >= 6 &&
-                    window.discountSettings.half_yearly_value > 0
-                ) {
-                    discountValue = window.discountSettings.half_yearly_value;
-                } else if (
-                    futureMonthsCount >= 3 &&
-                    window.discountSettings.quarterly_value > 0
-                ) {
-                    discountValue = window.discountSettings.quarterly_value;
-                } else if (
-                    futureMonthsCount >= 1 &&
-                    window.discountSettings.monthly_value > 0
-                ) {
-                    discountValue = window.discountSettings.monthly_value;
-                }
-            }
+                for (let i = 0; i < futureMonthsCount; i++) {
+                    let monthsAdvance = i + 1;
+                    let discountValue = 0;
+                    if (
+                        monthsAdvance >= 12 &&
+                        window.discountSettings.yearly_enabled
+                    ) {
+                        discountValue = window.discountSettings.yearly_value;
+                    } else if (
+                        monthsAdvance >= 6 &&
+                        window.discountSettings.half_yearly_enabled
+                    ) {
+                        discountValue = window.discountSettings.half_yearly_value;
+                    } else if (
+                        monthsAdvance >= 3 &&
+                        window.discountSettings.quarterly_enabled
+                    ) {
+                        discountValue = window.discountSettings.quarterly_value;
+                    } else if (
+                        monthsAdvance >= 1 &&
+                        window.discountSettings.monthly_enabled
+                    ) {
+                        discountValue = window.discountSettings.monthly_value;
+                    }
 
-            let discountAmount = 0;
-            if (discountValue > 0) {
-                if (window.discountSettings.type === "fixed") {
-                    discountAmount = parseFloat(discountValue);
-                } else {
-                    discountAmount =
-                        advanceAmount * (parseFloat(discountValue) / 100);
+                    if (discountValue > 0) {
+                        if (window.discountSettings.type === "fixed") {
+                            discountAmount += parseFloat(discountValue);
+                        } else {
+                            discountAmount +=
+                                window.currentMonthlyFee * (parseFloat(discountValue) / 100);
+                        }
+                    }
                 }
             }
 

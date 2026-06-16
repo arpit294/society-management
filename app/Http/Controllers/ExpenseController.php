@@ -7,6 +7,8 @@ use App\Models\Expense;
 use App\Models\User;
 use App\Models\ExpenseCategory;
 use App\DataTables\ExpensesDataTable;
+use App\Models\MaintenanceBill;
+use App\Models\NameTransferBill;
 
 class ExpenseController extends Controller
 {
@@ -17,7 +19,8 @@ class ExpenseController extends Controller
                                     ->whereYear('created_at', date('Y'))
                                     ->sum('total_amount');
         $totalInvoices = Expense::whereNotNull('invoice')->count();
-        $totalMaintenanceIncome = \App\Models\MaintenanceBill::where('status', 'paid')->sum('total_amount');
+        $totalMaintenanceIncome = MaintenanceBill::where('status', 'paid')->sum('total_amount')
+                                + NameTransferBill::where('status', 'paid')->sum('amount');
         $categories = ExpenseCategory::all();
         $users = User::whereIn('role', ['secretary', 'committee_member'])->get();
 
@@ -82,6 +85,7 @@ class ExpenseController extends Controller
             'category_id' => 'required|exists:expense_categories,id',
             'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
         ]);
+        
         // Delete old file if exists
         if ($request->hasFile('invoice')) {
 

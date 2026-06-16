@@ -52,9 +52,23 @@ class MaintenanceBillController extends Controller
         }, $months);
 
         $blocks = Block::orderBy('block_name')->get();
-        $residents = Resident::with(['user', 'flat.block'])->get()->sortBy(function($resident) {
+        $activeResidents = Resident::with(['user', 'flat.block'])
+            ->where(function ($query) {
+                $query->whereNull('move_out_date')
+                      ->orWhere('move_out_date', '>=', now()->startOfDay());
+            })
+            ->get();
+
+        $uniqueResidents = collect();
+        foreach ($activeResidents->groupBy('flat_id') as $flatId => $flatResidents) {
+            $tenant = $flatResidents->where('type', 'rental')->first();
+            $uniqueResidents->push($tenant ?: $flatResidents->first());
+        }
+
+        $residents = $uniqueResidents->sortBy(function($resident) {
             return $resident->user->name ?? '';
-        });
+        })->values();
+
         $dbYears = Maintenance::select('year')->distinct()->pluck('year')->toArray();
         $currentYear =  Carbon::now()->year;
         $rangeYears = range(2024, $currentYear + 1);
@@ -80,12 +94,22 @@ class MaintenanceBillController extends Controller
     // This method prepares the data needed for the create form, including fetching active residents and their associated fees, as well as discount and penalty settings.
     public function create()
     {
-        $residents = Resident::with(['user', 'flat.flatType', 'block'])
+        $activeResidents = Resident::with(['user', 'flat.flatType', 'block'])
             ->where(function (Builder $query) {
                 $query->whereNull('move_out_date')
                     ->orWhere('move_out_date', '>=', Carbon::now()->startOfDay());
             })
             ->get();
+
+        $uniqueResidents = collect();
+        foreach ($activeResidents->groupBy('flat_id') as $flatId => $flatResidents) {
+            $tenant = $flatResidents->where('type', 'rental')->first();
+            $uniqueResidents->push($tenant ?: $flatResidents->first());
+        }
+
+        $residents = $uniqueResidents->sortBy(function($resident) {
+            return $resident->user->name ?? '';
+        })->values();
 
         $residentFees = $residents->mapWithKeys(function ($resident) {
             $fee = 0;
@@ -243,7 +267,7 @@ class MaintenanceBillController extends Controller
     /**
      * Method to update payment status, with logic to lock in penalty and total amounts when marking as paid
      *
-     * @param  \App\Http\Requests\UpdateMaintenanceBillStatusRequest  $request
+     * @param  UpdateMaintenanceBillStatusRequest  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
@@ -415,10 +439,10 @@ class MaintenanceBillController extends Controller
     /**
      * Helper to calculate penalty and discount amounts.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @param  float  $monthlyFee
      * @param  int  $numberOfMonths
-     * @param  \Carbon\Carbon  $startDate
+     * @param  Carbon  $startDate
      * @param  bool  $forceRecalculation  If true, ignores request values and recalculates based on settings.
      * @return array  [totalPenaltyAmount, totalDiscountAmount]
      */
@@ -449,28 +473,31 @@ class MaintenanceBillController extends Controller
         } else {
             $penaltySettings = $this->getSettingValues('penalty');
             if ($penaltySettings['apply_penalty'] === '1' && $pastMonthsCount > 0) {
-                $penaltyValue = 0;
-                if ($pastMonthsCount >= 12 && $penaltySettings['yearly_enabled']) {
-                    $penaltyValue = $penaltySettings['yearly_value'];
-                } elseif ($pastMonthsCount >= 6 && $penaltySettings['half_yearly_enabled']) {
-                    $penaltyValue = $penaltySettings['half_yearly_value'];
-                } elseif ($pastMonthsCount >= 3 && $penaltySettings['quarterly_enabled']) {
-                    $penaltyValue = $penaltySettings['quarterly_value'];
-                } elseif ($pastMonthsCount >= 1 && $penaltySettings['monthly_enabled']) {
-                    $penaltyValue = $penaltySettings['monthly_value'];
-                }
+                for ($i = 0; $i < $pastMonthsCount; $i++) {
+                    $monthsLate = $pastMonthsCount - $i;
+                    $penaltyValue = 0;
+                    if ($monthsLate >= 12 && $penaltySettings['yearly_enabled']) {
+                        $penaltyValue = $penaltySettings['yearly_value'];
+                    } elseif ($monthsLate >= 6 && $penaltySettings['half_yearly_enabled']) {
+                        $penaltyValue = $penaltySettings['half_yearly_value'];
+                    } elseif ($monthsLate >= 3 && $penaltySettings['quarterly_enabled']) {
+                        $penaltyValue = $penaltySettings['quarterly_value'];
+                    } elseif ($monthsLate >= 1 && $penaltySettings['monthly_enabled']) {
+                        $penaltyValue = $penaltySettings['monthly_value'];
+                    }
 
-                if ($penaltyValue > 0) {
-                    if ($penaltySettings['type'] === 'fixed') {
-                        $totalPenaltyAmount = $penaltyValue;
-                    } else {
-                        $totalPenaltyAmount = $arrearsAmount * ($penaltyValue / 100);
+                    if ($penaltyValue > 0) {
+                        if ($penaltySettings['type'] === 'fixed') {
+                            $totalPenaltyAmount += $penaltyValue;
+                        } else {
+                            $totalPenaltyAmount += $monthlyFee * ($penaltyValue / 100);
+                        }
                     }
                 }
             }
         }
 
-        // Discount is only applied to future months, so we use advanceAmount for percentage calculations   
+        // Discount is only applied to future months, so we use advanceAmount for percentage calculations
         $totalDiscountAmount = 0;
         if ($forceRecalculation || ($request->has('discount_amount') && $request->filled('discount_amount'))) {
             $totalDiscountAmount = (float)$request->discount_amount;
@@ -479,22 +506,25 @@ class MaintenanceBillController extends Controller
             $applyDiscount = $discountSettings['apply_discount'];
 
             if (($applyDiscount === '1' || $applyDiscount === 'true' || $applyDiscount === 'on') && $futureMonthsCount > 0) {
-                $discountValue = 0;
-                if ($futureMonthsCount >= 12 && $discountSettings['yearly_enabled']) {
-                    $discountValue = $discountSettings['yearly_value'];
-                } elseif ($futureMonthsCount >= 6 && $discountSettings['half_yearly_enabled']) {
-                    $discountValue = $discountSettings['half_yearly_value'];
-                } elseif ($futureMonthsCount >= 3 && $discountSettings['quarterly_enabled']) {
-                    $discountValue = $discountSettings['quarterly_value'];
-                } elseif ($futureMonthsCount >= 1 && $discountSettings['monthly_enabled']) {
-                    $discountValue = $discountSettings['monthly_value'];
-                }
+                for ($i = 0; $i < $futureMonthsCount; $i++) {
+                    $monthsAdvance = $i + 1;
+                    $discountValue = 0;
+                    if ($monthsAdvance >= 12 && $discountSettings['yearly_enabled']) {
+                        $discountValue = $discountSettings['yearly_value'];
+                    } elseif ($monthsAdvance >= 6 && $discountSettings['half_yearly_enabled']) {
+                        $discountValue = $discountSettings['half_yearly_value'];
+                    } elseif ($monthsAdvance >= 3 && $discountSettings['quarterly_enabled']) {
+                        $discountValue = $discountSettings['quarterly_value'];
+                    } elseif ($monthsAdvance >= 1 && $discountSettings['monthly_enabled']) {
+                        $discountValue = $discountSettings['monthly_value'];
+                    }
 
-                if ($discountValue > 0) {
-                    if ($discountSettings['type'] === 'fixed') {
-                        $totalDiscountAmount = $discountValue;
-                    } else {
-                        $totalDiscountAmount = $advanceAmount * ($discountValue / 100);
+                    if ($discountValue > 0) {
+                        if ($discountSettings['type'] === 'fixed') {
+                            $totalDiscountAmount += $discountValue;
+                        } else {
+                            $totalDiscountAmount += $monthlyFee * ($discountValue / 100);
+                        }
                     }
                 }
             }

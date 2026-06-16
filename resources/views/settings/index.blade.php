@@ -44,6 +44,11 @@
                                         1st April</option>
                                 </select>
                             </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-muted small fw-semibold text-uppercase">Name Transfer Fee (₹)</label>
+                                <input type="number" step="0.01" name="name_transfer_fee" class="form-control"
+                                    value="{{ $settings['name_transfer_fee'] ?? '0' }}">
+                            </div>
                         </div>
 
                         <hr class="mb-4">
@@ -214,5 +219,55 @@
             </div>
         </div>
     </div>
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Function to toggle input disabled state based on checkbox
+            function toggleInputState(checkboxId, inputName) {
+                const checkbox = document.getElementById(checkboxId);
+                const input = document.querySelector(`input[name="${inputName}"]`);
+                if (checkbox && input) {
+                    input.disabled = !checkbox.checked;
+                    
+                    // Add event listener for changes
+                    checkbox.addEventListener('change', function() {
+                        input.disabled = !this.checked;
+                        if (!this.checked) {
+                            input.value = ''; // Optional: clear value when unchecked
+                        }
+                    });
+                }
+            }
 
+            // List of prefixes
+            const prefixes = ['penalty', 'discount'];
+            const phases = ['monthly', 'quarterly', 'half_yearly', 'yearly'];
+
+            prefixes.forEach(prefix => {
+                phases.forEach(phase => {
+                    toggleInputState(`${prefix}_${phase}_enabled`, `${prefix}_${phase}_value`);
+                });
+            });
+
+            // Update suffix based on penalty/discount type
+            function updateSuffix(selectId, suffixClass) {
+                const select = document.getElementById(selectId);
+                const suffixes = document.querySelectorAll(suffixClass);
+                
+                function update() {
+                    const symbol = select.value === 'percentage' ? '%' : '₹';
+                    suffixes.forEach(el => el.textContent = symbol);
+                }
+
+                if (select) {
+                    update();
+                    select.addEventListener('change', update);
+                }
+            }
+
+            updateSuffix('penalty_type', '.penalty-suffix');
+            updateSuffix('discount_type', '.discount-suffix');
+        });
+    </script>
+    @endpush
 </x-user-page>

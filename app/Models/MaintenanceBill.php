@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property float $penalty_amount
  * @property float $total_amount
  * @property float $discount_amount
- * @property \Carbon\Carbon|null $paid_at
+ * @property Carbon|null $paid_at
  * @property string|null $payment_method
  * @property string|null $transaction_id
  * @property string|null $payment_slip
@@ -119,7 +119,7 @@ class MaintenanceBill extends Model
         if ($status === 'paid' || $status === null) {
             return (float)$value;
         }
-    
+
         $baseAmount = (float)($this->attributes['amount'] ?? 0);
         $penalty = $this->getPenaltyAmountAttribute($this->attributes['penalty_amount'] ?? 0);
         return $baseAmount + $penalty;

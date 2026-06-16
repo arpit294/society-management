@@ -13,7 +13,7 @@ class ResidentController extends Controller
 {
     public function index(ResidentsDataTable $dataTable)
     {
-        $blocks = \App\Models\Block::all();
+        $blocks = Block::all();
         return $dataTable->render('residents.index', compact('blocks'));
     }
 
@@ -24,9 +24,21 @@ class ResidentController extends Controller
         return view('residents.create', compact('blocks', 'users'));
     }
 
-    public function store(\Illuminate\Http\Request $request)
+    public function store(Request $request)
     {
         $flatHasOwner = Resident::where('flat_id', $request->flat_id)->where('type', 'owner')->exists();
+
+        // Check if flat is already occupied
+        $isOccupied = Resident::where('flat_id', $request->flat_id)
+            ->whereNull('move_out_date')
+            ->exists();
+
+        if ($isOccupied) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This flat is already occupied by an active resident. Please move them out first before adding a new one.'
+            ], 422);
+        }
 
         $rules = [
             'block_id' => 'required|exists:blocks,id',
@@ -81,6 +93,19 @@ class ResidentController extends Controller
             ->where('type', 'owner')
             ->where('id', '!=', $resident->id)
             ->exists();
+
+        // Check if flat is already occupied by another resident
+        $isOccupied = Resident::where('flat_id', $request->flat_id)
+            ->whereNull('move_out_date')
+            ->where('id', '!=', $resident->id)
+            ->exists();
+
+        if ($isOccupied) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This flat is already occupied by an active resident. Please move them out first.'
+            ], 422);
+        }
 
         $rules = [
             'block_id' => 'required|exists:blocks,id',
@@ -164,7 +189,7 @@ class ResidentController extends Controller
             $writer->addRow(\OpenSpout\Common\Entity\Row::fromValues([
                 'Name', 'Email', 'Phone', 'Aadhar ID', 'Block Name', 'Flat No', 'Type (owner/rental)', 'Move In Date (YYYY-MM-DD)'
             ]));
-            
+
             // Example row
             $writer->addRow(\OpenSpout\Common\Entity\Row::fromValues([
                 'John Doe', 'john.doe@example.com', '9876543210', '123412341234', 'A', '101', 'owner', '2023-01-15'
@@ -193,6 +218,13 @@ class ResidentController extends Controller
             $isFirstRow = true;
             $successCount = 0;
 
+            // 1. Hash password ONCE outside the loop (Massive performance boost)
+            $defaultPassword = \Illuminate\Support\Facades\Hash::make('password123');
+            
+            // 2. Cache blocks and flats to avoid N+1 queries
+            $blockCache = [];
+            $flatCache = [];
+
             foreach ($reader->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
                     if ($isFirstRow) {
@@ -201,7 +233,7 @@ class ResidentController extends Controller
                     }
 
                     $cells = $row->toArray();
-                    
+
                     // Basic validation for required columns: Name, Email, Aadhar, Block, Flat, Type, Date
                     if (count($cells) < 8 || empty($cells[0]) || empty($cells[1]) || empty($cells[3]) || empty($cells[4]) || empty($cells[5])) {
                         continue;
@@ -223,20 +255,29 @@ class ResidentController extends Controller
                             'name' => $name,
                             'phone' => $phone,
                             'aadhar_id' => $aadhar,
-                            'password' => \Illuminate\Support\Facades\Hash::make('password123'), // Default password
+                            'password' => $defaultPassword, // Use pre-hashed password
                             'role' => $type,
                             'status' => 'active'
                         ]
                     );
 
-                    // Find Block
-                    $block = Block::where('block_name', $blockName)->first();
+                    // Find Block (with cache)
+                    if (!isset($blockCache[$blockName])) {
+                        $blockCache[$blockName] = Block::where('block_name', $blockName)->first();
+                    }
+                    $block = $blockCache[$blockName];
+                    
                     if (!$block) {
                         continue; // Skip if block not found
                     }
 
-                    // Find Flat
-                    $flat = Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->first();
+                    // Find Flat (with cache)
+                    $flatCacheKey = $block->id . '_' . $flatNo;
+                    if (!isset($flatCache[$flatCacheKey])) {
+                        $flatCache[$flatCacheKey] = Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->first();
+                    }
+                    $flat = $flatCache[$flatCacheKey];
+
                     if (!$flat) {
                         continue; // Skip if flat not found
                     }

@@ -83,6 +83,17 @@
                         $('#flat-history-modal-content').html('<div class="p-4 text-center text-danger">Failed to load history. Please try again.</div>');
                     });
                 });
+                $(document).on('click', '.btn-transfer-flat', function() {
+                    let url = $(this).data('url');
+                    $('#flat-modal-content').html('<div class="p-5 text-center"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted">Loading transfer form...</div></div>');
+                    $('#flat-modal').modal('show');
+                    
+                    $.get(url, function(data) {
+                        $('#flat-modal-content').html(data);
+                    }).fail(function() {
+                        $('#flat-modal-content').html('<div class="p-4 text-center text-danger">Failed to load transfer form. Please try again.</div>');
+                    });
+                });
             });
         </script>
     @endpush

@@ -66,11 +66,12 @@ class ResidentsDataTable extends DataTable
 
     public function query(Resident $model): QueryBuilder
     {
-        // Get all currently active residents
         $activeResidents = Resident::where(function($q) {
                 $q->whereNull('move_out_date')
                   ->orWhere('move_out_date', '>=', now()->startOfDay());
             })
+            // Prioritize residents with NO move_out_date
+            ->orderByRaw('move_out_date IS NOT NULL')
             // Sort by type DESC so 'rental' comes before 'owner'
             ->orderBy('type', 'desc')
             ->get();
