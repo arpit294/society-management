@@ -75,8 +75,8 @@ class UserController extends Controller
     {
         $validatedData = $request->validated();
 
-        // TRICKY: If the user didn't type a new password in the edit form, 
-        // we remove 'password' from the array so we don't accidentally overwrite 
+        // TRICKY: If the user didn't type a new password in the edit form,
+        // we remove 'password' from the array so we don't accidentally overwrite
         // their current password with an empty string!
         // (Note: Hashing is handled automatically by the 'hashed' cast in the User model)
         // Prevent removing the last secretary
@@ -89,6 +89,7 @@ class UserController extends Controller
                         'message' => 'You cannot remove the secretary role from the last remaining secretary.',
                     ], 403);
                 }
+
                 return redirect()->back()->with('error', 'You cannot remove the secretary role from the last remaining secretary.');
             }
         }
@@ -123,6 +124,7 @@ class UserController extends Controller
                     'message' => 'You cannot delete your own account.',
                 ], 403);
             }
+
             return redirect()
                 ->route('users.index')
                 ->with('error', 'You cannot delete your own account.');
@@ -143,5 +145,4 @@ class UserController extends Controller
             ->route('users.index')
             ->with('success', 'User deleted successfully.');
     }
-
 }

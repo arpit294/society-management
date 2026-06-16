@@ -3877,7 +3877,10 @@ $(document).ready(function () {
 
     window.currentMonthlyFee = 0;
 
-    // Toggle UPI details based on payment method selection
+    /**
+     * Toggles the visibility of UPI payment details based on the selected payment method.
+     * Also toggles the 'required' attribute on the payment slip upload field.
+     */
     function toggleUpiDetails() {
         const paymentMethod = $("#payment_method").val();
         const upiDetails = $("#upi-details");
@@ -3895,6 +3898,13 @@ $(document).ready(function () {
     // Initial call to set the correct state on page load and bind change event
     $(document).on("change", "#payment_method", toggleUpiDetails);
 
+    /**
+     * Core frontend engine to calculate dynamically the total maintenance bill.
+     * Evaluates the selected date range, fetches the resident's specific fee,
+     * and calculates month-by-month penalties or discounts based on global settings.
+     * 
+     * @function calculatePaymentTotals
+     */
     window.calculatePaymentTotals = function () {
         const startDateVal = $("#start_date").val();
         const endDateVal = $("#end_date").val();

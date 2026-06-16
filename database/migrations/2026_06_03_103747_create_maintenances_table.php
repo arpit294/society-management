@@ -23,12 +23,12 @@ return new class extends Migration
         });
 
         // Delete existing maintenance bills to avoid foreign key errors since we are changing the schema drastically
-        \DB::table('maintenance_bills')->truncate();
+        DB::table('maintenance_bills')->truncate();
 
         Schema::table('maintenance_bills', function (Blueprint $table) {
             $table->unsignedBigInteger('maintenance_id')->after('id');
             $table->foreign('maintenance_id')->references('id')->on('maintenances')->onDelete('cascade');
-            
+
             // drop old columns if they exist
             if (Schema::hasColumn('maintenance_bills', 'month')) {
                 $table->dropColumn('month');
@@ -51,7 +51,7 @@ return new class extends Migration
             $table->string('month')->nullable();
             $table->integer('year')->nullable();
         });
-        
+
         Schema::dropIfExists('maintenances');
     }
 };

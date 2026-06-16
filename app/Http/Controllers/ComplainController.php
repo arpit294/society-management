@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\DataTables\ComplainsDataTable;
 use App\Models\Complain;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class ComplainController extends Controller
@@ -18,7 +17,8 @@ class ComplainController extends Controller
 
     public function create()
     {
-        $users =User::all();
+        $users = User::all();
+
         return view('complains.create', compact('users'));
     }
 
@@ -33,7 +33,7 @@ class ComplainController extends Controller
                 'Security Issues',
                 'Cleanliness & Housekeeping',
                 'Common Facilities',
-                'other'
+                'other',
             ])],
         ]);
 
@@ -48,6 +48,7 @@ class ComplainController extends Controller
     public function edit(Complain $complain)
     {
         $users = User::all();
+
         return view('complains.edit', compact('complain', 'users'));
     }
 
@@ -62,7 +63,7 @@ class ComplainController extends Controller
                 'Security Issues',
                 'Cleanliness & Housekeeping',
                 'Common Facilities',
-                'other'
+                'other',
             ])],
             'status' => 'required|in:pending,in-progress,resolved',
             'resolution_notes' => 'nullable|string',
@@ -75,7 +76,6 @@ class ComplainController extends Controller
             'message' => 'Complaint updated successfully.',
         ]);
     }
-
 
     public function destroy(Complain $complain)
     {

@@ -20,7 +20,7 @@ class BlockController extends Controller
             'flats',
             'flats as occupied_flats_count' => function ($query) {
                 $query->where('status', 'occupied');
-            }
+            },
         ])->get();
         $totalFlats = Block::sum('total_flats');
         $totalActualFlats = Flat::count();
@@ -103,6 +103,5 @@ class BlockController extends Controller
         ]);
     }
 }
-
 
 //

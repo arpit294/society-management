@@ -2,23 +2,43 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Models\Setting;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\View\View;
 
+/**
+ * Class SettingController
+ *
+ * Manages global application settings (such as Penalty and Discount rates).
+ * Values are stored as key-value pairs in the database.
+ */
 class SettingController extends Controller
 {
+    /**
+     * Display a listing of all settings.
+     *
+     * @return View
+     */
     public function index()
     {
-        // Fetch all settings and convert to key-value pairs
+        // Fetch all settings and convert to a flat key-value array for easy view binding
         $settings = Setting::all()->pluck('value', 'key')->toArray();
+
         return view('settings.index', compact('settings'));
     }
 
+    /**
+     * Store or update settings in the database.
+     * Iterates through the request and upserts each setting key.
+     *
+     * @return RedirectResponse
+     */
     public function store(Request $request)
     {
         $data = $request->except(['_token', '_method']);
+
         // Update or create settings based on the provided data
         foreach ($data as $key => $value) {
             Setting::updateOrCreate(
@@ -27,7 +47,7 @@ class SettingController extends Controller
             );
         }
 
-        // Clear cache
+        // Clear the global settings cache so the new values apply immediately across the app
         Cache::forget('global_settings');
 
         return redirect()->back()->with('success', 'Settings updated successfully.');

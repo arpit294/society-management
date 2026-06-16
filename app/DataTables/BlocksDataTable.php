@@ -3,14 +3,11 @@
 namespace App\DataTables;
 
 use Illuminate\Database\Query\Builder as QueryBuilder;
-
-
-use Yajra\DataTables\QueryDataTable;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
-use Yajra\DataTables\Html\Editor\Editor;
-use Yajra\DataTables\Html\Editor\Fields;
+use Yajra\DataTables\QueryDataTable;
 use Yajra\DataTables\Services\DataTable;
 
 class BlocksDataTable extends DataTable
@@ -30,11 +27,9 @@ class BlocksDataTable extends DataTable
 
     public function query(): QueryBuilder
     {
-        return \Illuminate\Support\Facades\DB::table('blocks')
+        return DB::table('blocks')
             ->select(['id', 'block_name', 'total_floor', 'total_flats', 'created_at']);
     }
-
-
 
     public function html(): HtmlBuilder
     {
@@ -50,11 +45,10 @@ class BlocksDataTable extends DataTable
                 Button::make('pdf'),
                 Button::make('print'),
                 Button::make('reset'),
-                Button::make('reload')
+                Button::make('reload'),
             ]);
     }
 
-    
     public function getColumns(): array
     {
         return [
@@ -75,6 +69,6 @@ class BlocksDataTable extends DataTable
 
     protected function filename(): string
     {
-        return 'Blocks_' . date('YmdHis');
+        return 'Blocks_'.date('YmdHis');
     }
 }

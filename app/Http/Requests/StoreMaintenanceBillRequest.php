@@ -2,8 +2,13 @@
 
 namespace App\Http\Requests;
 
+use App\Models\MaintenanceBill;
+use App\Models\Resident;
+use Carbon\Carbon;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Validator;
 
 class StoreMaintenanceBillRequest extends FormRequest
 {
@@ -31,14 +36,14 @@ class StoreMaintenanceBillRequest extends FormRequest
             'transaction_id' => 'nullable|string',
             'payment_slip' => 'required_if:payment_method,upi,UPI|image|mimes:jpeg,png,jpg|max:2048',
             'discount_amount' => 'nullable|numeric|min:0',
-            'penalty_amount' => 'nullable|numeric|min:0'
+            'penalty_amount' => 'nullable|numeric|min:0',
         ];
     }
 
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param  Validator  $validator
      * @return void
      */
     public function withValidator($validator)
@@ -50,18 +55,18 @@ class StoreMaintenanceBillRequest extends FormRequest
             $months = $this->input('months');
 
             if ($residentId && $startMonth && $startYear && $months) {
-                $resident = \App\Models\Resident::find($residentId);
-                
+                $resident = Resident::find($residentId);
+
                 if ($resident) {
                     try {
-                        $currentDate = \Carbon\Carbon::createFromDate($startYear, \Carbon\Carbon::parse($startMonth)->month, 1);
-                        
+                        $currentDate = Carbon::createFromDate($startYear, Carbon::parse($startMonth)->month, 1);
+
                         for ($i = 0; $i < $months; $i++) {
                             $loopDate = $currentDate->copy()->addMonths($i);
                             $monthStr = $loopDate->format('F');
                             $yearInt = $loopDate->year;
-                            
-                            $isPaid = \App\Models\MaintenanceBill::where('maintenance_bills.user_id', $resident->user_id)
+
+                            $isPaid = MaintenanceBill::where('maintenance_bills.user_id', $resident->user_id)
                                 ->where('maintenance_bills.flat_id', $resident->flat_id)
                                 ->where('maintenance_bills.status', 'paid')
                                 ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
@@ -70,12 +75,12 @@ class StoreMaintenanceBillRequest extends FormRequest
                                 ->exists();
 
                             if ($isPaid) {
-                                throw new \Illuminate\Http\Exceptions\HttpResponseException(
+                                throw new HttpResponseException(
                                     response()->json(['message' => "Maintenance for {$monthStr} {$yearInt} is already paid."], 422)
                                 );
                             }
                         }
-                    } catch (\Illuminate\Http\Exceptions\HttpResponseException $e) {
+                    } catch (HttpResponseException $e) {
                         throw $e;
                     } catch (\Exception $e) {
                         // Ignore date parsing errors here, standard validation will catch them

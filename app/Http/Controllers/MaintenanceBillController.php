@@ -2,29 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\MaintenanceBill;
-use App\Models\Maintenance;
-use App\Models\Resident;
 use App\DataTables\MaintenanceBillsDataTable;
-use App\Models\Block;
-use App\Models\Flat;
-use App\Models\PrepaidMaintenance;
-use App\Models\User;
-use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
 use App\Http\Requests\StoreMaintenanceBillRequest;
 use App\Http\Requests\UpdateMaintenanceBillStatusRequest;
+use App\Models\Block;
+use App\Models\Maintenance;
+use App\Models\MaintenanceBill;
+use App\Models\Resident;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class MaintenanceBillController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @param  \App\DataTables\MaintenanceBillsDataTable  $dataTable
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function index(MaintenanceBillsDataTable $dataTable)
     {
@@ -34,7 +33,7 @@ class MaintenanceBillController extends Controller
 
         $months = [
             'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'
+            'July', 'August', 'September', 'October', 'November', 'December',
         ];
 
         $monthlyRevenueDB = MaintenanceBill::query()
@@ -51,11 +50,11 @@ class MaintenanceBillController extends Controller
         }, $months);
 
         $blocks = Block::orderBy('block_name')->get();
-        $residents = Resident::with(['user', 'flat.block'])->get()->sortBy(function($resident) {
+        $residents = Resident::with(['user', 'flat.block'])->get()->sortBy(function ($resident) {
             return $resident->user->name ?? '';
         });
         $dbYears = Maintenance::select('year')->distinct()->pluck('year')->toArray();
-        $currentYear = \Carbon\Carbon::now()->year;
+        $currentYear = Carbon::now()->year;
         $rangeYears = range(2024, $currentYear + 1);
         $years = collect(array_merge($dbYears, $rangeYears))->unique()->sortDesc()->values();
 
@@ -74,7 +73,7 @@ class MaintenanceBillController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function create()
     {
@@ -92,6 +91,7 @@ class MaintenanceBillController extends Controller
                     ? $resident->flat->flatType->owner_maintenance_fee
                     : $resident->flat->flatType->rental_maintenance_fee;
             }
+
             return [$resident->id => $fee];
         });
 
@@ -104,8 +104,7 @@ class MaintenanceBillController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \App\Http\Requests\StoreMaintenanceBillRequest  $request
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function store(StoreMaintenanceBillRequest $request)
     {
@@ -114,7 +113,7 @@ class MaintenanceBillController extends Controller
         try {
             $resident = Resident::with(['user', 'flat.flatType'])->findOrFail($request->resident_id);
 
-            if (!$resident->flat || !$resident->flat->flatType) {
+            if (! $resident->flat || ! $resident->flat->flatType) {
                 throw new \Exception('Resident does not have a flat assigned with a valid flat type.');
             }
 
@@ -130,7 +129,7 @@ class MaintenanceBillController extends Controller
 
             $currentDate = Carbon::createFromDate($request->start_year, Carbon::parse($request->start_month)->month, 1);
 
-            list($totalPenaltyAmount, $totalDiscountAmount) = $this->calculatePenaltyAndDiscount(
+            [$totalPenaltyAmount, $totalDiscountAmount] = $this->calculatePenaltyAndDiscount(
                 $request, $monthlyFee, $numberOfMonths, $currentDate
             );
 
@@ -150,7 +149,7 @@ class MaintenanceBillController extends Controller
                         'billing_cycle' => 'monthly',
                         'due_date' => $loopDate->copy()->endOfMonth()->format('Y-m-d'),
                         'total_additional_cost' => 0,
-                        'status' => 'published'
+                        'status' => 'published',
                     ]
                 );
 
@@ -179,14 +178,16 @@ class MaintenanceBillController extends Controller
 
             DB::commit();
 
-            $message = 'Payment recorded successfully for ' . $numberOfMonths . ' months.';
+            $message = 'Payment recorded successfully for '.$numberOfMonths.' months.';
+
             return $request->ajax()
                 ? response()->json(['success' => true, 'message' => $message])
                 : redirect()->route('maintenance-bills.index')->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $message = 'Error recording payment: ' . $e->getMessage();
+            $message = 'Error recording payment: '.$e->getMessage();
+
             return $request->ajax()
                 ? response()->json(['success' => false, 'message' => $message], 500)
                 : redirect()->back()->with('error', $message);
@@ -197,7 +198,7 @@ class MaintenanceBillController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  string  $id  Can be batch_id or individual bill id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function destroy($id)
     {
@@ -225,7 +226,7 @@ class MaintenanceBillController extends Controller
      * Additional method to delete individual bill (not by batch), useful for correcting mistakes without deleting entire batch
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function destroyIndividual($id)
     {
@@ -241,9 +242,8 @@ class MaintenanceBillController extends Controller
     /**
      * Method to update payment status, with logic to lock in penalty and total amounts when marking as paid
      *
-     * @param  \App\Http\Requests\UpdateMaintenanceBillStatusRequest  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function updateStatus(UpdateMaintenanceBillStatusRequest $request, $id)
     {
@@ -261,7 +261,7 @@ class MaintenanceBillController extends Controller
                 1
             );
 
-            list($totalPenaltyAmount, $totalDiscountAmount) = $this->calculatePenaltyAndDiscount(
+            [$totalPenaltyAmount, $totalDiscountAmount] = $this->calculatePenaltyAndDiscount(
                 $request, $monthlyFee, 1, $currentDate, true // Calculate for single month, force recalculation
             );
 
@@ -307,7 +307,7 @@ class MaintenanceBillController extends Controller
                 'message' => 'Status updated successfully.',
                 'paidCount' => $paidCount,
                 'totalCount' => $totalCount,
-                'totalAmountExpected' => number_format($totalAmountExpected, 2)
+                'totalAmountExpected' => number_format($totalAmountExpected, 2),
             ]);
         }
 
@@ -318,7 +318,7 @@ class MaintenanceBillController extends Controller
      * Display the specified resource details.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function details($id)
     {
@@ -331,7 +331,7 @@ class MaintenanceBillController extends Controller
      * Method to download invoice as PDF
      *
      * @param  string  $id  Can be batch_id or individual bill id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function downloadInvoice($id)
     {
@@ -352,7 +352,7 @@ class MaintenanceBillController extends Controller
         $bill = $bills->first();
         $pdf = Pdf::loadView('maintenance_bills.invoice_pdf', compact('bills', 'bill'));
 
-        $fileName = 'invoice_' . ($bill->flat->block->block_name ?? '') . '-' . ($bill->flat->flat_no ?? '') . '_' . now()->format('Ymd_His') . '.pdf';
+        $fileName = 'invoice_'.($bill->flat->block->block_name ?? '').'-'.($bill->flat->flat_no ?? '').'_'.now()->format('Ymd_His').'.pdf';
 
         return $pdf->download($fileName);
     }
@@ -361,7 +361,7 @@ class MaintenanceBillController extends Controller
      * API endpoint to fetch resident info based on user ID, used for dynamic form updates when creating/editing bills
      *
      * @param  int  $userId
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
     public function getResidentInfo($userId)
     {
@@ -381,9 +381,10 @@ class MaintenanceBillController extends Controller
                 'success' => true,
                 'block_id' => $resident->block_id,
                 'flat_id' => $resident->flat_id,
-                'amount' => $amount
+                'amount' => $amount,
             ]);
         }
+
         return response()->json(['success' => false, 'message' => 'Resident not found or flat/flat type missing.']);
     }
 
@@ -391,34 +392,28 @@ class MaintenanceBillController extends Controller
      * Helper to get setting values for discount or penalty.
      *
      * @param  string  $type  'discount' or 'penalty'
-     * @return array
      */
     private function getSettingValues(string $type): array
     {
         return [
             "apply_{$type}" => setting("apply_{$type}", '1'),
             'type' => setting("{$type}_type", 'percentage'),
-            'yearly_value' => (float)setting("{$type}_yearly_value", setting("{$type}_yearly_percent", ($type === 'penalty' ? 15 : 10))),
-            'half_yearly_value' => (float)setting("{$type}_half_yearly_value", setting("{$type}_half_yearly_percent", ($type === 'penalty' ? 10 : 0))),
-            'quarterly_value' => (float)setting("{$type}_quarterly_value", setting("{$type}_quarterly_percent", 5)),
-            'monthly_value' => (float)setting("{$type}_monthly_value", setting("{$type}_monthly_percent", 2)),
+            'yearly_value' => (float) setting("{$type}_yearly_value", setting("{$type}_yearly_percent", ($type === 'penalty' ? 15 : 10))),
+            'half_yearly_value' => (float) setting("{$type}_half_yearly_value", setting("{$type}_half_yearly_percent", ($type === 'penalty' ? 10 : 0))),
+            'quarterly_value' => (float) setting("{$type}_quarterly_value", setting("{$type}_quarterly_percent", 5)),
+            'monthly_value' => (float) setting("{$type}_monthly_value", setting("{$type}_monthly_percent", 2)),
         ];
     }
 
     /**
      * Helper to calculate penalty and discount amounts.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  float  $monthlyFee
-     * @param  int  $numberOfMonths
-     * @param  \Carbon\Carbon  $startDate
      * @param  bool  $forceRecalculation  If true, ignores request values and recalculates based on settings.
-     * @return array  [totalPenaltyAmount, totalDiscountAmount]
+     * @return array [totalPenaltyAmount, totalDiscountAmount]
      */
     private function calculatePenaltyAndDiscount(
         Request $request, float $monthlyFee, int $numberOfMonths, Carbon $startDate, bool $forceRecalculation = false
-    ): array
-    {
+    ): array {
         $now = Carbon::now()->startOfMonth();
 
         // Calculate past and future months
@@ -438,7 +433,7 @@ class MaintenanceBillController extends Controller
 
         $totalPenaltyAmount = 0;
         if ($forceRecalculation || ($request->has('penalty_amount') && $request->filled('penalty_amount'))) {
-            $totalPenaltyAmount = (float)$request->penalty_amount;
+            $totalPenaltyAmount = (float) $request->penalty_amount;
         } else {
             $penaltySettings = $this->getSettingValues('penalty');
             if ($penaltySettings['apply_penalty'] === '1' && $pastMonthsCount > 0) {
@@ -465,7 +460,7 @@ class MaintenanceBillController extends Controller
 
         $totalDiscountAmount = 0;
         if ($forceRecalculation || ($request->has('discount_amount') && $request->filled('discount_amount'))) {
-            $totalDiscountAmount = (float)$request->discount_amount;
+            $totalDiscountAmount = (float) $request->discount_amount;
         } else {
             $discountSettings = $this->getSettingValues('discount');
             $applyDiscount = $discountSettings['apply_discount'];

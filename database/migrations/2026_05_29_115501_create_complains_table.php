@@ -21,7 +21,7 @@ return new class extends Migration
                 'Security Issues',
                 'Cleanliness & Housekeeping',
                 'Common Facilities',
-                'other'
+                'other',
             ]);
             $table->enum('status', ['pending', 'in-progress', 'resolved'])->default('pending');
             $table->text('resolution_notes')->nullable();

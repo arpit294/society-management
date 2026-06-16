@@ -50,8 +50,9 @@ class User extends Authenticatable
     public function getResidentDetailsAttribute()
     {
         if ($this->resident && $this->resident->flat && $this->resident->flat->block) {
-            return $this->name . ' (' . $this->resident->flat->block->block_name . ' - ' . $this->resident->flat->flat_no . ')';
+            return $this->name.' ('.$this->resident->flat->block->block_name.' - '.$this->resident->flat->flat_no.')';
         }
-        return $this->name . ' (' . $this->email . ')';
+
+        return $this->name.' ('.$this->email.')';
     }
 }

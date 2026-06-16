@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property float $penalty_amount
  * @property float $total_amount
  * @property float $discount_amount
- * @property \Carbon\Carbon|null $paid_at
+ * @property Carbon|null $paid_at
  * @property string|null $payment_method
  * @property string|null $transaction_id
  * @property string|null $payment_slip
@@ -53,7 +53,7 @@ class MaintenanceBill extends Model
             return 'paid';
         }
         // If the bill is not paid and the due date has passed, mark it as 'due'
-        if ($this->maintenance && $this->maintenance->due_date && \Carbon\Carbon::parse($this->maintenance->due_date)->endOfDay()->isPast()) {
+        if ($this->maintenance && $this->maintenance->due_date && Carbon::parse($this->maintenance->due_date)->endOfDay()->isPast()) {
             return 'due';
         }
 
@@ -63,7 +63,7 @@ class MaintenanceBill extends Model
     public function getPenaltyAmountAttribute($value)
     {
         if ($this->attributes['status'] === 'paid' || $value > 0) {
-            return (float)$value;
+            return (float) $value;
         }
 
         // ---------------------------------------------------------
@@ -80,22 +80,22 @@ class MaintenanceBill extends Model
         }
 
         // 2. Check if the bill has crossed the allowed due days
-        $dueDays = (int)setting('penalty_due_days', 15);
+        $dueDays = (int) setting('penalty_due_days', 15);
         $dueDate = Carbon::parse($this->generated_date)->addDays($dueDays);
 
         // 3. If past due date, calculate the penalty based on billing cycle
         if ($dueDate->endOfDay()->isPast()) {
-            $baseAmount = (float)$this->amount;
+            $baseAmount = (float) $this->amount;
             $billingCycle = $this->maintenance->billing_cycle ?? 'monthly';
             $penaltyValue = 0;
 
             // Fetch the appropriate penalty value based on billing cycle and global settings
             if ($billingCycle === 'monthly') {
-                $penaltyValue = (float)setting('penalty_monthly_value', setting('penalty_monthly_percent', 5));
+                $penaltyValue = (float) setting('penalty_monthly_value', setting('penalty_monthly_percent', 5));
             } elseif ($billingCycle === 'quarterly') {
-                $penaltyValue = (float)setting('penalty_quarterly_value', setting('penalty_quarterly_percent', 10));
+                $penaltyValue = (float) setting('penalty_quarterly_value', setting('penalty_quarterly_percent', 10));
             } elseif ($billingCycle === 'yearly') {
-                $penaltyValue = (float)setting('penalty_yearly_value', setting('penalty_yearly_percent', 15));
+                $penaltyValue = (float) setting('penalty_yearly_value', setting('penalty_yearly_percent', 15));
             }
 
             // 4. Apply either as a fixed dollar amount or as a percentage multiplier
@@ -117,11 +117,12 @@ class MaintenanceBill extends Model
         // If status is paid OR if status is not loaded (e.g. grouped queries),
         // trust the raw value provided by the database.
         if ($status === 'paid' || $status === null) {
-            return (float)$value;
+            return (float) $value;
         }
-    
-        $baseAmount = (float)($this->attributes['amount'] ?? 0);
+
+        $baseAmount = (float) ($this->attributes['amount'] ?? 0);
         $penalty = $this->getPenaltyAmountAttribute($this->attributes['penalty_amount'] ?? 0);
+
         return $baseAmount + $penalty;
     }
 

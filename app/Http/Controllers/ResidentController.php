@@ -7,24 +7,49 @@ use App\Models\Block;
 use App\Models\Flat;
 use App\Models\Resident;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
+/**
+ * Class ResidentController
+ *
+ * Manages the lifecycle of residents (both owners and tenants) in the society.
+ * Handles mapping users to specific flats and tracking move-in/move-out dates.
+ */
 class ResidentController extends Controller
 {
+    /**
+     * Display a listing of residents.
+     *
+     * @return mixed
+     */
     public function index(ResidentsDataTable $dataTable)
     {
-        $blocks = \App\Models\Block::all();
+        $blocks = Block::all();
+
         return $dataTable->render('residents.index', compact('blocks'));
     }
 
+    /**
+     * Show the form for creating a new resident mapping.
+     *
+     * @return View
+     */
     public function create()
     {
         $blocks = Block::all();
         $users = User::with(['resident.flat.block'])->get();
+
         return view('residents.create', compact('blocks', 'users'));
     }
 
-    public function store(\Illuminate\Http\Request $request)
+    /**
+     * Store a newly created resident in storage.
+     *
+     * @return JsonResponse
+     */
+    public function store(Request $request)
     {
         $validatedData = $request->validate([
             'block_id' => 'required|exists:blocks,id',
@@ -43,14 +68,26 @@ class ResidentController extends Controller
         ]);
     }
 
+    /**
+     * Show the form for editing the specified resident.
+     *
+     * @return View
+     */
     public function edit(Resident $resident)
     {
         $blocks = Block::all();
         $flats = Flat::where('block_id', $resident->block_id)->get();
         $users = User::with(['resident.flat.block'])->get();
+
         return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
     }
 
+    /**
+     * Update the specified resident in storage.
+     * Note: Changing move_out_date impacts whether they appear in active billing logic.
+     *
+     * @return JsonResponse
+     */
     public function update(Request $request, Resident $resident)
     {
         $validatedData = $request->validate([
@@ -70,6 +107,11 @@ class ResidentController extends Controller
         ]);
     }
 
+    /**
+     * Remove the specified resident from storage.
+     *
+     * @return JsonResponse
+     */
     public function destroy(Resident $resident)
     {
         $resident->delete();
@@ -80,9 +122,17 @@ class ResidentController extends Controller
         ]);
     }
 
+    /**
+     * API Endpoint to get flats associated with a specific block.
+     * Used in dynamic frontend dropdowns.
+     *
+     * @param  int  $block_id
+     * @return JsonResponse
+     */
     public function getFlatsByBlock($block_id)
     {
         $flats = Flat::where('block_id', $block_id)->get();
+
         return response()->json($flats);
     }
 }

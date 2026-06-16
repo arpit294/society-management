@@ -3,12 +3,12 @@
 use App\Models\Setting;
 use Illuminate\Support\Facades\Cache;
 
-if (!function_exists('setting')) {
+if (! function_exists('setting')) {
     /**
      * Get a setting value.
      *
-     * @param string $key
-     * @param mixed $default
+     * @param  string  $key
+     * @param  mixed  $default
      * @return mixed
      */
     function setting($key, $default = null)

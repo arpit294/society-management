@@ -28,6 +28,7 @@ class FlatController extends Controller
         $blocks = Block::all();
         // Only get active flat types for the dropdown
         $flatTypes = FlatType::where('status', 'active')->get();
+
         return view('flats.create', compact('blocks', 'flatTypes'));
     }
 
@@ -43,11 +44,11 @@ class FlatController extends Controller
         ]);
 
         // Check if a block is selected and ensure the provided floor_no does not exceed the block's total_floor
-        if (!empty($validatedData['block_id'])) {
+        if (! empty($validatedData['block_id'])) {
             $block = Block::find($validatedData['block_id']);
             if ($block && $validatedData['floor_no'] > $block->total_floor) {
                 throw ValidationException::withMessages([
-                    'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.']
+                    'floor_no' => ['Floor No cannot be greater than '.$block->total_floor.' for the selected block.'],
                 ]);
             }
         }
@@ -67,6 +68,7 @@ class FlatController extends Controller
     {
         $blocks = Block::all();
         $flatTypes = FlatType::all();
+
         return view('flats.edit', compact('flat', 'blocks', 'flatTypes'));
     }
 
@@ -84,11 +86,11 @@ class FlatController extends Controller
         ]);
 
         // Check the selected floor number is valid or not based on block table
-        if (!empty($validatedData['block_id'])) {
+        if (! empty($validatedData['block_id'])) {
             $block = Block::find($validatedData['block_id']);
             if ($block && $validatedData['floor_no'] > $block->total_floor) {
                 throw ValidationException::withMessages([
-                    'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.']
+                    'floor_no' => ['Floor No cannot be greater than '.$block->total_floor.' for the selected block.'],
                 ]);
             }
         }

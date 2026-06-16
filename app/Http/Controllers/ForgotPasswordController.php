@@ -23,6 +23,7 @@ class ForgotPasswordController extends Controller
             ? back()->with(['status' => __($status)])
             : back()->withErrors(['email' => __($status)]);
     }
+
     // Show the form for resetting the password
     public function reset(ResetPasswordRequest $request)
     {
@@ -30,7 +31,7 @@ class ForgotPasswordController extends Controller
             $request->validated(),
             function (User $user, string $password) {
                 $user->forceFill([
-                    'password' => Hash::make($password)
+                    'password' => Hash::make($password),
                 ])->setRememberToken(Str::random(60));
 
                 $user->save();
