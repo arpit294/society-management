@@ -23,16 +23,20 @@ class MaintenanceBillController extends Controller
 {
     /**
      * Display a listing of the resource.
+     * This loads the main dashboard for maintenance bills, including the top statistics,
+     * the revenue chart, and the data table.
      *
      * @param  MaintenanceBillsDataTable  $dataTable
      * @return Response
      */
     public function index(MaintenanceBillsDataTable $dataTable)
     {
+        // 1. Calculate overall collection statistics for the top cards
         $totalCollected = MaintenanceBill::where('status', 'paid')->sum('total_amount');
         $cashCollected = MaintenanceBill::where('status', 'paid')->where('payment_method', 'CASH')->sum('total_amount');
         $upiCollected = MaintenanceBill::where('status', 'paid')->where('payment_method', 'UPI')->sum('total_amount');
 
+        // 2. Prepare data for the monthly revenue chart (current year)
         $months = [
             'January', 'February', 'March', 'April', 'May', 'June',
             'July', 'August', 'September', 'October', 'November', 'December'
@@ -47,33 +51,21 @@ class MaintenanceBillController extends Controller
             ->pluck('total', 'month')
             ->toArray();
 
+        // Map database results to the 12-month array format required by the chart
         $chartDataRevenue = array_map(function ($month) use ($monthlyRevenueDB) {
             return $monthlyRevenueDB[$month] ?? 0;
         }, $months);
 
+        // 3. Fetch data for dropdown filters (Blocks, Residents, Years)
         $blocks = Block::orderBy('block_name')->get();
-        $activeResidents = Resident::with(['user', 'flat.block'])
-            ->where(function ($query) {
-                $query->whereNull('move_out_date')
-                      ->orWhere('move_out_date', '>=', now()->startOfDay());
-            })
-            ->get();
-
-        $uniqueResidents = collect();
-        foreach ($activeResidents->groupBy('flat_id') as $flatId => $flatResidents) {
-            $tenant = $flatResidents->where('type', 'rental')->first();
-            $uniqueResidents->push($tenant ?: $flatResidents->first());
-        }
-
-        $residents = $uniqueResidents->sortBy(function($resident) {
-            return $resident->user->name ?? '';
-        })->values();
-
+        $residents = $this->getUniqueActiveResidents();
+        
         $dbYears = Maintenance::select('year')->distinct()->pluck('year')->toArray();
         $currentYear =  Carbon::now()->year;
         $rangeYears = range(2024, $currentYear + 1);
         $years = collect(array_merge($dbYears, $rangeYears))->unique()->sortDesc()->values();
 
+        // Render the page with all necessary data
         return $dataTable->render('maintenance_bills.index', compact(
             'totalCollected',
             'cashCollected',
@@ -87,30 +79,17 @@ class MaintenanceBillController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new maintenance bill.
+     * Prepares data like active residents, their fees, and dynamic penalty/discount settings.
      *
      * @return Response
      */
-    // This method prepares the data needed for the create form, including fetching active residents and their associated fees, as well as discount and penalty settings.
     public function create()
     {
-        $activeResidents = Resident::with(['user', 'flat.flatType', 'block'])
-            ->where(function (Builder $query) {
-                $query->whereNull('move_out_date')
-                    ->orWhere('move_out_date', '>=', Carbon::now()->startOfDay());
-            })
-            ->get();
+        // Get all active residents (filtering out old owners if a tenant lives there)
+        $residents = $this->getUniqueActiveResidents();
 
-        $uniqueResidents = collect();
-        foreach ($activeResidents->groupBy('flat_id') as $flatId => $flatResidents) {
-            $tenant = $flatResidents->where('type', 'rental')->first();
-            $uniqueResidents->push($tenant ?: $flatResidents->first());
-        }
-
-        $residents = $uniqueResidents->sortBy(function($resident) {
-            return $resident->user->name ?? '';
-        })->values();
-
+        // Pre-calculate the base monthly fee for each resident based on flat type (Owner vs Tenant rate)
         $residentFees = $residents->mapWithKeys(function ($resident) {
             $fee = 0;
             if ($resident->flat && $resident->flat->flatType) {
@@ -121,6 +100,7 @@ class MaintenanceBillController extends Controller
             return [$resident->id => $fee];
         });
 
+        // Load the global penalty and discount settings to pass to the frontend JavaScript
         $discountSettings = $this->getSettingValues('discount');
         $penaltySettings = $this->getSettingValues('penalty');
 
@@ -128,13 +108,15 @@ class MaintenanceBillController extends Controller
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created payment/bill in the database.
+     * Handles the logic of calculating totals, splitting across multiple months, and saving.
      *
      * @param  StoreMaintenanceBillRequest  $request
      * @return Response
      */
     public function store(StoreMaintenanceBillRequest $request)
     {
+        // Wrap everything in a database transaction. If anything fails, it will roll back all changes.
         DB::beginTransaction();
 
         try {
@@ -144,32 +126,41 @@ class MaintenanceBillController extends Controller
                 throw new \Exception('Resident does not have a flat assigned with a valid flat type.');
             }
 
+            // Determine the base fee (Owner vs Rental rate)
             $monthlyFee = ($resident->type === 'owner')
                 ? $resident->flat->flatType->owner_maintenance_fee
                 : $resident->flat->flatType->rental_maintenance_fee;
-            $numberOfMonths = $request->months;
+                
+            $numberOfMonths = (int) $request->months;
 
+            // Handle file upload for payment slips
             $paymentSlipPath = null;
             if ($request->hasFile('payment_slip')) {
                 $paymentSlipPath = $request->file('payment_slip')->store('payment_slips', 'public');
             }
 
+            // Determine the exact start date selected by the user
             $currentDate = Carbon::createFromDate($request->start_year, Carbon::parse($request->start_month)->month, 1);
 
+            // Calculate the total penalty and discount amounts across all selected months
             list($totalPenaltyAmount, $totalDiscountAmount) = $this->calculatePenaltyAndDiscount(
                 $request, $monthlyFee, $numberOfMonths, $currentDate
             );
 
+            // Split the total amount evenly across the selected number of months
             $amountPerMonth = $monthlyFee + ($totalPenaltyAmount / $numberOfMonths) - ($totalDiscountAmount / $numberOfMonths);
-            $amountPerMonth = max(0, $amountPerMonth); // Ensure amount is not negative
+            $amountPerMonth = max(0, $amountPerMonth); // Prevent negative bills
 
+            // Generate a unique batch ID to group these multi-month payments together
             $batchId = uniqid('pay_');
 
+            // Loop through each month and create a separate database entry
             for ($i = 0; $i < $numberOfMonths; $i++) {
                 $loopDate = $currentDate->copy()->addMonths($i);
                 $monthStr = $loopDate->format('F');
                 $yearInt = $loopDate->year;
 
+                // 1. Ensure the core "Maintenance" (the master billing period) exists
                 $maintenance = Maintenance::firstOrCreate(
                     ['month' => $monthStr, 'year' => $yearInt],
                     [
@@ -180,6 +171,7 @@ class MaintenanceBillController extends Controller
                     ]
                 );
 
+                // 2. Create or update the specific bill for this flat in this month
                 MaintenanceBill::updateOrCreate(
                     [
                         'maintenance_id' => $maintenance->id,
@@ -203,6 +195,7 @@ class MaintenanceBillController extends Controller
                 );
             }
 
+            // Commit all operations to the database
             DB::commit();
 
             $message = 'Payment recorded successfully for ' . $numberOfMonths . ' months.';
@@ -220,7 +213,7 @@ class MaintenanceBillController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified bill from storage (either by batch ID or individual ID).
      *
      * @param  string  $id  Can be batch_id or individual bill id
      * @return \Illuminate\Http\Response
@@ -248,7 +241,7 @@ class MaintenanceBillController extends Controller
     }
 
     /**
-     * Additional method to delete individual bill (not by batch), useful for correcting mistakes without deleting entire batch
+     * Additional method to delete an individual bill without deleting the entire batch.
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
@@ -265,7 +258,8 @@ class MaintenanceBillController extends Controller
     }
 
     /**
-     * Method to update payment status, with logic to lock in penalty and total amounts when marking as paid
+     * Method to update payment status.
+     * When marking a bill as 'paid', it dynamically recalculates and locks in the final penalty/discount amounts.
      *
      * @param  UpdateMaintenanceBillStatusRequest  $request
      * @param  int  $id
@@ -276,7 +270,8 @@ class MaintenanceBillController extends Controller
         $maintenanceBill = MaintenanceBill::findOrFail($id);
 
         if ($request->status === 'paid' && $maintenanceBill->status !== 'paid') {
-            // Recalculate penalty and discount based on current date for accurate locking
+            
+            // Re-fetch the correct monthly fee based on user type
             $monthlyFee = ($maintenanceBill->resident->type === 'owner')
                 ? $maintenanceBill->flat->flatType->owner_maintenance_fee
                 : $maintenanceBill->flat->flatType->rental_maintenance_fee;
@@ -287,8 +282,9 @@ class MaintenanceBillController extends Controller
                 1
             );
 
+            // Force recalculation of penalty and discount based on the ACTUAL date it was marked 'paid'
             list($totalPenaltyAmount, $totalDiscountAmount) = $this->calculatePenaltyAndDiscount(
-                $request, $monthlyFee, 1, $currentDate, true // Calculate for single month, force recalculation
+                $request, $monthlyFee, 1, $currentDate, true 
             );
 
             $maintenanceBill->status = 'paid';
@@ -300,24 +296,23 @@ class MaintenanceBillController extends Controller
                 $maintenanceBill->payment_slip = $request->file('payment_slip')->store('payment_slips', 'public');
             }
 
-            // Lock in the dynamically calculated amounts
+            // Lock in the dynamically calculated amounts so they never change again
             $maintenanceBill->penalty_amount = $totalPenaltyAmount;
             $maintenanceBill->discount_amount = $totalDiscountAmount;
             $maintenanceBill->total_amount = $monthlyFee + $totalPenaltyAmount - $totalDiscountAmount;
 
         } elseif ($request->status !== 'paid') {
+            // Revert back to unpaid state
             $maintenanceBill->status = $request->status;
             $maintenanceBill->paid_at = null;
             $maintenanceBill->payment_method = null;
             $maintenanceBill->transaction_id = null;
             $maintenanceBill->payment_slip = null;
-            // When status is not paid, reset penalty/discount to 0 or original calculated if any
-            // This part might need more specific business logic based on how you want to handle unpaid bills
-            // For now, we'll just clear payment-related fields.
-            $maintenanceBill->penalty_amount = 0; // Or recalculate based on current date if bill becomes due again
+            
+            // Reset modifiers
+            $maintenanceBill->penalty_amount = 0; 
             $maintenanceBill->discount_amount = 0;
-            // total_amount would then be $monthlyFee + 0 - 0 = $monthlyFee
-            // This needs careful consideration based on desired behavior for non-paid bills.
+            // The total_amount should revert back to just the base fee (adjusted as needed by business rules)
         }
 
         $maintenanceBill->save();
@@ -349,12 +344,11 @@ class MaintenanceBillController extends Controller
     public function details($id)
     {
         $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
-
         return view('maintenance_bills.details', compact('bill'));
     }
 
     /**
-     * Method to download invoice as PDF
+     * Download the invoice as a PDF file.
      *
      * @param  string  $id  Can be batch_id or individual bill id
      * @return \Illuminate\Http\Response
@@ -377,14 +371,14 @@ class MaintenanceBillController extends Controller
 
         $bill = $bills->first();
         $pdf = Pdf::loadView('maintenance_bills.invoice_pdf', compact('bills', 'bill'));
-
         $fileName = 'invoice_' . ($bill->flat->block->block_name ?? '') . '-' . ($bill->flat->flat_no ?? '') . '_' . now()->format('Ymd_His') . '.pdf';
 
         return $pdf->download($fileName);
     }
 
     /**
-     * API endpoint to fetch resident info based on user ID, used for dynamic form updates when creating/editing bills
+     * API endpoint to fetch resident info based on user ID.
+     * Used for dynamic form updates via AJAX.
      *
      * @param  int  $userId
      * @return \Illuminate\Http\JsonResponse
@@ -413,8 +407,13 @@ class MaintenanceBillController extends Controller
         return response()->json(['success' => false, 'message' => 'Resident not found or flat/flat type missing.']);
     }
 
+    // =========================================================================
+    // PRIVATE HELPER METHODS
+    // =========================================================================
+
     /**
      * Helper to get setting values for discount or penalty.
+     * Fetches the global configuration from the database.
      *
      * @param  string  $type  'discount' or 'penalty'
      * @return array
@@ -424,11 +423,14 @@ class MaintenanceBillController extends Controller
         return [
             "apply_{$type}" => setting("apply_{$type}", '1'),
             'type' => setting("{$type}_type", 'percentage'),
+            
+            // Values (percentages or fixed amounts)
             'yearly_value' => (float)setting("{$type}_yearly_value", setting("{$type}_yearly_percent", ($type === 'penalty' ? 15 : 10))),
             'half_yearly_value' => (float)setting("{$type}_half_yearly_value", setting("{$type}_half_yearly_percent", ($type === 'penalty' ? 10 : 0))),
             'quarterly_value' => (float)setting("{$type}_quarterly_value", setting("{$type}_quarterly_percent", 5)),
             'monthly_value' => (float)setting("{$type}_monthly_value", setting("{$type}_monthly_percent", 2)),
 
+            // Toggle Switches
             'yearly_enabled' => setting("{$type}_yearly_enabled", '1') == '1',
             'half_yearly_enabled' => setting("{$type}_half_yearly_enabled", '1') == '1',
             'quarterly_enabled' => setting("{$type}_quarterly_enabled", '1') == '1',
@@ -437,13 +439,41 @@ class MaintenanceBillController extends Controller
     }
 
     /**
-     * Helper to calculate penalty and discount amounts.
+     * Helper to fetch unique active residents.
+     * If an owner has rented out their flat, the tenant will take precedence in this list.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    private function getUniqueActiveResidents()
+    {
+        $activeResidents = Resident::with(['user', 'flat.block', 'flat.flatType'])
+            ->where(function ($query) {
+                $query->whereNull('move_out_date')
+                      ->orWhere('move_out_date', '>=', now()->startOfDay());
+            })
+            ->get();
+
+        $uniqueResidents = collect();
+        foreach ($activeResidents->groupBy('flat_id') as $flatId => $flatResidents) {
+            // Prioritize the tenant if one exists, otherwise default to the owner
+            $tenant = $flatResidents->where('type', 'rental')->first();
+            $uniqueResidents->push($tenant ?: $flatResidents->first());
+        }
+
+        return $uniqueResidents->sortBy(function($resident) {
+            return $resident->user->name ?? '';
+        })->values();
+    }
+
+    /**
+     * Core logic engine to calculate the correct penalty and discount amounts.
+     * This iterates month-by-month to apply the exact tier rate to each individual month based on lateness.
      *
      * @param  Request  $request
      * @param  float  $monthlyFee
      * @param  int  $numberOfMonths
      * @param  Carbon  $startDate
-     * @param  bool  $forceRecalculation  If true, ignores request values and recalculates based on settings.
+     * @param  bool  $forceRecalculation  If true, completely ignores frontend request values and relies ONLY on settings.
      * @return array  [totalPenaltyAmount, totalDiscountAmount]
      */
     private function calculatePenaltyAndDiscount(
@@ -452,30 +482,35 @@ class MaintenanceBillController extends Controller
     {
         $now = Carbon::now()->startOfMonth();
 
-        // Calculate past and future months
+        // 1. Determine how many months are past due (arrears) and how many are in advance (future)
         $pastMonthsCount = 0;
         $futureMonthsCount = $numberOfMonths;
 
         if ($startDate->lt($now)) {
             $pastMonthsCount = $now->diffInMonths($startDate);
+            // Cap past months so it doesn't exceed the total selected duration
             if ($pastMonthsCount > $numberOfMonths) {
                 $pastMonthsCount = $numberOfMonths;
             }
             $futureMonthsCount = $numberOfMonths - $pastMonthsCount;
         }
 
-        $arrearsAmount = $pastMonthsCount * $monthlyFee;
-        $advanceAmount = $futureMonthsCount * $monthlyFee;
-
+        // 2. Penalty Calculation (Only applies to Past Months)
         $totalPenaltyAmount = 0;
-        if ($forceRecalculation || ($request->has('penalty_amount') && $request->filled('penalty_amount'))) {
+        
+        // If frontend provided a manually overridden amount, use it (unless we force a strict recalculation)
+        if (!$forceRecalculation && $request->has('penalty_amount') && $request->filled('penalty_amount')) {
             $totalPenaltyAmount = (float)$request->penalty_amount;
         } else {
             $penaltySettings = $this->getSettingValues('penalty');
+            
+            // If penalty feature is enabled, iterate through each past-due month individually
             if ($penaltySettings['apply_penalty'] === '1' && $pastMonthsCount > 0) {
                 for ($i = 0; $i < $pastMonthsCount; $i++) {
                     $monthsLate = $pastMonthsCount - $i;
                     $penaltyValue = 0;
+                    
+                    // Determine which penalty tier this specific month falls into
                     if ($monthsLate >= 12 && $penaltySettings['yearly_enabled']) {
                         $penaltyValue = $penaltySettings['yearly_value'];
                     } elseif ($monthsLate >= 6 && $penaltySettings['half_yearly_enabled']) {
@@ -486,29 +521,34 @@ class MaintenanceBillController extends Controller
                         $penaltyValue = $penaltySettings['monthly_value'];
                     }
 
+                    // Apply the penalty rate for this month
                     if ($penaltyValue > 0) {
                         if ($penaltySettings['type'] === 'fixed') {
-                            $totalPenaltyAmount += $penaltyValue;
+                            $totalPenaltyAmount += $penaltyValue; // Add fixed amount per month
                         } else {
-                            $totalPenaltyAmount += $monthlyFee * ($penaltyValue / 100);
+                            $totalPenaltyAmount += $monthlyFee * ($penaltyValue / 100); // Add percentage
                         }
                     }
                 }
             }
         }
 
-        // Discount is only applied to future months, so we use advanceAmount for percentage calculations
+        // 3. Discount Calculation (Only applies to Future/Advance Months)
         $totalDiscountAmount = 0;
-        if ($forceRecalculation || ($request->has('discount_amount') && $request->filled('discount_amount'))) {
+        
+        if (!$forceRecalculation && $request->has('discount_amount') && $request->filled('discount_amount')) {
             $totalDiscountAmount = (float)$request->discount_amount;
         } else {
             $discountSettings = $this->getSettingValues('discount');
             $applyDiscount = $discountSettings['apply_discount'];
 
+            // If discount feature is enabled, iterate through each future month individually
             if (($applyDiscount === '1' || $applyDiscount === 'true' || $applyDiscount === 'on') && $futureMonthsCount > 0) {
                 for ($i = 0; $i < $futureMonthsCount; $i++) {
                     $monthsAdvance = $i + 1;
                     $discountValue = 0;
+                    
+                    // Determine which discount tier this specific month falls into
                     if ($monthsAdvance >= 12 && $discountSettings['yearly_enabled']) {
                         $discountValue = $discountSettings['yearly_value'];
                     } elseif ($monthsAdvance >= 6 && $discountSettings['half_yearly_enabled']) {
@@ -519,11 +559,12 @@ class MaintenanceBillController extends Controller
                         $discountValue = $discountSettings['monthly_value'];
                     }
 
+                    // Apply the discount rate for this month
                     if ($discountValue > 0) {
                         if ($discountSettings['type'] === 'fixed') {
-                            $totalDiscountAmount += $discountValue;
+                            $totalDiscountAmount += $discountValue; // Add fixed amount per month
                         } else {
-                            $totalDiscountAmount += $monthlyFee * ($discountValue / 100);
+                            $totalDiscountAmount += $monthlyFee * ($discountValue / 100); // Add percentage
                         }
                     }
                 }
