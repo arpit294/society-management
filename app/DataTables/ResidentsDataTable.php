@@ -41,7 +41,8 @@ class ResidentsDataTable extends DataTable
                 return $resident->move_out_date?->format('d-m-Y');
             })
             ->editColumn('type', function (Resident $resident) {
-                return ucfirst($resident->type);
+                $class = $resident->type === 'owner' ? 'bg-primary' : 'bg-info text-dark';
+                return '<span class="badge ' . $class . '">' . ucfirst($resident->type) . '</span>';
             })
             ->filterColumn('block', function($query, $keyword) {
                 $query->whereHas('block', function($q) use ($keyword) {
@@ -59,17 +60,35 @@ class ResidentsDataTable extends DataTable
                 });
             })
             ->addColumn('action', 'residents.action')
+            ->rawColumns(['type', 'action'])
             ->setRowId('id');
     }
 
-    /**
-     * Get the query source of dataTable.
-     *
-     * @return QueryBuilder<Resident>
-     */
     public function query(Resident $model): QueryBuilder
     {
-        return $model->newQuery()->with(['block', 'flat', 'user']);
+        // Get all currently active residents
+        $activeResidents = Resident::where(function($q) {
+                $q->whereNull('move_out_date')
+                  ->orWhere('move_out_date', '>=', now()->startOfDay());
+            })
+            // Sort by type DESC so 'rental' comes before 'owner'
+            ->orderBy('type', 'desc')
+            ->get();
+
+        $primaryResidentIds = [];
+        $processedFlats = [];
+
+        foreach ($activeResidents as $resident) {
+            if (!$resident->flat_id || in_array($resident->flat_id, $processedFlats)) {
+                continue;
+            }
+            $processedFlats[] = $resident->flat_id;
+            $primaryResidentIds[] = $resident->id;
+        }
+
+        return $model->newQuery()
+                     ->whereIn('id', $primaryResidentIds)
+                     ->with(['block', 'flat', 'user']);
     }
 
     /**

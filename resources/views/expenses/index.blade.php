@@ -92,6 +92,10 @@
                                 @endforeach
                             </select>
                         </div>
+                        <div class="filter-col" style="min-width: 200px;">
+                            <label class="form-label mb-1" for="expenses-filter-month">Filter by Month</label>
+                            <input type="month" id="expenses-filter-month" class="form-control" style="max-width: 320px;">
+                        </div>
                         <div class="filter-col d-none" id="expenses-filter-reset-col" style="min-width: 200px;">
                             <button type="button" id="expenses-filter-reset" class="btn btn-outline-secondary w-100">
                                 Reset filter

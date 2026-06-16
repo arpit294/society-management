@@ -40,8 +40,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('users', UserController::class)->except(['show']);
 
     // Flats
-    Route::resource('flats', FlatController::class)->except(['show']);
+    Route::resource('flats', FlatController::class);
     Route::get('api/flats-by-block/{block_id}', [\App\Http\Controllers\ResidentController::class, 'getFlatsByBlock'])->name('api.flats-by-block');
+    Route::get('api/flat-owner/{flat_id}', [\App\Http\Controllers\ResidentController::class, 'getFlatOwner'])->name('api.flat-owner');
 
     // Blocks
     Route::resource('blocks', BlockController::class)->except(['show']);
@@ -50,9 +51,12 @@ Route::middleware('auth')->group(function () {
     Route::resource('complains', \App\Http\Controllers\ComplainController::class)->except(['show']);
 
     // Residents
+    Route::post('residents/import', [\App\Http\Controllers\ResidentController::class, 'import'])->name('residents.import');
+    Route::get('residents/import/template', [\App\Http\Controllers\ResidentController::class, 'downloadTemplate'])->name('residents.import.template');
     Route::resource('residents', \App\Http\Controllers\ResidentController::class)->except(['show']);
     // Expenses
     Route::resource('expenses', \App\Http\Controllers\ExpenseController::class)->except(['show']);
+
 
     // Expense Categories
     Route::resource('expense-categories', \App\Http\Controllers\ExpenseCategoryController::class)->except(['show']);
@@ -67,8 +71,7 @@ Route::middleware('auth')->group(function () {
     Route::get('maintenance-bills/download-invoice/{id}', [\App\Http\Controllers\MaintenanceBillController::class, 'downloadInvoice'])->name('maintenance-bills.download-invoice');
     Route::resource('maintenance-bills', \App\Http\Controllers\MaintenanceBillController::class)->only(['index', 'create', 'store', 'destroy']);
     Route::post('maintenance-bills/{maintenanceBill}/update-status', [\App\Http\Controllers\MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
-    // Prepayments
-    Route::resource('prepayments', \App\Http\Controllers\PrepaymentController::class)->only(['index', 'create', 'store']);
+
 
     // Settings
     Route::get('settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
@@ -78,4 +81,8 @@ Route::middleware('auth')->group(function () {
     Route::get('reports/maintenance/export', [ReportController::class, 'exportReport'])->name('reports.maintenance.export');
     Route::get('reports/maintenance', [ReportController::class, 'maintenanceReport'])->name('reports.maintenance');
 });
-//
+
+
+
+
+// 

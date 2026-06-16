@@ -16,7 +16,8 @@ class FlatController extends Controller
      */
     public function index(FlatsDatatables $dataTable)
     {
-        return $dataTable->render('flats.index');
+        $blocks = Block::all();
+        return $dataTable->render('flats.index', compact('blocks'));
     }
 
     /**
@@ -58,6 +59,19 @@ class FlatController extends Controller
             'success' => true,
             'message' => 'Flat created successfully.',
         ]);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Flat $flat)
+    {
+        $history = \App\Models\Resident::with('user')
+            ->where('flat_id', $flat->id)
+            ->orderBy('move_in_date', 'desc')
+            ->get();
+            
+        return view('flats.history', compact('flat', 'history'));
     }
 
     /**

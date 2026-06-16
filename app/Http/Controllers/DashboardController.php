@@ -47,29 +47,44 @@ class DashboardController extends Controller
             $chartDataExpenses[] = $monthlyExpensesDB[$m] ?? 0;
         }
 
-        // Bill Status Doughnut Chart Data (Based on Latest Maintenance)
+        // Financial Upgrade: Maintenance Collected vs Pending (Based on Latest Maintenance)
         $latestMaintenance = \App\Models\Maintenance::orderBy('year', 'desc')->orderBy('id', 'desc')->first();
         $maintenanceId = $latestMaintenance ? $latestMaintenance->id : null;
 
-        $activeResidentsCount = \App\Models\Resident::where(function($query) {
-            $query->whereNull('move_out_date')
-                  ->orWhere('move_out_date', '>=', now()->startOfDay());
-        })->count();
-
-        $paidCount = 0;
+        $billStatusData = [
+            'paid' => 0,
+            'pending' => 0,
+        ];
         if ($maintenanceId) {
-            $paidCount = MaintenanceBill::where('maintenance_id', $maintenanceId)
-                ->where('status', 'paid')
-                ->count();
+            $billStatusData['paid'] = (float) MaintenanceBill::where('maintenance_id', $maintenanceId)->where('status', 'paid')->sum('total_amount');
+            $billStatusData['pending'] = (float) MaintenanceBill::where('maintenance_id', $maintenanceId)->where('status', 'pending')->sum('total_amount');
         }
 
-        $pendingCount = max(0, $activeResidentsCount - $paidCount);
-
-        $billStatusData = [
-            'paid' => $paidCount,
-            'pending' => $pendingCount,
-            'due' => 0,
+        // Occupancy Rates (Empty vs Occupied Flats)
+        $occupiedFlatsCount = Flat::whereHas('residents', function ($query) {
+            $query->whereNull('move_out_date')->orWhere('move_out_date', '>=', now()->startOfDay());
+        })->count();
+        $emptyFlatsCount = max(0, $totalFlats - $occupiedFlatsCount);
+        
+        $occupancyData = [
+            'occupied' => $occupiedFlatsCount,
+            'empty' => $emptyFlatsCount,
         ];
+
+        // Expense Breakdown (Pie Chart) - Current Year
+        $expenseCategories = \App\Models\ExpenseCategory::all()->keyBy('id');
+        $expensesByCategory = \App\Models\Expense::whereYear('created_at', date('Y'))
+            ->selectRaw('category_id, sum(total_amount) as total')
+            ->groupBy('category_id')
+            ->get();
+            
+        $expenseBreakdownLabels = [];
+        $expenseBreakdownData = [];
+        foreach ($expensesByCategory as $expense) {
+            $catName = isset($expenseCategories[$expense->category_id]) ? $expenseCategories[$expense->category_id]->title : 'Uncategorized';
+            $expenseBreakdownLabels[] = $catName;
+            $expenseBreakdownData[] = (float) $expense->total;
+        }
 
         // Fetch Recent Activities
         $recentPayments = MaintenanceBill::with('user')
@@ -134,6 +149,9 @@ class DashboardController extends Controller
             'chartDataRevenue',
             'chartDataExpenses',
             'billStatusData',
+            'occupancyData',
+            'expenseBreakdownLabels',
+            'expenseBreakdownData',
             'activities'
         ));
     }

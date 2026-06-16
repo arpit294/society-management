@@ -6,15 +6,7 @@
                     <h4 class="mb-0">Global Settings</h4>
                 </div>
                 <div class="card-body">
-                    @if (session('success'))
-                        @push('scripts')
-                            <script>
-                                $(document).ready(function() {
-                                    toastr.success("{{ session('success') }}");
-                                });
-                            </script>
-                        @endpush
-                    @endif
+
 
                     <form action="{{ route('settings.store') }}" method="POST">
                         @csrf
@@ -89,7 +81,11 @@
                             </div>
 
                             <div class="col-md-3 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Monthly (1 Month)</label>
+                                <div class="form-check mb-1">
+                                    <input type="hidden" name="penalty_monthly_enabled" value="0">
+                                    <input class="form-check-input" type="checkbox" id="penalty_monthly_enabled" name="penalty_monthly_enabled" value="1" {{ ($settings['penalty_monthly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold text-uppercase label-penalty" for="penalty_monthly_enabled">Monthly (1 Month)</label>
+                                </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_monthly_value" class="form-control text-end"
                                         value="{{ $settings['penalty_monthly_value'] ?? ($settings['penalty_monthly_percent'] ?? '2') }}">
@@ -97,7 +93,11 @@
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Quarterly (3 Months)</label>
+                                <div class="form-check mb-1">
+                                    <input type="hidden" name="penalty_quarterly_enabled" value="0">
+                                    <input class="form-check-input" type="checkbox" id="penalty_quarterly_enabled" name="penalty_quarterly_enabled" value="1" {{ ($settings['penalty_quarterly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold text-uppercase label-penalty" for="penalty_quarterly_enabled">Quarterly (3 Months)</label>
+                                </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_quarterly_value" class="form-control text-end"
                                         value="{{ $settings['penalty_quarterly_value'] ?? ($settings['penalty_quarterly_percent'] ?? '5') }}">
@@ -105,7 +105,11 @@
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Half-Yearly (6 Months)</label>
+                                <div class="form-check mb-1">
+                                    <input type="hidden" name="penalty_half_yearly_enabled" value="0">
+                                    <input class="form-check-input" type="checkbox" id="penalty_half_yearly_enabled" name="penalty_half_yearly_enabled" value="1" {{ ($settings['penalty_half_yearly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold text-uppercase label-penalty" for="penalty_half_yearly_enabled">Half-Yearly (6 Months)</label>
+                                </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_half_yearly_value" class="form-control text-end"
                                         value="{{ $settings['penalty_half_yearly_value'] ?? ($settings['penalty_half_yearly_percent'] ?? '10') }}">
@@ -113,7 +117,11 @@
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase label-penalty">Yearly (12 Months)</label>
+                                <div class="form-check mb-1">
+                                    <input type="hidden" name="penalty_yearly_enabled" value="0">
+                                    <input class="form-check-input" type="checkbox" id="penalty_yearly_enabled" name="penalty_yearly_enabled" value="1" {{ ($settings['penalty_yearly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold text-uppercase label-penalty" for="penalty_yearly_enabled">Yearly (12 Months)</label>
+                                </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_yearly_value" class="form-control text-end"
                                         value="{{ $settings['penalty_yearly_value'] ?? ($settings['penalty_yearly_percent'] ?? '15') }}">
@@ -149,7 +157,11 @@
                             </div>
 
                             <div class="col-md-3 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Monthly (1 Month)</label>
+                                <div class="form-check mb-1">
+                                    <input type="hidden" name="discount_monthly_enabled" value="0">
+                                    <input class="form-check-input" type="checkbox" id="discount_monthly_enabled" name="discount_monthly_enabled" value="1" {{ ($settings['discount_monthly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold text-uppercase label-discount" for="discount_monthly_enabled">Monthly (1 Month)</label>
+                                </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_monthly_value" class="form-control text-end"
                                         value="{{ $settings['discount_monthly_value'] ?? ($settings['discount_monthly_percent'] ?? '2') }}">
@@ -157,7 +169,11 @@
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Quarterly (3 Months)</label>
+                                <div class="form-check mb-1">
+                                    <input type="hidden" name="discount_quarterly_enabled" value="0">
+                                    <input class="form-check-input" type="checkbox" id="discount_quarterly_enabled" name="discount_quarterly_enabled" value="1" {{ ($settings['discount_quarterly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold text-uppercase label-discount" for="discount_quarterly_enabled">Quarterly (3 Months)</label>
+                                </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_quarterly_value" class="form-control text-end"
                                         value="{{ $settings['discount_quarterly_value'] ?? ($settings['discount_quarterly_percent'] ?? '5') }}">
@@ -165,7 +181,11 @@
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Half-Yearly (6 Months)</label>
+                                <div class="form-check mb-1">
+                                    <input type="hidden" name="discount_half_yearly_enabled" value="0">
+                                    <input class="form-check-input" type="checkbox" id="discount_half_yearly_enabled" name="discount_half_yearly_enabled" value="1" {{ ($settings['discount_half_yearly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold text-uppercase label-discount" for="discount_half_yearly_enabled">Half-Yearly (6 Months)</label>
+                                </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_half_yearly_value" class="form-control text-end"
                                         value="{{ $settings['discount_half_yearly_value'] ?? ($settings['discount_half_yearly_percent'] ?? '10') }}">
@@ -173,7 +193,11 @@
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase label-discount">Yearly (12 Months)</label>
+                                <div class="form-check mb-1">
+                                    <input type="hidden" name="discount_yearly_enabled" value="0">
+                                    <input class="form-check-input" type="checkbox" id="discount_yearly_enabled" name="discount_yearly_enabled" value="1" {{ ($settings['discount_yearly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold text-uppercase label-discount" for="discount_yearly_enabled">Yearly (12 Months)</label>
+                                </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_yearly_value" class="form-control text-end"
                                         value="{{ $settings['discount_yearly_value'] ?? ($settings['discount_yearly_percent'] ?? '15') }}">

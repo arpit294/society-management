@@ -50,28 +50,43 @@
                     </div>
                 </form>
 
-                <div class="row mb-4">
+                <div class="row g-4 mb-4">
                     <div class="col-md-4">
-                        <div class="card bg-info text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Expected Amount</h5>
-                                <h3>{{ number_format($reportType == 'yearly' ? $yearlyExpected : $totalExpected, 2) }}</h3>
+                        <div class="card dash-card card-flats h-100 shadow-sm border-0">
+                            <div class="card-body d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fs-4 fw-bold">₹{{ number_format($reportType == 'yearly' ? $yearlyExpected : $totalExpected, 2) }}</div>
+                                    <div class="text-uppercase fw-semibold small opacity-75">Total Expected</div>
+                                </div>
+                                <div class="fs-1 text-primary">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card bg-success text-white">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Paid Amount</h5>
-                                <h3>{{ number_format($reportType == 'yearly' ? $yearlyPaid : $totalPaid, 2) }}</h3>
+                        <div class="card dash-card card-revenue h-100 shadow-sm border-0">
+                            <div class="card-body d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fs-4 fw-bold">₹{{ number_format($reportType == 'yearly' ? $yearlyPaid : $totalPaid, 2) }}</div>
+                                    <div class="text-uppercase fw-semibold small opacity-75">Total Paid</div>
+                                </div>
+                                <div class="fs-1 text-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="col-md-4">
-                        <div class="card bg-warning text-dark">
-                            <div class="card-body">
-                                <h5 class="card-title">Total Pending Amount</h5>
-                                <h3>{{ number_format($reportType == 'yearly' ? $yearlyPending : $totalPending, 2) }}</h3>
+                        <div class="card dash-card card-complaints h-100 shadow-sm border-0">
+                            <div class="card-body d-flex justify-content-between align-items-start">
+                                <div>
+                                    <div class="fs-4 fw-bold">₹{{ number_format($reportType == 'yearly' ? $yearlyPending : $totalPending, 2) }}</div>
+                                    <div class="text-uppercase fw-semibold small opacity-75">Total Pending</div>
+                                </div>
+                                <div class="fs-1 text-warning">
+                                    <i class="fas fa-clock"></i>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -17,14 +17,15 @@ use Carbon\Carbon;
 use App\Http\Requests\StoreMaintenanceBillRequest;
 use App\Http\Requests\UpdateMaintenanceBillStatusRequest;
 use Illuminate\Database\Eloquent\Builder;
+use Laravel\Mcp\Response;
 
 class MaintenanceBillController extends Controller
 {
     /**
      * Display a listing of the resource.
      *
-     * @param  \App\DataTables\MaintenanceBillsDataTable  $dataTable
-     * @return \Illuminate\Http\Response
+     * @param  MaintenanceBillsDataTable  $dataTable
+     * @return Response
      */
     public function index(MaintenanceBillsDataTable $dataTable)
     {
@@ -55,7 +56,7 @@ class MaintenanceBillController extends Controller
             return $resident->user->name ?? '';
         });
         $dbYears = Maintenance::select('year')->distinct()->pluck('year')->toArray();
-        $currentYear = \Carbon\Carbon::now()->year;
+        $currentYear =  Carbon::now()->year;
         $rangeYears = range(2024, $currentYear + 1);
         $years = collect(array_merge($dbYears, $rangeYears))->unique()->sortDesc()->values();
 
@@ -74,8 +75,9 @@ class MaintenanceBillController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
+    // This method prepares the data needed for the create form, including fetching active residents and their associated fees, as well as discount and penalty settings.
     public function create()
     {
         $residents = Resident::with(['user', 'flat.flatType', 'block'])
@@ -104,8 +106,8 @@ class MaintenanceBillController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \App\Http\Requests\StoreMaintenanceBillRequest  $request
-     * @return \Illuminate\Http\Response
+     * @param  StoreMaintenanceBillRequest  $request
+     * @return Response
      */
     public function store(StoreMaintenanceBillRequest $request)
     {
@@ -402,6 +404,11 @@ class MaintenanceBillController extends Controller
             'half_yearly_value' => (float)setting("{$type}_half_yearly_value", setting("{$type}_half_yearly_percent", ($type === 'penalty' ? 10 : 0))),
             'quarterly_value' => (float)setting("{$type}_quarterly_value", setting("{$type}_quarterly_percent", 5)),
             'monthly_value' => (float)setting("{$type}_monthly_value", setting("{$type}_monthly_percent", 2)),
+
+            'yearly_enabled' => setting("{$type}_yearly_enabled", '1') == '1',
+            'half_yearly_enabled' => setting("{$type}_half_yearly_enabled", '1') == '1',
+            'quarterly_enabled' => setting("{$type}_quarterly_enabled", '1') == '1',
+            'monthly_enabled' => setting("{$type}_monthly_enabled", '1') == '1',
         ];
     }
 
@@ -443,13 +450,13 @@ class MaintenanceBillController extends Controller
             $penaltySettings = $this->getSettingValues('penalty');
             if ($penaltySettings['apply_penalty'] === '1' && $pastMonthsCount > 0) {
                 $penaltyValue = 0;
-                if ($pastMonthsCount >= 12) {
+                if ($pastMonthsCount >= 12 && $penaltySettings['yearly_enabled']) {
                     $penaltyValue = $penaltySettings['yearly_value'];
-                } elseif ($pastMonthsCount >= 6) {
+                } elseif ($pastMonthsCount >= 6 && $penaltySettings['half_yearly_enabled']) {
                     $penaltyValue = $penaltySettings['half_yearly_value'];
-                } elseif ($pastMonthsCount >= 3) {
+                } elseif ($pastMonthsCount >= 3 && $penaltySettings['quarterly_enabled']) {
                     $penaltyValue = $penaltySettings['quarterly_value'];
-                } elseif ($pastMonthsCount >= 1) {
+                } elseif ($pastMonthsCount >= 1 && $penaltySettings['monthly_enabled']) {
                     $penaltyValue = $penaltySettings['monthly_value'];
                 }
 
@@ -463,6 +470,7 @@ class MaintenanceBillController extends Controller
             }
         }
 
+        // Discount is only applied to future months, so we use advanceAmount for percentage calculations   
         $totalDiscountAmount = 0;
         if ($forceRecalculation || ($request->has('discount_amount') && $request->filled('discount_amount'))) {
             $totalDiscountAmount = (float)$request->discount_amount;
@@ -472,13 +480,13 @@ class MaintenanceBillController extends Controller
 
             if (($applyDiscount === '1' || $applyDiscount === 'true' || $applyDiscount === 'on') && $futureMonthsCount > 0) {
                 $discountValue = 0;
-                if ($futureMonthsCount >= 12) {
+                if ($futureMonthsCount >= 12 && $discountSettings['yearly_enabled']) {
                     $discountValue = $discountSettings['yearly_value'];
-                } elseif ($futureMonthsCount >= 6) {
+                } elseif ($futureMonthsCount >= 6 && $discountSettings['half_yearly_enabled']) {
                     $discountValue = $discountSettings['half_yearly_value'];
-                } elseif ($futureMonthsCount >= 3) {
+                } elseif ($futureMonthsCount >= 3 && $discountSettings['quarterly_enabled']) {
                     $discountValue = $discountSettings['quarterly_value'];
-                } elseif ($futureMonthsCount >= 1) {
+                } elseif ($futureMonthsCount >= 1 && $discountSettings['monthly_enabled']) {
                     $discountValue = $discountSettings['monthly_value'];
                 }
 

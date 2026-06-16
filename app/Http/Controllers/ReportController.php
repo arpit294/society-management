@@ -180,7 +180,19 @@ class ReportController extends Controller
         $totalPaid = 0;
         $totalPending = 0;
 
+        // Sort active residents to prioritize rentals, so if a flat has both, tenant is billed
+        $activeResidents = $activeResidents->sortByDesc(function ($resident) {
+            return $resident->type === 'rental' ? 1 : 0;
+        });
+
+        $processedFlats = [];
+
         foreach ($activeResidents as $resident) {
+            if (!$resident->flat_id || in_array($resident->flat_id, $processedFlats)) {
+                continue;
+            }
+            $processedFlats[] = $resident->flat_id;
+
             $baseAmount = 0;
             if ($resident->flat && $resident->flat->flatType) {
                 $baseAmount = $resident->type === 'owner' 
