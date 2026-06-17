@@ -83,10 +83,15 @@
                 Flat Types
             </a>
         </li>
-
-
-
         <li class="nav-item">
+            <a class="nav-link" href="{{ route('flat-documents.index') }}">
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M416 64H96C78.3 64 64 78.3 64 96v320c0 17.7 14.3 32 32 32h320c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32zM256 384H128v-32h128v32zm128-80H128v-32h256v32zm0-80H128v-32h256v32z" />
+                </svg>
+                Flat Documents
+            </a>
+        </li>        <li class="nav-item">
             <a class="nav-link" href="{{ route('blocks.index') }}">
                 <!-- Block Management Icon -->
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">

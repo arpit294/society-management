@@ -36,6 +36,17 @@ class Flat extends Model
 
     public function tenant()
     {
-        return $this->hasOne(Resident::class)->where('type', 'rental')->latest();
+        return $this->hasOne(Resident::class)
+            ->where('type', 'rental')
+            ->where(function ($query) {
+                $query->whereNull('move_out_date')
+                    ->orWhere('move_out_date', '>=', now()->startOfDay());
+            })
+            ->latest();
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(FlatDocument::class);
     }
 }
