@@ -44,11 +44,13 @@ class User extends Authenticatable
 
     public function resident()
     {
-        return $this->hasOne(Resident::class);
+        return $this->hasOne(Resident::class)
+            ->orderByRaw('move_out_date IS NOT NULL') // Nulls first (active)
+            ->latest('move_in_date');
     }
 
     public function getResidentDetailsAttribute()
     {
-        return $this->name . ' (' . ($this->phone ?? 'No Phone') . ')';
+        return $this->name.' ('.($this->phone ?? 'No Phone').')';
     }
 }

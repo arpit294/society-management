@@ -31,11 +31,23 @@ class Flat extends Model
 
     public function owner()
     {
-        return $this->hasOne(Resident::class)->where('type', 'owner')->latest();
+        return $this->hasOne(Resident::class)
+            ->where('type', 'owner')
+            ->where(function ($query) {
+                $query->whereNull('move_out_date')
+                    ->orWhere('move_out_date', '>=', now()->startOfDay());
+            })
+            ->latest();
     }
 
     public function tenant()
     {
-        return $this->hasOne(Resident::class)->where('type', 'rental')->latest();
+        return $this->hasOne(Resident::class)
+            ->where('type', 'rental')
+            ->where(function ($query) {
+                $query->whereNull('move_out_date')
+                    ->orWhere('move_out_date', '>=', now()->startOfDay());
+            })
+            ->latest();
     }
 }

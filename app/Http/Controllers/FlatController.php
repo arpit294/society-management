@@ -12,6 +12,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class FlatController extends Controller
@@ -22,6 +23,7 @@ class FlatController extends Controller
     public function index(FlatsDatatables $dataTable)
     {
         $blocks = Block::all();
+
         return $dataTable->render('flats.index', compact('blocks'));
     }
 
@@ -142,12 +144,14 @@ class FlatController extends Controller
             ->where('type', 'owner')
             ->where(function ($q) {
                 $q->whereNull('move_out_date')
-                  ->orWhere('move_out_date', '>=', now()->startOfDay());
+                    ->orWhere('move_out_date', '>=', now()->startOfDay());
             })
+            ->orderByRaw('move_out_date IS NOT NULL') // nulls first
+            ->latest('move_in_date')
             ->first();
 
         // if there's no owner, they should just add an owner via Resident features
-        if (!$currentOwner) {
+        if (! $currentOwner) {
             return response('<div class="p-4 text-center text-danger">This flat does not currently have an active owner to transfer from.</div>');
         }
 
@@ -167,18 +171,18 @@ class FlatController extends Controller
             'payment_slip' => 'nullable|required_if:payment_method,upi|file|mimes:jpeg,png,jpg,pdf|max:2048',
         ]);
 
-        \Illuminate\Support\Facades\DB::beginTransaction();
+        DB::beginTransaction();
         try {
             // 1. End current owner's residency
             $currentOwner = Resident::where('flat_id', $flat->id)
                 ->where('type', 'owner')
                 ->where(function ($q) {
                     $q->whereNull('move_out_date')
-                      ->orWhere('move_out_date', '>=', now()->startOfDay());
+                        ->orWhere('move_out_date', '>=', now()->startOfDay());
                 })
                 ->first();
 
-            if (!$currentOwner) {
+            if (! $currentOwner) {
                 throw new \Exception('No active owner found.');
             }
 
@@ -189,15 +193,15 @@ class FlatController extends Controller
                     'name' => $validatedData['new_owner_name'],
                     'phone' => $validatedData['new_owner_phone'],
                     'aadhar_id' => $validatedData['new_owner_aadhar'],
-                    'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+                    'password' => Hash::make('password123'),
                     'role' => 'owner',
-                    'status' => 'active'
+                    'status' => 'active',
                 ]
             );
 
             // 2. Generate Name Transfer Request (Bill)
             $settings = Setting::pluck('value', 'key');
-            $fee = isset($settings['name_transfer_fee']) ? (float)$settings['name_transfer_fee'] : 0;
+            $fee = isset($settings['name_transfer_fee']) ? (float) $settings['name_transfer_fee'] : 0;
 
             $status = $validatedData['payment_method'] === 'pending' ? 'pending' : 'paid';
             if ($fee == 0) {
@@ -223,7 +227,7 @@ class FlatController extends Controller
 
                     if ($request->hasFile('payment_slip')) {
                         $file = $request->file('payment_slip');
-                        $filename = time() . '_' . $file->getClientOriginalName();
+                        $filename = time().'_'.$file->getClientOriginalName();
                         $file->move(public_path('uploads/invoices'), $filename);
                         $billData['payment_slip'] = $filename;
                     }
@@ -239,10 +243,11 @@ class FlatController extends Controller
                 'message' => 'Ownership transferred successfully.',
             ]);
         } catch (\Exception $e) {
-                DB::rollBack();
-                return response()->json([
+            DB::rollBack();
+
+            return response()->json([
                 'success' => false,
-                'message' => 'Error transferring ownership: ' . $e->getMessage(),
+                'message' => 'Error transferring ownership: '.$e->getMessage(),
             ], 500);
         }
     }

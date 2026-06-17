@@ -8,12 +8,18 @@ use App\Models\Flat;
 use App\Models\Resident;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use OpenSpout\Common\Entity\Row;
+use OpenSpout\Reader\XLSX\Reader;
+use OpenSpout\Writer\XLSX\Writer;
 
 class ResidentController extends Controller
 {
     public function index(ResidentsDataTable $dataTable)
     {
         $blocks = Block::all();
+
         return $dataTable->render('residents.index', compact('blocks'));
     }
 
@@ -21,12 +27,19 @@ class ResidentController extends Controller
     {
         $blocks = Block::all();
         $users = User::with(['resident.flat.block'])->get();
+
         return view('residents.create', compact('blocks', 'users'));
     }
 
     public function store(Request $request)
     {
-        $flatHasOwner = Resident::where('flat_id', $request->flat_id)->where('type', 'owner')->exists();
+        $flatHasOwner = Resident::where('flat_id', $request->flat_id)
+            ->where('type', 'owner')
+            ->where(function ($q) {
+                $q->whereNull('move_out_date')
+                    ->orWhere('move_out_date', '>=', now()->startOfDay());
+            })
+            ->exists();
 
         // Check if flat is already occupied
         $isOccupied = Resident::where('flat_id', $request->flat_id)
@@ -36,7 +49,7 @@ class ResidentController extends Controller
         if ($isOccupied) {
             return response()->json([
                 'success' => false,
-                'message' => 'This flat is already occupied by an active resident. Please move them out first before adding a new one.'
+                'message' => 'This flat is already occupied by an active resident. Please move them out first before adding a new one.',
             ], 422);
         }
 
@@ -50,7 +63,7 @@ class ResidentController extends Controller
         ];
 
         // If it's a rental and flat doesn't have an owner, they can optionally provide one.
-        if ($request->type === 'rental' && !$flatHasOwner) {
+        if ($request->type === 'rental' && ! $flatHasOwner) {
             $rules['owner_user_id'] = 'nullable|exists:users,id';
         }
 
@@ -63,7 +76,7 @@ class ResidentController extends Controller
         Resident::create($validatedData);
 
         // If owner_user_id was provided, create the owner resident
-        if ($request->type === 'rental' && !$flatHasOwner && $ownerUserId) {
+        if ($request->type === 'rental' && ! $flatHasOwner && $ownerUserId) {
             Resident::create([
                 'block_id' => $validatedData['block_id'],
                 'flat_id' => $validatedData['flat_id'],
@@ -84,6 +97,7 @@ class ResidentController extends Controller
         $blocks = Block::all();
         $flats = Flat::where('block_id', $resident->block_id)->get();
         $users = User::with(['resident.flat.block'])->get();
+
         return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
     }
 
@@ -91,6 +105,10 @@ class ResidentController extends Controller
     {
         $flatHasOwner = Resident::where('flat_id', $request->flat_id)
             ->where('type', 'owner')
+            ->where(function ($q) {
+                $q->whereNull('move_out_date')
+                    ->orWhere('move_out_date', '>=', now()->startOfDay());
+            })
             ->where('id', '!=', $resident->id)
             ->exists();
 
@@ -103,7 +121,7 @@ class ResidentController extends Controller
         if ($isOccupied) {
             return response()->json([
                 'success' => false,
-                'message' => 'This flat is already occupied by an active resident. Please move them out first.'
+                'message' => 'This flat is already occupied by an active resident. Please move them out first.',
             ], 422);
         }
 
@@ -117,7 +135,7 @@ class ResidentController extends Controller
         ];
 
         // If it's a rental and flat doesn't have an owner, they can optionally provide one.
-        if ($request->type === 'rental' && !$flatHasOwner) {
+        if ($request->type === 'rental' && ! $flatHasOwner) {
             $rules['owner_user_id'] = 'nullable|exists:users,id';
         }
 
@@ -130,7 +148,7 @@ class ResidentController extends Controller
         $resident->update($validatedData);
 
         // If owner_user_id was provided, create the owner resident
-        if ($request->type === 'rental' && !$flatHasOwner && $ownerUserId) {
+        if ($request->type === 'rental' && ! $flatHasOwner && $ownerUserId) {
             Resident::create([
                 'block_id' => $validatedData['block_id'],
                 'flat_id' => $validatedData['flat_id'],
@@ -159,40 +177,50 @@ class ResidentController extends Controller
     public function getFlatsByBlock($block_id)
     {
         $flats = Flat::where('block_id', $block_id)->get();
+
         return response()->json($flats);
     }
 
     public function getFlatOwner($flat_id)
     {
-        $ownerResident = Resident::where('flat_id', $flat_id)->where('type', 'owner')->first();
+        $ownerResident = Resident::where('flat_id', $flat_id)
+            ->where('type', 'owner')
+            ->where(function ($q) {
+                $q->whereNull('move_out_date')
+                    ->orWhere('move_out_date', '>=', now()->startOfDay());
+            })
+            ->orderByRaw('move_out_date IS NOT NULL')
+            ->latest('move_in_date')
+            ->first();
         if ($ownerResident) {
             return response()->json(['has_owner' => true, 'user_id' => $ownerResident->user_id]);
         }
+
         return response()->json(['has_owner' => false]);
     }
 
     public function downloadTemplate()
     {
         $headers = [
-            "Content-type"        => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "Content-Disposition" => "attachment; filename=residents_import_template.xlsx",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename=residents_import_template.xlsx',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
 
         $callback = function () {
-            $writer = new \OpenSpout\Writer\XLSX\Writer();
+            $writer = new Writer;
             $writer->openToFile('php://output');
 
             // Header row matching the agreed columns
-            $writer->addRow(\OpenSpout\Common\Entity\Row::fromValues([
-                'Name', 'Email', 'Phone', 'Aadhar ID', 'Block Name', 'Flat No', 'Type (owner/rental)', 'Move In Date (YYYY-MM-DD)'
+            $writer->addRow(Row::fromValues([
+                'Name', 'Email', 'Phone', 'Aadhar ID', 'Block Name', 'Flat No', 'Type (owner/rental)', 'Move In Date (YYYY-MM-DD)',
             ]));
 
             // Example row
-            $writer->addRow(\OpenSpout\Common\Entity\Row::fromValues([
-                'John Doe', 'john.doe@example.com', '9876543210', '123412341234', 'A', '101', 'owner', '2023-01-15'
+            $writer->addRow(Row::fromValues([
+                'John Doe', 'john.doe@example.com', '9876543210', '123412341234', 'A', '101', 'owner', '2023-01-15',
             ]));
 
             $writer->close();
@@ -210,17 +238,17 @@ class ResidentController extends Controller
         $file = $request->file('excel_file');
 
         try {
-            \Illuminate\Support\Facades\DB::beginTransaction();
+            DB::beginTransaction();
 
-            $reader = new \OpenSpout\Reader\XLSX\Reader();
+            $reader = new Reader;
             $reader->open($file->path());
 
             $isFirstRow = true;
             $successCount = 0;
 
             // 1. Hash password ONCE outside the loop (Massive performance boost)
-            $defaultPassword = \Illuminate\Support\Facades\Hash::make('password123');
-            
+            $defaultPassword = Hash::make('password123');
+
             // 2. Cache blocks and flats to avoid N+1 queries
             $blockCache = [];
             $flatCache = [];
@@ -229,6 +257,7 @@ class ResidentController extends Controller
                 foreach ($sheet->getRowIterator() as $row) {
                     if ($isFirstRow) {
                         $isFirstRow = false;
+
                         continue; // Skip header row
                     }
 
@@ -257,28 +286,28 @@ class ResidentController extends Controller
                             'aadhar_id' => $aadhar,
                             'password' => $defaultPassword, // Use pre-hashed password
                             'role' => $type,
-                            'status' => 'active'
+                            'status' => 'active',
                         ]
                     );
 
                     // Find Block (with cache)
-                    if (!isset($blockCache[$blockName])) {
+                    if (! isset($blockCache[$blockName])) {
                         $blockCache[$blockName] = Block::where('block_name', $blockName)->first();
                     }
                     $block = $blockCache[$blockName];
-                    
-                    if (!$block) {
+
+                    if (! $block) {
                         continue; // Skip if block not found
                     }
 
                     // Find Flat (with cache)
-                    $flatCacheKey = $block->id . '_' . $flatNo;
-                    if (!isset($flatCache[$flatCacheKey])) {
+                    $flatCacheKey = $block->id.'_'.$flatNo;
+                    if (! isset($flatCache[$flatCacheKey])) {
                         $flatCache[$flatCacheKey] = Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->first();
                     }
                     $flat = $flatCache[$flatCacheKey];
 
-                    if (!$flat) {
+                    if (! $flat) {
                         continue; // Skip if flat not found
                     }
 
@@ -298,12 +327,13 @@ class ResidentController extends Controller
             }
 
             $reader->close();
-            \Illuminate\Support\Facades\DB::commit();
+            DB::commit();
 
             return redirect()->back()->with('success', "Successfully imported {$successCount} residents!");
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\DB::rollBack();
-            return redirect()->back()->with('error', "Error importing residents: " . $e->getMessage());
+            DB::rollBack();
+
+            return redirect()->back()->with('error', 'Error importing residents: '.$e->getMessage());
         }
     }
 }

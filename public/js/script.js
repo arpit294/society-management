@@ -799,6 +799,24 @@ $(document).ready(function () {
         $("#maintenance-bills-filter-reset-col").addClass("d-none");
     });
 
+    // Complains Filters
+    setupFilterChange(
+        "#complains-filter-category",
+        "#complains-table",
+        "complains.category:name",
+        "#complains-filter-reset-col"
+    );
+
+    $("#complains-filter-reset").on("click", function () {
+        $("#complains-filter-category").val("").trigger("change");
+
+        const dt = $("#complains-table").DataTable();
+        dt.column("complains.category:name").search("");
+        dt.draw();
+
+        $("#complains-filter-reset-col").addClass("d-none");
+    });
+
     // Expense Filters
     setupFilterChange(
         "#expenses-filter-category",
