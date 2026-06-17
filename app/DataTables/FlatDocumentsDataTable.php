@@ -15,15 +15,29 @@ class FlatDocumentsDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
-            ->addColumn('action', 'flat_documents.action')
+            ->addColumn('action', function ($model) {
+                $viewUrl = route('flat-documents.show', $model->id);
+                $deleteUrl = route('flat-documents.destroy', $model->id);
+                
+                return '<button type="button" class="btn btn-sm btn-info text-white view-btn" data-url="'.$viewUrl.'" title="View Documents">
+                            <i class="fa-solid fa-eye"></i> View
+                        </button>
+                        <button type="button" class="btn btn-sm btn-danger delete-btn" data-url="'.$deleteUrl.'" title="Delete Submission">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>';
+            })
             ->addColumn('block', function ($model) {
                 return $model->flat && $model->flat->block ? $model->flat->block->block_name : '-';
             })
             ->addColumn('flat_no', function ($model) {
                 return $model->flat ? $model->flat->flat_no : '-';
             })
-            ->addColumn('uploaded_by_name', function ($model) {
-                return $model->uploader ? $model->uploader->name : '-';
+            ->addColumn('resident_name', function ($model) {
+                return $model->user ? $model->user->name : '-';
+            })
+            ->addColumn('documents_count', function ($model) {
+                $docs = $model->documents ?? [];
+                return count($docs) . ' Documents';
             })
             ->filterColumn('block', function ($query, $keyword) {
                 $query->whereHas('flat.block', function ($q) use ($keyword) {
@@ -35,18 +49,6 @@ class FlatDocumentsDataTable extends DataTable
                     $q->where('flat_no', 'like', "%{$keyword}%");
                 });
             })
-            ->editColumn('file_size', function ($model) {
-                if (! $model->file_size) {
-                    return '-';
-                }
-                $bytes = $model->file_size;
-                $units = ['B', 'KB', 'MB', 'GB'];
-                for ($i = 0; $bytes > 1024; $i++) {
-                    $bytes /= 1024;
-                }
-
-                return round($bytes, 2).' '.$units[$i];
-            })
             ->editColumn('created_at', function ($model) {
                 return $model->created_at ? $model->created_at->format('Y-m-d H:i') : '-';
             })
@@ -56,7 +58,7 @@ class FlatDocumentsDataTable extends DataTable
 
     public function query(FlatDocument $model): QueryBuilder
     {
-        return $model->newQuery()->with(['flat.block', 'uploader']);
+        return $model->newQuery()->with(['flat.block', 'user']);
     }
 
     public function html(): HtmlBuilder
@@ -82,16 +84,14 @@ class FlatDocumentsDataTable extends DataTable
             Column::make('id')->width(50),
             Column::make('block')->title('Block')->searchable(false)->orderable(false),
             Column::make('flat_no')->title('Flat')->searchable(false)->orderable(false),
-            Column::make('resident_type')->title('Belongs To')->render('data === "owner" ? "Owner" : (data === "rental" ? "Tenant" : "Both")'),
-            Column::make('title')->title('Document Title'),
-            Column::make('file_type')->title('Type'),
-            Column::make('file_size')->title('Size'),
-            Column::make('uploaded_by_name')->title('Uploaded By')->searchable(false)->orderable(false),
+            Column::make('resident_name')->title('Resident Name')->searchable(false)->orderable(false),
+            Column::make('resident_type')->title('Type')->render('data === "owner" ? "Owner" : (data === "rental" ? "Tenant" : "Both")'),
+            Column::make('documents_count')->title('Uploaded Docs')->searchable(false)->orderable(false),
             Column::make('created_at'),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)
-                ->width(120)
+                ->width(150)
                 ->addClass('text-center'),
         ];
     }

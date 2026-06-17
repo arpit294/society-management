@@ -171,6 +171,23 @@ class ResidentController extends Controller
         return response()->json(['has_owner' => false]);
     }
 
+    public function getFlatUsers($flat_id)
+    {
+        $residents = Resident::with('user')->where('flat_id', $flat_id)->get();
+        
+        $users = $residents->map(function ($resident) {
+            return [
+                'id' => $resident->user->id,
+                'name' => $resident->user->name,
+                'email' => $resident->user->email,
+                'phone' => $resident->user->phone,
+                'resident_type' => $resident->type,
+            ];
+        });
+
+        return response()->json($users);
+    }
+
     public function downloadTemplate()
     {
         $headers = [

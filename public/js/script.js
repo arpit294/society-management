@@ -887,6 +887,15 @@ $(document).ready(function () {
         documentModalInstance,
     );
 
+    const viewDocumentModalElement = document.getElementById("viewDocumentModal");
+    const viewDocumentModalInstance = viewDocumentModalElement ? new coreui.Modal(viewDocumentModalElement) : null;
+
+    loadFormIntoModal(
+        '#flat-documents-table .view-btn',
+        "#viewDocumentModal .modal-content",
+        viewDocumentModalInstance,
+    );
+
     setupAjaxFormSubmission(
         "#addDocumentForm",
         documentModalInstance,
@@ -896,7 +905,7 @@ $(document).ready(function () {
     setupDeleteHandler(
         "#flat-documents-table .delete-btn",
         "#flat-documents-table",
-        "This document will be deleted permanently!",
+        "This submission will be deleted permanently!",
     );
 
     // Dependent dropdown for flat selection in document upload

@@ -8,18 +8,24 @@ class FlatDocument extends Model
 {
     protected $fillable = [
         'flat_id',
+        'user_id',
         'resident_type',
         'uploaded_by',
-        'title',
-        'description',
-        'file_path',
-        'file_type',
-        'file_size',
+        'documents',
+    ];
+
+    protected $casts = [
+        'documents' => 'array',
     ];
 
     public function flat()
     {
         return $this->belongsTo(Flat::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function uploader()

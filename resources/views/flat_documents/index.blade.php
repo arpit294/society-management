@@ -38,7 +38,16 @@
 
     <!-- Add Document Modal -->
     <div class="modal fade" id="addDocumentModal" tabindex="-1" aria-labelledby="addDocumentModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable add-document-dialog">
+            <div class="modal-content">
+                <!-- Content loaded via AJAX -->
+            </div>
+        </div>
+    </div>
+
+    <!-- View Document Modal -->
+    <div class="modal fade" id="viewDocumentModal" tabindex="-1" aria-labelledby="viewDocumentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <!-- Content loaded via AJAX -->
             </div>
@@ -47,5 +56,37 @@
 
     @push('scripts')
         {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
+    @endpush
+
+    @push('styles')
+        <style>
+            #addDocumentModal .add-document-dialog .modal-content {
+                max-height: calc(100vh - 3.5rem);
+                overflow: hidden;
+            }
+
+            #addDocumentModal .add-document-form {
+                display: flex;
+                flex: 1 1 auto;
+                flex-direction: column;
+                min-height: 0;
+                overflow: hidden;
+            }
+
+            #addDocumentModal .add-document-form .modal-body {
+                min-height: 0;
+                overflow-y: auto;
+            }
+
+            #addDocumentModal .add-document-form .modal-footer {
+                flex-shrink: 0;
+            }
+
+            @media (max-width: 575.98px) {
+                #addDocumentModal .add-document-dialog .modal-content {
+                    max-height: calc(100vh - 1rem);
+                }
+            }
+        </style>
     @endpush
 </x-user-page>

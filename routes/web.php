@@ -54,6 +54,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('flats', FlatController::class);
     Route::get('api/flats-by-block/{block_id}', [ResidentController::class, 'getFlatsByBlock'])->name('api.flats-by-block');
     Route::get('api/flat-owner/{flat_id}', [ResidentController::class, 'getFlatOwner'])->name('api.flat-owner');
+    Route::get('api/flat-users/{flat_id}', [ResidentController::class, 'getFlatUsers'])->name('api.flat-users');
 
     // Blocks
     Route::resource('blocks', BlockController::class)->except(['show']);
@@ -69,8 +70,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('expenses', ExpenseController::class)->except(['show']);
 
     // Flat Documents
-    Route::resource('flat-documents', FlatDocumentController::class)->except(['show', 'edit', 'update']);
-    Route::get('flat-documents/{flat_document}/download', [FlatDocumentController::class, 'download'])->name('flat-documents.download');
+    Route::resource('flat-documents', FlatDocumentController::class)->except(['edit', 'update']);
+    Route::get('flat-documents/{flat_document}/download/{doc_key}', [FlatDocumentController::class, 'download'])->name('flat-documents.download');
 
     // Expense Categories
     Route::resource('expense-categories', ExpenseCategoryController::class)->except(['show']);

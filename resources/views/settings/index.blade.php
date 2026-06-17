@@ -211,6 +211,70 @@
                             </div>
                         </div>
 
+                        <hr class="mb-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 fw-bold">Required Documents for Owner</h5>
+                            <button type="button" class="btn btn-sm btn-outline-primary checkall-btn" data-target="req_doc_owner_">Check All</button>
+                        </div>
+                        <div class="row mb-5">
+                            @php
+                                $ownerDocs = [
+                                    'passport_photo' => 'Passport Size Photo',
+                                    'adhar_card' => 'Aadhar Card',
+                                    'pan_card' => 'PAN Card',
+                                    'index_copy' => 'Index Copy',
+                                    'possession_letter' => 'Possession Letter',
+                                    'tax_bill' => 'Copy of Tax Bill',
+                                    'contact_no' => 'Contact No',
+                                    'email' => 'Email Address'
+                                ];
+                            @endphp
+                            @foreach($ownerDocs as $key => $label)
+                            <div class="col-md-3 mb-3">
+                                <div class="form-check form-switch mt-1">
+                                    <input type="hidden" name="req_doc_owner_{{ $key }}" value="0">
+                                    <input class="form-check-input" type="checkbox" id="req_doc_owner_{{ $key }}"
+                                        name="req_doc_owner_{{ $key }}" value="1"
+                                        {{ ($settings['req_doc_owner_'.$key] ?? '0') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold ms-1" for="req_doc_owner_{{ $key }}">{{ $label }}</label>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+
+                        <hr class="mb-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 fw-bold">Required Documents for Rental</h5>
+                            <button type="button" class="btn btn-sm btn-outline-primary checkall-btn" data-target="req_doc_rental_">Check All</button>
+                        </div>
+                        <div class="row mb-5">
+                            @php
+                                $rentalDocs = [
+                                    'passport_photo' => 'Passport Size Photo',
+                                    'adhar_card' => 'Aadhar Card',
+                                    'pan_card' => 'PAN Card',
+                                    'rent_agreement' => 'Rent Agreement',
+                                    'police_verification' => 'Police Verification',
+                                    'permanent_address_proof' => 'Permanent Address Proof',
+                                    'contact_no' => 'Contact Number',
+                                    'email' => 'Email Address'
+                                ];
+                            @endphp
+                            @foreach($rentalDocs as $key => $label)
+                            <div class="col-md-3 mb-3">
+                                <div class="form-check form-switch mt-1">
+                                    <input type="hidden" name="req_doc_rental_{{ $key }}" value="0">
+                                    <input class="form-check-input" type="checkbox" id="req_doc_rental_{{ $key }}"
+                                        name="req_doc_rental_{{ $key }}" value="1"
+                                        {{ ($settings['req_doc_rental_'.$key] ?? '0') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold ms-1" for="req_doc_rental_{{ $key }}">{{ $label }}</label>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+
                         <div class="text-end border-top pt-4">
                             <button type="submit" class="btn btn-primary fw-bold px-5 py-2 rounded-3"><i class="fa-solid fa-save me-2"></i> Save Settings</button>
                         </div>
@@ -267,6 +331,35 @@
 
             updateSuffix('penalty_type', '.penalty-suffix');
             updateSuffix('discount_type', '.discount-suffix');
+
+            // Check All / Uncheck All Buttons
+            document.querySelectorAll('.checkall-btn').forEach(btn => {
+                const targetPrefix = btn.getAttribute('data-target');
+                const checkboxes = document.querySelectorAll(`input[type="checkbox"][name^="${targetPrefix}"]`);
+                
+                // Initialize button state
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                btn.textContent = allChecked ? 'Uncheck All' : 'Check All';
+
+                // Handle button click
+                btn.addEventListener('click', function() {
+                    const isCheckAll = this.textContent === 'Check All';
+                    
+                    checkboxes.forEach(cb => {
+                        cb.checked = isCheckAll;
+                    });
+                    
+                    this.textContent = isCheckAll ? 'Uncheck All' : 'Check All';
+                });
+
+                // Update button state when individual checkboxes change
+                checkboxes.forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
+                        btn.textContent = anyUnchecked ? 'Check All' : 'Uncheck All';
+                    });
+                });
+            });
         });
     </script>
     @endpush
