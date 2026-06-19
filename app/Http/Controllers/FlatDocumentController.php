@@ -13,6 +13,7 @@ class FlatDocumentController extends Controller
 {
     public function index(FlatDocumentsDataTable $dataTable)
     {
+        abort_if(\Gate::denies('flat_document_view'), 403);
         $blocks = Block::all();
 
         return $dataTable->render('flat_documents.index', compact('blocks'));
@@ -20,6 +21,7 @@ class FlatDocumentController extends Controller
 
     public function create()
     {
+        abort_if(\Gate::denies('flat_document_create'), 403);
         $blocks = Block::all();
         $settings = Setting::pluck('value', 'key')->toArray();
         $documentRequirements = $this->documentRequirements();
@@ -29,6 +31,7 @@ class FlatDocumentController extends Controller
 
     public function store(Request $request)
     {
+        abort_if(\Gate::denies('flat_document_create'), 403);
         $validated = $request->validate([
             'block_id' => 'required|exists:blocks,id',
             'flat_id' => 'required|exists:flats,id',
@@ -106,11 +109,13 @@ class FlatDocumentController extends Controller
 
     public function show(FlatDocument $flatDocument)
     {
+        abort_if(\Gate::denies('flat_document_view'), 403);
         return view('flat_documents.show', compact('flatDocument'));
     }
 
     public function download(FlatDocument $flatDocument, $doc_key)
     {
+        abort_if(\Gate::denies('flat_document_view'), 403);
         $documents = $flatDocument->documents ?? [];
         if (!isset($documents[$doc_key])) {
             abort(404, 'File not found in submission');
@@ -128,6 +133,7 @@ class FlatDocumentController extends Controller
 
     public function destroy(FlatDocument $flatDocument)
     {
+        abort_if(\Gate::denies('flat_document_delete'), 403);
         $documents = $flatDocument->documents ?? [];
         foreach ($documents as $doc) {
             if (isset($doc['file_path']) && Storage::disk('public')->exists($doc['file_path'])) {

@@ -21,6 +21,7 @@ class FlatController extends Controller
      */
     public function index(FlatsDatatables $dataTable)
     {
+        abort_if(\Gate::denies('flat_view'), 403);
         $blocks = Block::all();
         return $dataTable->render('flats.index', compact('blocks'));
     }
@@ -30,6 +31,7 @@ class FlatController extends Controller
      */
     public function create()
     {
+        abort_if(\Gate::denies('flat_create'), 403);
         // Get all blocks and flat types to populate the dropdowns in the form
         $blocks = Block::all();
         // Only get active flat types for the dropdown
@@ -41,6 +43,7 @@ class FlatController extends Controller
     // Store a newly created resource in storage.
     public function store(Request $request)
     {
+        abort_if(\Gate::denies('flat_create'), 403);
         $validatedData = $request->validate([
             'block_id' => 'nullable|integer|exists:blocks,id',
             'flat_no' => 'required|string|max:255',
@@ -72,6 +75,7 @@ class FlatController extends Controller
      */
     public function show(Flat $flat)
     {
+        abort_if(\Gate::denies('flat_view'), 403);
         $history = Resident::with('user')
             ->where('flat_id', $flat->id)
             ->orderBy('move_in_date', 'desc')
@@ -85,6 +89,7 @@ class FlatController extends Controller
      */
     public function edit(Flat $flat)
     {
+        abort_if(\Gate::denies('flat_edit'), 403);
         $blocks = Block::all();
         $flatTypes = FlatType::all();
 
@@ -96,6 +101,7 @@ class FlatController extends Controller
      */
     public function update(Request $request, Flat $flat)
     {
+        abort_if(\Gate::denies('flat_edit'), 403);
         $validatedData = $request->validate([
             'block_id' => 'nullable|integer|exists:blocks,id',
             'flat_no' => 'required|string|max:255',
@@ -127,6 +133,7 @@ class FlatController extends Controller
      */
     public function destroy(Flat $flat)
     {
+        abort_if(\Gate::denies('flat_delete'), 403);
         $flat->delete();
 
         return response()->json([
@@ -137,6 +144,7 @@ class FlatController extends Controller
 
     public function transferCreate(Flat $flat)
     {
+        abort_if(\Gate::denies('flat_edit'), 403);
         $currentOwner = Resident::with('user')
             ->where('flat_id', $flat->id)
             ->where('type', 'owner')
@@ -156,6 +164,7 @@ class FlatController extends Controller
 
     public function transferStore(Request $request, Flat $flat)
     {
+        abort_if(\Gate::denies('flat_edit'), 403);
         $validatedData = $request->validate([
             'new_owner_name' => 'required|string|max:255',
             'new_owner_email' => 'required|email',

@@ -66,10 +66,12 @@
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Expenses</h4>
+                @can('expense_create')
                 <button type="button" class="btn btn-primary" id="btn-add-expense"
                     data-url="{{ route('expenses.create') }}" data-title="Add Expense">
                     <i class="fa-solid fa-plus me-1"></i> Add Expense
                 </button>
+                @endcan
             </div>
             <div class="card-body">
                 <div class="mb-3">

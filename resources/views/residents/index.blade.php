@@ -1,6 +1,7 @@
 <x-user-page>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">Residents Management</h4>
+        @can('resident_create')
         <div>
             <button type="button" class="btn btn-outline-success me-2" data-coreui-toggle="modal" data-coreui-target="#import-resident-modal">
                 <i class="fa-solid fa-file-import me-2"></i>Import Records
@@ -10,6 +11,7 @@
                 <i class="fa-solid fa-plus me-2"></i>Add Resident
             </button>
         </div>
+        @endcan
     </div>
 
     <div class="mb-3">

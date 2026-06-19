@@ -23,6 +23,7 @@ class SettingController extends Controller
      */
     public function index()
     {
+        abort_if(\Gate::denies('setting_view'), 403);
         // Fetch all settings and convert to a flat key-value array for easy view binding
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
@@ -37,6 +38,7 @@ class SettingController extends Controller
      */
     public function store(Request $request)
     {
+        abort_if(\Gate::denies('setting_edit'), 403);
         $data = $request->except(['_token', '_method']);
 
         // Update or create settings based on the provided data

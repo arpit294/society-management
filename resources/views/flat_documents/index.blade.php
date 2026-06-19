@@ -2,10 +2,12 @@
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1 class="h3 mb-0 text-gray-800">Flat Documents</h1>
+            @can('flat_document_create')
             <button type="button" class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#addDocumentModal"
                 data-url="{{ route('flat-documents.create') }}" data-title="Upload Document">
                 <i class="fas fa-plus"></i> Upload Document
             </button>
+            @endcan
         </div>
 
         <div class="card shadow mb-4">

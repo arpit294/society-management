@@ -10,16 +10,19 @@ class ExpenseCategoryController extends Controller
 {
     public function index(ExpenseCategoriesDataTable $dataTable)
     {
+        abort_if(\Gate::denies('expense_category_view'), 403);
         return $dataTable->render('expense_categories.index');
     }
 
     public function create()
     {
+        abort_if(\Gate::denies('expense_category_create'), 403);
         return view('expense_categories.create');
     }
 
     public function store(Request $request)
     {
+        abort_if(\Gate::denies('expense_category_create'), 403);
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'status' => 'required|in:active,inactive',
@@ -35,11 +38,13 @@ class ExpenseCategoryController extends Controller
 
     public function edit(ExpenseCategory $expenseCategory)
     {
+        abort_if(\Gate::denies('expense_category_edit'), 403);
         return view('expense_categories.edit', compact('expenseCategory'));
     }
 
     public function update(Request $request, ExpenseCategory $expenseCategory)
     {
+        abort_if(\Gate::denies('expense_category_edit'), 403);
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'status' => 'required|in:active,inactive',
@@ -55,6 +60,7 @@ class ExpenseCategoryController extends Controller
 
     public function destroy(ExpenseCategory $expenseCategory)
     {
+        abort_if(\Gate::denies('expense_category_delete'), 403);
         $expenseCategory->delete();
 
         return response()->json([

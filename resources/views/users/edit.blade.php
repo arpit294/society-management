@@ -39,8 +39,8 @@
             <label class="form-label">Role</label>
             <select name="role" class="form-select @error('role') is-invalid @enderror">
                 <option value="">Select role</option>
-                @foreach (['owner', 'rental', 'security', 'committee_member', 'secretary'] as $role)
-                    <option value="{{ $role }}" @selected(old('role', $user->role ?? '') === $role)>{{ ucfirst(str_replace('_', ' ', $role)) }}</option>
+                @foreach (config('roles.all') as $role)
+                    <option value="{{ $role }}" @selected(old('role', $user->role ?? '') === $role)>{{ config('roles.labels.'.$role, ucfirst(str_replace('_', ' ', $role))) }}</option>
                 @endforeach
             </select>
             @error('role')

@@ -2,10 +2,12 @@
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0 text-gray-800">Flat Types</h1>
+        @can('flat_type_create')
         <button type="button" class="btn btn-primary" id="btn-add-flat-type"
             data-url="{{ route('flat-types.create') }}" data-title="Add Flat Type">
             <i class="fa-solid fa-plus me-1"></i> Add Flat Type
         </button>
+        @endcan
     </div>
 
     <div class="row">

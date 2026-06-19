@@ -61,8 +61,10 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">Block Management</h4>
 
+        @can('block_create')
         <button type="button" class="btn btn-primary" id="btn-add-block" data-url="{{ route('blocks.create') }}"
             data-title="Add Block">Add Block</button>
+        @endcan
     </div>
 
     <div class="card">

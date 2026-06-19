@@ -10,8 +10,10 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">Flat Management</h4>
 
+        @can('flat_create')
         <button type="button" class="btn btn-primary" id="btn-add-flat" data-url="{{ route('flats.create') }}"
             data-title="Add Flat">Add Flat</button>
+        @endcan
     </div>
 
     <div class="mb-3">

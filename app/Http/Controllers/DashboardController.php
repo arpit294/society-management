@@ -18,6 +18,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        abort_if(\Gate::denies('dashboard_view'), 403);
         $totalFlats = Flat::count();
         $totalResidents = Flat::whereHas('residents', function ($query) {
             $query->whereNull('move_out_date')->orWhere('move_out_date', '>=', now()->startOfDay());

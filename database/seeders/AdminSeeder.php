@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class AdminSeeder extends Seeder
 {
@@ -12,16 +13,18 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        \App\Models\User::firstOrCreate(
+        User::firstOrCreate(
             ['email' => 'admin@society.com'],
             [
                 'name' => 'Society Secretary',
-                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+                'password' => Hash::make('password123'),
                 'role' => 'secretary',
                 'status' => 'active',
                 'phone' => '9999999999',
                 'aadhar_id' => '000000000000',
             ]
         );
+
+        $this->call(RolesAndPermissionsSeeder::class);
     }
 }
