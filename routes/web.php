@@ -88,7 +88,6 @@ Route::middleware('auth')->group(function () {
 
     // Roles & Permissions
     Route::resource('roles', \App\Http\Controllers\RoleController::class);
-    Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 });
 
 

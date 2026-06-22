@@ -7,12 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-use Spatie\Permission\Traits\HasRoles;
-
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable, HasRoles;
+    use HasFactory, Notifiable;
 
     public const UPDATED_AT = null;
 
@@ -54,5 +52,24 @@ class User extends Authenticatable
     public function getResidentDetailsAttribute()
     {
         return $this->name.' ('.($this->phone ?? 'No Phone').')';
+    }
+
+    public function roleModel()
+    {
+        return $this->belongsTo(Role::class, 'role', 'name');
+    }
+
+    public function hasPermissionTo($permission)
+    {
+        if ($this->role === 'Super Admin') {
+            return true;
+        }
+        
+        $roleModel = $this->roleModel;
+        if (!$roleModel || empty($roleModel->permissions)) {
+            return false;
+        }
+
+        return in_array($permission, $roleModel->permissions);
     }
 }

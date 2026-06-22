@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
+
 /**
  * Class SettingController
  *
@@ -26,7 +27,19 @@ class SettingController extends Controller
         // Fetch all settings and convert to a flat key-value array for easy view binding
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
-        return view('settings.index', compact('settings'));
+        // Fetch roles (excluding Super Admin and Admin)
+        $roles = \App\Models\Role::whereNotIn('name', ['Super Admin', 'Admin'])->get();
+            
+        // Map over roles to add the count from the User model's role column
+        $roles->map(function ($role) {
+            $role->users_count = \App\Models\User::where('role', $role->name)->count();
+            return $role;
+        });
+
+        // Fetch all permissions grouped by their module name from the config
+        $permissionsByModule = config('permissions.modules', []);
+
+        return view('settings.index', compact('settings', 'roles', 'permissionsByModule'));
     }
 
     /**

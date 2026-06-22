@@ -161,21 +161,15 @@
             </a>
             <ul class="nav-group-items">
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('settings*') ? 'active' : '' }}" href="{{ route('settings.index') }}">
+                    <a class="nav-link {{ request()->is('settings*') ? 'active' : '' }}" href="{{ route('settings.index') }}#general-settings">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         General Settings
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('roles*') ? 'active' : '' }}" href="{{ route('roles.index') }}">
+                    <a class="nav-link" href="{{ route('settings.index') }}#role-settings">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                        Roles
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('permissions*') ? 'active' : '' }}" href="{{ route('permissions.index') }}">
-                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                        Permissions
+                        Roles & Permissions
                     </a>
                 </li>
             </ul>

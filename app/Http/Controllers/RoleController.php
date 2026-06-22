@@ -4,32 +4,32 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreRoleRequest;
 use App\Http\Requests\UpdateRoleRequest;
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
+use App\Models\Role;
 
 class RoleController extends Controller
 {
     public function index()
     {
-        $roles = Role::with('permissions')->get();
+        $roles = Role::all();
+
         return view('roles.index', compact('roles'));
     }
 
     public function create()
     {
-        $permissions = Permission::all();
+        $permissions = config('permissions.modules', []);
+
         return view('roles.create', compact('permissions'));
     }
 
     public function store(StoreRoleRequest $request)
     {
-        $role = Role::create(['name' => $request->validated('name')]);
-        
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->validated('permissions'));
-        }
+        $role = Role::create([
+            'name' => $request->validated('name'),
+            'permissions' => $request->input('permissions', [])
+        ]);
 
-        return redirect()->route('roles.index')->with('success', 'Role created successfully.');
+        return redirect(route('settings.index').'#role-settings')->with('success', 'Role created successfully.');
     }
 
     public function show(Role $role)
@@ -39,32 +39,30 @@ class RoleController extends Controller
 
     public function edit(Role $role)
     {
-        $permissions = Permission::all();
-        $rolePermissions = $role->permissions->pluck('name')->toArray();
-        
+        $permissions = config('permissions.modules', []);
+        $rolePermissions = $role->permissions ?? [];
+
         return view('roles.edit', compact('role', 'permissions', 'rolePermissions'));
     }
 
     public function update(UpdateRoleRequest $request, Role $role)
     {
-        $role->update(['name' => $request->validated('name')]);
-        
-        if ($request->has('permissions')) {
-            $role->syncPermissions($request->validated('permissions'));
-        } else {
-            $role->syncPermissions([]);
-        }
+        $role->update([
+            'name' => $request->validated('name'),
+            'permissions' => $request->input('permissions', [])
+        ]);
 
-        return redirect()->route('roles.index')->with('success', 'Role updated successfully.');
+        return redirect(route('settings.index').'#role-settings')->with('success', 'Role updated successfully.');
     }
 
     public function destroy(Role $role)
     {
         if ($role->name === 'Super Admin') {
-            return redirect()->route('roles.index')->with('error', 'Cannot delete Super Admin role.');
+            return redirect(route('settings.index').'#role-settings')->with('error', 'Cannot delete Super Admin role.');
         }
 
         $role->delete();
-        return redirect()->route('roles.index')->with('success', 'Role deleted successfully.');
+
+        return redirect(route('settings.index').'#role-settings')->with('success', 'Role deleted successfully.');
     }
 }

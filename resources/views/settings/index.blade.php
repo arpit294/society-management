@@ -1,5 +1,5 @@
 <x-user-page>
-    <div class="row">
+    <div class="row" id="general-settings">
         <div class="col-12">
             <div class="card mb-4">
                 <div class="card-header">
@@ -219,6 +219,105 @@
             </div>
         </div>
     </div>
+
+    <div class="row mt-2" id="role-settings">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="mb-0">Role and Permission Setting</h4>
+                <a href="{{ route('roles.create') }}" class="btn btn-primary text-white fw-medium">Add New Role</a>
+            </div>
+            
+            <!-- Role Cards -->
+            <div class="row mb-4">
+                @foreach($roles as $role)
+                <div class="col-md-6 mb-3">
+                    <div class="card border-0 shadow-sm h-100 role-card" style="cursor: pointer;" data-role-id="{{ $role->id }}" data-role-name="{{ $role->name }}" data-role-permissions="{{ json_encode($role->permissions ?? []) }}" onclick="selectRole(this)">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="card-title mb-0 fw-bold border-start border-primary border-4 ps-2">{{ $role->name }}</h5>
+                                <div class="dropdown">
+                                    <button class="btn btn-link text-muted p-0" type="button" data-coreui-toggle="dropdown" onclick="event.stopPropagation();">
+                                        <i class="fa-solid fa-ellipsis"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                        <li><a class="dropdown-item" href="{{ route('roles.edit', $role->id) }}">Edit Role Name</a></li>
+                                        <li>
+                                            <form action="{{ route('roles.destroy', $role->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this role?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="dropdown-item text-danger">Delete Role</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                                <span class="text-muted small">Permission</span>
+                                <span class="text-primary small fw-medium">View</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted small">Member :</span>
+                                <span class="fw-bold small">{{ $role->users_count ?? 0 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+
+            <!-- Permissions Table -->
+            <div class="card border-0 shadow-sm mb-5" id="permissions-container" style="display: none;">
+                <div class="card-body p-0">
+                    <form id="role-permissions-form" action="" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="name" id="selected-role-name" value="">
+                        
+                        <div class="table-responsive">
+                            <table class="table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4 py-3 border-0 text-white">Module</th>
+                                        <th class="py-3 border-0 text-white">Permissions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($permissionsByModule as $moduleName => $permissions)
+                                    <tr>
+                                        <td class="ps-4 align-middle fw-semibold text-white" style="width: 250px;">{{ $moduleName ?? 'General' }}</td>
+                                        <td>
+                                            <div class="d-flex flex-wrap gap-4 py-2">
+                                                @foreach($permissions as $permission)
+                                                <div class="form-check">
+                                                    <input class="form-check-input permission-checkbox" type="checkbox" name="permissions[]" value="{{ $permission }}" id="perm_{{ Str::slug($permission) }}">
+                                                    <label class="form-check-label text-white" for="perm_{{ Str::slug($permission) }}">
+                                                        {{ ucwords(str_replace(['_', '-'], ' ', $permission)) }}
+                                                    </label>
+                                                </div>
+                                                @endforeach
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="card-footer text-end py-3 border-0">
+                            <button type="submit" class="btn btn-primary fw-medium px-4">Update Permissions</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card border-0 shadow-sm mb-5 text-center py-5" id="no-role-selected">
+                <div class="card-body py-5">
+                    <i class="fa-solid fa-list-check fa-3x text-muted mb-3" style="opacity: 0.1;"></i>
+                    <p class="text-muted fw-medium mb-0">Select role for show permission</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -267,6 +366,107 @@
 
             updateSuffix('penalty_type', '.penalty-suffix');
             updateSuffix('discount_type', '.discount-suffix');
+        });
+
+        function selectRole(element) {
+            // Remove active class from all cards
+            document.querySelectorAll('.role-card').forEach(card => {
+                card.classList.remove('border-primary');
+                card.classList.add('border-0');
+            });
+
+            // Add active class to selected card
+            element.classList.remove('border-0');
+            element.classList.add('border-primary');
+
+            // Show permissions container, hide placeholder
+            document.getElementById('permissions-container').style.display = 'block';
+            document.getElementById('no-role-selected').style.display = 'none';
+
+            // Get role data
+            const roleId = element.getAttribute('data-role-id');
+            const roleName = element.getAttribute('data-role-name');
+            const permissions = JSON.parse(element.getAttribute('data-role-permissions'));
+
+            // Set form data
+            document.getElementById('selected-role-name').value = roleName;
+            
+            // Set form action using base URL (assuming /roles/{role} is the update endpoint)
+            const baseUrl = "{{ url('roles') }}";
+            document.getElementById('role-permissions-form').action = baseUrl + '/' + roleId;
+
+            // Uncheck all checkboxes
+            document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            // Check the ones the role has
+            permissions.forEach(permission => {
+                const checkbox = document.querySelector(`.permission-checkbox[value="${permission}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                }
+            });
+            
+            // Smooth scroll to permissions table
+            document.getElementById('permissions-container').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // ScrollSpy for Sidebar Links
+        document.addEventListener('DOMContentLoaded', function() {
+            const generalLink = document.querySelector('a.nav-link[href$="#general-settings"]');
+            const roleLink = document.querySelector('a.nav-link[href$="#role-settings"]');
+            
+            if (!generalLink || !roleLink) return;
+
+            // Handle clicking the links to update hash and active class immediately
+            function updateActiveLink(hash) {
+                if (hash === '#role-settings') {
+                    generalLink.classList.remove('active');
+                    roleLink.classList.add('active');
+                } else {
+                    roleLink.classList.remove('active');
+                    generalLink.classList.add('active');
+                }
+            }
+
+            // Initial check on page load
+            updateActiveLink(window.location.hash);
+
+            // Listen for hash changes (e.g., clicking the sidebar links)
+            window.addEventListener('hashchange', function() {
+                updateActiveLink(window.location.hash);
+            });
+
+            // Intersection Observer to detect which section is in view during scrolling
+            const observerOptions = {
+                root: null,
+                rootMargin: '-50% 0px -50% 0px', // Trigger when section crosses the middle of the viewport
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // If user is actively scrolling, update hash without jumping
+                        if (entry.target.id === 'general-settings') {
+                            generalLink.classList.add('active');
+                            roleLink.classList.remove('active');
+                            history.replaceState(null, null, '#general-settings');
+                        } else if (entry.target.id === 'role-settings') {
+                            roleLink.classList.add('active');
+                            generalLink.classList.remove('active');
+                            history.replaceState(null, null, '#role-settings');
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            const generalSection = document.getElementById('general-settings');
+            const roleSection = document.getElementById('role-settings');
+
+            if (generalSection) observer.observe(generalSection);
+            if (roleSection) observer.observe(roleSection);
         });
     </script>
     @endpush
