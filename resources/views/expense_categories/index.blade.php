@@ -4,10 +4,12 @@
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Expense Categories</h4>
+                @can('expense_category_create')
                 <button type="button" class="btn btn-primary" id="btn-add-expense-category"
                     data-url="{{ route('expense-categories.create') }}" data-title="Add Expense Category">
                     <i class="fa-solid fa-plus me-1"></i> Add Category
                 </button>
+                @endcan
             </div>
             <div class="card-body">
                 <div class="table-responsive">

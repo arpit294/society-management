@@ -799,22 +799,22 @@ $(document).ready(function () {
         $("#maintenance-bills-filter-reset-col").addClass("d-none");
     });
 
-    // Complains Filters
+    // Flat Documents Filters
     setupFilterChange(
-        "#complains-filter-category",
-        "#complains-table",
-        "complains.category:name",
-        "#complains-filter-reset-col"
+        "#flat-documents-filter-block",
+        "#flat-documents-table",
+        "block:name",
+        "#flat-documents-filter-reset-col"
     );
 
-    $("#complains-filter-reset").on("click", function () {
-        $("#complains-filter-category").val("").trigger("change");
+    $("#flat-documents-filter-reset").on("click", function () {
+        $("#flat-documents-filter-block").val("").trigger("change.select2");
 
-        const dt = $("#complains-table").DataTable();
-        dt.column("complains.category:name").search("");
+        const dt = $("#flat-documents-table").DataTable();
+        dt.column("block:name").search("");
         dt.draw();
 
-        $("#complains-filter-reset-col").addClass("d-none");
+        $("#flat-documents-filter-reset-col").addClass("d-none");
     });
 
     // Expense Filters
@@ -877,6 +877,51 @@ $(document).ready(function () {
             });
         });
     }
+
+    const documentModalElement = document.getElementById("addDocumentModal");
+    const documentModalInstance = documentModalElement ? new coreui.Modal(documentModalElement) : null;
+
+    loadFormIntoModal(
+        '[data-coreui-target="#addDocumentModal"]',
+        "#addDocumentModal .modal-content",
+        documentModalInstance,
+    );
+
+    const viewDocumentModalElement = document.getElementById("viewDocumentModal");
+    const viewDocumentModalInstance = viewDocumentModalElement ? new coreui.Modal(viewDocumentModalElement) : null;
+
+    loadFormIntoModal(
+        '#flat-documents-table .view-btn',
+        "#viewDocumentModal .modal-content",
+        viewDocumentModalInstance,
+    );
+
+    setupAjaxFormSubmission(
+        "#addDocumentForm",
+        documentModalInstance,
+        "#flat-documents-table",
+    );
+
+    setupDeleteHandler(
+        "#flat-documents-table .delete-btn",
+        "#flat-documents-table",
+        "This submission will be deleted permanently!",
+    );
+
+    // Dependent dropdown for flat selection in document upload
+    $(document).on('change', '#addDocumentForm #block_id', function() {
+        var blockId = $(this).val();
+        var flatSelect = $('#addDocumentForm #flat_id');
+        flatSelect.empty().append('<option value="">Select Flat</option>');
+        
+        if (blockId) {
+            $.get('/api/flats-by-block/' + blockId, function(data) {
+                $.each(data, function(index, flat) {
+                    flatSelect.append('<option value="' + flat.id + '">' + flat.flat_no + '</option>');
+                });
+            });
+        }
+    });
 
     // Generic AJAX form submission handler
     function setupAjaxFormSubmission(

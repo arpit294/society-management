@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             FlatSeeder::class,
             UserResidentSeeder::class,
+            RolesAndPermissionsSeeder::class,
         ]);
     }
 }

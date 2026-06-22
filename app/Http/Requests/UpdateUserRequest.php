@@ -13,7 +13,7 @@ class UpdateUserRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->can('user_edit') ?? false;
     }
 
     /**
@@ -33,7 +33,7 @@ class UpdateUserRequest extends FormRequest
             'phone' => 'required|string|max:20',
             'role' => [
                 'required',
-                Rule::in(['owner', 'rental', 'security', 'committee_member', 'secretary']),
+                Rule::in(config('roles.all')),
             ],
             'password' => 'nullable|string|min:6',
             'aadhar_id' => 'required|string|max:20',

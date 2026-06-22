@@ -9,8 +9,10 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">User Management</h4>
-        <button type="button" class="btn btn-primary" id="btn-add-user" data-url="{{ route('users.create') }}"
-            data-title="Add User">Add User</button>
+        @can('user_create')
+            <button type="button" class="btn btn-primary" id="btn-add-user" data-url="{{ route('users.create') }}"
+                data-title="Add User">Add User</button>
+        @endcan
     </div>
 
     <div class="mb-3">
@@ -19,9 +21,10 @@
                 <label class="form-label mb-1" for="users-filter-role">Filter by Role</label>
                 <select id="users-filter-role" class="form-select" style="max-width: 320px;">
                     <option value="">All Roles</option>
-                    @foreach (['owner', 'rental', 'security', 'committee_member', 'secretary'] as $role)
-                        <option value="{{ $role }}">{{ $role }}</option>
-                    @endforeach
+                    <option value="{{ $role }}">
+                        {{ config('roles.labels.' . $role, ucfirst(str_replace('_', ' ', $role))) }}</option>
+                    @endforeach@foreach (config('roles.all') as $role)
+
                 </select>
             </div>
             <div class="filter-col" style="min-width: 220px;">
@@ -57,5 +60,3 @@
         {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
     @endpush
 </x-user-page>
-
-

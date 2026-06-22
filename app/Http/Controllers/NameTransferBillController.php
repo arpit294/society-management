@@ -13,11 +13,13 @@ class NameTransferBillController extends Controller
 {
     public function index(NameTransferBillsDataTable $dataTable)
     {
+        abort_if(\Gate::denies('name_transfer_bill_view'), 403);
         return $dataTable->render('name_transfer_bills.index');
     }
 
     public function updateStatus(Request $request, NameTransferBill $bill)
     {
+        abort_if(\Gate::denies('name_transfer_bill_view'), 403);
         $request->validate([
             'status' => 'required|in:pending,paid,cancelled',
             'payment_method' => 'nullable|string|max:255',
@@ -46,6 +48,7 @@ class NameTransferBillController extends Controller
 
     public function destroy(NameTransferBill $bill)
     {
+        abort_if(\Gate::denies('name_transfer_bill_delete'), 403);
         $bill->delete();
         return response()->json([
             'success' => true,
@@ -56,6 +59,7 @@ class NameTransferBillController extends Controller
 
     public function approve(NameTransferBill $bill)
     {
+        abort_if(\Gate::denies('name_transfer_bill_view'), 403);
         if ($bill->is_approved) {
             return response()->json([
                 'success' => false,

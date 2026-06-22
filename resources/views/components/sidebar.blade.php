@@ -38,6 +38,7 @@
             onclick="(function(){const sidebar=document.getElementById('sidebar');if(!sidebar||!window.coreui?.Sidebar)return;const instance=window.coreui.Sidebar.getInstance(sidebar);instance?.toggle();})()"></button>
     </div>
     <ul class="sidebar-nav" data-coreui="navigation" data-simplebar>
+        @can('dashboard_view')
         <li class="nav-item">
             <a class="nav-link" href="{{ route('dashboard') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -52,7 +53,9 @@
                 <span class="badge badge-sm bg-info ms-auto">NEW</span>
             </a>
         </li>
+        @endcan
 
+        @can('user_view')
         <li class="nav-item">
             <a class="nav-link" href="{{ route('users.index') }}">
                 <!-- User Icon -->
@@ -63,7 +66,9 @@
                 User Management
             </a>
         </li>
+        @endcan
 
+        @can('flat_view')
         <li class="nav-item">
             <a class="nav-link" href="{{ route('flats.index') }}">
                 <!-- Flat / Building Icon -->
@@ -74,6 +79,8 @@
                 Flat Management
             </a>
         </li>
+        @endcan
+        @can('flat_type_view')
         <li class="nav-item">
             <a class="nav-link" href="{{ route('flat-types.index') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -83,9 +90,19 @@
                 Flat Types
             </a>
         </li>
-
-
-
+        @endcan
+        @can('flat_document_view')
+        <li class="nav-item">
+            <a class="nav-link" href="{{ route('flat-documents.index') }}">
+                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M416 64H96C78.3 64 64 78.3 64 96v320c0 17.7 14.3 32 32 32h320c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32zM256 384H128v-32h128v32zm128-80H128v-32h256v32zm0-80H128v-32h256v32z" />
+                </svg>
+                Flat Documents
+            </a>
+        </li>
+        @endcan
+        @can('block_view')
         <li class="nav-item">
             <a class="nav-link" href="{{ route('blocks.index') }}">
                 <!-- Block Management Icon -->
@@ -96,7 +113,9 @@
                 Block Management
             </a>
         </li>
+        @endcan
 
+        @can('complain_view')
         <li class="nav-item">
             <a class="nav-link" href="{{ route('complains.index') }}">
                 <!-- Complaint Icon -->
@@ -107,6 +126,8 @@
                 Complaints
             </a>
         </li>
+        @endcan
+        @can('resident_view')
         <li class="nav-item">
             <a class="nav-link" href="{{ route('residents.index') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -116,6 +137,8 @@
                 Residents
             </a>
         </li>
+        @endcan
+        @if(auth()->user()?->can('maintenance_bill_view') || auth()->user()?->can('expense_category_view') || auth()->user()?->can('expense_view') || auth()->user()?->can('name_transfer_bill_view'))
         <li class="nav-group {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('expense-categories*') || request()->is('expenses*') || request()->is('prepayments*') || request()->is('name-transfer-bills*') ? 'show' : '' }}">
             <a class="nav-link nav-group-toggle" href="#">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -125,32 +148,41 @@
                 Finances
             </a>
             <ul class="nav-group-items">
+                @can('maintenance_bill_view')
                 <li class="nav-item">
                     <a class="nav-link {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('prepayments*') ? 'active' : '' }}" href="{{ route('maintenance-bills.index') }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         Payments
                     </a>
                 </li>
+                @endcan
+                @can('expense_category_view')
                 <li class="nav-item">
                     <a class="nav-link {{ request()->is('expense-categories*') ? 'active' : '' }}" href="{{ route('expense-categories.index') }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         Expense Categories
                     </a>
                 </li>
+                @endcan
+                @can('expense_view')
                 <li class="nav-item">
                     <a class="nav-link {{ request()->is('expenses*') ? 'active' : '' }}" href="{{ route('expenses.index') }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         Expenses
                     </a>
                 </li>
+                @endcan
+                @can('name_transfer_bill_view')
                 <li class="nav-item">
                     <a class="nav-link {{ request()->is('name-transfer-bills*') ? 'active' : '' }}" href="{{ route('name-transfer-bills.index') }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         Name Transfer Bills
                     </a>
                 </li>
+                @endcan
             </ul>
         </li>
+        @endif
 
         <li class="nav-group {{ request()->is('roles*') || request()->is('settings*') ? 'show' : '' }}">
             <a class="nav-link nav-group-toggle" href="#">

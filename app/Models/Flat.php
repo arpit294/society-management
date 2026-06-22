@@ -50,4 +50,9 @@ class Flat extends Model
             })
             ->latest();
     }
+
+    public function documents()
+    {
+        return $this->hasMany(FlatDocument::class);
+    }
 }

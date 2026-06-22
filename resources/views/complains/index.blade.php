@@ -9,8 +9,10 @@
 
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">Complaints Management</h4>
+        @can('complain_create')
         <button type="button" class="btn btn-primary" id="btn-add-complain" data-url="{{ route('complains.create') }}"
             data-title="Add Complaint">Add Complaint</button>
+        @endcan
     </div>
 
     <div class="mb-3">

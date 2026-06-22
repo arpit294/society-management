@@ -16,30 +16,31 @@ use OpenSpout\Writer\XLSX\Writer;
 
 class ResidentController extends Controller
 {
+    // Display a listing of the resource.
     public function index(ResidentsDataTable $dataTable)
     {
+        abort_if(\Gate::denies('resident_view'), 403);
         $blocks = Block::all();
 
         return $dataTable->render('residents.index', compact('blocks'));
     }
 
+    // Show the form for creating a new resource.
     public function create()
     {
+        abort_if(\Gate::denies('resident_create'), 403);
         $blocks = Block::all();
         $users = User::with(['resident.flat.block'])->get();
 
         return view('residents.create', compact('blocks', 'users'));
     }
 
+    // Store a newly created resource in storage.
     public function store(Request $request)
     {
-        $flatHasOwner = Resident::where('flat_id', $request->flat_id)
-            ->where('type', 'owner')
-            ->where(function ($q) {
-                $q->whereNull('move_out_date')
-                    ->orWhere('move_out_date', '>=', now()->startOfDay());
-            })
-            ->exists();
+        abort_if(\Gate::denies('resident_create'), 403);
+        // Check if the flat already has an owner
+        $flatHasOwner = Resident::where('flat_id', $request->flat_id)->where('type', 'owner')->exists();
 
         // Check if flat is already occupied
         $isOccupied = Resident::where('flat_id', $request->flat_id)
@@ -92,8 +93,10 @@ class ResidentController extends Controller
         ]);
     }
 
+    // Show the form for editing the specified resource.
     public function edit(Resident $resident)
     {
+        abort_if(\Gate::denies('resident_edit'), 403);
         $blocks = Block::all();
         $flats = Flat::where('block_id', $resident->block_id)->get();
         $users = User::with(['resident.flat.block'])->get();
@@ -101,8 +104,10 @@ class ResidentController extends Controller
         return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
     }
 
+    // Update the specified resource in storage.
     public function update(Request $request, Resident $resident)
     {
+        abort_if(\Gate::denies('resident_edit'), 403);
         $flatHasOwner = Resident::where('flat_id', $request->flat_id)
             ->where('type', 'owner')
             ->where(function ($q) {
@@ -164,8 +169,10 @@ class ResidentController extends Controller
         ]);
     }
 
+    // Remove the specified resource from storage.
     public function destroy(Resident $resident)
     {
+        abort_if(\Gate::denies('resident_delete'), 403);
         $resident->delete();
 
         return response()->json([
@@ -174,8 +181,10 @@ class ResidentController extends Controller
         ]);
     }
 
+    // API Methods
     public function getFlatsByBlock($block_id)
     {
+        abort_if(\Gate::denies('resident_view'), 403);
         $flats = Flat::where('block_id', $block_id)->get();
 
         return response()->json($flats);
@@ -183,15 +192,8 @@ class ResidentController extends Controller
 
     public function getFlatOwner($flat_id)
     {
-        $ownerResident = Resident::where('flat_id', $flat_id)
-            ->where('type', 'owner')
-            ->where(function ($q) {
-                $q->whereNull('move_out_date')
-                    ->orWhere('move_out_date', '>=', now()->startOfDay());
-            })
-            ->orderByRaw('move_out_date IS NOT NULL')
-            ->latest('move_in_date')
-            ->first();
+        abort_if(\Gate::denies('resident_view'), 403);
+        $ownerResident = Resident::where('flat_id', $flat_id)->where('type', 'owner')->first();
         if ($ownerResident) {
             return response()->json(['has_owner' => true, 'user_id' => $ownerResident->user_id]);
         }
@@ -199,8 +201,28 @@ class ResidentController extends Controller
         return response()->json(['has_owner' => false]);
     }
 
+    public function getFlatUsers($flat_id)
+    {
+        abort_if(\Gate::denies('resident_view'), 403);
+        $residents = Resident::with('user')->where('flat_id', $flat_id)->get();
+
+        $users = $residents->map(function ($resident) {
+            return [
+                'id' => $resident->user->id,
+                'name' => $resident->user->name,
+                'email' => $resident->user->email,
+                'phone' => $resident->user->phone,
+                'resident_type' => $resident->type,
+            ];
+        });
+
+        return response()->json($users);
+    }
+
+    // Bulk Import Methods
     public function downloadTemplate()
     {
+        abort_if(\Gate::denies('resident_create'), 403);
         $headers = [
             'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename=residents_import_template.xlsx',
@@ -229,8 +251,10 @@ class ResidentController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    // Handle the import of residents from Excel file
     public function import(Request $request)
     {
+        abort_if(\Gate::denies('resident_create'), 403);
         $request->validate([
             'excel_file' => 'required|file|mimes:xlsx,xls|max:5120',
         ]);

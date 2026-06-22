@@ -72,9 +72,11 @@
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h4 class="mb-0">Payments</h4>
                 <div>
+                    @can('maintenance_bill_create')
                     <button type="button" data-url="{{ route('maintenance-bills.create') }}" id="btn-record-payment" class="btn btn-primary me-2">
                         <i class="fa-solid fa-plus me-1"></i> Record Payment
                     </button>
+                    @endcan
                 </div>
             </div>
             <div class="card-body">

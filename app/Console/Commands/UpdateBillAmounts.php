@@ -2,14 +2,15 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\MaintenanceBill;
 use Carbon\Carbon;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
 class UpdateBillAmounts extends Command
 {
     protected $signature = 'app:update-bill-amounts';
+
     protected $description = 'Daily update of penalty and discount amounts for unpaid bills based on settings';
 
     public function handle()
@@ -20,17 +21,17 @@ class UpdateBillAmounts extends Command
         $penaltySettings = $this->getSettingValues('penalty');
         $discountSettings = $this->getSettingValues('discount');
 
-        $dueDays = (int)($penaltySettings['due_days'] ?? 15);
+        $dueDays = (int) ($penaltySettings['due_days'] ?? 15);
 
         foreach ($bills as $bill) {
             $updated = false;
-            
+
             // Calculate past/future months based on maintenance month/year vs now
             $now = Carbon::now()->startOfMonth();
             $billDate = null;
             if ($bill->maintenance && $bill->maintenance->month && $bill->maintenance->year) {
                 try {
-                    $billDate = Carbon::parse('1 ' . $bill->maintenance->month . ' ' . $bill->maintenance->year)->startOfMonth();
+                    $billDate = Carbon::parse('1 '.$bill->maintenance->month.' '.$bill->maintenance->year)->startOfMonth();
                 } catch (\Exception $e) {
                     $billDate = Carbon::parse($bill->generated_date)->startOfMonth();
                 }
@@ -56,13 +57,13 @@ class UpdateBillAmounts extends Command
                 $futureMonthsCount = 0;
             }
 
-            $baseAmount = (float)$bill->amount;
+            $baseAmount = (float) $bill->amount;
 
             // Penalty Logic
             $newPenalty = 0;
             if ($penaltySettings['apply_penalty'] === '1' || $penaltySettings['apply_penalty'] === 'true') {
                 $dueDate = Carbon::parse($bill->generated_date)->addDays($dueDays);
-                
+
                 if ($dueDate->endOfDay()->isPast()) {
                     $billingCycle = $bill->maintenance->billing_cycle ?? 'monthly';
                     $penaltyValue = 0;
@@ -77,9 +78,9 @@ class UpdateBillAmounts extends Command
 
                     if ($penaltyValue > 0) {
                         if (($penaltySettings['type'] ?? 'percentage') === 'fixed') {
-                            $newPenalty = (float)$penaltyValue;
+                            $newPenalty = (float) $penaltyValue;
                         } else {
-                            $newPenalty = $baseAmount * ((float)$penaltyValue / 100);
+                            $newPenalty = $baseAmount * ((float) $penaltyValue / 100);
                         }
                     }
                 }
@@ -107,9 +108,9 @@ class UpdateBillAmounts extends Command
 
                 if ($discountValue > 0) {
                     if (($discountSettings['type'] ?? 'percentage') === 'fixed') {
-                        $newDiscount = (float)$discountValue;
+                        $newDiscount = (float) $discountValue;
                     } else {
-                        $newDiscount = $baseAmount * ((float)$discountValue / 100);
+                        $newDiscount = $baseAmount * ((float) $discountValue / 100);
                     }
                 }
             }
@@ -140,10 +141,10 @@ class UpdateBillAmounts extends Command
             'half_yearly_enabled' => setting("{$type}_half_yearly_enabled", '0') === '1',
             'quarterly_enabled' => setting("{$type}_quarterly_enabled", '0') === '1',
             'monthly_enabled' => setting("{$type}_monthly_enabled", '0') === '1',
-            'yearly_value' => (float)setting("{$type}_yearly_value", setting("{$type}_yearly_percent", ($type === 'penalty' ? 15 : 10))),
-            'half_yearly_value' => (float)setting("{$type}_half_yearly_value", setting("{$type}_half_yearly_percent", ($type === 'penalty' ? 10 : 0))),
-            'quarterly_value' => (float)setting("{$type}_quarterly_value", setting("{$type}_quarterly_percent", ($type === 'penalty' ? 5 : 0))),
-            'monthly_value' => (float)setting("{$type}_monthly_value", setting("{$type}_monthly_percent", ($type === 'penalty' ? 2 : 0))),
+            'yearly_value' => (float) setting("{$type}_yearly_value", setting("{$type}_yearly_percent", ($type === 'penalty' ? 15 : 10))),
+            'half_yearly_value' => (float) setting("{$type}_half_yearly_value", setting("{$type}_half_yearly_percent", ($type === 'penalty' ? 10 : 0))),
+            'quarterly_value' => (float) setting("{$type}_quarterly_value", setting("{$type}_quarterly_percent", ($type === 'penalty' ? 5 : 0))),
+            'monthly_value' => (float) setting("{$type}_monthly_value", setting("{$type}_monthly_percent", ($type === 'penalty' ? 2 : 0))),
         ];
     }
 }

@@ -264,6 +264,70 @@
                             </div>
                         </div>
 
+                        <hr class="mb-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 fw-bold">Required Documents for Owner</h5>
+                            <button type="button" class="btn btn-sm btn-outline-primary checkall-btn" data-target="req_doc_owner_">Check All</button>
+                        </div>
+                        <div class="row mb-5">
+                            @php
+                                $ownerDocs = [
+                                    'passport_photo' => 'Passport Size Photo',
+                                    'adhar_card' => 'Aadhar Card',
+                                    'pan_card' => 'PAN Card',
+                                    'index_copy' => 'Index Copy',
+                                    'possession_letter' => 'Possession Letter',
+                                    'tax_bill' => 'Copy of Tax Bill',
+                                    'contact_no' => 'Contact No',
+                                    'email' => 'Email Address'
+                                ];
+                            @endphp
+                            @foreach($ownerDocs as $key => $label)
+                            <div class="col-md-3 mb-3">
+                                <div class="form-check form-switch mt-1">
+                                    <input type="hidden" name="req_doc_owner_{{ $key }}" value="0">
+                                    <input class="form-check-input" type="checkbox" id="req_doc_owner_{{ $key }}"
+                                        name="req_doc_owner_{{ $key }}" value="1"
+                                        {{ ($settings['req_doc_owner_'.$key] ?? '0') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold ms-1" for="req_doc_owner_{{ $key }}">{{ $label }}</label>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+
+                        <hr class="mb-4">
+
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0 fw-bold">Required Documents for Rental</h5>
+                            <button type="button" class="btn btn-sm btn-outline-primary checkall-btn" data-target="req_doc_rental_">Check All</button>
+                        </div>
+                        <div class="row mb-5">
+                            @php
+                                $rentalDocs = [
+                                    'passport_photo' => 'Passport Size Photo',
+                                    'adhar_card' => 'Aadhar Card',
+                                    'pan_card' => 'PAN Card',
+                                    'rent_agreement' => 'Rent Agreement',
+                                    'police_verification' => 'Police Verification',
+                                    'permanent_address_proof' => 'Permanent Address Proof',
+                                    'contact_no' => 'Contact Number',
+                                    'email' => 'Email Address'
+                                ];
+                            @endphp
+                            @foreach($rentalDocs as $key => $label)
+                            <div class="col-md-3 mb-3">
+                                <div class="form-check form-switch mt-1">
+                                    <input type="hidden" name="req_doc_rental_{{ $key }}" value="0">
+                                    <input class="form-check-input" type="checkbox" id="req_doc_rental_{{ $key }}"
+                                        name="req_doc_rental_{{ $key }}" value="1"
+                                        {{ ($settings['req_doc_rental_'.$key] ?? '0') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label text-muted small fw-semibold ms-1" for="req_doc_rental_{{ $key }}">{{ $label }}</label>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+
                         <div class="text-end border-top pt-4">
                             <button type="submit" class="btn btn-primary fw-bold px-5 py-2 rounded-3"><i
                                     class="fa-solid fa-save me-2"></i> Save Settings</button>
@@ -511,97 +575,38 @@
                 });
             }
 
-            // ScrollSpy for Sidebar Links
-            document.addEventListener('DOMContentLoaded', function() {
-                const generalLink = document.querySelector('a.nav-link[href$="#general-settings"]');
-                const roleLink = document.querySelector('a.nav-link[href$="#role-settings"]');
+            updateSuffix('penalty_type', '.penalty-suffix');
+            updateSuffix('discount_type', '.discount-suffix');
 
-                if (!generalLink || !roleLink) return;
+            // Check All / Uncheck All Buttons
+            document.querySelectorAll('.checkall-btn').forEach(btn => {
+                const targetPrefix = btn.getAttribute('data-target');
+                const checkboxes = document.querySelectorAll(`input[type="checkbox"][name^="${targetPrefix}"]`);
+                
+                // Initialize button state
+                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+                btn.textContent = allChecked ? 'Uncheck All' : 'Check All';
 
-                // Handle clicking the links to update hash and active class immediately
-                function updateActiveLink(hash) {
-                    if (hash === '#role-settings') {
-                        generalLink.classList.remove('active');
-                        roleLink.classList.add('active');
-                    } else {
-                        roleLink.classList.remove('active');
-                        generalLink.classList.add('active');
-                    }
-                }
-
-                // Initial check on page load
-                updateActiveLink(window.location.hash);
-
-                // Listen for hash changes (e.g., clicking the sidebar links)
-                window.addEventListener('hashchange', function() {
-                    updateActiveLink(window.location.hash);
+                // Handle button click
+                btn.addEventListener('click', function() {
+                    const isCheckAll = this.textContent === 'Check All';
+                    
+                    checkboxes.forEach(cb => {
+                        cb.checked = isCheckAll;
+                    });
+                    
+                    this.textContent = isCheckAll ? 'Uncheck All' : 'Check All';
                 });
 
-                // Intersection Observer to detect which section is in view during scrolling
-                const observerOptions = {
-                    root: null,
-                    rootMargin: '-50% 0px -50% 0px', // Trigger when section crosses the middle of the viewport
-                    threshold: 0
-                };
-
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            // If user is actively scrolling, update hash without jumping
-                            if (entry.target.id === 'general-settings') {
-                                generalLink.classList.add('active');
-                                roleLink.classList.remove('active');
-                                history.replaceState(null, null, '#general-settings');
-                            } else if (entry.target.id === 'role-settings') {
-                                roleLink.classList.add('active');
-                                generalLink.classList.remove('active');
-                                history.replaceState(null, null, '#role-settings');
-                            }
-                        }
-                    });
-                }, observerOptions);
-
-                const generalSection = document.getElementById('general-settings');
-                const roleSection = document.getElementById('role-settings');
-
-                if (generalSection) observer.observe(generalSection);
-                if (roleSection) observer.observe(roleSection);
-            });
-        </script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                document.querySelectorAll('.btn-delete-role').forEach(function(btn) {
-                    btn.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const url = this.getAttribute('data-url');
-                        const roleName = this.getAttribute('data-role-name') || '';
-
-                        Swal.fire({
-                            title: 'Are you sure?',
-                            text: `Delete role "${roleName}"? This action cannot be undone.`,
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonColor: '#d33',
-                            confirmButtonText: 'Yes, delete it',
-                            cancelButtonText: 'Cancel'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                const form = document.createElement('form');
-                                form.method = 'POST';
-                                form.action = url;
-                                form.style.display = 'none';
-                                form.innerHTML = `
-                                <input type="hidden" name="_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="_method" value="DELETE">
-                            `;
-                                document.body.appendChild(form);
-                                form.submit();
-                            }
-                        });
+                // Update button state when individual checkboxes change
+                checkboxes.forEach(cb => {
+                    cb.addEventListener('change', function() {
+                        const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
+                        btn.textContent = anyUnchecked ? 'Check All' : 'Uncheck All';
                     });
                 });
             });
-        </script>
+        });
+    </script>
     @endpush
 </x-user-page>

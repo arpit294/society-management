@@ -32,6 +32,7 @@ class MaintenanceBillController extends Controller
      */
     public function index(MaintenanceBillsDataTable $dataTable)
     {
+        abort_if(\Gate::denies('maintenance_bill_view'), 403);
         // 1. Calculate overall collection statistics for the top cards
         $totalCollected = MaintenanceBill::where('status', 'paid')->sum('total_amount');
         $cashCollected = MaintenanceBill::where('status', 'paid')->where('payment_method', 'CASH')->sum('total_amount');
@@ -87,6 +88,7 @@ class MaintenanceBillController extends Controller
      */
     public function create()
     {
+        abort_if(\Gate::denies('maintenance_bill_create'), 403);
         // Get all active residents (filtering out old owners if a tenant lives there)
         $residents = $this->getUniqueActiveResidents();
 
@@ -117,6 +119,7 @@ class MaintenanceBillController extends Controller
      */
     public function store(StoreMaintenanceBillRequest $request)
     {
+        abort_if(\Gate::denies('maintenance_bill_create'), 403);
         // Wrap everything in a database transaction. If anything fails, it will roll back all changes.
         DB::beginTransaction();
 
@@ -223,6 +226,7 @@ class MaintenanceBillController extends Controller
      */
     public function destroy($id)
     {
+        abort_if(\Gate::denies('maintenance_bill_delete'), 403);
         $bills = MaintenanceBill::where('batch_id', $id)->get();
 
         if ($bills->isEmpty()) {
@@ -251,6 +255,7 @@ class MaintenanceBillController extends Controller
      */
     public function destroyIndividual($id)
     {
+        abort_if(\Gate::denies('maintenance_bill_delete'), 403);
         $bill = MaintenanceBill::findOrFail($id);
         $bill->delete();
 
@@ -269,6 +274,7 @@ class MaintenanceBillController extends Controller
      */
     public function updateStatus(UpdateMaintenanceBillStatusRequest $request, $id)
     {
+        abort_if(\Gate::denies('maintenance_bill_create'), 403);
         $maintenanceBill = MaintenanceBill::findOrFail($id);
 
         if ($request->status === 'paid' && $maintenanceBill->status !== 'paid') {
@@ -345,6 +351,7 @@ class MaintenanceBillController extends Controller
      */
     public function details($id)
     {
+        abort_if(\Gate::denies('maintenance_bill_view'), 403);
         $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
 
         return view('maintenance_bills.details', compact('bill'));
@@ -358,6 +365,7 @@ class MaintenanceBillController extends Controller
      */
     public function downloadInvoice($id)
     {
+        abort_if(\Gate::denies('maintenance_bill_view'), 403);
         $bills = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])
             ->where('batch_id', $id)
             ->orderBy('id', 'asc')
@@ -388,6 +396,7 @@ class MaintenanceBillController extends Controller
      */
     public function getResidentInfo($userId)
     {
+        abort_if(\Gate::denies('maintenance_bill_view'), 403);
         $resident = Resident::with('flat.flatType')
             ->where('user_id', $userId)
             ->where(function (Builder $query) {

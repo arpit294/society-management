@@ -16,6 +16,8 @@ class UserController extends Controller
      */
     public function index(UsersDataTable $dataTable)
     {
+        abort_if(\Gate::denies('user_view'), 403);
+
         return $dataTable->render('users.index');
     }
 
@@ -24,6 +26,7 @@ class UserController extends Controller
      */
     public function create()
     {
+        abort_if(\Gate::denies('user_create'), 403);
         if (request()->ajax()) {
             return view('users.create', [
                 'user' => null,
@@ -39,6 +42,7 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request)
     {
+        abort_if(\Gate::denies('user_create'), 403);
         User::create($request->validated());
 
         if ($request->ajax()) {
@@ -58,6 +62,7 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
+        abort_if(\Gate::denies('user_edit'), 403);
         if (request()->ajax()) {
             return view('users.edit', [
                 'user' => $user,
@@ -73,6 +78,7 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user)
     {
+        abort_if(\Gate::denies('user_edit'), 403);
         $validatedData = $request->validated();
 
         // TRICKY: If the user didn't type a new password in the edit form,
@@ -117,6 +123,7 @@ class UserController extends Controller
      */
     public function destroy(Request $request, User $user)
     {
+        abort_if(\Gate::denies('user_delete'), 403);
         if (auth()->id() === $user->id) {
             if ($request->ajax()) {
                 return response()->json([
