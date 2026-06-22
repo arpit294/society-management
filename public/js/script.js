@@ -1246,6 +1246,49 @@ $(document).ready(function () {
         "This resident will be deleted permanently!",
     );
 
+    $(document).on("click", ".btn-delete-role", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const url = $(this).data("url");
+        const roleName = $(this).data("role-name");
+
+        swalWithBootstrapButtons
+            .fire({
+                title: "Delete role?",
+                text: `Are you sure you want to delete "${roleName}"? This action cannot be undone.`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, delete!",
+                cancelButtonText: "Cancel",
+                reverseButtons: true,
+            })
+            .then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: url,
+                        type: "DELETE",
+                        success: function (response) {
+                            toastr.success(
+                                response.message || "Role deleted successfully.",
+                            );
+                            setTimeout(function () {
+                                window.location.href =
+                                    window.location.pathname + "#role-settings";
+                                window.location.reload();
+                            }, 800);
+                        },
+                        error: function (xhr) {
+                            toastr.error(
+                                xhr.responseJSON?.message ||
+                                    "Could not delete role.",
+                            );
+                        },
+                    });
+                }
+            });
+    });
+
     // Modal Close Cleanup
     $(document).on("click", '[data-coreui-dismiss="modal"]', function () {
         userModalInstance?.hide();
@@ -1705,39 +1748,35 @@ $(document).ready(function () {
                 window.penaltySettings.apply_penalty == "1" &&
                 pastMonthsCount > 0
             ) {
-                for (let i = 0; i < pastMonthsCount; i++) {
-                    let monthsLate = pastMonthsCount - i;
-                    let penaltyValue = 0;
-                    if (
-                        monthsLate >= 12 &&
-                        window.penaltySettings.yearly_enabled
-                    ) {
-                        penaltyValue = window.penaltySettings.yearly_value;
-                    } else if (
-                        monthsLate >= 6 &&
-                        window.penaltySettings.half_yearly_enabled
-                    ) {
-                        penaltyValue = window.penaltySettings.half_yearly_value;
-                    } else if (
-                        monthsLate >= 3 &&
-                        window.penaltySettings.quarterly_enabled
-                    ) {
-                        penaltyValue = window.penaltySettings.quarterly_value;
-                    } else if (
-                        monthsLate >= 1 &&
-                        window.penaltySettings.monthly_enabled
-                    ) {
-                        penaltyValue = window.penaltySettings.monthly_value;
-                    }
+                let penaltyValue = 0;
+                if (
+                    pastMonthsCount >= 12 &&
+                    window.penaltySettings.yearly_enabled
+                ) {
+                    penaltyValue = window.penaltySettings.yearly_value;
+                } else if (
+                    pastMonthsCount >= 6 &&
+                    window.penaltySettings.half_yearly_enabled
+                ) {
+                    penaltyValue = window.penaltySettings.half_yearly_value;
+                } else if (
+                    pastMonthsCount >= 3 &&
+                    window.penaltySettings.quarterly_enabled
+                ) {
+                    penaltyValue = window.penaltySettings.quarterly_value;
+                } else if (
+                    pastMonthsCount >= 1 &&
+                    window.penaltySettings.monthly_enabled
+                ) {
+                    penaltyValue = window.penaltySettings.monthly_value;
+                }
 
-                    if (penaltyValue > 0) {
-                        if (window.penaltySettings.type === "fixed") {
-                            penaltyAmount += parseFloat(penaltyValue);
-                        } else {
-                            penaltyAmount +=
-                                window.currentMonthlyFee *
-                                (parseFloat(penaltyValue) / 100);
-                        }
+                if (penaltyValue > 0) {
+                    if (window.penaltySettings.type === "fixed") {
+                        penaltyAmount = parseFloat(penaltyValue);
+                    } else {
+                        let arrearsAmount = pastMonthsCount * window.currentMonthlyFee;
+                        penaltyAmount = arrearsAmount * (parseFloat(penaltyValue) / 100);
                     }
                 }
             }
@@ -1753,40 +1792,35 @@ $(document).ready(function () {
                     applyDiscount === "on") &&
                 futureMonthsCount > 0
             ) {
-                for (let i = 0; i < futureMonthsCount; i++) {
-                    let monthsAdvance = i + 1;
-                    let discountValue = 0;
-                    if (
-                        monthsAdvance >= 12 &&
-                        window.discountSettings.yearly_enabled
-                    ) {
-                        discountValue = window.discountSettings.yearly_value;
-                    } else if (
-                        monthsAdvance >= 6 &&
-                        window.discountSettings.half_yearly_enabled
-                    ) {
-                        discountValue =
-                            window.discountSettings.half_yearly_value;
-                    } else if (
-                        monthsAdvance >= 3 &&
-                        window.discountSettings.quarterly_enabled
-                    ) {
-                        discountValue = window.discountSettings.quarterly_value;
-                    } else if (
-                        monthsAdvance >= 1 &&
-                        window.discountSettings.monthly_enabled
-                    ) {
-                        discountValue = window.discountSettings.monthly_value;
-                    }
+                let discountValue = 0;
+                if (
+                    futureMonthsCount >= 12 &&
+                    window.discountSettings.yearly_enabled
+                ) {
+                    discountValue = window.discountSettings.yearly_value;
+                } else if (
+                    futureMonthsCount >= 6 &&
+                    window.discountSettings.half_yearly_enabled
+                ) {
+                    discountValue = window.discountSettings.half_yearly_value;
+                } else if (
+                    futureMonthsCount >= 3 &&
+                    window.discountSettings.quarterly_enabled
+                ) {
+                    discountValue = window.discountSettings.quarterly_value;
+                } else if (
+                    futureMonthsCount >= 1 &&
+                    window.discountSettings.monthly_enabled
+                ) {
+                    discountValue = window.discountSettings.monthly_value;
+                }
 
-                    if (discountValue > 0) {
-                        if (window.discountSettings.type === "fixed") {
-                            discountAmount += parseFloat(discountValue);
-                        } else {
-                            discountAmount +=
-                                window.currentMonthlyFee *
-                                (parseFloat(discountValue) / 100);
-                        }
+                if (discountValue > 0) {
+                    if (window.discountSettings.type === "fixed") {
+                        discountAmount = parseFloat(discountValue);
+                    } else {
+                        let advanceAmount = futureMonthsCount * window.currentMonthlyFee;
+                        discountAmount = advanceAmount * (parseFloat(discountValue) / 100);
                     }
                 }
             }

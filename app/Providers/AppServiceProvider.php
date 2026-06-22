@@ -24,6 +24,10 @@ class AppServiceProvider extends ServiceProvider
             if ($user->role === 'secretary') {
                 return true;
             }
+
+            if (method_exists($user, 'hasPermissionTo') && $user->hasPermissionTo($ability)) {
+                return true;
+            }
         });
     }
 }

@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -26,7 +28,20 @@ class SettingController extends Controller
         // Fetch all settings and convert to a flat key-value array for easy view binding
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
-        return view('settings.index', compact('settings'));
+        // Fetch roles (excluding Admin)
+        $roles = Role::whereNotIn('name', ['Admin'])->get();
+
+        // Map over roles to add the count from the User model's role column
+        $roles->map(function ($role) {
+            $role->users_count = User::where('role', $role->name)->count();
+
+            return $role;
+        });
+
+        // Fetch all permissions grouped by their module name from the config
+        $permissionsByModule = config('permissions.modules', []);
+
+        return view('settings.index', compact('settings', 'roles', 'permissionsByModule'));
     }
 
     /**

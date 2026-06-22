@@ -51,6 +51,25 @@ class User extends Authenticatable
 
     public function getResidentDetailsAttribute()
     {
-        return $this->name.' ('.($this->phone ?? 'No Phone').')';
+        return $this->name . ' (' . ($this->phone ?? 'No Phone') . ')';
+    }
+
+    public function roleModel()
+    {
+        return $this->belongsTo(Role::class, 'role', 'name');
+    }
+
+    public function hasPermissionTo($permission)
+    {
+        if ($this->role === 'Admin') {
+            return true;
+        }
+
+        $roleModel = $this->roleModel;
+        if (!$roleModel || empty($roleModel->permissions)) {
+            return false;
+        }
+
+        return in_array($permission, $roleModel->permissions);
     }
 }

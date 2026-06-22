@@ -13,6 +13,7 @@ use App\Models\Resident;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use GuzzleHttp\Psr7\Response as Psr7Response;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -82,7 +83,7 @@ class MaintenanceBillController extends Controller
      * Show the form for creating a new maintenance bill.
      * Prepares data like active residents, their fees, and dynamic penalty/discount settings.
      *
-     * @return Response
+     * @return Psr7Response
      */
     public function create()
     {
@@ -509,30 +510,28 @@ class MaintenanceBillController extends Controller
         } else {
             $penaltySettings = $this->getSettingValues('penalty');
 
-            // If penalty feature is enabled, iterate through each past-due month individually
+            // If penalty feature is enabled, apply penalty based on total past months
             if ($penaltySettings['apply_penalty'] === '1' && $pastMonthsCount > 0) {
-                for ($i = 0; $i < $pastMonthsCount; $i++) {
-                    $monthsLate = $pastMonthsCount - $i;
-                    $penaltyValue = 0;
+                $penaltyValue = 0;
 
-                    // Determine which penalty tier this specific month falls into
-                    if ($monthsLate >= 12 && $penaltySettings['yearly_enabled']) {
-                        $penaltyValue = $penaltySettings['yearly_value'];
-                    } elseif ($monthsLate >= 6 && $penaltySettings['half_yearly_enabled']) {
-                        $penaltyValue = $penaltySettings['half_yearly_value'];
-                    } elseif ($monthsLate >= 3 && $penaltySettings['quarterly_enabled']) {
-                        $penaltyValue = $penaltySettings['quarterly_value'];
-                    } elseif ($monthsLate >= 1 && $penaltySettings['monthly_enabled']) {
-                        $penaltyValue = $penaltySettings['monthly_value'];
-                    }
+                // Determine which penalty tier the total duration falls into
+                if ($pastMonthsCount >= 12 && $penaltySettings['yearly_enabled']) {
+                    $penaltyValue = $penaltySettings['yearly_value'];
+                } elseif ($pastMonthsCount >= 6 && $penaltySettings['half_yearly_enabled']) {
+                    $penaltyValue = $penaltySettings['half_yearly_value'];
+                } elseif ($pastMonthsCount >= 3 && $penaltySettings['quarterly_enabled']) {
+                    $penaltyValue = $penaltySettings['quarterly_value'];
+                } elseif ($pastMonthsCount >= 1 && $penaltySettings['monthly_enabled']) {
+                    $penaltyValue = $penaltySettings['monthly_value'];
+                }
 
-                    // Apply the penalty rate for this month
-                    if ($penaltyValue > 0) {
-                        if ($penaltySettings['type'] === 'fixed') {
-                            $totalPenaltyAmount += $penaltyValue; // Add fixed amount per month
-                        } else {
-                            $totalPenaltyAmount += $monthlyFee * ($penaltyValue / 100); // Add percentage
-                        }
+                // Apply the penalty rate to the total arrears amount
+                if ($penaltyValue > 0) {
+                    if ($penaltySettings['type'] === 'fixed') {
+                        $totalPenaltyAmount = (float) $penaltyValue;
+                    } else {
+                        $totalArrearsAmount = $pastMonthsCount * $monthlyFee;
+                        $totalPenaltyAmount = $totalArrearsAmount * ($penaltyValue / 100);
                     }
                 }
             }
@@ -547,30 +546,28 @@ class MaintenanceBillController extends Controller
             $discountSettings = $this->getSettingValues('discount');
             $applyDiscount = $discountSettings['apply_discount'];
 
-            // If discount feature is enabled, iterate through each future month individually
+            // If discount feature is enabled, apply discount based on total future months
             if (($applyDiscount === '1' || $applyDiscount === 'true' || $applyDiscount === 'on') && $futureMonthsCount > 0) {
-                for ($i = 0; $i < $futureMonthsCount; $i++) {
-                    $monthsAdvance = $i + 1;
-                    $discountValue = 0;
+                $discountValue = 0;
 
-                    // Determine which discount tier this specific month falls into
-                    if ($monthsAdvance >= 12 && $discountSettings['yearly_enabled']) {
-                        $discountValue = $discountSettings['yearly_value'];
-                    } elseif ($monthsAdvance >= 6 && $discountSettings['half_yearly_enabled']) {
-                        $discountValue = $discountSettings['half_yearly_value'];
-                    } elseif ($monthsAdvance >= 3 && $discountSettings['quarterly_enabled']) {
-                        $discountValue = $discountSettings['quarterly_value'];
-                    } elseif ($monthsAdvance >= 1 && $discountSettings['monthly_enabled']) {
-                        $discountValue = $discountSettings['monthly_value'];
-                    }
+                // Determine which discount tier the total duration falls into
+                if ($futureMonthsCount >= 12 && $discountSettings['yearly_enabled']) {
+                    $discountValue = $discountSettings['yearly_value'];
+                } elseif ($futureMonthsCount >= 6 && $discountSettings['half_yearly_enabled']) {
+                    $discountValue = $discountSettings['half_yearly_value'];
+                } elseif ($futureMonthsCount >= 3 && $discountSettings['quarterly_enabled']) {
+                    $discountValue = $discountSettings['quarterly_value'];
+                } elseif ($futureMonthsCount >= 1 && $discountSettings['monthly_enabled']) {
+                    $discountValue = $discountSettings['monthly_value'];
+                }
 
-                    // Apply the discount rate for this month
-                    if ($discountValue > 0) {
-                        if ($discountSettings['type'] === 'fixed') {
-                            $totalDiscountAmount += $discountValue; // Add fixed amount per month
-                        } else {
-                            $totalDiscountAmount += $monthlyFee * ($discountValue / 100); // Add percentage
-                        }
+                // Apply the discount rate to the total advance amount
+                if ($discountValue > 0) {
+                    if ($discountSettings['type'] === 'fixed') {
+                        $totalDiscountAmount = (float) $discountValue;
+                    } else {
+                        $totalAdvanceAmount = $futureMonthsCount * $monthlyFee;
+                        $totalDiscountAmount = $totalAdvanceAmount * ($discountValue / 100);
                     }
                 }
             }

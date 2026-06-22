@@ -20,3 +20,19 @@ if (! function_exists('setting')) {
         return $settings[$key] ?? $default;
     }
 }
+
+if (! function_exists('all_permissions')) {
+    /**
+     * @return list<string>
+     */
+    function all_permissions(): array
+    {
+        $permissions = [];
+
+        foreach (config('permissions.modules', []) as $modulePermissions) {
+            $permissions = array_merge($permissions, $modulePermissions);
+        }
+
+        return $permissions;
+    }
+}
