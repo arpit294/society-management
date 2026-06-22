@@ -86,7 +86,9 @@ Route::middleware('auth')->group(function () {
     Route::get('settings', [\App\Http\Controllers\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [\App\Http\Controllers\SettingController::class, 'store'])->name('settings.store');
 
-
+    // Roles & Permissions
+    Route::resource('roles', \App\Http\Controllers\RoleController::class);
+    Route::resource('permissions', \App\Http\Controllers\PermissionController::class);
 });
 
 
