@@ -1,7 +1,7 @@
 <x-user-page>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">Edit Role</h4>
-        <a href="{{ route('roles.index') }}" class="btn btn-secondary">Back to Roles</a>
+        <a href="{{ route('settings.index') }}#role-settings" class="btn btn-secondary">Back to Settings</a>
     </div>
 
     <div class="card">
@@ -15,22 +15,6 @@
                     @error('name')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Assign Permissions</label>
-                    <div class="row">
-                        @foreach ($permissions as $permission)
-                            <div class="col-md-3 mb-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->name }}" id="perm_{{ $permission->id }}" {{ in_array($permission->name, $rolePermissions) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="perm_{{ $permission->id }}">
-                                        {{ $permission->name }}
-                                    </label>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary">Update Role</button>

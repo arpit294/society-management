@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Role;
 use App\Models\Setting;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
-
 
 /**
  * Class SettingController
@@ -27,12 +28,13 @@ class SettingController extends Controller
         // Fetch all settings and convert to a flat key-value array for easy view binding
         $settings = Setting::all()->pluck('value', 'key')->toArray();
 
-        // Fetch roles (excluding Super Admin and Admin)
-        $roles = \App\Models\Role::whereNotIn('name', ['Super Admin', 'Admin'])->get();
-            
+        // Fetch roles (excluding Admin)
+        $roles = Role::whereNotIn('name', ['Admin'])->get();
+
         // Map over roles to add the count from the User model's role column
         $roles->map(function ($role) {
-            $role->users_count = \App\Models\User::where('role', $role->name)->count();
+            $role->users_count = User::where('role', $role->name)->count();
+
             return $role;
         });
 

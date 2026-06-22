@@ -1246,6 +1246,49 @@ $(document).ready(function () {
         "This resident will be deleted permanently!",
     );
 
+    $(document).on("click", ".btn-delete-role", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const url = $(this).data("url");
+        const roleName = $(this).data("role-name");
+
+        swalWithBootstrapButtons
+            .fire({
+                title: "Delete role?",
+                text: `Are you sure you want to delete "${roleName}"? This action cannot be undone.`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, delete!",
+                cancelButtonText: "Cancel",
+                reverseButtons: true,
+            })
+            .then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: url,
+                        type: "DELETE",
+                        success: function (response) {
+                            toastr.success(
+                                response.message || "Role deleted successfully.",
+                            );
+                            setTimeout(function () {
+                                window.location.href =
+                                    window.location.pathname + "#role-settings";
+                                window.location.reload();
+                            }, 800);
+                        },
+                        error: function (xhr) {
+                            toastr.error(
+                                xhr.responseJSON?.message ||
+                                    "Could not delete role.",
+                            );
+                        },
+                    });
+                }
+            });
+    });
+
     // Modal Close Cleanup
     $(document).on("click", '[data-coreui-dismiss="modal"]', function () {
         userModalInstance?.hide();

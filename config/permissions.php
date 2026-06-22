@@ -73,10 +73,6 @@ return [
             'create roles',
             'edit roles',
             'delete roles',
-            'view permissions',
-            'create permissions',
-            'edit permissions',
-            'delete permissions',
         ],
     ],
 ];

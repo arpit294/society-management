@@ -2,10 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-
 use App\Models\Role;
+use Illuminate\Database\Seeder;
 
 class RoleAndPermissionSeeder extends Seeder
 {
@@ -14,20 +12,12 @@ class RoleAndPermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get all permissions from config
-        $allPermissions = [];
-        $modules = config('permissions.modules', []);
-        foreach ($modules as $module => $perms) {
-            $allPermissions = array_merge($allPermissions, $perms);
-        }
+        // Admin will hold all permissions now (no separate Super Admin role)
+        Role::firstOrCreate(
+            ['name' => 'Admin'],
+            ['permissions' => all_permissions()]
+        );
 
-        // Create roles and assign created permissions
-        $superAdmin = Role::firstOrCreate(['name' => 'Super Admin'], ['permissions' => $allPermissions]);
-        
-        $admin = Role::firstOrCreate(['name' => 'Admin'], ['permissions' => [
-            'user_view', 'user_create', 'user_edit'
-        ]]);
-
-        $user = Role::firstOrCreate(['name' => 'User']);
+        Role::firstOrCreate(['name' => 'User']);
     }
 }

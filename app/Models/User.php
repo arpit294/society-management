@@ -51,7 +51,7 @@ class User extends Authenticatable
 
     public function getResidentDetailsAttribute()
     {
-        return $this->name.' ('.($this->phone ?? 'No Phone').')';
+        return $this->name . ' (' . ($this->phone ?? 'No Phone') . ')';
     }
 
     public function roleModel()
@@ -61,10 +61,10 @@ class User extends Authenticatable
 
     public function hasPermissionTo($permission)
     {
-        if ($this->role === 'Super Admin') {
+        if ($this->role === 'Admin') {
             return true;
         }
-        
+
         $roleModel = $this->roleModel;
         if (!$roleModel || empty($roleModel->permissions)) {
             return false;
