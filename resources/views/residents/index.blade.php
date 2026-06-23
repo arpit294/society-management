@@ -3,6 +3,11 @@
         <h4 class="mb-0">Residents Management</h4>
         @can('resident_create')
         <div>
+            @can('resident_view')
+            <a href="{{ route('residents.export') }}" class="btn btn-outline-info me-2">
+                <i class="fa-solid fa-file-export me-2"></i>Export Records
+            </a>
+            @endcan
             <button type="button" class="btn btn-outline-success me-2" data-coreui-toggle="modal" data-coreui-target="#import-resident-modal">
                 <i class="fa-solid fa-file-import me-2"></i>Import Records
             </button>

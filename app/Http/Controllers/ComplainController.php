@@ -12,13 +12,13 @@ class ComplainController extends Controller
 {
     public function index(ComplainsDataTable $dataTable)
     {
-        abort_if(\Gate::denies('complain_view'), 403);
+        abort_if(! \Auth::user()->can('complain_view'), 403);
         return $dataTable->render('complains.index');
     }
 
     public function create()
     {
-        abort_if(\Gate::denies('complain_create'), 403);
+        abort_if(! \Auth::user()->can('complain_create'), 403);
         $users = User::all();
 
         return view('complains.create', compact('users'));
@@ -26,7 +26,7 @@ class ComplainController extends Controller
 
     public function store(Request $request)
     {
-        abort_if(\Gate::denies('complain_create'), 403);
+        abort_if(! \Auth::user()->can('complain_create'), 403);
         $validatedData = $request->validate([
             'subject' => 'required|string|max:255',
             'description' => 'required|string',
@@ -50,7 +50,7 @@ class ComplainController extends Controller
 
     public function edit(Complain $complain)
     {
-        abort_if(\Gate::denies('complain_edit'), 403);
+        abort_if(! \Auth::user()->can('complain_edit'), 403);
         $users = User::all();
 
         return view('complains.edit', compact('complain', 'users'));
@@ -58,7 +58,7 @@ class ComplainController extends Controller
 
     public function update(Request $request, Complain $complain)
     {
-        abort_if(\Gate::denies('complain_edit'), 403);
+        abort_if(! \Auth::user()->can('complain_edit'), 403);
         $validatedData = $request->validate([
             'subject' => 'required|string|max:255',
             'description' => 'required|string',
@@ -84,7 +84,7 @@ class ComplainController extends Controller
 
     public function destroy(Complain $complain)
     {
-        abort_if(\Gate::denies('complain_delete'), 403);
+        abort_if(! \Auth::user()->can('complain_delete'), 403);
         $complain->delete();
 
         return response()->json([
