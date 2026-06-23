@@ -12,16 +12,6 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('flats', function (Blueprint $table) {
-<<<<<<< HEAD
-    $table->id();
-    $table->unsignedBigInteger('block_id')->nullable();
-    $table->string('flat_no');
-    $table->string('floor_no');
-    $table->unsignedBigInteger('flat_type_id')->nullable();
-    $table->string('status');
-    $table->timestamps();
-});
-=======
             $table->id();
             $table->unsignedBigInteger('block_id')->nullable();
             $table->string('flat_no');
@@ -30,9 +20,7 @@ return new class extends Migration
             $table->string('status');
             $table->timestamps();
         });
->>>>>>> main
     }
-
 
     /**
      * Reverse the migrations.

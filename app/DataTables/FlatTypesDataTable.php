@@ -3,12 +3,12 @@
 namespace App\DataTables;
 
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Yajra\DataTables\QueryDataTable;
+use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
 use Yajra\DataTables\Html\Button;
 use Yajra\DataTables\Html\Column;
+use Yajra\DataTables\QueryDataTable;
 use Yajra\DataTables\Services\DataTable;
-use Illuminate\Support\Facades\DB;
 
 class FlatTypesDataTable extends DataTable
 {
@@ -19,31 +19,20 @@ class FlatTypesDataTable extends DataTable
             ->editColumn('created_at', function ($row) {
                 return $row->created_at ? date('d-m-Y h:i A', strtotime($row->created_at)) : '-';
             })
-<<<<<<< HEAD
-            ->editColumn('maintenance_fee', function ($row) {
-                return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">₹' . number_format($row->maintenance_fee, 2) . '</span>';
-=======
             ->editColumn('owner_maintenance_fee', function ($row) {
-                return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">$' . number_format($row->owner_maintenance_fee, 2) . '</span>';
+                return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">$'.number_format($row->owner_maintenance_fee, 2).'</span>';
             })
             ->editColumn('rental_maintenance_fee', function ($row) {
-                return '<span class="badge bg-info fw-bold px-3 py-2 fs-6">$' . number_format($row->rental_maintenance_fee, 2) . '</span>';
-            })
-            ->editColumn('penalty_per_day', function ($row) {
-                return '<span class="badge bg-danger text-white fw-bold px-3 py-2 fs-6">$' . number_format($row->penalty_per_day, 2) . '</span>';
->>>>>>> main
+                return '<span class="badge bg-info fw-bold px-3 py-2 fs-6">$'.number_format($row->rental_maintenance_fee, 2).'</span>';
             })
             ->editColumn('status', function ($row) {
                 if ($row->status === 'active') {
                     return '<span class="badge bg-success">Active</span>';
                 }
+
                 return '<span class="badge bg-secondary">Inactive</span>';
             })
-<<<<<<< HEAD
-            ->rawColumns(['action', 'status', 'maintenance_fee'])
-=======
-            ->rawColumns(['action', 'status', 'owner_maintenance_fee', 'rental_maintenance_fee', 'penalty_per_day'])
->>>>>>> main
+            ->rawColumns(['action', 'status', 'owner_maintenance_fee', 'rental_maintenance_fee'])
             ->setRowId('id');
     }
 
@@ -53,15 +42,10 @@ class FlatTypesDataTable extends DataTable
             ->select([
                 'id',
                 'name',
-<<<<<<< HEAD
-                'maintenance_fee',
-=======
                 'owner_maintenance_fee',
                 'rental_maintenance_fee',
-                'penalty_per_day',
->>>>>>> main
                 'status',
-                'created_at'
+                'created_at',
             ]);
 
         return $query;
@@ -81,7 +65,7 @@ class FlatTypesDataTable extends DataTable
                 Button::make('pdf'),
                 Button::make('print'),
                 Button::make('reset'),
-                Button::make('reload')
+                Button::make('reload'),
             ]);
     }
 
@@ -95,13 +79,8 @@ class FlatTypesDataTable extends DataTable
                 ->width(60)
                 ->addClass('text-center'),
             Column::make('name')->data('name')->name('name'),
-<<<<<<< HEAD
-            Column::make('maintenance_fee')->data('maintenance_fee')->name('maintenance_fee')->title('Maintenance Fee'),
-=======
             Column::make('owner_maintenance_fee')->data('owner_maintenance_fee')->name('owner_maintenance_fee')->title('Owner Fee'),
             Column::make('rental_maintenance_fee')->data('rental_maintenance_fee')->name('rental_maintenance_fee')->title('Rental Fee'),
-            Column::make('penalty_per_day')->data('penalty_per_day')->name('penalty_per_day')->title('Late Penalty'),
->>>>>>> main
             Column::make('status')->data('status')->name('status'),
             Column::make('created_at')->data('created_at')->name('created_at')->title('Created At'),
             Column::computed('action')->orderable(false)->searchable(false)->width(120),
@@ -110,6 +89,6 @@ class FlatTypesDataTable extends DataTable
 
     protected function filename(): string
     {
-        return 'FlatTypes_' . date('YmdHis');
+        return 'FlatTypes_'.date('YmdHis');
     }
 }
