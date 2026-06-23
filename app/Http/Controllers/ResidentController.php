@@ -20,7 +20,7 @@ class ResidentController extends Controller
     // Display a listing of the resource.
     public function index(ResidentsDataTable $dataTable)
     {
-        abort_if(Auth::denies('resident_view'), 403);
+        abort_if(\Gate::denies('resident_view'), 403);
         $blocks = Block::all();
 
         return $dataTable->render('residents.index', compact('blocks'));
@@ -29,7 +29,7 @@ class ResidentController extends Controller
     // Show the form for creating a new resource.
     public function create()
     {
-        abort_if(Auth::denies('resident_create'), 403);
+        abort_if(\Gate::denies('resident_create'), 403);
         $blocks = Block::all();
         $users = User::with(['resident.flat.block'])->get();
 
@@ -39,7 +39,7 @@ class ResidentController extends Controller
     // Store a newly created resource in storage.
     public function store(Request $request)
     {
-        abort_if(Auth::denies('resident_create'), 403);
+        abort_if(\Gate::denies('resident_create'), 403);
         // Check if the flat already has an owner
         $flatHasOwner = Resident::where('flat_id', $request->flat_id)->where('type', 'owner')->exists();
 
@@ -99,7 +99,7 @@ class ResidentController extends Controller
     // Show the form for editing the specified resource.
     public function edit(Resident $resident)
     {
-        abort_if(Auth::denies('resident_edit'), 403);
+        abort_if(\Gate::denies('resident_edit'), 403);
         $blocks = Block::all();
         $flats = Flat::where('block_id', $resident->block_id)->get();
         $users = User::with(['resident.flat.block'])->get();
