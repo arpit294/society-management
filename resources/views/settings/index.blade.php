@@ -372,14 +372,14 @@
                         <div class="card border-0 shadow-sm h-100 role-card" style="cursor: pointer;"
                             data-role-id="{{ $role->id }}" data-role-name="{{ $role->name }}"
                             data-role-permissions='@json($role->permissions->pluck("name")->values())'
-                            onclick="selectRole(this)">
+                            onclick="selectRole(this, event)">
                             <div class="card-body p-4">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <h5 class="card-title mb-0 fw-bold border-start border-primary border-4 ps-2">
                                         {{ $role->name }}</h5>
                                     <div class="dropdown">
                                         <button class="btn btn-link text-muted p-0" type="button"
-                                            data-coreui-toggle="dropdown" onclick="event.stopPropagation();">
+                                            data-coreui-toggle="dropdown">
                                             <i class="fa-solid fa-ellipsis"></i>
                                         </button>
                                         <ul class="dropdown-menu dropdown-menu-end shadow-sm">
@@ -390,8 +390,7 @@
                                                 <button type="button"
                                                     class="dropdown-item text-danger btn-delete-role"
                                                     data-url="{{ route('roles.destroy', $role->id) }}"
-                                                    data-role-name="{{ $role->name }}"
-                                                    onclick="event.stopPropagation();">
+                                                    data-role-name="{{ $role->name }}">
                                                     Delete Role
                                                 </button>
                                             </li>
@@ -528,7 +527,12 @@
                 }
             });
 
-            function selectRole(element) {
+            function selectRole(element, event) {
+                // If the click originated from the dropdown menu, don't trigger role selection
+                if (event && event.target.closest('.dropdown')) {
+                    return;
+                }
+
                 // Remove active class from all cards
                 document.querySelectorAll('.role-card').forEach(card => {
                     card.classList.remove('border-primary');

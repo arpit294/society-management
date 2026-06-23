@@ -8,6 +8,7 @@ use App\Models\Flat;
 use App\Models\Resident;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use OpenSpout\Common\Entity\Row;
@@ -19,7 +20,7 @@ class ResidentController extends Controller
     // Display a listing of the resource.
     public function index(ResidentsDataTable $dataTable)
     {
-        abort_if(\Gate::denies('resident_view'), 403);
+        abort_if(Auth::denies('resident_view'), 403);
         $blocks = Block::all();
 
         return $dataTable->render('residents.index', compact('blocks'));
@@ -28,7 +29,7 @@ class ResidentController extends Controller
     // Show the form for creating a new resource.
     public function create()
     {
-        abort_if(\Gate::denies('resident_create'), 403);
+        abort_if(Auth::denies('resident_create'), 403);
         $blocks = Block::all();
         $users = User::with(['resident.flat.block'])->get();
 
@@ -38,7 +39,7 @@ class ResidentController extends Controller
     // Store a newly created resource in storage.
     public function store(Request $request)
     {
-        abort_if(\Gate::denies('resident_create'), 403);
+        abort_if(Auth::denies('resident_create'), 403);
         // Check if the flat already has an owner
         $flatHasOwner = Resident::where('flat_id', $request->flat_id)->where('type', 'owner')->exists();
 
@@ -96,7 +97,7 @@ class ResidentController extends Controller
     // Show the form for editing the specified resource.
     public function edit(Resident $resident)
     {
-        abort_if(\Gate::denies('resident_edit'), 403);
+        abort_if(Auth::denies('resident_edit'), 403);
         $blocks = Block::all();
         $flats = Flat::where('block_id', $resident->block_id)->get();
         $users = User::with(['resident.flat.block'])->get();
@@ -107,7 +108,7 @@ class ResidentController extends Controller
     // Update the specified resource in storage.
     public function update(Request $request, Resident $resident)
     {
-        abort_if(\Gate::denies('resident_edit'), 403);
+        abort_if(! \Auth::user()->can('resident_edit'), 403);
         $flatHasOwner = Resident::where('flat_id', $request->flat_id)
             ->where('type', 'owner')
             ->where(function ($q) {
@@ -172,7 +173,7 @@ class ResidentController extends Controller
     // Remove the specified resource from storage.
     public function destroy(Resident $resident)
     {
-        abort_if(\Gate::denies('resident_delete'), 403);
+        abort_if(! \Auth::user()->can('resident_delete'), 403);
         $resident->delete();
 
         return response()->json([
@@ -184,7 +185,7 @@ class ResidentController extends Controller
     // API Methods
     public function getFlatsByBlock($block_id)
     {
-        abort_if(\Gate::denies('resident_view'), 403);
+        abort_if(! \Auth::user()->can('resident_view'), 403);
         $flats = Flat::where('block_id', $block_id)->get();
 
         return response()->json($flats);
@@ -192,7 +193,7 @@ class ResidentController extends Controller
 
     public function getFlatOwner($flat_id)
     {
-        abort_if(\Gate::denies('resident_view'), 403);
+        abort_if(! \Auth::user()->can('resident_view'), 403);
         $ownerResident = Resident::where('flat_id', $flat_id)->where('type', 'owner')->first();
         if ($ownerResident) {
             return response()->json(['has_owner' => true, 'user_id' => $ownerResident->user_id]);
@@ -203,7 +204,7 @@ class ResidentController extends Controller
 
     public function getFlatUsers($flat_id)
     {
-        abort_if(\Gate::denies('resident_view'), 403);
+        abort_if(! \Auth::user()->can('resident_view'), 403);
         $residents = Resident::with('user')->where('flat_id', $flat_id)->get();
 
         $users = $residents->map(function ($resident) {
@@ -222,7 +223,7 @@ class ResidentController extends Controller
     // Bulk Import Methods
     public function downloadTemplate()
     {
-        abort_if(\Gate::denies('resident_create'), 403);
+        abort_if(! \Auth::user()->can('resident_create'), 403);
         $headers = [
             'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename=residents_import_template.xlsx',
@@ -251,10 +252,50 @@ class ResidentController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    public function export()
+    {
+        abort_if(! \Auth::user()->can('resident_view'), 403);
+        $headers = [
+            'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename=residents_export_'.date('Ymd_His').'.xlsx',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+
+        $callback = function () {
+            $writer = new Writer;
+            $writer->openToFile('php://output');
+
+            $writer->addRow(Row::fromValues([
+                'Name', 'Email', 'Phone', 'Aadhar ID', 'Block Name', 'Flat No', 'Type', 'Move In Date', 'Move Out Date'
+            ]));
+
+            $residents = Resident::with(['user', 'block', 'flat'])->get();
+            foreach ($residents as $resident) {
+                $writer->addRow(Row::fromValues([
+                    $resident->user->name ?? 'N/A',
+                    $resident->user->email ?? 'N/A',
+                    $resident->user->phone ?? 'N/A',
+                    $resident->user->aadhar_id ?? 'N/A',
+                    $resident->block->block_name ?? 'N/A',
+                    $resident->flat->flat_no ?? 'N/A',
+                    ucfirst($resident->type),
+                    $resident->move_in_date ? date('Y-m-d', strtotime($resident->move_in_date)) : '',
+                    $resident->move_out_date ? date('Y-m-d', strtotime($resident->move_out_date)) : '',
+                ]));
+            }
+
+            $writer->close();
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     // Handle the import of residents from Excel file
     public function import(Request $request)
     {
-        abort_if(\Gate::denies('resident_create'), 403);
+        abort_if(! \Auth::user()->can('resident_create'), 403);
         $request->validate([
             'excel_file' => 'required|file|mimes:xlsx,xls|max:5120',
         ]);
@@ -299,7 +340,7 @@ class ResidentController extends Controller
                     $blockName = $cells[4];
                     $flatNo = $cells[5];
                     $type = strtolower(trim($cells[6] ?? 'owner'));
-                    
+
                     // Date Parsing
                     $moveInDate = $cells[7] ?? null;
                     if ($moveInDate instanceof \DateTime) {
@@ -311,7 +352,7 @@ class ResidentController extends Controller
                     }
 
                     // Check or create User
-                    $user = \App\Models\User::firstOrCreate(
+                    $user = User::firstOrCreate(
                         ['email' => $email],
                         [
                             'name' => $name,
@@ -325,7 +366,7 @@ class ResidentController extends Controller
 
                     // Find Block (with cache)
                     if (! isset($blockCache[$blockName])) {
-                        $blockCache[$blockName] = \App\Models\Block::where('block_name', $blockName)->first();
+                        $blockCache[$blockName] = Block::where('block_name', $blockName)->first();
                     }
                     $block = $blockCache[$blockName];
 
@@ -336,7 +377,7 @@ class ResidentController extends Controller
                     // Find Flat (with cache)
                     $flatCacheKey = $block->id.'_'.$flatNo;
                     if (! isset($flatCache[$flatCacheKey])) {
-                        $flatCache[$flatCacheKey] = \App\Models\Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->first();
+                        $flatCache[$flatCacheKey] = Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->first();
                     }
                     $flat = $flatCache[$flatCacheKey];
 
@@ -345,7 +386,7 @@ class ResidentController extends Controller
                     }
 
                     // Create Resident (check if exact resident exists to avoid duplicates)
-                    \App\Models\Resident::firstOrCreate([
+                    Resident::firstOrCreate([
                         'user_id' => $user->id,
                         'flat_id' => $flat->id,
                         'type' => in_array($type, ['owner', 'rental']) ? $type : 'owner',
