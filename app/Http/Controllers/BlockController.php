@@ -16,7 +16,7 @@ class BlockController extends Controller
      */
     public function index(BlocksDataTable $dataTable)
     {
-        abort_if(\Gate::denies('block_view'), 403);
+        abort_if(! \Auth::user()->can('block_view'), 403);
         $blocks = Block::withCount([
             'flats',
             'flats as occupied_flats_count' => function ($query) {
@@ -35,7 +35,7 @@ class BlockController extends Controller
      */
     public function create()
     {
-        abort_if(\Gate::denies('block_create'), 403);
+        abort_if(! \Auth::user()->can('block_create'), 403);
         return view('blocks.create');
     }
 
@@ -44,7 +44,7 @@ class BlockController extends Controller
      */
     public function store(Request $request)
     {
-        abort_if(\Gate::denies('block_create'), 403);
+        abort_if(! \Auth::user()->can('block_create'), 403);
         $validatedData = $request->validate([
             'block_name' => 'required|string|max:255',
             'total_floor' => 'required|integer|min:0',
@@ -62,7 +62,7 @@ class BlockController extends Controller
     //  Show the form for editing the specified resource.
     public function edit(Block $block)
     {
-        abort_if(\Gate::denies('block_edit'), 403);
+        abort_if(! \Auth::user()->can('block_edit'), 403);
         return view('blocks.edit', compact('block'));
     }
 
@@ -71,7 +71,7 @@ class BlockController extends Controller
      */
     public function update(Request $request, Block $block)
     {
-        abort_if(\Gate::denies('block_edit'), 403);
+        abort_if(! \Auth::user()->can('block_edit'), 403);
         $validatedData = $request->validate([
             'block_name' => 'required|string|max:255',
             'total_floor' => 'required|integer|min:0',
@@ -91,7 +91,7 @@ class BlockController extends Controller
      */
     public function destroy(Block $block)
     {
-        abort_if(\Gate::denies('block_delete'), 403);
+        abort_if(! \Auth::user()->can('block_delete'), 403);
         DB::transaction(function () use ($block) {
             // Delete related maintenance bills
             MaintenanceBill::where('block_id', $block->id)->delete();

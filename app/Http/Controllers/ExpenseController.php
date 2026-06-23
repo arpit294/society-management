@@ -14,7 +14,7 @@ class ExpenseController extends Controller
 {
     public function index(ExpensesDataTable $dataTable)
     {
-        abort_if(\Gate::denies('expense_view'), 403);
+        abort_if(! \Auth::user()->can('expense_view'), 403);
         $totalExpenses = Expense::sum('total_amount');
         $thisMonthExpenses = Expense::whereMonth('created_at', date('m'))
                                     ->whereYear('created_at', date('Y'))
@@ -30,7 +30,7 @@ class ExpenseController extends Controller
 
     public function create()
     {
-        abort_if(\Gate::denies('expense_create'), 403);
+        abort_if(! \Auth::user()->can('expense_create'), 403);
         $users = User::whereIn('role', ['Admin', 'secretary', 'committee_member'])->get();
         $categories = ExpenseCategory::where('status', 'active')->get();
         return view('expenses.create', compact('users', 'categories'));
@@ -38,7 +38,7 @@ class ExpenseController extends Controller
 
     public function store(Request $request)
     {
-        abort_if(\Gate::denies('expense_create'), 403);
+        abort_if(! \Auth::user()->can('expense_create'), 403);
         if ($request->has('expense_date') && strlen($request->expense_date) === 7) {
             $request->merge(['expense_date' => $request->expense_date . '-01']);
         }
@@ -69,7 +69,7 @@ class ExpenseController extends Controller
 
     public function edit(Expense $expense)
     {
-        abort_if(\Gate::denies('expense_edit'), 403);
+        abort_if(! \Auth::user()->can('expense_edit'), 403);
         $users = User::whereIn('role', ['secretary', 'committee_member'])->get();
         $categories = ExpenseCategory::where('status', 'active')->get();
         return view('expenses.edit', compact('expense', 'users', 'categories'));
@@ -77,7 +77,7 @@ class ExpenseController extends Controller
 
     public function update(Request $request, Expense $expense)
     {
-        abort_if(\Gate::denies('expense_edit'), 403);
+        abort_if(! \Auth::user()->can('expense_edit'), 403);
         if ($request->has('expense_date') && strlen($request->expense_date) === 7) {
             $request->merge(['expense_date' => $request->expense_date . '-01']);
         }
@@ -113,7 +113,7 @@ class ExpenseController extends Controller
 
     public function destroy(Expense $expense)
     {
-        abort_if(\Gate::denies('expense_delete'), 403);
+        abort_if(! \Auth::user()->can('expense_delete'), 403);
         // Delete  invoice file if exists
         if ($expense->invoice && file_exists(public_path('uploads/invoices/' . $expense->invoice))) {
             unlink(public_path('uploads/invoices/' . $expense->invoice));
