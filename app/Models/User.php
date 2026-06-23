@@ -6,7 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Enums\UserRole;
+
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -18,6 +18,23 @@ class User extends Authenticatable
     }
 
     public const UPDATED_AT = null;
+
+    public const ROLE_OWNER = 'owner';
+    public const ROLE_RENTAL = 'rental';
+    public const ROLE_SECURITY = 'security';
+    public const ROLE_COMMITTEE_MEMBER = 'committee_member';
+    public const ROLE_SECRETARY = 'secretary';
+
+    public static function roleValues(): array
+    {
+        return [
+            self::ROLE_OWNER,
+            self::ROLE_RENTAL,
+            self::ROLE_SECURITY,
+            self::ROLE_COMMITTEE_MEMBER,
+            self::ROLE_SECRETARY,
+        ];
+    }
 
     protected $fillable = [
         'name',
@@ -66,35 +83,35 @@ class User extends Authenticatable
 
     public function isSecretary(): bool
     {
-        return $this->role === UserRole::SECRETARY->value;
+        return $this->role === self::ROLE_SECRETARY;
     }
 
     public function isCommitteeMember(): bool
     {
-        return $this->role === UserRole::COMMITTEE_MEMBER->value;
+        return $this->role === self::ROLE_COMMITTEE_MEMBER;
     }
 
     public function isSecurity(): bool
     {
-        return $this->role === UserRole::SECURITY->value;
+        return $this->role === self::ROLE_SECURITY;
     }
 
     public function isOwner(): bool
     {
-        return $this->role === UserRole::OWNER->value;
+        return $this->role === self::ROLE_OWNER;
     }
 
     public function isRental(): bool
     {
-        return $this->role === UserRole::RENTAL->value;
+        return $this->role === self::ROLE_RENTAL;
     }
 
     public function isStaff(): bool
     {
         return in_array($this->role, [
-            UserRole::SECRETARY->value,
-            UserRole::COMMITTEE_MEMBER->value,
-            UserRole::SECURITY->value,
+            self::ROLE_SECRETARY,
+            self::ROLE_COMMITTEE_MEMBER,
+            self::ROLE_SECURITY,
         ]);
     }
 

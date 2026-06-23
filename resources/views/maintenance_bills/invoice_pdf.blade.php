@@ -207,7 +207,7 @@
                 <tr>
                     <td>
                         <h1>INVOICE</h1>
-                        <div class="society-name">{{ setting('society_name', 'Society Name') }}</div>
+                        <div class="society-name">{{ \App\Models\Setting::get('society_name', 'Society Name') }}</div>
                     </td>
                     <td align="right" style="vertical-align: bottom;">
                         <div>
@@ -305,7 +305,7 @@
                                 @endif
                             </div>
                         </td>
-                        <td class="text-right">{{ setting('currency_symbol', '₹') }}{{ number_format($totalBase, 2) }}</td>
+                        <td class="text-right">{{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($totalBase, 2) }}</td>
                     </tr>
                     @if($totalPenalty > 0)
                     <tr>
@@ -313,7 +313,7 @@
                             <div class="item-desc-title">Penalty Amount</div>
                             <div class="item-desc-sub">Late Fee applied</div>
                         </td>
-                        <td class="text-right text-danger">+ {{ setting('currency_symbol', '₹') }}{{ number_format($totalPenalty, 2) }}</td>
+                        <td class="text-right text-danger">+ {{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($totalPenalty, 2) }}</td>
                     </tr>
                     @endif
                     @if($totalDiscount > 0)
@@ -321,7 +321,7 @@
                         <td>
                             <div class="item-desc-title">Discount Applied</div>
                         </td>
-                        <td class="text-right text-success">- {{ setting('currency_symbol', '₹') }}{{ number_format($totalDiscount, 2) }}</td>
+                        <td class="text-right text-success">- {{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($totalDiscount, 2) }}</td>
                     </tr>
                     @endif
                 </tbody>
@@ -333,17 +333,17 @@
             <table class="totals-table">
                 <tr>
                     <td style="color: #666; font-weight: bold;">Subtotal</td>
-                    <td class="text-right" style="font-weight: bold;">{{ setting('currency_symbol', '₹') }}{{ number_format($totalBase + $totalPenalty, 2) }}</td>
+                    <td class="text-right" style="font-weight: bold;">{{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($totalBase + $totalPenalty, 2) }}</td>
                 </tr>
                 @if($totalDiscount > 0)
                 <tr>
                     <td style="color: #666; font-weight: bold;">Discount</td>
-                    <td class="text-right text-success">- {{ setting('currency_symbol', '₹') }}{{ number_format($totalDiscount, 2) }}</td>
+                    <td class="text-right text-success">- {{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($totalDiscount, 2) }}</td>
                 </tr>
                 @endif
                 <tr class="total-row">
                     <td style="padding: 15px;">TOTAL</td>
-                    <td class="text-right" style="padding: 15px;">{{ setting('currency_symbol', '₹') }}{{ number_format($grandTotal, 2) }}</td>
+                    <td class="text-right" style="padding: 15px;">{{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($grandTotal, 2) }}</td>
                 </tr>
             </table>
         </div>
@@ -351,7 +351,7 @@
         <!-- Footer -->
         <div class="footer">
             <strong>Thank You!</strong><br>
-            {{ setting('invoice_notes', 'Thank you for your payment. If you have any questions concerning this invoice, please contact the society management.') }}
+            {{ \App\Models\Setting::get('invoice_notes', 'Thank you for your payment. If you have any questions concerning this invoice, please contact the society management.') }}
         </div>
         
     </div>

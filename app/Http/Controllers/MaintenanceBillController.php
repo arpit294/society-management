@@ -433,20 +433,20 @@ class MaintenanceBillController extends Controller
     private function getSettingValues(string $type): array
     {
         return [
-            "apply_{$type}" => setting("apply_{$type}", '1'),
-            'type' => setting("{$type}_type", 'percentage'),
+            "apply_{$type}" => \App\Models\Setting::get("apply_{$type}", '1'),
+            'type' => \App\Models\Setting::get("{$type}_type", 'percentage'),
 
             // Values (percentages or fixed amounts)
-            'yearly_value' => (float) setting("{$type}_yearly_value", setting("{$type}_yearly_percent", ($type === 'penalty' ? 15 : 10))),
-            'half_yearly_value' => (float) setting("{$type}_half_yearly_value", setting("{$type}_half_yearly_percent", ($type === 'penalty' ? 10 : 0))),
-            'quarterly_value' => (float) setting("{$type}_quarterly_value", setting("{$type}_quarterly_percent", 5)),
-            'monthly_value' => (float) setting("{$type}_monthly_value", setting("{$type}_monthly_percent", 2)),
+            'yearly_value' => (float) \App\Models\Setting::get("{$type}_yearly_value", \App\Models\Setting::get("{$type}_yearly_percent", ($type === 'penalty' ? 15 : 10))),
+            'half_yearly_value' => (float) \App\Models\Setting::get("{$type}_half_yearly_value", \App\Models\Setting::get("{$type}_half_yearly_percent", ($type === 'penalty' ? 10 : 0))),
+            'quarterly_value' => (float) \App\Models\Setting::get("{$type}_quarterly_value", \App\Models\Setting::get("{$type}_quarterly_percent", 5)),
+            'monthly_value' => (float) \App\Models\Setting::get("{$type}_monthly_value", \App\Models\Setting::get("{$type}_monthly_percent", 2)),
 
             // Toggle Switches
-            'yearly_enabled' => setting("{$type}_yearly_enabled", '1') == '1',
-            'half_yearly_enabled' => setting("{$type}_half_yearly_enabled", '1') == '1',
-            'quarterly_enabled' => setting("{$type}_quarterly_enabled", '1') == '1',
-            'monthly_enabled' => setting("{$type}_monthly_enabled", '1') == '1',
+            'yearly_enabled' => \App\Models\Setting::get("{$type}_yearly_enabled", '1') == '1',
+            'half_yearly_enabled' => \App\Models\Setting::get("{$type}_half_yearly_enabled", '1') == '1',
+            'quarterly_enabled' => \App\Models\Setting::get("{$type}_quarterly_enabled", '1') == '1',
+            'monthly_enabled' => \App\Models\Setting::get("{$type}_monthly_enabled", '1') == '1',
         ];
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\DataTables\ExpenseCategoriesDataTable;
 use App\Models\ExpenseCategory;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class ExpenseCategoryController extends Controller
 {
@@ -28,6 +29,7 @@ class ExpenseCategoryController extends Controller
             'status' => 'required|in:active,inactive',
         ]);
 
+        $validatedData['slug'] = Str::slug($validatedData['title']);
         ExpenseCategory::create($validatedData);
 
         return response()->json([
@@ -50,6 +52,7 @@ class ExpenseCategoryController extends Controller
             'status' => 'required|in:active,inactive',
         ]);
 
+        $validatedData['slug'] = Str::slug($validatedData['title']);
         $expenseCategory->update($validatedData);
 
         return response()->json([

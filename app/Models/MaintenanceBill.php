@@ -74,13 +74,13 @@ class MaintenanceBill extends Model
         // ---------------------------------------------------------
 
         // 1. Check if penalties are globally enabled in settings
-        $applyPenalty = setting('apply_penalty', '1');
+        $applyPenalty = \App\Models\Setting::get('apply_penalty', '1');
         if ($applyPenalty !== '1') {
             return 0.00;
         }
 
         // 2. Check if the bill has crossed the allowed due days
-        $dueDays = (int)setting('penalty_due_days', 15);
+        $dueDays = (int)\App\Models\Setting::get('penalty_due_days', 15);
         $dueDate = Carbon::parse($this->generated_date)->addDays($dueDays);
 
         // 3. If past due date, calculate the penalty based on billing cycle
@@ -90,16 +90,16 @@ class MaintenanceBill extends Model
             $penaltyValue = 0;
 
             // Fetch the appropriate penalty value based on billing cycle and global settings
-            if ($billingCycle === 'monthly' && setting('penalty_monthly_enabled', '1') == '1') {
-                $penaltyValue = (float)setting('penalty_monthly_value', setting('penalty_monthly_percent', 5));
-            } elseif ($billingCycle === 'quarterly' && setting('penalty_quarterly_enabled', '1') == '1') {
-                $penaltyValue = (float)setting('penalty_quarterly_value', setting('penalty_quarterly_percent', 10));
-            } elseif ($billingCycle === 'yearly' && setting('penalty_yearly_enabled', '1') == '1') {
-                $penaltyValue = (float)setting('penalty_yearly_value', setting('penalty_yearly_percent', 15));
+            if ($billingCycle === 'monthly' && \App\Models\Setting::get('penalty_monthly_enabled', '1') == '1') {
+                $penaltyValue = (float)\App\Models\Setting::get('penalty_monthly_value', \App\Models\Setting::get('penalty_monthly_percent', 5));
+            } elseif ($billingCycle === 'quarterly' && \App\Models\Setting::get('penalty_quarterly_enabled', '1') == '1') {
+                $penaltyValue = (float)\App\Models\Setting::get('penalty_quarterly_value', \App\Models\Setting::get('penalty_quarterly_percent', 10));
+            } elseif ($billingCycle === 'yearly' && \App\Models\Setting::get('penalty_yearly_enabled', '1') == '1') {
+                $penaltyValue = (float)\App\Models\Setting::get('penalty_yearly_value', \App\Models\Setting::get('penalty_yearly_percent', 15));
             }
 
             // 4. Apply either as a fixed dollar amount or as a percentage multiplier
-            $penaltyType = setting('penalty_type', 'percentage');
+            $penaltyType = \App\Models\Setting::get('penalty_type', 'percentage');
             if ($penaltyType === 'fixed') {
                 return $penaltyValue;
             }

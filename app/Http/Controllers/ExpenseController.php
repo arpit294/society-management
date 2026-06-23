@@ -23,7 +23,7 @@ class ExpenseController extends Controller
         $totalMaintenanceIncome = MaintenanceBill::where('status', 'paid')->sum('total_amount')
                                 + NameTransferBill::where('status', 'paid')->sum('amount');
         $categories = ExpenseCategory::all();
-        $users = User::whereIn('role', ['secretary', 'committee_member'])->get();
+        $users = User::whereIn('role', ['Admin', 'secretary', 'committee_member'])->get();
 
         return $dataTable->render('expenses.index', compact('totalExpenses', 'thisMonthExpenses', 'totalInvoices', 'totalMaintenanceIncome', 'categories', 'users'));
     }
@@ -31,7 +31,7 @@ class ExpenseController extends Controller
     public function create()
     {
         abort_if(\Gate::denies('expense_create'), 403);
-        $users = User::whereIn('role', ['secretary', 'committee_member'])->get();
+        $users = User::whereIn('role', ['Admin', 'secretary', 'committee_member'])->get();
         $categories = ExpenseCategory::where('status', 'active')->get();
         return view('expenses.create', compact('users', 'categories'));
     }

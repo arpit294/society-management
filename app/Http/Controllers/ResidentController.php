@@ -299,24 +299,33 @@ class ResidentController extends Controller
                     $blockName = $cells[4];
                     $flatNo = $cells[5];
                     $type = strtolower(trim($cells[6] ?? 'owner'));
-                    $moveInDate = $cells[7];
+                    
+                    // Date Parsing
+                    $moveInDate = $cells[7] ?? null;
+                    if ($moveInDate instanceof \DateTime) {
+                        $moveInDate = $moveInDate->format('Y-m-d');
+                    } else if (!empty($moveInDate) && strtotime($moveInDate)) {
+                        $moveInDate = date('Y-m-d', strtotime($moveInDate));
+                    } else {
+                        $moveInDate = now()->format('Y-m-d');
+                    }
 
                     // Check or create User
-                    $user = User::firstOrCreate(
+                    $user = \App\Models\User::firstOrCreate(
                         ['email' => $email],
                         [
                             'name' => $name,
                             'phone' => $phone,
                             'aadhar_id' => $aadhar,
                             'password' => $defaultPassword, // Use pre-hashed password
-                            'role' => $type,
+                            'role' => in_array($type, ['owner', 'rental']) ? $type : 'owner',
                             'status' => 'active',
                         ]
                     );
 
                     // Find Block (with cache)
                     if (! isset($blockCache[$blockName])) {
-                        $blockCache[$blockName] = Block::where('block_name', $blockName)->first();
+                        $blockCache[$blockName] = \App\Models\Block::where('block_name', $blockName)->first();
                     }
                     $block = $blockCache[$blockName];
 
@@ -327,7 +336,7 @@ class ResidentController extends Controller
                     // Find Flat (with cache)
                     $flatCacheKey = $block->id.'_'.$flatNo;
                     if (! isset($flatCache[$flatCacheKey])) {
-                        $flatCache[$flatCacheKey] = Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->first();
+                        $flatCache[$flatCacheKey] = \App\Models\Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->first();
                     }
                     $flat = $flatCache[$flatCacheKey];
 
@@ -336,13 +345,13 @@ class ResidentController extends Controller
                     }
 
                     // Create Resident (check if exact resident exists to avoid duplicates)
-                    Resident::firstOrCreate([
+                    \App\Models\Resident::firstOrCreate([
                         'user_id' => $user->id,
                         'flat_id' => $flat->id,
-                        'type' => $type,
+                        'type' => in_array($type, ['owner', 'rental']) ? $type : 'owner',
                     ], [
                         'block_id' => $block->id,
-                        'move_in_date' => $moveInDate ?: now(),
+                        'move_in_date' => $moveInDate,
                     ]);
 
                     $successCount++;

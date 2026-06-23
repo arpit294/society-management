@@ -77,25 +77,13 @@
                 <!-- CHARTS ROW 1 -->
                 <div class="row g-4 mb-4">
                     <!-- Main Chart: Revenue vs Expenses -->
-                    <div class="col-lg-8">
+                    <div class="col-lg-12">
                         <div class="card h-100 shadow-sm border-0">
                             <div class="card-header bg-transparent border-0 pt-4 pb-0">
                                 <h5 class="card-title mb-0 fw-bold">Revenue vs Expenses ({{ date('Y') }})</h5>
                             </div>
                             <div class="card-body">
                                 <canvas id="mainChart" height="300"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Secondary Chart: Bill Status -->
-                    <div class="col-lg-4">
-                        <div class="card h-100 shadow-sm border-0">
-                            <div class="card-header bg-transparent border-0 pt-4 pb-0">
-                                <h5 class="card-title mb-0 fw-bold">Recent Maintenance Tracker</h5>
-                            </div>
-                            <div class="card-body d-flex justify-content-center align-items-center">
-                                <canvas id="statusChart" height="250"></canvas>
                             </div>
                         </div>
                     </div>

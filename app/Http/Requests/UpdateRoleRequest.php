@@ -27,7 +27,7 @@ class UpdateRoleRequest extends FormRequest
             'name' => 'required|string|max:255|unique:roles,name,'.$this->route('role')->id,
             'permissions' => 'nullable|array',
             'permissions.*' => [
-                Rule::in(all_permissions()),
+                Rule::in(\App\Models\Setting::allPermissions()),
             ],
         ];
     }
