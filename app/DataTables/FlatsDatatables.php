@@ -50,9 +50,11 @@ class FlatsDatatables extends DataTable
                 return $model->tenant && $model->tenant->user ? $model->tenant->user->name : '<span class="text-muted fst-italic">None</span>';
             })
             ->editColumn('status', function ($model) {
-                $class = strtolower($model->status) === 'occupied' ? 'bg-success' : 'bg-danger';
+                $hasResident = ($model->owner && $model->owner->user) || ($model->tenant && $model->tenant->user);
+                $displayStatus = $hasResident ? 'Occupied' : 'Empty';
+                $class = $hasResident ? 'bg-success' : 'bg-secondary';
 
-                return '<span class="badge '.$class.'">'.ucfirst($model->status).'</span>';
+                return '<span class="badge '.$class.'">'.$displayStatus.'</span>';
             })
             ->rawColumns(['status', 'action', 'owner_name', 'tenant_name'])
             ->setRowId('id');

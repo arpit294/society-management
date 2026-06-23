@@ -63,7 +63,7 @@
                 <label class="form-label">Status</label>
                 <select name="status" class="form-select">
                     <option value="">Select Status</option>
-                    <option value="Empty" {{ old('status') == 'Empty' ? 'selected' : '' }}>Empty</option>
+                    <option value="Empty" {{ old('status', 'Empty') == 'Empty' ? 'selected' : '' }}>Empty</option>
                     <option value="Occupied" {{ old('status') == 'Occupied' ? 'selected' : '' }}>Occupied</option>
                 </select>
                 @error('status')
