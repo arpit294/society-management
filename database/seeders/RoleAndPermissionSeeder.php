@@ -12,12 +12,7 @@ class RoleAndPermissionSeeder extends Seeder
      */
     public function run(): void
     {
-        // Admin will hold all permissions now (no separate Super Admin role)
-        Role::firstOrCreate(
-            ['name' => 'Admin'],
-            ['permissions' => all_permissions()]
-        );
-
-        Role::firstOrCreate(['name' => 'User']);
+        Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'User', 'guard_name' => 'web']);
     }
 }

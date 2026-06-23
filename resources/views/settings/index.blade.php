@@ -371,7 +371,7 @@
                     <div class="col-md-6 mb-3">
                         <div class="card border-0 shadow-sm h-100 role-card" style="cursor: pointer;"
                             data-role-id="{{ $role->id }}" data-role-name="{{ $role->name }}"
-                            data-role-permissions="{{ json_encode($role->permissions ?? []) }}"
+                            data-role-permissions='@json($role->permissions->pluck("name")->values())'
                             onclick="selectRole(this)">
                             <div class="card-body p-4">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -575,9 +575,6 @@
                 });
             }
 
-            updateSuffix('penalty_type', '.penalty-suffix');
-            updateSuffix('discount_type', '.discount-suffix');
-
             // Check All / Uncheck All Buttons
             document.querySelectorAll('.checkall-btn').forEach(btn => {
                 const targetPrefix = btn.getAttribute('data-target');
@@ -606,7 +603,6 @@
                     });
                 });
             });
-        });
     </script>
     @endpush
 </x-user-page>

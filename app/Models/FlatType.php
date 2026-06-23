@@ -11,8 +11,7 @@ class FlatType extends Model
 
     protected $fillable = [
         'name',
-        'owner_maintenance_fee',
-        'rental_maintenance_fee',
+        'maintenance_fee',
         'penalty_per_day',
         'description',
         'status',

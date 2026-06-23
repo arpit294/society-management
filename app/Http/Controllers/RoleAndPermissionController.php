@@ -15,7 +15,7 @@ class RoleAndPermissionController extends Controller
     {
         $role = Role::create([
             'name' => $request->validated('name'),
-            'permissions' => [],
+            'guard_name' => 'web',
         ]);
 
         return redirect(route('settings.index') . '#role-settings')
@@ -32,11 +32,8 @@ class RoleAndPermissionController extends Controller
     {
         $attributes = ['name' => $request->validated('name')];
 
-        if ($request->has('permissions')) {
-            $attributes['permissions'] = $request->input('permissions', []);
-        }
-
         $role->update($attributes);
+        $role->syncPermissions($request->input('permissions', []));
 
         return redirect(route('settings.index') . '#role-settings')->with('success', 'Role updated successfully.');
     }

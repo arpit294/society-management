@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use App\Models\Permission;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
+use App\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
@@ -78,13 +78,22 @@ class RolesAndPermissionsSeeder extends Seeder
                 'expense_edit',
                 'expense_delete',
             ],
+            'Dashboard' => [
+                'dashboard_view',
+            ],
             'Name Transfer Bills' => [
                 'name_transfer_bill_view',
                 'name_transfer_bill_delete',
             ],
-            'Settings vc' => [
+            'Settings' => [
                 'setting_view',
                 'setting_edit',
+            ],
+            'Roles & Permissions' => [
+                'view roles',
+                'create roles',
+                'edit roles',
+                'delete roles',
             ],
         ];
 
@@ -112,10 +121,13 @@ class RolesAndPermissionsSeeder extends Seeder
             'expense-categories' => 'Expense Categories',
             'expenses' => 'Expenses',
             'name-transfer-bills' => 'Name Transfer Bills',
-            'settings' => 'Settings vc',
+            'settings' => 'Settings',
         ];
 
         // 4. Create roles and assign their fine-grained permissions
+        $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        $adminRole->syncPermissions(Permission::pluck('name')->toArray());
+
         foreach (config('roles.access') as $roleName => $moduleNames) {
             $role = Role::firstOrCreate(['name' => $roleName, 'guard_name' => 'web']);
 

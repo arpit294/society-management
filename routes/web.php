@@ -14,6 +14,7 @@ use App\Http\Controllers\MaintenanceBillController;
 use App\Http\Controllers\NameTransferBillController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\ResidentController;
+use App\Http\Controllers\RoleAndPermissionController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -165,5 +166,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:setting_view')->group(function () {
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
+    });
+
+    Route::middleware('permission:setting_edit')->group(function () {
+        Route::resource('roles', RoleAndPermissionController::class)
+            ->only(['store', 'edit', 'update', 'destroy']);
     });
 });

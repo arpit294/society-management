@@ -12,13 +12,15 @@ use App\Models\ExpenseCategory;
 use App\Models\Maintenance;
 use App\Models\NameTransferBill;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     public function index()
     {
-        abort_if(\Gate::denies('dashboard_view'), 403);
+        // dd(Auth::user());
+        // abort_if(\Gate::denies('dashboard_view'), 403);
         $totalFlats = Flat::count();
         $totalResidents = Flat::whereHas('residents', function ($query) {
             $query->whereNull('move_out_date')->orWhere('move_out_date', '>=', now()->startOfDay());
