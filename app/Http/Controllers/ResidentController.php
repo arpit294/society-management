@@ -332,9 +332,11 @@ class ResidentController extends Controller
             // 1. Hash password ONCE outside the loop
             $defaultPassword = Hash::make('password123');
 
-            // 2. Cache blocks and flats to avoid N+1 queries
+            // 2. Caches to avoid N+1 queries
             $blockCache = [];
             $flatCache = [];
+            $activeOwnerCache = []; // flat_id => boolean
+            $userCache = []; // email => user_id
 
             foreach ($reader->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
@@ -412,33 +414,44 @@ class ResidentController extends Controller
 
                     // Enforce No Rental Without Owner Rule
                     if ($data['type'] === 'rental') {
-                        $hasOwner = Resident::where('flat_id', $flat->id)->where('type', 'owner')->where(function($q) {
-                            $q->whereNull('move_out_date')->orWhere('move_out_date', '>=', now()->startOfDay());
-                        })->exists();
+                        if (!array_key_exists($flat->id, $activeOwnerCache)) {
+                            $activeOwnerCache[$flat->id] = Resident::where('flat_id', $flat->id)
+                                ->where('type', 'owner')
+                                ->where(function($q) {
+                                    $q->whereNull('move_out_date')->orWhere('move_out_date', '>=', now()->startOfDay());
+                                })->exists();
+                        }
 
-                        if (!$hasOwner) {
+                        if (!$activeOwnerCache[$flat->id]) {
                             $errorMessages[] = "Row {$rowIndex}: Cannot add rental to flat '{$data['flat_no']}' because it has no active owner.";
                             $rowIndex++;
                             continue;
                         }
+                    } else if ($data['type'] === 'owner') {
+                        // If an owner is imported, update cache so subsequent rentals in the same import pass
+                        $activeOwnerCache[$flat->id] = true;
                     }
 
-                    // Check or create User
-                    $user = User::firstOrCreate(
-                        ['email' => $data['email']],
-                        [
-                            'name' => $data['name'],
-                            'phone' => $data['phone'],
-                            'aadhar_id' => $data['aadhar_id'],
-                            'password' => $defaultPassword,
-                            'role' => $data['type'],
-                            'status' => 'active',
-                        ]
-                    );
+                    // Check or create User (with cache)
+                    if (!isset($userCache[$data['email']])) {
+                        $user = User::firstOrCreate(
+                            ['email' => $data['email']],
+                            [
+                                'name' => $data['name'],
+                                'phone' => $data['phone'],
+                                'aadhar_id' => $data['aadhar_id'],
+                                'password' => $defaultPassword,
+                                'role' => $data['type'],
+                                'status' => 'active',
+                            ]
+                        );
+                        $userCache[$data['email']] = $user->id;
+                    }
+                    $userId = $userCache[$data['email']];
 
                     // Update existing resident or create new one
                     Resident::updateOrCreate([
-                        'user_id' => $user->id,
+                        'user_id' => $userId,
                         'flat_id' => $flat->id,
                         'type' => $data['type'],
                     ], [
@@ -454,16 +467,22 @@ class ResidentController extends Controller
 
             $reader->close();
 
+            DB::commit();
+
             if (count($errorMessages) > 0) {
-                DB::rollBack();
                 $errorList = implode('<br>', array_slice($errorMessages, 0, 10));
                 if (count($errorMessages) > 10) {
                     $errorList .= "<br>...and " . (count($errorMessages) - 10) . " more errors.";
                 }
-                return redirect()->back()->with('error', "Import failed with errors:<br>{$errorList}");
-            }
 
-            DB::commit();
+                if ($successCount > 0) {
+                    return redirect()->back()
+                        ->with('success', "Successfully imported/updated {$successCount} residents!")
+                        ->with('error', "However, some rows were skipped due to errors:<br>{$errorList}");
+                } else {
+                    return redirect()->back()->with('error', "Import failed. All rows had errors:<br>{$errorList}");
+                }
+            }
 
             return redirect()->back()->with('success', "Successfully imported/updated {$successCount} residents!");
         } catch (\Exception $e) {
