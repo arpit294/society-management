@@ -9,19 +9,62 @@
     <div class="wrapper d-flex flex-column min-vh-100">
         <x-header />
         <div class="body flex-grow-1">
+            <style>
+                .dash-card {
+                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    border-radius: 1.2rem;
+                    overflow: hidden;
+                    position: relative;
+                    z-index: 1;
+                    color: white;
+                }
+                .dash-card::before {
+                    content: '';
+                    position: absolute;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    background: inherit;
+                    filter: blur(20px);
+                    z-index: -1;
+                    opacity: 0.4;
+                    transition: opacity 0.4s;
+                }
+                .dash-card:hover {
+                    transform: translateY(-8px) scale(1.02);
+                }
+                .dash-card:hover::before {
+                    opacity: 0.8;
+                }
+                .card-flats { background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%); color: #4a0011; }
+                .card-residents { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: #2a114f; }
+                .card-complaints { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); color: #014421; }
+                .card-revenue { background: linear-gradient(135deg, #fccb90 0%, #d57eeb 100%); color: #420657; }
+                
+                .dash-icon-bg {
+                    background: rgba(255,255,255,0.3);
+                    width: 60px;
+                    height: 60px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    font-size: 1.5rem;
+                    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+                    backdrop-filter: blur(5px);
+                }
+            </style>
             <div class="container-lg px-4">
                 
                 <!-- TOP CARDS ROW -->
                 <div class="row g-4 mb-4">
                     <!-- Flats Card -->
                     <div class="col-sm-6 col-xl-3">
-                        <div class="card dash-card card-flats h-100 shadow-sm border-0">
-                            <div class="card-body d-flex justify-content-between align-items-start">
+                        <div class="card dash-card card-flats h-100 border-0">
+                            <div class="card-body d-flex justify-content-between align-items-center p-4">
                                 <div>
-                                    <div class="fs-4 fw-bold">{{ $totalFlats }}</div>
-                                    <div class="text-uppercase fw-semibold small opacity-75">Total Flats</div>
+                                    <div class="text-uppercase fw-bold small opacity-75 mb-1 tracking-wide">Total Flats</div>
+                                    <div class="fs-2 fw-bolder counter-animate" data-target="{{ $totalFlats }}">0</div>
                                 </div>
-                                <div class="fs-1">
+                                <div class="dash-icon-bg">
                                     <i class="fas fa-building"></i>
                                 </div>
                             </div>
@@ -30,13 +73,13 @@
                     
                     <!-- Residents Card -->
                     <div class="col-sm-6 col-xl-3">
-                        <div class="card dash-card card-residents h-100 shadow-sm border-0">
-                            <div class="card-body d-flex justify-content-between align-items-start">
+                        <div class="card dash-card card-residents h-100 border-0">
+                            <div class="card-body d-flex justify-content-between align-items-center p-4">
                                 <div>
-                                    <div class="fs-4 fw-bold">{{ $totalResidents }}</div>
-                                    <div class="text-uppercase fw-semibold small opacity-75">Total Residents</div>
+                                    <div class="text-uppercase fw-bold small opacity-75 mb-1 tracking-wide">Total Residents</div>
+                                    <div class="fs-2 fw-bolder counter-animate" data-target="{{ $totalResidents }}">0</div>
                                 </div>
-                                <div class="fs-1">
+                                <div class="dash-icon-bg">
                                     <i class="fas fa-users"></i>
                                 </div>
                             </div>
@@ -45,13 +88,13 @@
 
                     <!-- Complaints Card -->
                     <div class="col-sm-6 col-xl-3">
-                        <div class="card dash-card card-complaints h-100 shadow-sm border-0">
-                            <div class="card-body d-flex justify-content-between align-items-start">
+                        <div class="card dash-card card-complaints h-100 border-0">
+                            <div class="card-body d-flex justify-content-between align-items-center p-4">
                                 <div>
-                                    <div class="fs-4 fw-bold">{{ $totalComplaints }}</div>
-                                    <div class="text-uppercase fw-semibold small opacity-75">Total Complaints</div>
+                                    <div class="text-uppercase fw-bold small opacity-75 mb-1 tracking-wide">Total Complaints</div>
+                                    <div class="fs-2 fw-bolder counter-animate" data-target="{{ $totalComplaints }}">0</div>
                                 </div>
-                                <div class="fs-1">
+                                <div class="dash-icon-bg">
                                     <i class="fas fa-exclamation-circle"></i>
                                 </div>
                             </div>
@@ -60,13 +103,13 @@
 
                     <!-- Revenue Card -->
                     <div class="col-sm-6 col-xl-3">
-                        <div class="card dash-card card-revenue h-100 shadow-sm border-0">
-                            <div class="card-body d-flex justify-content-between align-items-start">
+                        <div class="card dash-card card-revenue h-100 border-0">
+                            <div class="card-body d-flex justify-content-between align-items-center p-4">
                                 <div>
-                                    <div class="fs-4 fw-bold">₹{{ number_format($totalRevenue, 2) }}</div>
-                                    <div class="text-uppercase fw-semibold small opacity-75">Total Revenue</div>
+                                    <div class="text-uppercase fw-bold small opacity-75 mb-1 tracking-wide">Total Revenue</div>
+                                    <div class="fs-2 fw-bolder">₹<span class="counter-animate" data-target="{{ $totalRevenue }}">0</span></div>
                                 </div>
-                                <div class="fs-1">
+                                <div class="dash-icon-bg">
                                     <i class="fas fa-dollar-sign"></i>
                                 </div>
                             </div>
@@ -126,8 +169,8 @@
                             <div class="card-body p-0">
                                 <div class="list-group list-group-flush">
                                     @forelse($activities as $activity)
-                                        <div class="list-group-item px-4 py-3 border-light d-flex align-items-center transition-hover" style="transition: background-color 0.2s;">
-                                            <div class="bg-light rounded-circle p-3 me-3 d-flex justify-content-center align-items-center shadow-sm" style="width: 48px; height: 48px;">
+                                        <div class="list-group-item px-4 py-3 d-flex align-items-center transition-hover" style="transition: background-color 0.2s;">
+                                            <div class="bg-secondary bg-opacity-10 rounded-circle p-3 me-3 d-flex justify-content-center align-items-center shadow-sm" style="width: 48px; height: 48px;">
                                                 <i class="{{ $activity->icon }} fs-5"></i>
                                             </div>
                                             <div class="flex-grow-1">
@@ -135,7 +178,7 @@
                                                 <p class="mb-0 text-muted small">{{ $activity->description }}</p>
                                             </div>
                                             <div class="text-end">
-                                                <span class="badge bg-light text-dark border">{{ $activity->time }}</span>
+                                                <span class="badge bg-secondary bg-opacity-10 text-body border">{{ $activity->time }}</span>
                                             </div>
                                         </div>
                                     @empty
@@ -165,4 +208,30 @@
          data-expense-labels='{{ json_encode($expenseBreakdownLabels) }}'
          data-expense-data='{{ json_encode($expenseBreakdownData) }}'>
     </div>
-</x-user-page>
+
+    @push('scripts')
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                // Counter Animation
+                const counters = document.querySelectorAll('.counter-animate');
+                const speed = 200;
+
+                counters.forEach(counter => {
+                    const updateCount = () => {
+                        const target = +counter.getAttribute('data-target');
+                        const count = +counter.innerText.replace(/,/g, '');
+                        const inc = target / speed;
+
+                        if (count < target) {
+                            counter.innerText = Math.ceil(count + inc).toLocaleString();
+                            setTimeout(updateCount, 10);
+                        } else {
+                            counter.innerText = target.toLocaleString();
+                        }
+                    };
+                    updateCount();
+                });
+            });
+        </script>
+    @endpush
+</x-layout>

@@ -22,7 +22,7 @@ class ReportController extends Controller
             ->get();
 
         $latestMaintenance = Maintenance::orderBy('year', 'desc')->orderBy('id', 'desc')->first();
-        
+
         $selectedMonth = $request->input('month', $latestMaintenance ? $latestMaintenance->month : Carbon::now()->format('F'));
         $selectedYear = $request->input('year', $latestMaintenance ? $latestMaintenance->year : Carbon::now()->format('Y'));
 
@@ -84,6 +84,7 @@ class ReportController extends Controller
         $selectedMonth = $request->input('month', $latestMaintenance ? $latestMaintenance->month : Carbon::now()->format('F'));
         $selectedYear = $request->input('year', $latestMaintenance ? $latestMaintenance->year : Carbon::now()->format('Y'));
 
+        // Fetch all active residents once
         $activeResidents = \App\Models\Resident::with(['user', 'flat.block', 'flat.flatType'])
             ->where(function($query) {
                 $query->whereNull('move_out_date')
@@ -98,13 +99,14 @@ class ReportController extends Controller
             "Expires"             => "0"
         ];
 
+        // Create a callback to stream the Excel file
         $callback = function() use ($reportType, $selectedMonth, $selectedYear, $activeResidents) {
             $writer = new Writer();
             $writer->openToFile('php://output');
-            
+
             if ($reportType === 'yearly') {
                 $writer->addRow(Row::fromValues(['Month', 'Expected Amount', 'Paid Amount', 'Pending Amount']));
-                
+
                 $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
                 $yearlyExpected = $yearlyPaid = $yearlyPending = 0;
 
@@ -116,12 +118,12 @@ class ReportController extends Controller
                         round($stats['totalPaid'], 2),
                         round($stats['totalPending'], 2)
                     ]));
-                    
+
                     $yearlyExpected += $stats['totalExpected'];
                     $yearlyPaid += $stats['totalPaid'];
                     $yearlyPending += $stats['totalPending'];
                 }
-                
+
                 $writer->addRow(Row::fromValues([
                     'Total',
                     round($yearlyExpected, 2),
@@ -130,10 +132,10 @@ class ReportController extends Controller
                 ]));
             } else {
                 $stats = $this->calculateMonthlyStats($selectedMonth, $selectedYear, $activeResidents);
-                
+
                 $writer->addRow(Row::fromValues(["Paid Residents - $selectedMonth $selectedYear"]));
                 $writer->addRow(Row::fromValues(['Resident', 'Block - Flat', 'Paid Amount', 'Payment Method', 'Paid Date']));
-                
+
                 foreach ($stats['paidBills'] as $bill) {
                     $writer->addRow(Row::fromValues([
                         $bill->user->name ?? 'N/A',
@@ -143,12 +145,12 @@ class ReportController extends Controller
                         $bill->paid_at ? $bill->paid_at->format('d M Y') : 'N/A'
                     ]));
                 }
-                
+
                 $writer->addRow(Row::fromValues([]));
-                
+
                 $writer->addRow(Row::fromValues(["Pending Maintenance - $selectedMonth $selectedYear"]));
                 $writer->addRow(Row::fromValues(['Resident', 'Block - Flat', 'Base Amount', 'Penalty Amount', 'Total Due', 'Status']));
-                
+
                 foreach ($stats['pendingBills'] as $bill) {
                     $writer->addRow(Row::fromValues([
                         $bill->user->name ?? 'N/A',
@@ -160,7 +162,7 @@ class ReportController extends Controller
                     ]));
                 }
             }
-            
+
             $writer->close();
         };
 
@@ -183,8 +185,8 @@ class ReportController extends Controller
         foreach ($activeResidents as $resident) {
             $baseAmount = 0;
             if ($resident->flat && $resident->flat->flatType) {
-                $baseAmount = $resident->type === 'owner' 
-                    ? (float)$resident->flat->flatType->owner_maintenance_fee 
+                $baseAmount = $resident->type === 'owner'
+                    ? (float)$resident->flat->flatType->owner_maintenance_fee
                     : (float)$resident->flat->flatType->rental_maintenance_fee;
             }
 

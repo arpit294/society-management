@@ -73,7 +73,9 @@
                 toastr.success("{{ session('success') }}");
             @endif
             @if(session('error'))
-                toastr.error("{{ session('error') }}");
+                @if(!str_contains(session('error'), '<br>'))
+                    toastr.error("{{ session('error') }}");
+                @endif
             @endif
             @if(session('status'))
                 toastr.success("{{ session('status') }}");
