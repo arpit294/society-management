@@ -423,14 +423,14 @@
                             <table class="table mb-0">
                                 <thead>
                                     <tr>
-                                        <th class="ps-4 py-3 border-0 text-white">Module</th>
-                                        <th class="py-3 border-0 text-white">Permissions</th>
+                                        <th class="ps-4 py-3 border-0 text-body">Module</th>
+                                        <th class="py-3 border-0 text-body">Permissions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach ($permissionsByModule as $moduleName => $permissions)
                                         <tr>
-                                            <td class="ps-4 align-middle fw-semibold text-white"
+                                            <td class="ps-4 align-middle fw-semibold text-body"
                                                 style="width: 250px;">{{ $moduleName ?? 'General' }}</td>
                                             <td>
                                                 <div class="d-flex flex-wrap gap-4 py-2">
@@ -440,7 +440,7 @@
                                                                 type="checkbox" name="permissions[]"
                                                                 value="{{ $permission }}"
                                                                 id="perm_{{ Str::slug($permission) }}">
-                                                            <label class="form-check-label text-white"
+                                                            <label class="form-check-label text-body"
                                                                 for="perm_{{ Str::slug($permission) }}">
                                                                 {{ ucwords(str_replace(['_', '-'], ' ', $permission)) }}
                                                             </label>

@@ -1276,7 +1276,7 @@ $(document).ready(function () {
         residentModalInstance,
     );
     loadFormIntoModal(
-        "#residents-table .btn-edit-resident",
+        ".btn-edit-resident",
         "#resident-modal-content",
         residentModalInstance,
     );
@@ -1286,7 +1286,7 @@ $(document).ready(function () {
         "#residents-table",
     );
     setupDeleteHandler(
-        "#residents-table .btn-delete-resident",
+        ".btn-delete-resident",
         "#residents-table",
         "This resident will be deleted permanently!",
     );
