@@ -13,6 +13,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\MaintenanceBillController;
 use App\Http\Controllers\NameTransferBillController;
 use App\Http\Controllers\RegisterController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\RoleAndPermissionController;
 use App\Http\Controllers\SettingController;
@@ -165,8 +166,13 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('permission:setting_view')->group(function () {
+        // Settings
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
+
+        // Reports
+        Route::get('reports/maintenance/export', [ReportController::class, 'exportReport'])->name('reports.maintenance.export');
+        Route::get('reports/maintenance', [ReportController::class, 'maintenanceReport'])->name('reports.maintenance');
     });
 
     Route::middleware('permission:setting_edit')->group(function () {

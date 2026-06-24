@@ -64,12 +64,14 @@ class ResidentController extends Controller
             'move_out_date' => 'nullable|date',
         ];
 
-        // If it's a rental and flat doesn't have an owner, they can optionally provide one.
+        // If it's a rental and flat doesn't have an owner, they must provide one.
         if ($request->type === 'rental' && ! $flatHasOwner) {
-            $rules['owner_user_id'] = 'nullable|exists:users,id';
+            $rules['owner_user_id'] = 'required|exists:users,id';
         }
 
-        $validatedData = $request->validate($rules);
+        $validatedData = $request->validate($rules, [
+            'owner_user_id.required' => 'A flat must have an owner before it can be rented. Please assign an owner.',
+        ]);
 
         // Remove owner_user_id from validatedData before creating the tenant
         $ownerUserId = $validatedData['owner_user_id'] ?? null;
@@ -140,12 +142,14 @@ class ResidentController extends Controller
             'move_out_date' => 'nullable|date',
         ];
 
-        // If it's a rental and flat doesn't have an owner, they can optionally provide one.
+        // If it's a rental and flat doesn't have an owner, they must provide one.
         if ($request->type === 'rental' && ! $flatHasOwner) {
-            $rules['owner_user_id'] = 'nullable|exists:users,id';
+            $rules['owner_user_id'] = 'required|exists:users,id';
         }
 
-        $validatedData = $request->validate($rules);
+        $validatedData = $request->validate($rules, [
+            'owner_user_id.required' => 'A flat must have an owner before it can be rented. Please assign an owner.',
+        ]);
 
         // Remove owner_user_id from validatedData before updating the tenant
         $ownerUserId = $validatedData['owner_user_id'] ?? null;
