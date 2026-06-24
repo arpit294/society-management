@@ -83,7 +83,8 @@ Route::middleware('auth')->group(function () {
         Route::patch('residents/{resident}', [ResidentController::class, 'update']);
         Route::delete('residents/{resident}', [ResidentController::class, 'destroy'])->name('residents.destroy');
         Route::get('residents/export', [ResidentController::class, 'export'])->name('residents.export');
-        Route::post('residents/import', [ResidentController::class, 'import'])->name('residents.import');
+        Route::post('residents/import/preview', [ResidentController::class, 'previewImport'])->name('residents.import.preview');
+        Route::post('residents/import/process', [ResidentController::class, 'processImport'])->name('residents.import.process');
         Route::get('residents/import/template', [ResidentController::class, 'downloadTemplate'])->name('residents.import.template');
     });
 

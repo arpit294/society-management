@@ -91,9 +91,13 @@ class ReportController extends Controller
                       ->orWhere('move_out_date', '>=', now()->startOfDay());
             })->get();
 
+        $filename = $reportType === 'monthly' 
+            ? "maintenance_report_{$selectedMonth}_{$selectedYear}.xlsx" 
+            : "maintenance_report_yearly_{$selectedYear}.xlsx";
+
         $headers = [
             "Content-type"        => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "Content-Disposition" => "attachment; filename=maintenance_report_{$reportType}_{$selectedYear}.xlsx",
+            "Content-Disposition" => "attachment; filename={$filename}",
             "Pragma"              => "no-cache",
             "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
             "Expires"             => "0"
@@ -181,8 +185,48 @@ class ReportController extends Controller
         $totalExpected = 0;
         $totalPaid = 0;
         $totalPending = 0;
+        $processedFlatIds = [];
+
+        if ($maintenance) {
+            $allBills = MaintenanceBill::with(['user', 'block', 'flat'])
+                                       ->where('maintenance_id', $maintenance->id)
+                                       ->get();
+
+            foreach ($allBills as $bill) {
+                $processedFlatIds[] = $bill->flat_id;
+                
+                if ($bill->status === 'paid') {
+                    $paidBills->push((object)[
+                        'user' => $bill->user,
+                        'block' => $bill->block,
+                        'flat' => $bill->flat,
+                        'total_amount' => $bill->total_amount,
+                        'payment_method' => $bill->payment_method ?? 'N/A',
+                        'paid_at' => $bill->paid_at,
+                    ]);
+                    $totalPaid += $bill->total_amount;
+                    $totalExpected += $bill->amount ?? $bill->total_amount;
+                } else {
+                    $pendingBills->push((object)[
+                        'user' => $bill->user,
+                        'block' => $bill->block,
+                        'flat' => $bill->flat,
+                        'amount' => $bill->amount,
+                        'penalty_amount' => $bill->penalty_amount,
+                        'total_amount' => $bill->total_amount,
+                        'status' => $bill->status,
+                    ]);
+                    $totalPending += $bill->total_amount;
+                    $totalExpected += $bill->amount; 
+                }
+            }
+        }
 
         foreach ($activeResidents as $resident) {
+            if (in_array($resident->flat_id, $processedFlatIds)) {
+                continue;
+            }
+
             $baseAmount = 0;
             if ($resident->flat && $resident->flat->flatType) {
                 $baseAmount = $resident->type === 'owner'
@@ -190,41 +234,18 @@ class ReportController extends Controller
                     : (float)$resident->flat->flatType->rental_maintenance_fee;
             }
 
+            $pendingBills->push((object)[
+                'user' => $resident->user,
+                'block' => $resident->flat->block ?? null,
+                'flat' => $resident->flat,
+                'amount' => $baseAmount,
+                'penalty_amount' => 0,
+                'total_amount' => $baseAmount,
+                'status' => 'pending',
+            ]);
+            
             $totalExpected += $baseAmount;
-
-            $bill = null;
-            if ($maintenance) {
-                $bill = MaintenanceBill::where('maintenance_id', $maintenance->id)
-                                       ->where('flat_id', $resident->flat_id)
-                                       ->first();
-            }
-
-            if ($bill && $bill->status === 'paid') {
-                $paidBills->push((object)[
-                    'user' => $resident->user,
-                    'block' => $resident->flat->block ?? null,
-                    'flat' => $resident->flat,
-                    'total_amount' => $bill->total_amount,
-                    'payment_method' => $bill->payment_method ?? 'N/A',
-                    'paid_at' => $bill->paid_at,
-                ]);
-                $totalPaid += $bill->total_amount;
-            } else {
-                $penalty = $bill ? $bill->penalty_amount : 0;
-                $totalDue = $bill ? $bill->total_amount : $baseAmount;
-                $status = $bill ? $bill->status : 'pending';
-
-                $pendingBills->push((object)[
-                    'user' => $resident->user,
-                    'block' => $resident->flat->block ?? null,
-                    'flat' => $resident->flat,
-                    'amount' => $baseAmount,
-                    'penalty_amount' => $penalty,
-                    'total_amount' => $totalDue,
-                    'status' => $status,
-                ]);
-                $totalPending += $totalDue;
-            }
+            $totalPending += $baseAmount;
         }
 
         return [

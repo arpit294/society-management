@@ -308,8 +308,8 @@ class ResidentController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
-    // Handle the import of residents from Excel file
-    public function import(Request $request)
+    // Handle the preview of residents from Excel file
+    public function previewImport(Request $request)
     {
         abort_if(\Gate::denies('resident_create'), 403);
         $request->validate([
@@ -317,26 +317,97 @@ class ResidentController extends Controller
         ]);
 
         $file = $request->file('excel_file');
+        
+        // Store the file temporarily
+        $path = $file->storeAs('temp_imports', 'residents_import_' . time() . '.' . $file->getClientOriginalExtension());
+
+        try {
+            $reader = new Reader;
+            $reader->open(\Illuminate\Support\Facades\Storage::path($path));
+            
+            $previewRows = [];
+            $headers = [];
+            $rowCount = 0;
+
+            foreach ($reader->getSheetIterator() as $sheet) {
+                foreach ($sheet->getRowIterator() as $row) {
+                    if ($rowCount === 0) {
+                        $headers = $row->toArray();
+                    } else {
+                        // Sometimes dates are objects in Spout, we must convert to string for JSON preview
+                        $cells = $row->toArray();
+                        foreach ($cells as &$cell) {
+                            if ($cell instanceof \DateTime) {
+                                $cell = $cell->format('Y-m-d');
+                            }
+                        }
+                        $previewRows[] = $cells;
+                    }
+                    
+                    $rowCount++;
+                    if ($rowCount > 5) break; // Only read top 5 data rows
+                }
+                break; // Only read first sheet
+            }
+            $reader->close();
+
+            return response()->json([
+                'success' => true,
+                'file_path' => $path,
+                'headers' => $headers,
+                'preview_rows' => $previewRows
+            ]);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Storage::delete($path);
+            return response()->json([
+                'success' => false,
+                'message' => 'Error reading Excel file: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    // Handle the actual import process with field mapping
+    public function processImport(Request $request)
+    {
+        abort_if(\Gate::denies('resident_create'), 403);
+        $request->validate([
+            'file_path' => 'required|string',
+            'mapping' => 'required|array',
+        ]);
+
+        $path = $request->file_path;
+        if (!\Illuminate\Support\Facades\Storage::exists($path) || !str_starts_with($path, 'temp_imports/')) {
+            return redirect()->back()->with('error', 'Temporary file not found or invalid. Please try uploading again.');
+        }
+
+        $mapping = $request->mapping;
+
+        // Ensure required mappings are present
+        $requiredFields = ['name', 'email', 'aadhar_id', 'block_name', 'flat_no', 'type'];
+        foreach ($requiredFields as $field) {
+            if (!isset($mapping[$field]) && $mapping[$field] !== '0' && $mapping[$field] !== 0) {
+                \Illuminate\Support\Facades\Storage::delete($path);
+                return redirect()->back()->with('error', "Required field '{$field}' is not mapped.");
+            }
+        }
 
         try {
             DB::beginTransaction();
 
             $reader = new Reader;
-            $reader->open($file->path());
+            $reader->open(\Illuminate\Support\Facades\Storage::path($path));
 
             $isFirstRow = true;
             $successCount = 0;
             $errorMessages = [];
             $rowIndex = 1;
 
-            // 1. Hash password ONCE outside the loop
             $defaultPassword = Hash::make('password123');
-
-            // 2. Caches to avoid N+1 queries
             $blockCache = [];
             $flatCache = [];
-            $activeOwnerCache = []; // flat_id => boolean
-            $userCache = []; // email => user_id
+            $activeOwnerCache = [];
+            $userCache = [];
 
             foreach ($reader->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
@@ -347,17 +418,27 @@ class ResidentController extends Controller
                     }
 
                     $cells = $row->toArray();
-                    $cells = array_pad($cells, 8, null);
+
+                    // Safely grab using mapped indices
+                    $name = isset($mapping['name']) && isset($cells[$mapping['name']]) ? trim($cells[$mapping['name']]) : null;
+                    $email = isset($mapping['email']) && isset($cells[$mapping['email']]) ? trim($cells[$mapping['email']]) : null;
+                    $phone = isset($mapping['phone']) && isset($cells[$mapping['phone']]) ? trim($cells[$mapping['phone']]) : null;
+                    $aadhar_id = isset($mapping['aadhar_id']) && isset($cells[$mapping['aadhar_id']]) ? trim($cells[$mapping['aadhar_id']]) : null;
+                    $block_name = isset($mapping['block_name']) && isset($cells[$mapping['block_name']]) ? trim($cells[$mapping['block_name']]) : null;
+                    $flat_no = isset($mapping['flat_no']) && isset($cells[$mapping['flat_no']]) ? trim($cells[$mapping['flat_no']]) : null;
+                    $type = isset($mapping['type']) && isset($cells[$mapping['type']]) ? strtolower(trim($cells[$mapping['type']])) : 'owner';
+                    
+                    $moveInDateRaw = isset($mapping['move_in_date']) && isset($cells[$mapping['move_in_date']]) ? $cells[$mapping['move_in_date']] : null;
 
                     $data = [
-                        'name' => $cells[0],
-                        'email' => $cells[1],
-                        'phone' => $cells[2],
-                        'aadhar_id' => $cells[3],
-                        'block_name' => $cells[4],
-                        'flat_no' => $cells[5],
-                        'type' => strtolower(trim($cells[6] ?? 'owner')),
-                        'move_in_date' => $cells[7],
+                        'name' => $name,
+                        'email' => $email,
+                        'phone' => $phone,
+                        'aadhar_id' => $aadhar_id,
+                        'block_name' => $block_name,
+                        'flat_no' => $flat_no,
+                        'type' => $type,
+                        'move_in_date' => $moveInDateRaw,
                     ];
 
                     // Validate Data
@@ -428,7 +509,6 @@ class ResidentController extends Controller
                             continue;
                         }
                     } else if ($data['type'] === 'owner') {
-                        // If an owner is imported, update cache so subsequent rentals in the same import pass
                         $activeOwnerCache[$flat->id] = true;
                     }
 
@@ -466,8 +546,8 @@ class ResidentController extends Controller
             }
 
             $reader->close();
-
             DB::commit();
+            \Illuminate\Support\Facades\Storage::delete($path); // Cleanup temp file
 
             if (count($errorMessages) > 0) {
                 $errorList = implode('<br>', array_slice($errorMessages, 0, 10));
@@ -487,8 +567,9 @@ class ResidentController extends Controller
             return redirect()->back()->with('success', "Successfully imported/updated {$successCount} residents!");
         } catch (\Exception $e) {
             DB::rollBack();
+            \Illuminate\Support\Facades\Storage::delete($path); // Cleanup temp file
 
-            return redirect()->back()->with('error', 'Error importing residents: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Error processing residents import: '.$e->getMessage());
         }
     }
 }

@@ -9,49 +9,7 @@
     <div class="wrapper d-flex flex-column min-vh-100">
         <x-header />
         <div class="body flex-grow-1">
-            <style>
-                .dash-card {
-                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                    border-radius: 1.2rem;
-                    overflow: hidden;
-                    position: relative;
-                    z-index: 1;
-                    color: white;
-                }
-                .dash-card::before {
-                    content: '';
-                    position: absolute;
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    background: inherit;
-                    filter: blur(20px);
-                    z-index: -1;
-                    opacity: 0.4;
-                    transition: opacity 0.4s;
-                }
-                .dash-card:hover {
-                    transform: translateY(-8px) scale(1.02);
-                }
-                .dash-card:hover::before {
-                    opacity: 0.8;
-                }
-                .card-flats { background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 99%, #FECFEF 100%); color: #4a0011; }
-                .card-residents { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); color: #2a114f; }
-                .card-complaints { background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%); color: #014421; }
-                .card-revenue { background: linear-gradient(135deg, #fccb90 0%, #d57eeb 100%); color: #420657; }
-                
-                .dash-icon-bg {
-                    background: rgba(255,255,255,0.3);
-                    width: 60px;
-                    height: 60px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 50%;
-                    font-size: 1.5rem;
-                    box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-                    backdrop-filter: blur(5px);
-                }
-            </style>
+
             <div class="container-lg px-4">
                 
                 <!-- TOP CARDS ROW -->
@@ -209,29 +167,5 @@
          data-expense-data='{{ json_encode($expenseBreakdownData) }}'>
     </div>
 
-    @push('scripts')
-        <script>
-            document.addEventListener("DOMContentLoaded", function() {
-                // Counter Animation
-                const counters = document.querySelectorAll('.counter-animate');
-                const speed = 200;
 
-                counters.forEach(counter => {
-                    const updateCount = () => {
-                        const target = +counter.getAttribute('data-target');
-                        const count = +counter.innerText.replace(/,/g, '');
-                        const inc = target / speed;
-
-                        if (count < target) {
-                            counter.innerText = Math.ceil(count + inc).toLocaleString();
-                            setTimeout(updateCount, 10);
-                        } else {
-                            counter.innerText = target.toLocaleString();
-                        }
-                    };
-                    updateCount();
-                });
-            });
-        </script>
-    @endpush
 </x-layout>

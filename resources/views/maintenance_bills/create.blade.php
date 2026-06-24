@@ -1,4 +1,4 @@
-<form id="prepayment-form" action="{{ route('maintenance-bills.store') }}" method="POST" enctype="multipart/form-data">
+<form id="prepayment-form" action="{{ route('maintenance-bills.store') }}" method="POST" enctype="multipart/form-data" data-fees="{{ json_encode($residentFees) }}" data-discount="{{ json_encode($discountSettings) }}" data-penalty="{{ json_encode($penaltySettings) }}">
     @csrf
     <div class="modal-header">
         <div>
@@ -122,9 +122,4 @@
     </div>
 </form>
 
-<script>
-    // Global variables for script.js
-    window.residentFees = @json($residentFees);
-    window.discountSettings = @json($discountSettings);
-    window.penaltySettings = @json($penaltySettings);
-</script>
+

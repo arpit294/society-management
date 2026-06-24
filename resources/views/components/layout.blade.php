@@ -65,26 +65,12 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
     <script src="{{ asset('js/script.js') }}?v={{ filemtime(public_path('js/script.js')) }}"></script>
     {{-- <script src="{{ asset('js/main.js') }}"></script> --}}
-    <script>
-        $(document).ready(function() {
-            $('input[type="file"]').dropify();
-
-            @if(session('success'))
-                toastr.success("{{ session('success') }}");
-            @endif
-            @if(session('error'))
-                @if(!str_contains(session('error'), '<br>'))
-                    toastr.error("{{ session('error') }}");
-                @endif
-            @endif
-            @if(session('status'))
-                toastr.success("{{ session('status') }}");
-            @endif
-            @if($errors->any())
-                toastr.error("{{ $errors->first() }}");
-            @endif
-        });
-    </script>
+    <div id="global-flash-messages" class="d-none"
+        data-success="{{ session('success') }}"
+        data-error="{{ !str_contains(session('error', ''), '<br>') ? session('error') : '' }}"
+        data-status="{{ session('status') }}"
+        data-validation="{{ $errors->any() ? $errors->first() : '' }}">
+    </div>
         @stack('scripts')
 </body>
 
