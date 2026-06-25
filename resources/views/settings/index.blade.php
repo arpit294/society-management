@@ -470,5 +470,4 @@
     </div>
 
     <div id="settings-data" class="d-none" data-created-role-id="{{ session('created_role_id') }}"></div>
-    @endpush
 </x-user-page>

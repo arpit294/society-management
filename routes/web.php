@@ -125,6 +125,8 @@ Route::middleware('auth')->group(function () {
         Route::get('flat-documents/{flat_document}', [FlatDocumentController::class, 'show'])->name('flat-documents.show');
         Route::delete('flat-documents/{flat_document}', [FlatDocumentController::class, 'destroy'])->name('flat-documents.destroy');
         Route::get('flat-documents/{flat_document}/download/{doc_key}', [FlatDocumentController::class, 'download'])->name('flat-documents.download');
+        Route::delete('flat-documents/{flat_document}/document/{doc_key}', [FlatDocumentController::class, 'deleteDocument'])->name('flat-documents.delete-document');
+        Route::post('flat-documents/{flat_document}/document/{doc_key}', [FlatDocumentController::class, 'updateDocument'])->name('flat-documents.update-document');
     });
 
     Route::middleware('permission:expense_category_view')->group(function () {

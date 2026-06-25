@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\DataTables\ResidentsDataTable;
 use App\Models\Block;
 use App\Models\Flat;
+use App\Models\FlatType;
 use App\Models\Resident;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -345,7 +346,7 @@ class ResidentController extends Controller
                     }
                     
                     $rowCount++;
-                    if ($rowCount > 5) break; // Only read top 5 data rows
+
                 }
                 break; // Only read first sheet
             }
@@ -378,7 +379,7 @@ class ResidentController extends Controller
 
         $path = $request->file_path;
         if (!\Illuminate\Support\Facades\Storage::exists($path) || !str_starts_with($path, 'temp_imports/')) {
-            return redirect()->back()->with('error', 'Temporary file not found or invalid. Please try uploading again.');
+            return response()->json(['success' => false, 'message' => 'Temporary file not found or invalid. Please try uploading again.']);
         }
 
         $mapping = $request->mapping;
@@ -388,7 +389,7 @@ class ResidentController extends Controller
         foreach ($requiredFields as $field) {
             if (!isset($mapping[$field]) && $mapping[$field] !== '0' && $mapping[$field] !== 0) {
                 \Illuminate\Support\Facades\Storage::delete($path);
-                return redirect()->back()->with('error', "Required field '{$field}' is not mapped.");
+                return response()->json(['success' => false, 'message' => "Required field '{$field}' is not mapped."]);
             }
         }
 
@@ -400,7 +401,7 @@ class ResidentController extends Controller
 
             $isFirstRow = true;
             $successCount = 0;
-            $errorMessages = [];
+            $failedRecords = [];
             $rowIndex = 1;
 
             $defaultPassword = Hash::make('password123');
@@ -453,7 +454,12 @@ class ResidentController extends Controller
                     ]);
 
                     if ($validator->fails()) {
-                        $errorMessages[] = "Row {$rowIndex}: " . implode(', ', $validator->errors()->all());
+                        $failedRecords[] = [
+                            'name' => $data['name'] ?? 'Unknown',
+                            'block' => $data['block_name'] ?? 'Unknown',
+                            'flat' => $data['flat_no'] ?? 'Unknown',
+                            'reason' => implode(', ', $validator->errors()->all())
+                        ];
                         $rowIndex++;
                         continue;
                     }
@@ -475,7 +481,12 @@ class ResidentController extends Controller
                     $block = $blockCache[$data['block_name']];
 
                     if (! $block) {
-                        $errorMessages[] = "Row {$rowIndex}: Block '{$data['block_name']}' not found.";
+                        $failedRecords[] = [
+                            'name' => $data['name'] ?? 'Unknown',
+                            'block' => $data['block_name'] ?? 'Unknown',
+                            'flat' => $data['flat_no'] ?? 'Unknown',
+                            'reason' => "Block '{$data['block_name']}' not found."
+                        ];
                         $rowIndex++;
                         continue;
                     }
@@ -483,12 +494,30 @@ class ResidentController extends Controller
                     // Find Flat (with cache)
                     $flatCacheKey = $block->id.'_'.$data['flat_no'];
                     if (! isset($flatCache[$flatCacheKey])) {
-                        $flatCache[$flatCacheKey] = Flat::where('block_id', $block->id)->where('flat_no', $data['flat_no'])->first();
+                        $flat = Flat::where('block_id', $block->id)->where('flat_no', $data['flat_no'])->first();
+                        
+                        if (!$flat) {
+                            $failedRecords[] = [
+                                'name' => $data['name'] ?? 'Unknown',
+                                'block' => $data['block_name'] ?? 'Unknown',
+                                'flat' => $data['flat_no'] ?? 'Unknown',
+                                'reason' => "Flat '{$data['flat_no']}' not found in Block '{$data['block_name']}'."
+                            ];
+                            $rowIndex++;
+                            continue;
+                        }
+                        
+                        $flatCache[$flatCacheKey] = $flat;
                     }
                     $flat = $flatCache[$flatCacheKey];
 
                     if (! $flat) {
-                        $errorMessages[] = "Row {$rowIndex}: Flat '{$data['flat_no']}' not found in Block '{$data['block_name']}'.";
+                        $failedRecords[] = [
+                            'name' => $data['name'] ?? 'Unknown',
+                            'block' => $data['block_name'] ?? 'Unknown',
+                            'flat' => $data['flat_no'] ?? 'Unknown',
+                            'reason' => "Flat '{$data['flat_no']}' not found and no active Flat Type exists to auto-create it."
+                        ];
                         $rowIndex++;
                         continue;
                     }
@@ -504,7 +533,12 @@ class ResidentController extends Controller
                         }
 
                         if (!$activeOwnerCache[$flat->id]) {
-                            $errorMessages[] = "Row {$rowIndex}: Cannot add rental to flat '{$data['flat_no']}' because it has no active owner.";
+                            $failedRecords[] = [
+                                'name' => $data['name'] ?? 'Unknown',
+                                'block' => $data['block_name'] ?? 'Unknown',
+                                'flat' => $data['flat_no'] ?? 'Unknown',
+                                'reason' => "Cannot add rental to flat '{$data['flat_no']}' because it has no active owner."
+                            ];
                             $rowIndex++;
                             continue;
                         }
@@ -529,12 +563,28 @@ class ResidentController extends Controller
                     }
                     $userId = $userCache[$data['email']];
 
-                    // Update existing resident or create new one
-                    Resident::updateOrCreate([
+                    // Check for duplicate entry
+                    $isDuplicate = Resident::where('user_id', $userId)
+                        ->where('flat_id', $flat->id)
+                        ->where('type', $data['type'])
+                        ->exists();
+
+                    if ($isDuplicate) {
+                        $failedRecords[] = [
+                            'name' => $data['name'] ?? 'Unknown',
+                            'block' => $data['block_name'] ?? 'Unknown',
+                            'flat' => $data['flat_no'] ?? 'Unknown',
+                            'reason' => "Duplicate entry: Resident already registered for this flat."
+                        ];
+                        $rowIndex++;
+                        continue;
+                    }
+
+                    // Create new resident
+                    Resident::create([
                         'user_id' => $userId,
                         'flat_id' => $flat->id,
                         'type' => $data['type'],
-                    ], [
                         'block_id' => $block->id,
                         'move_in_date' => $moveInDate,
                     ]);
@@ -549,27 +599,18 @@ class ResidentController extends Controller
             DB::commit();
             \Illuminate\Support\Facades\Storage::delete($path); // Cleanup temp file
 
-            if (count($errorMessages) > 0) {
-                $errorList = implode('<br>', array_slice($errorMessages, 0, 10));
-                if (count($errorMessages) > 10) {
-                    $errorList .= "<br>...and " . (count($errorMessages) - 10) . " more errors.";
-                }
+            return response()->json([
+                'success' => true,
+                'success_count' => $successCount,
+                'failed_count' => count($failedRecords),
+                'failed_records' => $failedRecords
+            ]);
 
-                if ($successCount > 0) {
-                    return redirect()->back()
-                        ->with('success', "Successfully imported/updated {$successCount} residents!")
-                        ->with('error', "However, some rows were skipped due to errors:<br>{$errorList}");
-                } else {
-                    return redirect()->back()->with('error', "Import failed. All rows had errors:<br>{$errorList}");
-                }
-            }
-
-            return redirect()->back()->with('success', "Successfully imported/updated {$successCount} residents!");
         } catch (\Exception $e) {
             DB::rollBack();
             \Illuminate\Support\Facades\Storage::delete($path); // Cleanup temp file
 
-            return redirect()->back()->with('error', 'Error processing residents import: '.$e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Error processing residents import: '.$e->getMessage()]);
         }
     }
 }

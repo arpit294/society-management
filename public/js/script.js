@@ -2683,7 +2683,56 @@ document.addEventListener('DOMContentLoaded', function() {
         const submitBtn = document.getElementById('process-submit-btn');
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
-        
-        this.submit();
+        const formData = new FormData(this);
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-file-import me-2"></i>Process Import';
+
+            if (data.success) {
+                step2.classList.add('d-none');
+                const step3 = document.getElementById('import-step-3');
+                if (step3) step3.classList.remove('d-none');
+
+                document.getElementById('import-success-count').textContent = data.success_count || 0;
+                document.getElementById('import-failed-count').textContent = data.failed_count || 0;
+
+                if (data.failed_count > 0) {
+                    document.getElementById('import-failure-table-container').classList.remove('d-none');
+                    const tbody = document.getElementById('import-failure-tbody');
+                    tbody.innerHTML = '';
+                    data.failed_records.forEach(record => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${record.name}</td>
+                            <td>${record.block}</td>
+                            <td>${record.flat}</td>
+                            <td class="text-danger">${record.reason}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    document.getElementById('import-success-alert').textContent = 'All records were imported successfully!';
+                    document.getElementById('import-success-alert').classList.remove('d-none');
+                }
+            } else {
+                toastr.error(data.message || 'Error processing import.');
+            }
+        })
+        .catch(error => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-file-import me-2"></i>Process Import';
+            toastr.error('A network error occurred.');
+            console.error(error);
+        });
     });
 });

@@ -22,10 +22,11 @@ class ResidentsExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
         $this->request = $request;
     }
 
+    //  Define the query to fetch residents based on the request parameters
     public function query(): Builder|EloquentBuilder|Relation|ScoutBuilder
     {
         $query = Resident::query()->with(['user', 'block', 'flat']);
-            
+
         if ($this->request->filled('block')) {
             $query->whereHas('block', function ($q) {
                 $q->where('block_name', $this->request->block);
@@ -38,6 +39,7 @@ class ResidentsExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
         return $query;
     }
 
+    //  Define the headings for the exported Excel file
     public function headings(): array
     {
         return [
@@ -53,6 +55,7 @@ class ResidentsExport implements FromQuery, WithHeadings, WithMapping, ShouldAut
         ];
     }
 
+    //  Map the data for each resident to the desired format for export
     public function map(mixed $resident): array
     {
         return [

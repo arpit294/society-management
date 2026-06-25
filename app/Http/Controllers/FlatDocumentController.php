@@ -148,7 +148,81 @@ class FlatDocumentController extends Controller
             'message' => 'Document submission deleted successfully.',
         ]);
     }
+    public function deleteDocument(FlatDocument $flatDocument, $doc_key)
+    {
+        abort_if(! \Auth::user()->can('flat_document_delete'), 403);
+        $documents = $flatDocument->documents ?? [];
 
+        if (isset($documents[$doc_key])) {
+            $doc = $documents[$doc_key];
+            if (isset($doc['file_path']) && Storage::disk('public')->exists($doc['file_path'])) {
+                Storage::disk('public')->delete($doc['file_path']);
+            }
+            unset($documents[$doc_key]);
+            $flatDocument->documents = $documents;
+            $flatDocument->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Document deleted successfully.',
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Document not found.',
+        ], 404);
+    }
+
+    public function updateDocument(Request $request, FlatDocument $flatDocument, $doc_key)
+    {
+        abort_if(! \Auth::user()->can('flat_document_edit'), 403);
+        
+        $request->validate([
+            'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+        ]);
+
+        $documents = $flatDocument->documents ?? [];
+
+        if (!isset($documents[$doc_key])) {
+            return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
+        }
+
+        $oldDoc = $documents[$doc_key];
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $originalName = $file->getClientOriginalName();
+            $fileSize = $file->getSize();
+            $fileType = $file->getClientOriginalExtension();
+
+            $path = $file->store("flat_documents/{$flatDocument->flat_id}", 'public');
+
+            // Delete old file
+            if (isset($oldDoc['file_path']) && Storage::disk('public')->exists($oldDoc['file_path'])) {
+                Storage::disk('public')->delete($oldDoc['file_path']);
+            }
+
+            // Update json
+            $documents[$doc_key] = [
+                'title' => $oldDoc['title'] ?? ucfirst(str_replace('_', ' ', $doc_key)),
+                'file_path' => $path,
+                'original_name' => $originalName,
+                'file_size' => $fileSize,
+                'file_type' => $fileType,
+            ];
+
+            $flatDocument->documents = $documents;
+            $flatDocument->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Document updated successfully.',
+            ]);
+        }
+
+        return response()->json(['success' => false, 'message' => 'No file provided.'], 400);
+    }
     private function documentRequirements(): array
     {
         return [

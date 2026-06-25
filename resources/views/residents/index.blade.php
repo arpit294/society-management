@@ -133,6 +133,31 @@
                     </form>
                 </div>
 
+                <!-- Step 3: Import Results -->
+                <div id="import-step-3" class="d-none">
+                    <div class="modal-body">
+                        <div class="alert alert-success d-none mb-3" id="import-success-alert"></div>
+                        <div class="alert alert-danger d-none mb-3" id="import-error-alert"></div>
+                        <div id="import-summary-container" class="mb-3 text-center">
+                            <h5 class="fw-bold"><span id="import-success-count" class="text-success">0</span> record(s) imported, <span id="import-failed-count" class="text-danger">0</span> failed</h5>
+                        </div>
+                        
+                        <div id="import-failure-table-container" class="d-none">
+                            <h6 class="fw-bold text-danger mb-2">Failed Records Details:</h6>
+                            <div class="table-responsive border rounded" style="max-height: 300px;">
+                                <table class="table table-sm table-hover table-striped mb-0" style="font-size: 0.875rem;">
+
+                                    <tbody id="import-failure-tbody">
+                                        <!-- Injected via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top-0">
+                        <button type="button" class="btn btn-primary" onclick="window.location.reload();">Finish & Reload</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
