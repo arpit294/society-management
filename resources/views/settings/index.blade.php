@@ -466,6 +466,152 @@
                     <p class="text-muted fw-medium mb-0">Select a role to assign permissions</p>
                 </div>
             </div>
+
+            <!-- Global Import Export Hub -->
+            <div class="row mt-4" id="global-import-export">
+                <div class="col-12">
+                    <div class="card mb-5 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+                            <h4 class="mb-0 fw-bold"><i class="fa-solid fa-database text-primary me-2"></i>Global Import Export</h4>
+                            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small">All Modules Engine</span>
+                        </div>
+                        <div class="card-body p-4">
+                            <div class="row g-4">
+                                <!-- Export Panel -->
+                                <div class="col-md-6">
+                                    <div class="card h-100 border shadow-sm rounded-4 p-4">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 me-3">
+                                                <i class="fa-solid fa-file-export fa-xl"></i>
+                                            </div>
+                                            <div>
+                                                <h5 class="fw-bold mb-1 text-body">Export Records</h5>
+                                                <p class="text-muted small mb-0">Download database records into Excel (.xlsx)</p>
+                                            </div>
+                                        </div>
+                                        <hr class="text-muted opacity-25 mb-4">
+                                        
+                                        <form id="global-export-form" action="{{ route('settings.global.export') }}" method="GET">
+                                            <input type="hidden" name="format" value="excel">
+                                            <div class="mb-4 position-relative" style="z-index: 10;">
+                                                <label class="form-label small fw-bold text-uppercase text-muted">Select Table Module</label>
+                                                <select name="table" class="form-select form-select-lg shadow-none border-secondary border-opacity-25" id="export_module_select" style="cursor: pointer;">
+                                                    <option value="blocks">Blocks</option>
+                                                    <option value="flats">Flats</option>
+                                                    <option value="users">Staff & Users</option>
+                                                    <option value="residents">Residents</option>
+                                                    <option value="complaints">Complaints</option>
+                                                    <option value="expenses">Expenses</option>
+                                                    <option value="flat_types">Flat Types</option>
+                                                    <option value="expense_categories">Expense Categories</option>
+                                                </select>
+                                            </div>
+                                            <div class="mt-auto pt-2">
+                                                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 py-3">
+                                                    <i class="fa-solid fa-cloud-arrow-down"></i> <span id="export_btn_text">Export Blocks</span>
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <!-- Import Panel -->
+                                <div class="col-md-6">
+                                    <div class="card h-100 border shadow-sm rounded-4 p-4">
+                                        <div class="d-flex align-items-center justify-content-between mb-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-success bg-opacity-10 text-success p-3 rounded-3 me-3">
+                                                    <i class="fa-solid fa-file-import fa-xl"></i>
+                                                </div>
+                                                <div>
+                                                    <h5 class="fw-bold mb-1 text-body">Bulk Import</h5>
+                                                    <p class="text-muted small mb-0">Upload Excel to add records in bulk</p>
+                                                </div>
+                                            </div>
+                                            <a href="{{ route('settings.global.template', ['table' => 'blocks']) }}" id="btn_dl_template" class="btn btn-sm btn-outline-success fw-semibold d-flex align-items-center gap-1">
+                                                <i class="fa-solid fa-download"></i> Template
+                                            </a>
+                                        </div>
+                                        <hr class="text-muted opacity-25 mb-4">
+
+                                        <form id="global-import-form" onsubmit="return false;">
+                                            <div class="mb-3 position-relative" style="z-index: 10;">
+                                                <label class="form-label small fw-bold text-uppercase text-muted">Target Table Module</label>
+                                                <select name="import_table" class="form-select form-select-lg shadow-none border-secondary border-opacity-25" id="import_module_select" style="cursor: pointer;">
+                                                    <option value="blocks">Blocks</option>
+                                                    <option value="flats">Flats</option>
+                                                    <option value="users">Staff & Users</option>
+                                                    <option value="residents">Residents</option>
+                                                    <option value="complaints">Complaints</option>
+                                                    <option value="expenses">Expenses</option>
+                                                    <option value="flat_types">Flat Types</option>
+                                                    <option value="expense_categories">Expense Categories</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="mb-4">
+                                                <label class="form-label small fw-bold text-uppercase text-muted">Upload Spreadsheet</label>
+                                                <div class="border border-2 border-dashed rounded-3 p-4 text-center position-relative" style="transition: all 0.2s;">
+                                                    <input type="file" class="position-absolute w-100 h-100 top-0 start-0 opacity-0" id="global_import_file" accept=".xlsx, .xls, .csv" style="cursor: pointer;">
+                                                    <i class="fa-solid fa-cloud-arrow-up text-success mb-2" style="font-size: 2.2rem;"></i>
+                                                    <h6 class="mb-1 fw-bold text-body" id="import_file_label">Click or Drag Excel file here</h6>
+                                                    <p class="text-muted small mb-0">Max file size: 5MB</p>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-auto pt-1">
+                                                <button type="button" id="btn_preview_global_import" class="btn btn-success btn-lg w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 py-3">
+                                                    <i class="fa-solid fa-play"></i> Preview & Map Columns
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Import Preview & Mapping Modal -->
+            <div class="modal fade" id="globalImportPreviewModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-success text-white py-3">
+                            <h5 class="modal-title fw-bold"><i class="fa-solid fa-table-columns me-2"></i>Map Spreadsheet Columns (<span id="modal_import_table_name"></span>)</h5>
+                            <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="alert alert-info border-0 shadow-sm small mb-4 d-flex align-items-center">
+                                <i class="fa-solid fa-circle-info fa-xl me-3 text-info"></i>
+                                <div>
+                                    Map your Excel sheet columns to the database fields below. Required fields are marked with <strong>(*)</strong>.<br>
+                                    <em>Note: Any duplicates or conflicts will stop import and display exact line errors.</em>
+                                </div>
+                            </div>
+
+                            <h6 class="fw-bold text-body mb-3">1. Column Field Mapping</h6>
+                            <div class="row g-3 mb-4" id="global_mapping_container"></div>
+
+                            <h6 class="fw-bold text-body mb-3">2. Data Preview (First 5 Rows)</h6>
+                            <div class="table-responsive border rounded shadow-sm">
+                                <table class="table table-bordered table-striped table-hover mb-0 small" id="global_preview_table">
+                                    <thead class="table-light" id="global_preview_thead"></thead>
+                                    <tbody id="global_preview_tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light py-3">
+                            <input type="hidden" id="global_temp_file_path">
+                            <input type="hidden" id="global_target_table">
+                            <button type="button" class="btn btn-secondary px-4 fw-medium" data-coreui-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success px-5 fw-bold text-white shadow-sm" id="btn_process_global_import">
+                                <i class="fa-solid fa-check me-1"></i> Start Import
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -607,6 +753,188 @@
                     });
                 });
             });
+
+            // Global Import Export Hub Script
+            const exportSelect = document.getElementById('export_module_select');
+            const exportBtnText = document.getElementById('export_btn_text');
+            if (exportSelect && exportBtnText) {
+                const updateExportBtn = () => {
+                    const opt = exportSelect.options[exportSelect.selectedIndex];
+                    exportBtnText.textContent = opt ? 'Export ' + opt.text : 'Export Spreadsheet';
+                };
+                exportSelect.addEventListener('change', updateExportBtn);
+                updateExportBtn();
+            }
+
+            const importSelect = document.getElementById('import_module_select');
+            const dlTemplateBtn = document.getElementById('btn_dl_template');
+            if (importSelect && dlTemplateBtn) {
+                importSelect.addEventListener('change', function() {
+                    dlTemplateBtn.href = "{{ route('settings.global.template') }}?table=" + this.value;
+                });
+            }
+
+            const globalFileInput = document.getElementById('global_import_file');
+            const globalFileLabel = document.getElementById('import_file_label');
+            if (globalFileInput && globalFileLabel) {
+                globalFileInput.addEventListener('change', function() {
+                    if (this.files && this.files.length > 0) {
+                        globalFileLabel.textContent = this.files[0].name;
+                        globalFileLabel.classList.add('text-success');
+                    } else {
+                        globalFileLabel.textContent = 'Click or Drag Excel file here';
+                        globalFileLabel.classList.remove('text-success');
+                    }
+                });
+            }
+
+            const btnPreviewImport = document.getElementById('btn_preview_global_import');
+            if (btnPreviewImport) {
+                btnPreviewImport.addEventListener('click', function() {
+                    const table = importSelect ? importSelect.value : 'blocks';
+                    if (!globalFileInput || !globalFileInput.files || globalFileInput.files.length === 0) {
+                        toastr.error('Please select a spreadsheet file (.xlsx, .csv) first.');
+                        return;
+                    }
+
+                    const originalText = this.innerHTML;
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Reading Spreadsheet...';
+
+                    const fd = new FormData();
+                    fd.append('_token', '{{ csrf_token() }}');
+                    fd.append('table', table);
+                    fd.append('import_file', globalFileInput.files[0]);
+
+                    fetch("{{ route('settings.global.preview') }}", {
+                        method: 'POST',
+                        body: fd
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+
+                        if (!data.success) {
+                            toastr.error(data.message || 'Error parsing spreadsheet.');
+                            return;
+                        }
+
+                        document.getElementById('modal_import_table_name').textContent = table.toUpperCase();
+                        document.getElementById('global_temp_file_path').value = data.file_path;
+                        document.getElementById('global_target_table').value = data.table;
+
+                        const container = document.getElementById('global_mapping_container');
+                        container.innerHTML = '';
+
+                        data.expected_headers.forEach((dbField, idx) => {
+                            const label = data.expected_labels[idx];
+                            const colDiv = document.createElement('div');
+                            colDiv.className = 'col-md-4';
+
+                            let optionsHtml = '<option value="">-- Ignore / Skip --</option>';
+                            data.headers.forEach((sheetHeader, hIdx) => {
+                                const cleanSheetH = String(sheetHeader).trim().toLowerCase();
+                                const cleanDbH = dbField.toLowerCase().replace('_', ' ');
+                                const selected = (cleanSheetH === cleanDbH || cleanSheetH === dbField.toLowerCase() || hIdx === idx) ? 'selected' : '';
+                                optionsHtml += `<option value="${hIdx}" ${selected}>Col ${hIdx + 1}: ${sheetHeader}</option>`;
+                            });
+
+                            colDiv.innerHTML = `
+                                <div class="p-3 bg-white border rounded shadow-sm">
+                                    <label class="form-label small fw-bold text-body d-block mb-1">${label}</label>
+                                    <select class="form-select form-select-sm global-map-select" data-db-field="${dbField}">
+                                        ${optionsHtml}
+                                    </select>
+                                </div>
+                            `;
+                            container.appendChild(colDiv);
+                        });
+
+                        const thead = document.getElementById('global_preview_thead');
+                        const tbody = document.getElementById('global_preview_tbody');
+                        thead.innerHTML = '';
+                        tbody.innerHTML = '';
+
+                        let trHead = '<tr>';
+                        data.headers.forEach((h, i) => {
+                            trHead += `<th class="text-body text-truncate" style="max-width:150px;">Col ${i+1}: ${h}</th>`;
+                        });
+                        trHead += '</tr>';
+                        thead.innerHTML = trHead;
+
+                        data.preview_rows.forEach(r => {
+                            let trBody = '<tr>';
+                            r.forEach(c => {
+                                trBody += `<td class="text-truncate text-muted" style="max-width:150px;">${c !== null ? c : ''}</td>`;
+                            });
+                            trBody += '</tr>';
+                            tbody.innerHTML += trBody;
+                        });
+
+                        const modalElem = document.getElementById('globalImportPreviewModal');
+                        const modal = coreui.Modal.getOrCreateInstance(modalElem);
+                        modal.show();
+                    })
+                    .catch(err => {
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+                        toastr.error('Network error during file preview.');
+                    });
+                });
+            }
+
+            const btnProcessImport = document.getElementById('btn_process_global_import');
+            if (btnProcessImport) {
+                btnProcessImport.addEventListener('click', function() {
+                    const filePath = document.getElementById('global_temp_file_path').value;
+                    const targetTable = document.getElementById('global_target_table').value;
+
+                    const mapping = {};
+                    document.querySelectorAll('.global-map-select').forEach(sel => {
+                        mapping[sel.getAttribute('data-db-field')] = sel.value;
+                    });
+
+                    const origHtml = this.innerHTML;
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing...';
+
+                    fetch("{{ route('settings.global.process') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({
+                            table: targetTable,
+                            file_path: filePath,
+                            mapping: mapping
+                        })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        this.disabled = false;
+                        this.innerHTML = origHtml;
+
+                        if (data.success) {
+                            const modalElem = document.getElementById('globalImportPreviewModal');
+                            const modal = coreui.Modal.getInstance(modalElem);
+                            if (modal) modal.hide();
+
+                            toastr.success(data.message);
+                            if (globalFileInput) globalFileInput.value = '';
+                            if (globalFileLabel) globalFileLabel.textContent = 'Click or Drag Excel file here';
+                        } else {
+                            toastr.error(data.message || 'Import failed due to duplicate conflict.');
+                        }
+                    })
+                    .catch(err => {
+                        this.disabled = false;
+                        this.innerHTML = origHtml;
+                        toastr.error('Server error during bulk import.');
+                    });
+                });
+            }
     </script>
     @endpush
 </x-user-page>

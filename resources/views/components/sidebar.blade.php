@@ -204,6 +204,12 @@
                         Roles & Permissions
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#global-import-export">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Global Import Export
+                    </a>
+                </li>
             </ul>
         </li>
 
