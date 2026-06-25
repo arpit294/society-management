@@ -497,17 +497,21 @@ class MaintenanceBillController extends Controller
     ): array {
         $now = Carbon::now()->startOfMonth();
 
-        // 1. Determine how many months are past due (arrears) and how many are in advance (future)
+        // 1. Determine how many months are past due (arrears), current (neutral), and in advance (future)
         $pastMonthsCount = 0;
-        $futureMonthsCount = $numberOfMonths;
+        $currentMonthCount = 0;
+        $futureMonthsCount = 0;
 
-        if ($startDate->lt($now)) {
-            $pastMonthsCount = $now->diffInMonths($startDate);
-            // Cap past months so it doesn't exceed the total selected duration
-            if ($pastMonthsCount > $numberOfMonths) {
-                $pastMonthsCount = $numberOfMonths;
+        $tempDate = $startDate->copy()->startOfMonth();
+        for ($i = 0; $i < $numberOfMonths; $i++) {
+            if ($tempDate->lt($now)) {
+                $pastMonthsCount++;
+            } elseif ($tempDate->equalTo($now)) {
+                $currentMonthCount++;
+            } else {
+                $futureMonthsCount++;
             }
-            $futureMonthsCount = $numberOfMonths - $pastMonthsCount;
+            $tempDate->addMonth();
         }
 
         // 2. Penalty Calculation (Only applies to Past Months)

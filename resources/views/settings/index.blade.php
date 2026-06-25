@@ -338,6 +338,57 @@
         </div>
     </div>
 
+    <!-- Society Location Settings -->
+    <div class="row mt-4" id="location-settings">
+        <div class="col-12">
+            <div class="card mb-4 border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h4 class="mb-0"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Society Location Setting</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form action="{{ route('settings.store') }}" method="POST">
+                        @csrf
+                        <p class="text-muted small mb-4">
+                            Search your location or click anywhere on the interactive map below to set your society's exact GPS coordinates. The address bar will automatically update as you move the pin.
+                        </p>
+                        
+                        <input type="hidden" id="society_latitude" name="society_latitude" value="{{ $settings['society_latitude'] ?? '19.0760' }}">
+                        <input type="hidden" id="society_longitude" name="society_longitude" value="{{ $settings['society_longitude'] ?? '72.8777' }}">
+
+                        <div class="row mb-3">
+                            <div class="col-md-8 mb-3 position-relative">
+                                <label class="form-label text-muted small fw-semibold text-uppercase">Search Location / Address</label>
+                                <div class="input-group shadow-sm">
+                                    <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                    <input type="text" id="map_search_input" name="society_map_address" class="form-control border-start-0 ps-0 py-2" placeholder="Type city, area, society name or street..." value="{{ $settings['society_map_address'] ?? '' }}" autocomplete="off">
+                                    <button class="btn btn-primary px-4 fw-semibold" type="button" id="btn_search_location">Search</button>
+                                </div>
+                                <div id="search_results_list" class="list-group position-absolute w-100 shadow-lg border-0 rounded-3 mt-1 d-none text-start bg-white" style="z-index: 1050; max-height: 300px; overflow-y: auto; left: 12px; width: calc(100% - 24px) !important;"></div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-muted small fw-semibold text-uppercase">GPS Auto-Detect</label>
+                                <button type="button" class="btn btn-outline-primary w-100 fw-semibold py-2 shadow-sm" id="btn_get_my_current_location">
+                                    <i class="fa-solid fa-location-crosshairs me-2"></i>Detect Device GPS
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="position-relative mb-4">
+                            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+                            <div id="society_location_map" style="height: 420px; width: 100%; border-radius: 12px; z-index: 1;" class="shadow-sm border"></div>
+                        </div>
+
+                        <div class="text-end border-top pt-3">
+                            <button type="submit" class="btn btn-primary fw-bold px-5 py-2 rounded-3">
+                                <i class="fa-solid fa-save me-2"></i> Save Society Location
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row mt-2" id="role-settings">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -469,144 +520,189 @@
         </div>
     </div>
 
+    <div id="settings-data" class="d-none" data-created-role-id="{{ session('created_role_id') }}"></div>
+
     @push('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Function to toggle input disabled state based on checkbox
-                function toggleInputState(checkboxId, inputName) {
-                    const checkbox = document.getElementById(checkboxId);
-                    const input = document.querySelector(`input[name="${inputName}"]`);
-                    if (checkbox && input) {
-                        input.disabled = !checkbox.checked;
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var mapElem = document.getElementById('society_location_map');
+            if (!mapElem) return;
 
-                        // Add event listener for changes
-                        checkbox.addEventListener('change', function() {
-                            input.disabled = !this.checked;
-                            if (!this.checked) {
-                                input.value = ''; // Optional: clear value when unchecked
-                            }
-                        });
-                    }
+            var initialLat = parseFloat("{{ $settings['society_latitude'] ?? '19.0760' }}") || 19.0760;
+            var initialLng = parseFloat("{{ $settings['society_longitude'] ?? '72.8777' }}") || 72.8777;
+
+            var map = L.map('society_location_map').setView([initialLat, initialLng], 15);
+
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            }).addTo(map);
+
+            var marker = L.marker([initialLat, initialLng], {
+                draggable: true
+            }).addTo(map);
+
+            function reverseGeocode(lat, lng) {
+                fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng)
+                    .then(response => response.json())
+                    .then(data => {
+                        var searchInput = document.getElementById('map_search_input');
+                        if (searchInput && data && data.display_name) {
+                            searchInput.value = data.display_name;
+                        }
+                    })
+                    .catch(err => console.log(err));
+            }
+
+            function updateCoordinates(lat, lng, doReverse = false) {
+                var latInput = document.getElementById('society_latitude');
+                var lngInput = document.getElementById('society_longitude');
+                if (latInput && lngInput) {
+                    latInput.value = lat.toFixed(6);
+                    lngInput.value = lng.toFixed(6);
                 }
-
-                // List of prefixes
-                const prefixes = ['penalty', 'discount'];
-                const phases = ['monthly', 'quarterly', 'half_yearly', 'yearly'];
-
-                prefixes.forEach(prefix => {
-                    phases.forEach(phase => {
-                        toggleInputState(`${prefix}_${phase}_enabled`, `${prefix}_${phase}_value`);
-                    });
-                });
-
-                // Update suffix based on penalty/discount type
-                function updateSuffix(selectId, suffixClass) {
-                    const select = document.getElementById(selectId);
-                    const suffixes = document.querySelectorAll(suffixClass);
-
-                    function update() {
-                        const symbol = select.value === 'percentage' ? '%' : '₹';
-                        suffixes.forEach(el => el.textContent = symbol);
-                    }
-
-                    if (select) {
-                        update();
-                        select.addEventListener('change', update);
-                    }
+                if (doReverse) {
+                    reverseGeocode(lat, lng);
                 }
+            }
 
-                updateSuffix('penalty_type', '.penalty-suffix');
-                updateSuffix('discount_type', '.discount-suffix');
-
-                const createdRoleId = @json(session('created_role_id'));
-                if (createdRoleId) {
-                    const card = document.querySelector(`.role-card[data-role-id="${createdRoleId}"]`);
-                    if (card) {
-                        selectRole(card);
-                    }
-                }
+            marker.on('dragend', function(e) {
+                var position = marker.getLatLng();
+                updateCoordinates(position.lat, position.lng, true);
             });
 
-            function selectRole(element, event) {
-                // If the click originated from the dropdown menu, don't trigger role selection
-                if (event && event.target.closest('.dropdown')) {
+            map.on('click', function(e) {
+                marker.setLatLng(e.latlng);
+                updateCoordinates(e.latlng.lat, e.latlng.lng, true);
+            });
+
+            function renderSearchResults(results) {
+                var listElem = document.getElementById('search_results_list');
+                if (!listElem) return;
+                listElem.innerHTML = '';
+                
+                if (!results || results.length === 0) {
+                    listElem.innerHTML = '<div class="list-group-item text-muted small p-3">No societies or matching locations found in India. Try searching city name + area.</div>';
+                    listElem.classList.remove('d-none');
                     return;
                 }
 
-                // Remove active class from all cards
-                document.querySelectorAll('.role-card').forEach(card => {
-                    card.classList.remove('border-primary');
-                    card.classList.add('border-0');
+                results.forEach(function(place) {
+                    var item = document.createElement('a');
+                    item.href = 'javascript:void(0)';
+                    item.className = 'list-group-item list-group-item-action p-3 border-bottom d-flex align-items-center';
+                    var title = place.display_name.split(',')[0] || 'Location';
+                    item.innerHTML = '<div class="bg-light p-2 rounded-circle me-3 text-primary"><i class="fa-solid fa-location-dot"></i></div>' +
+                                     '<div class="flex-grow-1 overflow-hidden">' +
+                                         '<div class="fw-semibold text-primary mb-0 text-truncate">' + title + '</div>' +
+                                         '<div class="small text-muted text-truncate">' + place.display_name + '</div>' +
+                                     '</div>';
+                    
+                    item.addEventListener('click', function() {
+                        var lat = parseFloat(place.lat);
+                        var lon = parseFloat(place.lon);
+                        map.setView([lat, lon], 17);
+                        marker.setLatLng([lat, lon]);
+                        updateCoordinates(lat, lon, false);
+                        var searchInput = document.getElementById('map_search_input');
+                        if (searchInput) searchInput.value = place.display_name;
+                        listElem.classList.add('d-none');
+                        toastr.success('Location pin updated!');
+                    });
+
+                    listElem.appendChild(item);
                 });
 
-                // Add active class to selected card
-                element.classList.remove('border-0');
-                element.classList.add('border-primary');
+                listElem.classList.remove('d-none');
+            }
 
-                // Show permissions container, hide placeholder
-                document.getElementById('permissions-container').style.display = 'block';
-                document.getElementById('no-role-selected').style.display = 'none';
+            function searchAddress(query) {
+                if (!query || !query.trim()) return;
+                toastr.info('Searching locations in India...');
+                
+                // Search Nominatim + Photon for comprehensive society & landmark matching
+                var p1 = fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=in&limit=6&q=' + encodeURIComponent(query))
+                    .then(res => res.json()).catch(() => []);
+                var p2 = fetch('https://photon.komoot.io/api/?filter=countrycode:in&limit=6&q=' + encodeURIComponent(query))
+                    .then(res => res.json()).catch(() => ({ features: [] }));
 
-                // Get role data
-                const roleId = element.getAttribute('data-role-id');
-                const roleName = element.getAttribute('data-role-name');
-                const permissions = JSON.parse(element.getAttribute('data-role-permissions'));
+                Promise.all([p1, p2]).then(function(resArray) {
+                    var nData = resArray[0] || [];
+                    var pData = resArray[1] || { features: [] };
+                    
+                    var combined = [];
+                    var seen = new Set();
 
-                // Set form data
-                document.getElementById('selected-role-name').value = roleName;
+                    nData.forEach(function(item) {
+                        var key = parseFloat(item.lat).toFixed(3) + '_' + parseFloat(item.lon).toFixed(3);
+                        if (!seen.has(key)) {
+                            seen.add(key);
+                            combined.push({ lat: item.lat, lon: item.lon, display_name: item.display_name });
+                        }
+                    });
 
-                // Set form action using base URL (assuming /roles/{role} is the update endpoint)
-                const baseUrl = "{{ url('roles') }}";
-                document.getElementById('role-permissions-form').action = baseUrl + '/' + roleId;
+                    (pData.features || []).forEach(function(f) {
+                        if (f.geometry && f.geometry.coordinates) {
+                            var lon = f.geometry.coordinates[0];
+                            var lat = f.geometry.coordinates[1];
+                            var key = parseFloat(lat).toFixed(3) + '_' + parseFloat(lon).toFixed(3);
+                            if (!seen.has(key)) {
+                                seen.add(key);
+                                var nameParts = [f.properties.name, f.properties.street, f.properties.district, f.properties.city, f.properties.state].filter(Boolean);
+                                combined.push({ lat: lat, lon: lon, display_name: nameParts.join(', ') });
+                            }
+                        }
+                    });
 
-                // Uncheck all checkboxes
-                document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
-                    checkbox.checked = false;
-                });
-
-                // Check the ones the role has
-                permissions.forEach(permission => {
-                    const checkbox = document.querySelector(`.permission-checkbox[value="${permission}"]`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
-                });
-
-                // Smooth scroll to permissions table
-                document.getElementById('permissions-container').scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
+                    renderSearchResults(combined);
+                    if (combined.length > 0) toastr.success('Found ' + combined.length + ' matching locations!');
                 });
             }
 
-            // Check All / Uncheck All Buttons
-            document.querySelectorAll('.checkall-btn').forEach(btn => {
-                const targetPrefix = btn.getAttribute('data-target');
-                const checkboxes = document.querySelectorAll(`input[type="checkbox"][name^="${targetPrefix}"]`);
-                
-                // Initialize button state
-                const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-                btn.textContent = allChecked ? 'Uncheck All' : 'Check All';
+            var btnSearch = document.getElementById('btn_search_location');
+            var searchInput = document.getElementById('map_search_input');
 
-                // Handle button click
-                btn.addEventListener('click', function() {
-                    const isCheckAll = this.textContent === 'Check All';
-                    
-                    checkboxes.forEach(cb => {
-                        cb.checked = isCheckAll;
-                    });
-                    
-                    this.textContent = isCheckAll ? 'Uncheck All' : 'Check All';
+            if (btnSearch && searchInput) {
+                btnSearch.addEventListener('click', function() {
+                    searchAddress(searchInput.value);
                 });
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        searchAddress(searchInput.value);
+                    }
+                });
+                // Close dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    var listElem = document.getElementById('search_results_list');
+                    if (listElem && !listElem.contains(e.target) && e.target !== searchInput && e.target !== btnSearch) {
+                        listElem.classList.add('d-none');
+                    }
+                });
+            }
 
-                // Update button state when individual checkboxes change
-                checkboxes.forEach(cb => {
-                    cb.addEventListener('change', function() {
-                        const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
-                        btn.textContent = anyUnchecked ? 'Check All' : 'Uncheck All';
-                    });
+            var btnDetect = document.getElementById('btn_get_my_current_location');
+            if (btnDetect) {
+                btnDetect.addEventListener('click', function() {
+                    if (navigator.geolocation) {
+                        toastr.info('Detecting device GPS location...');
+                        navigator.geolocation.getCurrentPosition(function(position) {
+                            var lat = position.coords.latitude;
+                            var lng = position.coords.longitude;
+                            map.setView([lat, lng], 16);
+                            marker.setLatLng([lat, lng]);
+                            updateCoordinates(lat, lng, true);
+                            toastr.success('Device location detected!');
+                        }, function(error) {
+                            toastr.error('Unable to retrieve GPS location. Check browser location permissions.');
+                        });
+                    } else {
+                        toastr.error('Geolocation is not supported by your browser.');
+                    }
                 });
-            });
+            }
+        });
     </script>
     @endpush
 </x-user-page>

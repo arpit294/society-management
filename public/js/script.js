@@ -1942,3 +1942,803 @@ $(document).ready(function () {
     toggleUpiDetails();
     window.calculatePaymentTotals();
 });
+
+// --- Global Layout Scripts ---
+$(document).ready(function() {
+    if ($('input[type="file"]').length) {
+        $('input[type="file"]').dropify();
+    }
+    const flashMessages = document.getElementById('global-flash-messages');
+    if (flashMessages) {
+        if (flashMessages.dataset.success) toastr.success(flashMessages.dataset.success);
+        if (flashMessages.dataset.error) toastr.error(flashMessages.dataset.error);
+        if (flashMessages.dataset.status) toastr.success(flashMessages.dataset.status);
+        if (flashMessages.dataset.validation) toastr.error(flashMessages.dataset.validation);
+    }
+});
+
+// --- Maintenance Report Scripts ---
+document.addEventListener("DOMContentLoaded", function() {
+    const reportTypeSelect = document.getElementById('reportTypeSelect');
+    if (reportTypeSelect) {
+        reportTypeSelect.addEventListener('change', function() {
+            if(this.value === 'yearly') {
+                document.getElementById('monthContainer').style.display = 'none';
+            } else {
+                document.getElementById('monthContainer').style.display = 'block';
+            }
+        });
+    }
+
+    if (typeof $ !== 'undefined') {
+        if ($('#paidTable').length) {
+            $('#paidTable').DataTable({
+                pageLength: 25,
+                responsive: true
+            });
+        }
+        if ($('#pendingTable').length) {
+            $('#pendingTable').DataTable({
+                pageLength: 25,
+                responsive: true
+            });
+        }
+        if ($('#yearlyTable').length) {
+            $('#yearlyTable').DataTable({
+                paging: false,
+                searching: false,
+                info: false,
+                ordering: false
+            });
+        }
+    }
+});
+
+// --- Dashboard Scripts ---
+document.addEventListener("DOMContentLoaded", function() {
+    // Counter Animation
+    const counters = document.querySelectorAll('.counter-animate');
+    const speed = 200;
+
+    if (counters.length > 0) {
+        counters.forEach(counter => {
+            const updateCount = () => {
+                const target = +counter.getAttribute('data-target');
+                const count = +counter.innerText.replace(/,/g, '');
+                const inc = target / speed;
+
+                if (count < target) {
+                    counter.innerText = Math.ceil(count + inc).toLocaleString();
+                    setTimeout(updateCount, 10);
+                } else {
+                    counter.innerText = target.toLocaleString();
+                }
+            };
+            updateCount();
+        });
+    }
+});
+
+// --- Flat Documents Modal Scripts ---
+$(document).on('shown.coreui.modal', '#addDocumentModal', function () {
+    $('#addDocumentModal .select2').select2({
+        dropdownParent: $('#addDocumentModal')
+    });
+});
+
+$(document).on('change', '#addDocumentModal #block_id', function() {
+    var blockId = $(this).val();
+    $('#addDocumentModal #flat_id').html('<option value="">Select Flat</option>');
+    $('#addDocumentModal #user_id').html('<option value="">Select Resident</option>');
+    resetResidentInfo();
+
+    if (blockId) {
+        $.ajax({
+            url: '/api/flats-by-block/' + blockId,
+            type: 'GET',
+            success: function(data) {
+                $.each(data, function(key, flat) {
+                    $('#addDocumentModal #flat_id').append('<option value="' + flat.id + '">' + flat.flat_no + '</option>');
+                });
+            }
+        });
+    }
+});
+
+$(document).on('change', '#addDocumentModal #flat_id', function() {
+    var flatId = $(this).val();
+    $('#addDocumentModal #user_id').html('<option value="">Select Resident</option>');
+    resetResidentInfo();
+
+    if (flatId) {
+        $.ajax({
+            url: '/api/flat-users/' + flatId,
+            type: 'GET',
+            success: function(data) {
+                $.each(data, function(key, user) {
+                    var typeLabel = user.resident_type === 'owner' ? 'Owner' : 'Tenant';
+                    $('#addDocumentModal #user_id').append('<option value="' + user.id +
+                        '" data-phone="' + (user.phone || 'N/A') +
+                        '" data-email="' + (user.email || 'N/A') +
+                        '" data-type="' + user.resident_type + '">' +
+                        user.name + ' (' + typeLabel + ')</option>');
+                });
+            }
+        });
+    }
+});
+
+$(document).on('change', '#addDocumentModal #user_id', function() {
+    var selected = $(this).find('option:selected');
+    var userId = selected.val();
+
+    if (userId) {
+        var phone = selected.data('phone');
+        var email = selected.data('email');
+        var type = selected.data('type');
+
+        $('#addDocumentModal #resident_phone').val(phone);
+        $('#addDocumentModal #resident_email').val(email);
+        $('#addDocumentModal #resident_type').val(type);
+        $('#addDocumentModal #resident_info_container').removeClass('d-none');
+
+        generateDocumentInputs(type);
+        $('#addDocumentModal #submitBtn').prop('disabled', false);
+    } else {
+        resetResidentInfo();
+    }
+});
+
+function resetResidentInfo() {
+    $('#addDocumentModal #resident_info_container').addClass('d-none');
+    $('#addDocumentModal #resident_phone').val('');
+    $('#addDocumentModal #resident_email').val('');
+    $('#addDocumentModal #resident_type').val('');
+    $('#addDocumentModal #dynamic_documents_container').html(
+        '<p class="text-muted small">Please select a resident to view required documents.</p>');
+    $('#addDocumentModal #submitBtn').prop('disabled', true);
+}
+
+function generateDocumentInputs(residentType) {
+    var container = $('#addDocumentModal #dynamic_documents_container');
+    var form = document.getElementById('addDocumentForm');
+    container.empty();
+    
+    if(!form) return;
+
+    var appSettings = JSON.parse(form.dataset.settings || '{}');
+    var documentRequirements = JSON.parse(form.dataset.requirements || '{}');
+    var docs = documentRequirements[residentType] || {};
+    var hasRequiredDocs = false;
+
+    $.each(docs, function(key, label) {
+        var settingKey = 'req_doc_' + residentType + '_' + key;
+
+        if (appSettings && appSettings[settingKey] == '1') {
+            hasRequiredDocs = true;
+            var html = `
+            <div class="mb-3">
+                <label class="form-label fw-semibold text-white">${label} <span class="text-danger">*</span></label>
+                <input type="file" class="form-control bg-white text-dark" name="${settingKey}" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+            </div>
+            `;
+            container.append(html);
+        }
+    });
+
+    if (!hasRequiredDocs) {
+        container.html('<p class="text-light small">No documents are required for this resident type based on global settings.</p>');
+        $('#addDocumentModal #submitBtn').prop('disabled', true);
+    }
+}
+
+// --- Flats Index Scripts ---
+$(document).on('click', '.btn-history-flat', function() {
+    let url = $(this).data('url');
+    $('#flat-history-modal-content').html('<div class="p-5 text-center"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted">Loading history...</div></div>');
+    $('#flat-history-modal').modal('show');
+    
+    $.get(url, function(data) {
+        $('#flat-history-modal-content').html(data);
+    }).fail(function() {
+        $('#flat-history-modal-content').html('<div class="p-4 text-center text-danger">Failed to load history. Please try again.</div>');
+    });
+});
+
+$(document).on('click', '.btn-transfer-flat', function() {
+    let url = $(this).data('url');
+    $('#flat-modal-content').html('<div class="p-5 text-center"><div class="spinner-border text-primary"></div><div class="mt-2 text-muted">Loading transfer form...</div></div>');
+    $('#flat-modal').modal('show');
+    
+    $.get(url, function(data) {
+        $('#flat-modal-content').html(data);
+        if ($('#flat-modal-content .dropify').length) {
+            $('#flat-modal-content .dropify').dropify();
+        }
+    }).fail(function() {
+        $('#flat-modal-content').html('<div class="p-4 text-center text-danger">Failed to load transfer form. Please try again.</div>');
+    });
+});
+
+// --- Maintenance Bills Scripts ---
+$(document).ajaxComplete(function(event, xhr, settings) {
+    const form = document.getElementById('prepayment-form');
+    if (form) {
+        window.residentFees = JSON.parse(form.dataset.fees || '{}');
+        window.discountSettings = JSON.parse(form.dataset.discount || '{}');
+        window.penaltySettings = JSON.parse(form.dataset.penalty || '{}');
+    }
+});
+
+// --- Flats Transfer Scripts ---
+$(document).on('change', '#transfer_payment_method', function() {
+    if ($(this).val() === 'upi') {
+        $('#upi_details_container').show();
+        $('#payment_slip').prop('required', true);
+    } else {
+        $('#upi_details_container').hide();
+        $('#payment_slip').prop('required', false);
+    }
+});
+
+$(document).on('submit', '#flat-transfer-form', function(e) {
+    e.preventDefault();
+    
+    let form = $(this);
+    let submitBtn = $('#btn-save-transfer');
+    let originalText = submitBtn.html();
+    
+    submitBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...').prop('disabled', true);
+    
+    // Remove old invalid feedback
+    form.find('.is-invalid').removeClass('is-invalid');
+    form.find('.invalid-feedback').remove();
+
+    let formData = new FormData(this);
+
+    $.ajax({
+        url: form.attr('action'),
+        type: "POST",
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function(response) {
+            if (response.success) {
+                $('#flat-modal').modal('hide');
+                if (typeof window.LaravelDataTables !== 'undefined') {
+                    window.LaravelDataTables['flats-table'].ajax.reload(null, false);
+                }
+                showToast('success', response.message);
+            }
+        },
+        error: function(xhr) {
+            submitBtn.html(originalText).prop('disabled', false);
+            
+            if (xhr.status === 422) {
+                let errors = xhr.responseJSON.errors;
+                for (let key in errors) {
+                    let input = form.find('[name="' + key + '"]');
+                    if (input.length) {
+                        input.addClass('is-invalid');
+                        input.after('<div class="invalid-feedback">' + errors[key][0] + '</div>');
+                    }
+                }
+            } else {
+                let msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'An error occurred while transferring ownership.';
+                showToast('danger', msg);
+            }
+        }
+    });
+});
+
+// --- Name Transfer Bills Scripts ---
+let currentStatusUrl = '';
+
+$(document).on('click', '.btn-status', function() {
+    currentStatusUrl = $(this).data('url');
+    let currentStatus = $(this).data('status');
+    $('#bill-status').val(currentStatus).trigger('change');
+    $('#status-modal').modal('show');
+});
+
+$(document).on('change', '#bill-status', function() {
+    if ($(this).val() === 'paid') {
+        $('#payment-method-container').show();
+    } else {
+        $('#payment-method-container').hide();
+    }
+});
+
+$(document).on('submit', '#status-form', function(e) {
+    e.preventDefault();
+    let btn = $('#btn-save-status');
+    let originalText = btn.html();
+    btn.html('<span class="spinner-border spinner-border-sm"></span> Saving...').prop('disabled', true);
+    
+    $.ajax({
+        url: currentStatusUrl,
+        type: 'POST',
+        data: $(this).serialize(),
+        success: function(response) {
+            if (response.success) {
+                $('#status-modal').modal('hide');
+                if (typeof window.LaravelDataTables !== 'undefined') {
+                    window.LaravelDataTables['nametransferbills-table'].ajax.reload(null, false);
+                }
+                showToast('success', response.message);
+            }
+        },
+        error: function(xhr) {
+            showToast('danger', 'Error updating status');
+        },
+        complete: function() {
+            btn.html(originalText).prop('disabled', false);
+        }
+    });
+});
+
+$(document).on('click', '.btn-delete-bill', function() {
+    let url = $(this).data('url');
+    Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!',
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+            return $.ajax({
+                url: url,
+                type: 'DELETE',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                }
+            }).catch(error => {
+                let msg = error.responseJSON && error.responseJSON.message ? error.responseJSON.message : 'Error deleting bill';
+                Swal.showValidationMessage(msg);
+            });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then((result) => {
+        if (result.isConfirmed) {
+            if (typeof window.LaravelDataTables !== 'undefined') {
+                window.LaravelDataTables['nametransferbills-table'].ajax.reload(null, false);
+            }
+            Swal.fire(
+                'Deleted!',
+                'The bill has been deleted.',
+                'success'
+            );
+        }
+    });
+});
+
+$(document).on('click', '.btn-approve', function() {
+    let url = $(this).data('url');
+    
+    Swal.fire({
+        title: 'Approve Transfer?',
+        text: "This will update the resident records and finalize the transfer.",
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Yes, approve it!',
+        showLoaderOnConfirm: true,
+        preConfirm: () => {
+            return $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content')
+                }
+            }).catch(error => {
+                let msg = error.responseJSON && error.responseJSON.message ? error.responseJSON.message : 'Error approving transfer';
+                Swal.showValidationMessage(msg);
+            });
+        },
+        allowOutsideClick: () => !Swal.isLoading()
+    }).then((result) => {
+        if (result.isConfirmed) {
+            if (typeof window.LaravelDataTables !== 'undefined') {
+                window.LaravelDataTables['nametransferbills-table'].ajax.reload(null, false);
+            }
+            Swal.fire(
+                'Approved!',
+                'The transfer has been approved successfully.',
+                'success'
+            );
+        }
+    });
+});
+
+// --- Settings Scripts ---
+document.addEventListener('DOMContentLoaded', function() {
+    if(window.location.pathname !== '/settings' && !document.getElementById('role-permissions-form')) return;
+
+    // Function to toggle input disabled state based on checkbox
+    function toggleInputState(checkboxId, inputName) {
+        const checkbox = document.getElementById(checkboxId);
+        const input = document.querySelector(`input[name="${inputName}"]`);
+        if (checkbox && input) {
+            input.disabled = !checkbox.checked;
+
+            // Add event listener for changes
+            checkbox.addEventListener('change', function() {
+                input.disabled = !this.checked;
+                if (!this.checked) {
+                    input.value = ''; // Optional: clear value when unchecked
+                }
+            });
+        }
+    }
+
+    // List of prefixes
+    const prefixes = ['penalty', 'discount'];
+    const phases = ['monthly', 'quarterly', 'half_yearly', 'yearly'];
+
+    prefixes.forEach(prefix => {
+        phases.forEach(phase => {
+            toggleInputState(`${prefix}_${phase}_enabled`, `${prefix}_${phase}_value`);
+        });
+    });
+
+    // Update suffix based on penalty/discount type
+    function updateSuffix(selectId, suffixClass) {
+        const select = document.getElementById(selectId);
+        const suffixes = document.querySelectorAll(suffixClass);
+
+        function update() {
+            const symbol = select.value === 'percentage' ? '%' : '₹';
+            suffixes.forEach(el => el.textContent = symbol);
+        }
+
+        if (select) {
+            update();
+            select.addEventListener('change', update);
+        }
+    }
+
+    updateSuffix('penalty_type', '.penalty-suffix');
+    updateSuffix('discount_type', '.discount-suffix');
+
+    const settingsData = document.getElementById('settings-data');
+    if (settingsData) {
+        const createdRoleId = settingsData.dataset.createdRoleId;
+        if (createdRoleId) {
+            const card = document.querySelector(`.role-card[data-role-id="${createdRoleId}"]`);
+            if (card) {
+                window.selectRole(card);
+            }
+        }
+    }
+
+    // Check All / Uncheck All Buttons
+    document.querySelectorAll('.checkall-btn').forEach(btn => {
+        const targetPrefix = btn.getAttribute('data-target');
+        const checkboxes = document.querySelectorAll(`input[type="checkbox"][name^="${targetPrefix}"]`);
+        
+        // Initialize button state
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        btn.textContent = allChecked ? 'Uncheck All' : 'Check All';
+
+        // Handle button click
+        btn.addEventListener('click', function() {
+            const isCheckAll = this.textContent === 'Check All';
+            
+            checkboxes.forEach(cb => {
+                cb.checked = isCheckAll;
+            });
+            
+            this.textContent = isCheckAll ? 'Uncheck All' : 'Check All';
+        });
+
+        // Update button state when individual checkboxes change
+        checkboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
+                btn.textContent = anyUnchecked ? 'Check All' : 'Uncheck All';
+            });
+        });
+    });
+});
+
+window.selectRole = function(element, event) {
+    // If the click originated from the dropdown menu, don't trigger role selection
+    if (event && event.target.closest('.dropdown')) {
+        return;
+    }
+
+    // Remove active class from all cards
+    document.querySelectorAll('.role-card').forEach(card => {
+        card.classList.remove('border-primary');
+        card.classList.add('border-0');
+    });
+
+    // Add active class to selected card
+    element.classList.remove('border-0');
+    element.classList.add('border-primary');
+
+    // Show permissions container, hide placeholder
+    document.getElementById('permissions-container').style.display = 'block';
+    document.getElementById('no-role-selected').style.display = 'none';
+
+    // Get role data
+    const roleId = element.getAttribute('data-role-id');
+    const roleName = element.getAttribute('data-role-name');
+    const permissions = JSON.parse(element.getAttribute('data-role-permissions'));
+
+    // Set form data
+    document.getElementById('selected-role-name').value = roleName;
+
+    // Set form action using base URL
+    const baseUrl = window.location.origin + '/roles';
+    document.getElementById('role-permissions-form').action = baseUrl + '/' + roleId;
+
+    // Uncheck all checkboxes
+    document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+        checkbox.checked = false;
+    });
+
+    // Check the ones the role has
+    permissions.forEach(permission => {
+        const checkbox = document.querySelector(`.permission-checkbox[value="${permission}"]`);
+        if (checkbox) {
+            checkbox.checked = true;
+        }
+    });
+
+    // Smooth scroll to permissions table
+    document.getElementById('permissions-container').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+    });
+};
+
+// --- Residents Dynamic Import Scripts ---
+document.addEventListener('DOMContentLoaded', function() {
+    const previewForm = document.getElementById('import-preview-form');
+    const processForm = document.getElementById('import-process-form');
+    const step1 = document.getElementById('import-step-1');
+    const step2 = document.getElementById('import-step-2');
+    const btnBack = document.getElementById('btn-back-to-step-1');
+
+    if (!previewForm || !processForm) return;
+
+    const availableFields = {
+        '': 'Skip Column',
+        'name': 'Resident Name (*)',
+        'email': 'Email Address (*)',
+        'phone': 'Phone Number',
+        'aadhar_id': 'Aadhar ID (*)',
+        'block_name': 'Block Name (*)',
+        'flat_no': 'Flat No (*)',
+        'type': 'Type (owner/rental) (*)',
+        'move_in_date': 'Move In Date'
+    };
+
+    const requiredFields = ['name', 'email', 'aadhar_id', 'block_name', 'flat_no', 'type'];
+
+    previewForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('excel_file');
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            toastr.error('Please select an Excel (.xlsx / .xls) file first.');
+            return;
+        }
+
+        const submitBtn = document.getElementById('preview-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+
+        const formData = new FormData(this);
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-eye me-2"></i>Preview Data';
+
+            if (data.success) {
+                document.getElementById('process-file-path').value = data.file_path;
+                
+                // Build Table
+                const dropdownRow = document.getElementById('preview-dropdown-row');
+                const tbody = document.getElementById('preview-tbody');
+                
+                dropdownRow.innerHTML = '';
+                tbody.innerHTML = '';
+
+                // Build Dropdowns
+                data.headers.forEach((headerText, index) => {
+
+                    // Dropdown cell
+                    const td = document.createElement('th');
+                    const select = document.createElement('select');
+                    select.className = 'form-select form-select-sm mapping-select';
+                    select.dataset.index = index;
+
+                    // Auto-mapping logic
+                    let autoSelected = '';
+                    const headerLower = (headerText || '').toLowerCase().trim();
+                    if (headerLower.includes('name') && !headerLower.includes('block')) autoSelected = 'name';
+                    else if (headerLower.includes('email')) autoSelected = 'email';
+                    else if (headerLower.includes('phone') || headerLower.includes('mobile')) autoSelected = 'phone';
+                    else if (headerLower.includes('aadhar')) autoSelected = 'aadhar_id';
+                    else if (headerLower.includes('block')) autoSelected = 'block_name';
+                    else if (headerLower.includes('flat')) autoSelected = 'flat_no';
+                    else if (headerLower.includes('type')) autoSelected = 'type';
+                    else if (headerLower.includes('date')) autoSelected = 'move_in_date';
+
+                    Object.keys(availableFields).forEach(key => {
+                        const option = document.createElement('option');
+                        option.value = key;
+                        option.textContent = availableFields[key];
+                        if (key === autoSelected) option.selected = true;
+                        select.appendChild(option);
+                    });
+
+                    td.appendChild(select);
+
+                    // Add "skip" button below dropdown
+                    const skipDiv = document.createElement('div');
+                    skipDiv.className = 'text-end mt-1';
+                    skipDiv.innerHTML = '<a href="#" class="text-danger small text-decoration-none">skip</a>';
+                    skipDiv.querySelector('a').addEventListener('click', function(e) {
+                        e.preventDefault();
+                        select.value = '';
+                    });
+                    td.appendChild(skipDiv);
+
+                    dropdownRow.appendChild(td);
+                });
+
+                // Build Data Rows
+                data.preview_rows.forEach(row => {
+                    const tr = document.createElement('tr');
+                    row.forEach(cell => {
+                        const td = document.createElement('td');
+                        td.textContent = cell !== null ? cell : '';
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+
+                // Switch steps
+                step1.classList.add('d-none');
+                step2.classList.remove('d-none');
+                document.getElementById('preview-error-alert').classList.add('d-none');
+
+            } else {
+                toastr.error(data.message || 'Error processing file.');
+            }
+        })
+        .catch(error => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-eye me-2"></i>Preview Data';
+            toastr.error('A network error occurred.');
+            console.error(error);
+        });
+    });
+
+    btnBack.addEventListener('click', function() {
+        step2.classList.add('d-none');
+        step1.classList.remove('d-none');
+    });
+
+    processForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Gather mappings
+        const selects = document.querySelectorAll('.mapping-select');
+        const mapping = {};
+        const reverseMapping = {}; // Check for duplicates
+        let hasDuplicates = false;
+
+        selects.forEach(select => {
+            const field = select.value;
+            const index = select.dataset.index;
+            if (field) {
+                if (reverseMapping[field]) {
+                    hasDuplicates = true;
+                }
+                reverseMapping[field] = index;
+                mapping[field] = index;
+            }
+        });
+
+        const errorAlert = document.getElementById('preview-error-alert');
+        errorAlert.classList.add('d-none');
+
+        if (hasDuplicates) {
+            errorAlert.textContent = 'Error: You cannot map multiple columns to the same field.';
+            errorAlert.classList.remove('d-none');
+            return;
+        }
+
+        const missingFields = [];
+        requiredFields.forEach(field => {
+            if (mapping[field] === undefined) {
+                missingFields.push(availableFields[field]);
+            }
+        });
+
+        if (missingFields.length > 0) {
+            errorAlert.innerHTML = `<strong>Error:</strong> Missing required mappings for: <br>- ${missingFields.join('<br>- ')}`;
+            errorAlert.classList.remove('d-none');
+            return;
+        }
+
+        // Add mappings to form
+        Object.keys(mapping).forEach(field => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = `mapping[${field}]`;
+            input.value = mapping[field];
+            this.appendChild(input);
+        });
+
+        const submitBtn = document.getElementById('process-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        const formData = new FormData(this);
+
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-file-import me-2"></i>Process Import';
+
+            if (data.success) {
+                step2.classList.add('d-none');
+                const step3 = document.getElementById('import-step-3');
+                if (step3) step3.classList.remove('d-none');
+
+                document.getElementById('import-success-count').textContent = data.success_count || 0;
+                document.getElementById('import-failed-count').textContent = data.failed_count || 0;
+
+                if (data.failed_count > 0) {
+                    document.getElementById('import-failure-table-container').classList.remove('d-none');
+                    const tbody = document.getElementById('import-failure-tbody');
+                    tbody.innerHTML = '';
+                    data.failed_records.forEach(record => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${record.name}</td>
+                            <td>${record.block}</td>
+                            <td>${record.flat}</td>
+                            <td class="text-danger">${record.reason}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    document.getElementById('import-success-alert').textContent = 'All records were imported successfully!';
+                    document.getElementById('import-success-alert').classList.remove('d-none');
+                }
+            } else {
+                toastr.error(data.message || 'Error processing import.');
+            }
+        })
+        .catch(error => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fa-solid fa-file-import me-2"></i>Process Import';
+            toastr.error('A network error occurred.');
+            console.error(error);
+        });
+    });
+});
