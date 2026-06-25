@@ -199,6 +199,12 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#location-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Society Location
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="{{ route('settings.index') }}#role-settings">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         Roles & Permissions

@@ -5,16 +5,16 @@
         <div class="d-flex flex-wrap align-items-center gap-2">
 
             @can('resident_view')
-            <a href="{{ route('residents.export') }}" class="btn btn-outline-info export-btn-pulse" id="export-residents-btn">
+            <button type="button" class="btn btn-outline-info export-btn-pulse" data-coreui-toggle="modal" data-coreui-target="#export-resident-modal" id="export-residents-btn">
                 <i class="fa-solid fa-file-export me-2"></i>Export Records
-            </a>
+            </button>
             @endcan
             
             @can('resident_create')
             <button type="button" class="btn btn-outline-success" data-coreui-toggle="modal" data-coreui-target="#import-resident-modal">
                 <i class="fa-solid fa-file-import me-2"></i>Import Records
             </button>
-            <button type="button" class="btn btn-primary bg-gradient shadow-sm border-0" id="btn-add-resident"
+            <button type="button" class="btn btn-primary" id="btn-add-resident"
                 data-url="{{ route('residents.create') }}" data-title="Add New Resident">
                 <i class="fa-solid fa-plus me-2"></i>Add Resident
             </button>
@@ -83,7 +83,7 @@
                             </div>
                             <div class="mb-3">
                                 <div class="drag-drop-zone border border-2 border-dashed rounded p-4 text-center position-relative" id="drag-drop-zone" style="background-color: #f8f9fa; cursor: pointer; transition: all 0.3s ease;">
-                                    <input type="file" class="position-absolute w-100 h-100 top-0 start-0 opacity-0" id="excel_file" name="excel_file" accept=".xlsx, .xls" required style="cursor: pointer;">
+                                    <input type="file" class="position-absolute w-100 h-100 top-0 start-0 opacity-0" id="excel_file" name="excel_file" accept=".xlsx, .xls" style="cursor: pointer;">
                                     <i class="fa-solid fa-file-excel text-success mb-2" style="font-size: 3rem;"></i>
                                     <h6 class="mb-1 text-dark fw-bold" id="drag-drop-text">Drag & Drop your Excel file here</h6>
                                     <p class="text-muted small mb-0" id="drag-drop-subtext">or click to browse</p>
@@ -162,23 +162,91 @@
         </div>
     </div>
 
+    <!-- Export Resident Modal (Quick HRM Design) -->
+    <div class="modal fade" id="export-resident-modal" tabindex="-1" aria-labelledby="exportResidentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" style="max-width: 620px;">
+            <div class="modal-content rounded-4 border-0 shadow-lg p-2">
+                <div class="modal-header border-0 pb-2 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-pill me-2" style="width: 4px; height: 24px; background: #6c5ce7;"></div>
+                        <h5 class="modal-title fw-bold text-body mb-0 fs-5">Export Resident</h5>
+                    </div>
+                    <button type="button" class="btn-close small" data-coreui-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <form action="{{ route('residents.export') }}" method="GET" id="export-resident-form">
+                    <input type="hidden" name="block" id="modal_export_block" value="">
+                    
+                    <div class="modal-body p-4 pt-2">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="fw-bold small text-body">Select fields</span>
+                            <div class="form-check mb-0 d-flex align-items-center">
+                                <input class="form-check-input mt-0 me-2 small" type="checkbox" id="export-all-fields" checked style="cursor: pointer;">
+                                <label class="form-check-label text-muted small fw-semibold" for="export-all-fields" style="cursor: pointer;">All Fields</label>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-4">
+                            @php
+                                $exportFieldsList = [
+                                    'name' => 'Name',
+                                    'email' => 'Email',
+                                    'phone' => 'Mobile',
+                                    'aadhar_id' => 'Aadhar ID',
+                                    'block_name' => 'Block Name',
+                                    'flat_no' => 'Flat No',
+                                    'type' => 'Resident Type',
+                                    'status' => 'Status',
+                                    'move_in_date' => 'Move In Date',
+                                    'move_out_date' => 'Move Out Date',
+                                ];
+                            @endphp
+                            @foreach($exportFieldsList as $fKey => $fLabel)
+                                <div class="col-6 col-sm-6 mb-1">
+                                    <div class="form-check d-flex align-items-center">
+                                        <input class="form-check-input export-field-cb mt-0 me-2" type="checkbox" name="fields[]" value="{{ $fKey }}" id="exp_cb_{{ $fKey }}" checked style="cursor: pointer;">
+                                        <label class="form-check-label small text-body fw-medium text-truncate" for="exp_cb_{{ $fKey }}" style="cursor: pointer;">{{ $fLabel }}</label>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
+                        <button type="submit" class="btn px-4 py-2 rounded-3 text-white fw-bold shadow-sm" style="background: #6c5ce7; border-color: #6c5ce7;" id="btn-process-export-residents" onclick="setTimeout(()=> coreui.Modal.getInstance(document.getElementById('export-resident-modal')).hide(), 500);">
+                            <i class="fa-solid fa-download me-2"></i>Export
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
         {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
         <script type="module">
             document.addEventListener('DOMContentLoaded', function() {
                 const blockFilter = document.getElementById('residents-filter-block');
-                const exportBtn = document.getElementById('export-residents-btn');
+                const modalExportBlock = document.getElementById('modal_export_block');
 
-                if (blockFilter && exportBtn) {
-                    blockFilter.addEventListener('change', updateExportUrl);
+                if (blockFilter && modalExportBlock) {
+                    blockFilter.addEventListener('change', function() {
+                        modalExportBlock.value = blockFilter.value;
+                    });
+                }
 
-                    function updateExportUrl() {
-                        const url = new URL(exportBtn.href.split('?')[0]);
-                        if (blockFilter.value) {
-                            url.searchParams.set('block', blockFilter.value);
-                        }
-                        exportBtn.href = url.toString();
-                    }
+                const allCb = document.getElementById('export-all-fields');
+                const fieldCbs = document.querySelectorAll('.export-field-cb');
+                if (allCb && fieldCbs.length) {
+                    allCb.addEventListener('change', function() {
+                        fieldCbs.forEach(cb => cb.checked = allCb.checked);
+                    });
+                    fieldCbs.forEach(cb => {
+                        cb.addEventListener('change', function() {
+                            allCb.checked = Array.from(fieldCbs).every(c => c.checked);
+                        });
+                    });
                 }
 
                 // Drag and drop zone UI

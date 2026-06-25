@@ -11,17 +11,19 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Reader\XLSX\Reader;
 use OpenSpout\Writer\XLSX\Writer;
+use OpenSpout\Writer\CSV\Writer as CSVWriter;
 
 class ResidentController extends Controller
 {
     // Display a listing of the resource.
     public function index(ResidentsDataTable $dataTable)
     {
-        abort_if(\Gate::denies('resident_view'), 403);
+        abort_if(Gate::denies('resident_view'), 403);
         $blocks = Block::all();
 
         return $dataTable->render('residents.index', compact('blocks'));
@@ -30,7 +32,7 @@ class ResidentController extends Controller
     // Show the form for creating a new resource.
     public function create()
     {
-        abort_if(\Gate::denies('resident_create'), 403);
+        abort_if(Gate::denies('resident_create'), 403);
         $blocks = Block::all();
         $users = User::with(['resident.flat.block'])->get();
 
@@ -40,7 +42,7 @@ class ResidentController extends Controller
     // Store a newly created resource in storage.
     public function store(Request $request)
     {
-        abort_if(\Gate::denies('resident_create'), 403);
+        abort_if(Gate::denies('resident_create'), 403);
         // Check if the flat already has an owner
         $flatHasOwner = Resident::where('flat_id', $request->flat_id)->where('type', 'owner')->exists();
 
@@ -100,7 +102,7 @@ class ResidentController extends Controller
     // Show the form for editing the specified resource.
     public function edit(Resident $resident)
     {
-        abort_if(\Gate::denies('resident_edit'), 403);
+        abort_if(Gate::denies('resident_edit'), 403);
         $blocks = Block::all();
         $flats = Flat::where('block_id', $resident->block_id)->get();
         $users = User::with(['resident.flat.block'])->get();
@@ -111,8 +113,8 @@ class ResidentController extends Controller
     // Update the specified resource in storage.
     public function update(Request $request, Resident $resident)
     {
-        abort_if(! \Auth::user()->can('resident_edit'), 403);
-        $flatHasOwner = Resident::where('flat_id', $request->flat_id)
+        abort_if(Gate::denies('resident_edit'), 403);
+        $flatHasOwner = Resident::query()->where('flat_id', $request->flat_id)
             ->where('type', 'owner')
             ->where(function ($q) {
                 $q->whereNull('move_out_date')
@@ -178,7 +180,7 @@ class ResidentController extends Controller
     // Remove the specified resource from storage.
     public function destroy(Resident $resident)
     {
-        abort_if(! \Auth::user()->can('resident_delete'), 403);
+        abort_if(Gate::denies('resident_delete'), 403);
         $resident->delete();
 
         return response()->json([
@@ -190,7 +192,7 @@ class ResidentController extends Controller
     // API Methods
     public function getFlatsByBlock($block_id)
     {
-        abort_if(! \Auth::user()->can('resident_view'), 403);
+        abort_if(Gate::denies('resident_view'), 403);
         $flats = Flat::where('block_id', $block_id)->get();
 
         return response()->json($flats);
@@ -198,7 +200,7 @@ class ResidentController extends Controller
 
     public function getFlatOwner($flat_id)
     {
-        abort_if(! \Auth::user()->can('resident_view'), 403);
+        abort_if(Gate::denies('resident_view'), 403);
         $ownerResident = Resident::where('flat_id', $flat_id)->where('type', 'owner')->first();
         if ($ownerResident) {
             return response()->json(['has_owner' => true, 'user_id' => $ownerResident->user_id]);
@@ -209,7 +211,7 @@ class ResidentController extends Controller
 
     public function getFlatUsers($flat_id)
     {
-        abort_if(! \Auth::user()->can('resident_view'), 403);
+        abort_if(Gate::denies('resident_view'), 403);
         $residents = Resident::with('user')->where('flat_id', $flat_id)->get();
 
         $users = $residents->map(function ($resident) {
@@ -228,7 +230,7 @@ class ResidentController extends Controller
     // Bulk Import Methods
     public function downloadTemplate()
     {
-        abort_if(! \Auth::user()->can('resident_create'), 403);
+        abort_if(Gate::denies('resident_create'), 403);
         $headers = [
             'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             'Content-Disposition' => 'attachment; filename=residents_import_template.xlsx',
@@ -257,27 +259,56 @@ class ResidentController extends Controller
         return response()->stream($callback, 200, $headers);
     }
 
+    // Export Residents to Excel
     public function export(Request $request)
     {
-        abort_if(\Gate::denies('resident_view'), 403);
+        abort_if(Gate::denies('resident_view'), 403);
+        $exportType = $request->input('export_type', 'excel');
+        $ext = $exportType === 'csv' ? 'csv' : 'xlsx';
+        $contentType = $exportType === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
         $headers = [
-            'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename=residents_export_'.date('Ymd_His').'.xlsx',
+            'Content-type' => $contentType,
+            'Content-Disposition' => 'attachment; filename=residents_export_'.date('Ymd_His').'.'.$ext,
             'Pragma' => 'no-cache',
             'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
             'Expires' => '0',
         ];
 
-        $callback = function () use ($request) {
-            $writer = new Writer;
+        $callback = function () use ($request, $exportType) {
+            $writer = $exportType === 'csv' ? new CSVWriter() : new Writer();
             $writer->openToFile('php://output');
 
-            $writer->addRow(Row::fromValues([
-                'Name', 'Email', 'Phone', 'Aadhar ID', 'Block Name', 'Flat No', 'Type', 'Move In Date', 'Move Out Date'
-            ]));
+            $allFieldsMap = [
+                'name' => ['label' => 'Name', 'getter' => fn($r) => $r->user->name ?? 'N/A'],
+                'email' => ['label' => 'Email', 'getter' => fn($r) => $r->user->email ?? 'N/A'],
+                'phone' => ['label' => 'Mobile', 'getter' => fn($r) => $r->user->phone ?? 'N/A'],
+                'aadhar_id' => ['label' => 'Aadhar ID', 'getter' => fn($r) => $r->user->aadhar_id ?? 'N/A'],
+                'block_name' => ['label' => 'Block Name', 'getter' => fn($r) => $r->block->block_name ?? 'N/A'],
+                'flat_no' => ['label' => 'Flat No', 'getter' => fn($r) => $r->flat->flat_no ?? 'N/A'],
+                'type' => ['label' => 'Resident Type', 'getter' => fn($r) => ucfirst($r->type)],
+                'status' => ['label' => 'Status', 'getter' => fn($r) => $r->move_out_date && $r->move_out_date < date('Y-m-d') ? 'Former' : 'Active'],
+                'move_in_date' => ['label' => 'Move In Date', 'getter' => fn($r) => $r->move_in_date ? date('Y-m-d', strtotime($r->move_in_date)) : ''],
+                'move_out_date' => ['label' => 'Move Out Date', 'getter' => fn($r) => $r->move_out_date ? date('Y-m-d', strtotime($r->move_out_date)) : ''],
+            ];
+
+            // Determine which fields to include based on request or default to all
+            $selectedFields = $request->input('fields');
+            if (!is_array($selectedFields) || empty($selectedFields)) {
+                $selectedFields = array_keys($allFieldsMap);
+            }
+
+            $headerRow = [];
+            foreach ($selectedFields as $f) {
+                if (isset($allFieldsMap[$f])) {
+                    $headerRow[] = $allFieldsMap[$f]['label'];
+                }
+            }
+
+            $writer->addRow(Row::fromValues($headerRow));
 
             $query = Resident::with(['user', 'block', 'flat']);
-            
+
             if ($request->filled('block')) {
                 $query->whereHas('block', function ($q) use ($request) {
                     $q->where('block_name', $request->block);
@@ -287,19 +318,16 @@ class ResidentController extends Controller
                 $query->where('type', $request->type);
             }
 
-            $query->chunk(200, function ($residents) use ($writer) {
+            // Use chunking to handle large datasets efficiently
+            $query->chunk(200, function ($residents) use ($writer, $selectedFields, $allFieldsMap) {
                 foreach ($residents as $resident) {
-                    $writer->addRow(Row::fromValues([
-                        $resident->user->name ?? 'N/A',
-                        $resident->user->email ?? 'N/A',
-                        $resident->user->phone ?? 'N/A',
-                        $resident->user->aadhar_id ?? 'N/A',
-                        $resident->block->block_name ?? 'N/A',
-                        $resident->flat->flat_no ?? 'N/A',
-                        ucfirst($resident->type),
-                        $resident->move_in_date ? date('Y-m-d', strtotime($resident->move_in_date)) : '',
-                        $resident->move_out_date ? date('Y-m-d', strtotime($resident->move_out_date)) : '',
-                    ]));
+                    $rowValues = [];
+                    foreach ($selectedFields as $f) {
+                        if (isset($allFieldsMap[$f])) {
+                            $rowValues[] = ($allFieldsMap[$f]['getter'])($resident);
+                        }
+                    }
+                    $writer->addRow(Row::fromValues($rowValues));
                 }
             });
 
@@ -312,20 +340,20 @@ class ResidentController extends Controller
     // Handle the preview of residents from Excel file
     public function previewImport(Request $request)
     {
-        abort_if(\Gate::denies('resident_create'), 403);
+        abort_if(Gate::denies('resident_create'), 403);
         $request->validate([
             'excel_file' => 'required|file|mimes:xlsx,xls|max:5120',
         ]);
 
         $file = $request->file('excel_file');
-        
+
         // Store the file temporarily
         $path = $file->storeAs('temp_imports', 'residents_import_' . time() . '.' . $file->getClientOriginalExtension());
 
         try {
             $reader = new Reader;
             $reader->open(\Illuminate\Support\Facades\Storage::path($path));
-            
+
             $previewRows = [];
             $headers = [];
             $rowCount = 0;
@@ -344,7 +372,7 @@ class ResidentController extends Controller
                         }
                         $previewRows[] = $cells;
                     }
-                    
+
                     $rowCount++;
 
                 }
@@ -371,7 +399,7 @@ class ResidentController extends Controller
     // Handle the actual import process with field mapping
     public function processImport(Request $request)
     {
-        abort_if(\Gate::denies('resident_create'), 403);
+        abort_if(Gate::denies('resident_create'), 403);
         $request->validate([
             'file_path' => 'required|string',
             'mapping' => 'required|array',
@@ -428,7 +456,7 @@ class ResidentController extends Controller
                     $block_name = isset($mapping['block_name']) && isset($cells[$mapping['block_name']]) ? trim($cells[$mapping['block_name']]) : null;
                     $flat_no = isset($mapping['flat_no']) && isset($cells[$mapping['flat_no']]) ? trim($cells[$mapping['flat_no']]) : null;
                     $type = isset($mapping['type']) && isset($cells[$mapping['type']]) ? strtolower(trim($cells[$mapping['type']])) : 'owner';
-                    
+
                     $moveInDateRaw = isset($mapping['move_in_date']) && isset($cells[$mapping['move_in_date']]) ? $cells[$mapping['move_in_date']] : null;
 
                     $data = [
@@ -495,7 +523,7 @@ class ResidentController extends Controller
                     $flatCacheKey = $block->id.'_'.$data['flat_no'];
                     if (! isset($flatCache[$flatCacheKey])) {
                         $flat = Flat::where('block_id', $block->id)->where('flat_no', $data['flat_no'])->first();
-                        
+
                         if (!$flat) {
                             $failedRecords[] = [
                                 'name' => $data['name'] ?? 'Unknown',
@@ -506,7 +534,7 @@ class ResidentController extends Controller
                             $rowIndex++;
                             continue;
                         }
-                        
+
                         $flatCache[$flatCacheKey] = $flat;
                     }
                     $flat = $flatCache[$flatCacheKey];

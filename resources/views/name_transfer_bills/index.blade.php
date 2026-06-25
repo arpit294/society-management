@@ -34,9 +34,7 @@
                             <label class="form-label text-muted small fw-semibold text-uppercase">Payment Method</label>
                             <select name="payment_method" class="form-select">
                                 <option value="cash">Cash</option>
-                                <option value="bank_transfer">Bank Transfer</option>
                                 <option value="upi">UPI</option>
-                                <option value="cheque">Cheque</option>
                             </select>
                         </div>
                     </div>

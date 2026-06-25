@@ -2523,6 +2523,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     previewForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        const fileInput = document.getElementById('excel_file');
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+            toastr.error('Please select an Excel (.xlsx / .xls) file first.');
+            return;
+        }
+
         const submitBtn = document.getElementById('preview-submit-btn');
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
