@@ -25,9 +25,44 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @php
+                        $hasCurrentOwner = false;
+                        $hasCurrentRental = false;
+                        $nextOwnerMoveIn = null;
+                        $nextRentalMoveIn = null;
+                    @endphp
                     @foreach($history as $resident)
                         @php
-                            $isCurrent = is_null($resident->move_out_date) || \Carbon\Carbon::parse($resident->move_out_date)->isFuture();
+                            $type = $resident->type;
+                            $rawMoveOut = $resident->move_out_date;
+                            $isCurrentCandidate = is_null($rawMoveOut) || \Carbon\Carbon::parse($rawMoveOut)->isFuture();
+
+                            $isCurrent = false;
+                            $displayMoveOut = $rawMoveOut ? \Carbon\Carbon::parse($rawMoveOut)->format('d M, Y') : '-';
+
+                            if ($type === 'owner') {
+                                if ($isCurrentCandidate && !$hasCurrentOwner) {
+                                    $isCurrent = true;
+                                    $hasCurrentOwner = true;
+                                } else {
+                                    $isCurrent = false;
+                                    if (!$rawMoveOut && $nextOwnerMoveIn) {
+                                        $displayMoveOut = \Carbon\Carbon::parse($nextOwnerMoveIn)->format('d M, Y');
+                                    }
+                                }
+                                $nextOwnerMoveIn = $resident->move_in_date;
+                            } else {
+                                if ($isCurrentCandidate && !$hasCurrentRental) {
+                                    $isCurrent = true;
+                                    $hasCurrentRental = true;
+                                } else {
+                                    $isCurrent = false;
+                                    if (!$rawMoveOut && $nextRentalMoveIn) {
+                                        $displayMoveOut = \Carbon\Carbon::parse($nextRentalMoveIn)->format('d M, Y');
+                                    }
+                                }
+                                $nextRentalMoveIn = $resident->move_in_date;
+                            }
                         @endphp
                         <tr>
                             <td class="ps-4 fw-semibold">
@@ -44,7 +79,7 @@
                                 @endif
                             </td>
                             <td>{{ $resident->move_in_date ? \Carbon\Carbon::parse($resident->move_in_date)->format('d M, Y') : '-' }}</td>
-                            <td>{{ $resident->move_out_date ? \Carbon\Carbon::parse($resident->move_out_date)->format('d M, Y') : '-' }}</td>
+                            <td>{{ $displayMoveOut }}</td>
                             <td>
                                 @if($isCurrent)
                                     <span class="badge bg-success">Current</span>
