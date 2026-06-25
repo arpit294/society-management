@@ -90,7 +90,7 @@
                     <div class="tab-content" id="reportTabsContent">
                         <div class="tab-pane fade show active" id="paid" role="tabpanel" aria-labelledby="paid-tab">
                             <div class="table-responsive">
-                                <table class="table table-bordered table-striped table-hover">
+                                <table id="paidTable" class="table table-bordered table-striped table-hover">
                                     <thead>
                                         <tr>
                                             <th>Resident</th>
@@ -101,7 +101,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse($paidBills as $bill)
+                                        @foreach($paidBills as $bill)
                                             <tr>
                                                 <td>{{ $bill->user->name ?? 'N/A' }}</td>
                                                 <td>{{ $bill->block->block_name ?? 'N/A' }} - {{ $bill->flat->flat_no ?? 'N/A' }}</td>
@@ -109,11 +109,7 @@
                                                 <td>{{ ucfirst($bill->payment_method) }}</td>
                                                 <td>{{ $bill->paid_at ? $bill->paid_at->format('d M Y') : 'N/A' }}</td>
                                             </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="5" class="text-center">No paid bills found for this month.</td>
-                                            </tr>
-                                        @endforelse
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
@@ -121,7 +117,7 @@
 
                         <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
                             <div class="table-responsive">
-                                <table class="table table-bordered table-striped table-hover">
+                                <table id="pendingTable" class="table table-bordered table-striped table-hover">
                                     <thead>
                                         <tr>
                                             <th>Resident</th>
@@ -133,7 +129,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse($pendingBills as $bill)
+                                        @foreach($pendingBills as $bill)
                                             <tr>
                                                 <td>{{ $bill->user->name ?? 'N/A' }}</td>
                                                 <td>{{ $bill->block->block_name ?? 'N/A' }} - {{ $bill->flat->flat_no ?? 'N/A' }}</td>
@@ -142,11 +138,7 @@
                                                 <td>{{ number_format($bill->total_amount, 2) }}</td>
                                                 <td><span class="badge bg-danger">{{ ucfirst($bill->status) }}</span></td>
                                             </tr>
-                                        @empty
-                                            <tr>
-                                                <td colspan="6" class="text-center">No pending bills found for this month.</td>
-                                            </tr>
-                                        @endforelse
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
@@ -159,7 +151,7 @@
                         </div>
                         <div class="card-body p-0">
                             <div class="table-responsive">
-                                <table class="table table-bordered table-striped table-hover mb-0">
+                                <table id="yearlyTable" class="table table-bordered table-striped table-hover mb-0">
                                     <thead class="table-light">
                                         <tr>
                                             <th>Month</th>
@@ -196,13 +188,5 @@
     </div>
 </div>
 
-<script>
-    document.getElementById('reportTypeSelect').addEventListener('change', function() {
-        if(this.value === 'yearly') {
-            document.getElementById('monthContainer').style.display = 'none';
-        } else {
-            document.getElementById('monthContainer').style.display = 'block';
-        }
-    });
-</script>
+
 </x-user-page>
