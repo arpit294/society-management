@@ -574,7 +574,7 @@ class ResidentController extends Controller
                         $activeOwnerCache[$flat->id] = true;
                     }
 
-                    // Check or create User (with cache)
+                    // Check or create User (with cache) 
                     if (!isset($userCache[$data['email']])) {
                         $user = User::firstOrCreate(
                             ['email' => $data['email']],
