@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Dompdf\Image\Cache;
 use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
@@ -10,7 +11,7 @@ class Setting extends Model
 
     public static function get($key, $default = null)
     {
-        $settings = \Illuminate\Support\Facades\Cache::rememberForever('global_settings', function () {
+        $settings = Cache::rememberForever('global_settings', function () {
             return self::all()->pluck('value', 'key')->toArray();
         });
 

@@ -542,24 +542,35 @@
                                         </div>
                                         <hr class="text-muted opacity-25 mb-4">
                                         
-                                        <form id="global-export-form" action="{{ route('settings.global.export') }}" method="GET">
+                                        <form id="global-export-form" action="{{ route('settings.global.export_master') }}" method="GET">
                                             <input type="hidden" name="format" value="excel">
-                                            <div class="mb-4 position-relative" style="z-index: 10;">
-                                                <label class="form-label small fw-bold text-uppercase text-muted">Select Table Module</label>
-                                                <select name="table" class="form-select form-select-lg shadow-none border-secondary border-opacity-25" id="export_module_select" style="cursor: pointer;">
-                                                    <option value="blocks">Blocks</option>
-                                                    <option value="flats">Flats</option>
-                                                    <option value="users">Staff & Users</option>
-                                                    <option value="residents">Residents</option>
-                                                    <option value="complaints">Complaints</option>
-                                                    <option value="expenses">Expenses</option>
-                                                    <option value="flat_types">Flat Types</option>
-                                                    <option value="expense_categories">Expense Categories</option>
-                                                </select>
+
+                                            <div id="export_master_container" class="mb-4">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <label class="form-label small fw-bold text-uppercase text-muted mb-0">Select Tables to Include</label>
+                                                    <div class="form-check form-check-sm mb-0">
+                                                        <input class="form-check-input" type="checkbox" id="export_master_select_all" checked style="cursor: pointer;">
+                                                        <label class="form-check-label small fw-bold text-primary" for="export_master_select_all" style="cursor: pointer;">Select All</label>
+                                                    </div>
+                                                </div>
+                                                <div class="row g-2 border border-secondary border-opacity-25 rounded p-3" style="max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.15);">
+                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="blocks" id="em_blocks" checked><label class="form-check-label text-body fw-medium" for="em_blocks">Blocks</label></div></div>
+                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="flat_types" id="em_flat_types" checked><label class="form-check-label text-body fw-medium" for="em_flat_types">Flat Types</label></div></div>
+                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="flats" id="em_flats" checked><label class="form-check-label text-body fw-medium" for="em_flats">Flats</label></div></div>
+                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="users" id="em_users" checked><label class="form-check-label text-body fw-medium" for="em_users">Staff & Users</label></div></div>
+                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="residents" id="em_residents" checked><label class="form-check-label text-body fw-medium" for="em_residents">Residents</label></div></div>
+                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="expense_categories" id="em_expense_categories" checked><label class="form-check-label text-body fw-medium" for="em_expense_categories">Expense Categories</label></div></div>
+                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="expenses" id="em_expenses" checked><label class="form-check-label text-body fw-medium" for="em_expenses">Expenses</label></div></div>
+                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="complaints" id="em_complaints" checked><label class="form-check-label text-body fw-medium" for="em_complaints">Complaints</label></div></div>
+                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="maintenances" id="em_maintenances" checked><label class="form-check-label text-body fw-medium" for="em_maintenances">Maintenance Batches</label></div></div>
+                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="maintenance_bills" id="em_maintenance_bills" checked><label class="form-check-label text-body fw-medium" for="em_maintenance_bills">Maintenance Bills</label></div></div>
+                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="name_transfer_bills" id="em_name_transfer_bills" checked><label class="form-check-label text-body fw-medium" for="em_name_transfer_bills">Transfer Fees</label></div></div>
+                                                </div>
                                             </div>
+
                                             <div class="mt-auto pt-2">
-                                                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 py-3">
-                                                    <i class="fa-solid fa-cloud-arrow-down"></i> <span id="export_btn_text">Export Blocks</span>
+                                                <button type="submit" id="btn_submit_export" class="btn btn-primary btn-lg w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 py-3">
+                                                    <i class="fa-solid fa-cloud-arrow-down"></i> <span id="export_btn_text">Export Master Excel (All Data)</span>
                                                 </button>
                                             </div>
                                         </form>
@@ -579,40 +590,26 @@
                                                     <p class="text-muted small mb-0">Upload Excel to add records in bulk</p>
                                                 </div>
                                             </div>
-                                            <a href="{{ route('settings.global.template', ['table' => 'blocks']) }}" id="btn_dl_template" class="btn btn-sm btn-outline-success fw-semibold d-flex align-items-center gap-1">
-                                                <i class="fa-solid fa-download"></i> Template
+                                            <a href="{{ route('settings.global.template_master') }}" id="btn_dl_template" class="btn btn-sm btn-outline-success fw-semibold d-flex align-items-center gap-1">
+                                                <i class="fa-solid fa-download"></i> <span id="template_btn_text">Master Template</span>
                                             </a>
                                         </div>
                                         <hr class="text-muted opacity-25 mb-4">
 
                                         <form id="global-import-form" onsubmit="return false;">
-                                            <div class="mb-3 position-relative" style="z-index: 10;">
-                                                <label class="form-label small fw-bold text-uppercase text-muted">Target Table Module</label>
-                                                <select name="import_table" class="form-select form-select-lg shadow-none border-secondary border-opacity-25" id="import_module_select" style="cursor: pointer;">
-                                                    <option value="blocks">Blocks</option>
-                                                    <option value="flats">Flats</option>
-                                                    <option value="users">Staff & Users</option>
-                                                    <option value="residents">Residents</option>
-                                                    <option value="complaints">Complaints</option>
-                                                    <option value="expenses">Expenses</option>
-                                                    <option value="flat_types">Flat Types</option>
-                                                    <option value="expense_categories">Expense Categories</option>
-                                                </select>
-                                            </div>
-
                                             <div class="mb-4">
-                                                <label class="form-label small fw-bold text-uppercase text-muted">Upload Spreadsheet</label>
+                                                <label class="form-label small fw-bold text-uppercase text-muted">Upload Master Spreadsheet</label>
                                                 <div class="border border-2 border-dashed rounded-3 p-4 text-center position-relative" style="transition: all 0.2s;">
-                                                    <input type="file" class="position-absolute w-100 h-100 top-0 start-0 opacity-0" id="global_import_file" accept=".xlsx, .xls, .csv" style="cursor: pointer;">
+                                                    <input type="file" class="position-absolute w-100 h-100 top-0 start-0 opacity-0 no-dropify" id="global_import_file" accept=".xlsx, .xls, .csv" style="cursor: pointer;">
                                                     <i class="fa-solid fa-cloud-arrow-up text-success mb-2" style="font-size: 2.2rem;"></i>
-                                                    <h6 class="mb-1 fw-bold text-body" id="import_file_label">Click or Drag Excel file here</h6>
-                                                    <p class="text-muted small mb-0">Max file size: 5MB</p>
+                                                    <h6 class="mb-1 fw-bold text-body" id="import_file_label">Click or Drag Master Excel file here</h6>
+                                                    <p class="text-muted small mb-0">Max file size: 10MB</p>
                                                 </div>
                                             </div>
 
                                             <div class="mt-auto pt-1">
                                                 <button type="button" id="btn_preview_global_import" class="btn btn-success btn-lg w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 py-3">
-                                                    <i class="fa-solid fa-play"></i> Preview & Map Columns
+                                                    <i class="fa-solid fa-play"></i> <span id="import_btn_text">Preview Master Database</span>
                                                 </button>
                                             </div>
                                         </form>
@@ -659,6 +656,63 @@
                             <button type="button" class="btn btn-success px-5 fw-bold text-white shadow-sm" id="btn_process_global_import">
                                 <i class="fa-solid fa-check me-1"></i> Start Import
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Master All-in-One Import Modal (3-Step Resident Style) -->
+            <div class="modal fade" id="master-import-modal" tabindex="-1" aria-labelledby="masterImportModalLabel" aria-hidden="true" data-coreui-backdrop="static">
+                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-success text-white py-3">
+                            <h5 class="modal-title fw-bold" id="masterImportModalLabel"><i class="fa-solid fa-file-import me-2"></i>Master Database Bulk Import</h5>
+                            <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        
+                        <!-- Step 2: Preview Sheets & Records -->
+                        <div id="master-import-step-2">
+                            <div class="modal-body p-4" style="max-height: calc(80vh - 130px); overflow-y: auto;">
+                                <div class="alert alert-info border-0 shadow-sm small mb-4 d-flex align-items-center">
+                                    <i class="fa-solid fa-circle-info fa-xl me-3 text-info"></i>
+                                    <div>
+                                        Below is a summary of valid data rows found in each sheet of your uploaded Master Excel workbook. Click <strong>"Process Master Import"</strong> to validate and insert these records across all modules.
+                                    </div>
+                                </div>
+                                <input type="hidden" id="master_import_file_path">
+                                <div class="row g-3" id="master_sheets_summary_container"></div>
+                            </div>
+                            <div class="modal-footer bg-light py-3">
+                                <button type="button" class="btn btn-secondary px-4 fw-medium" data-coreui-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-success px-5 fw-bold text-white shadow-sm" id="btn_process_master_import">
+                                    <i class="fa-solid fa-cloud-arrow-up me-2"></i>Process Master Import
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Execution Summary & Errors -->
+                        <div id="master-import-step-3" class="d-none">
+                            <div class="modal-body p-4 text-center py-4" style="max-height: calc(80vh - 130px); overflow-y: auto;">
+                                <div id="master_import_status_box" class="mb-4"></div>
+                                
+                                <div id="master_import_failure_container" class="d-none text-start">
+                                    <h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Failed / Duplicate Entry Details:</h6>
+                                    <div class="table-responsive border border-danger border-opacity-25 rounded shadow-sm" style="max-height: 320px;">
+                                        <table class="table table-sm table-hover table-striped mb-0 small">
+                                            <thead class="table-danger sticky-top">
+                                                <tr>
+                                                    <th>Module / Sheet</th>
+                                                    <th>Row Number</th>
+                                                    <th>Error / Conflict Reason</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="master_import_failure_tbody"></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer bg-light py-3 d-flex justify-content-center">
+                                <button type="button" class="btn btn-primary px-5 fw-bold" onclick="window.location.reload();">Finish & Reload Page</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -850,22 +904,10 @@
             }
 
             // Global Import Export Hub Script
-            const exportSelect = document.getElementById('export_module_select');
-            const exportBtnText = document.getElementById('export_btn_text');
-            if (exportSelect && exportBtnText) {
-                const updateExportBtn = () => {
-                    const opt = exportSelect.options[exportSelect.selectedIndex];
-                    exportBtnText.textContent = opt ? 'Export ' + opt.text : 'Export Spreadsheet';
-                };
-                exportSelect.addEventListener('change', updateExportBtn);
-                updateExportBtn();
-            }
-
-            const importSelect = document.getElementById('import_module_select');
-            const dlTemplateBtn = document.getElementById('btn_dl_template');
-            if (importSelect && dlTemplateBtn) {
-                importSelect.addEventListener('change', function() {
-                    dlTemplateBtn.href = "{{ route('settings.global.template') }}?table=" + this.value;
+            const emSelectAll = document.getElementById('export_master_select_all');
+            if (emSelectAll) {
+                emSelectAll.addEventListener('change', function() {
+                    document.querySelectorAll('.export-master-chk').forEach(c => c.checked = this.checked);
                 });
             }
 
@@ -877,7 +919,7 @@
                         globalFileLabel.textContent = this.files[0].name;
                         globalFileLabel.classList.add('text-success');
                     } else {
-                        globalFileLabel.textContent = 'Click or Drag Excel file here';
+                        globalFileLabel.textContent = 'Click or Drag Master Excel file here';
                         globalFileLabel.classList.remove('text-success');
                     }
                 });
@@ -886,95 +928,75 @@
             const btnPreviewImport = document.getElementById('btn_preview_global_import');
             if (btnPreviewImport) {
                 btnPreviewImport.addEventListener('click', function() {
-                    const table = importSelect ? importSelect.value : 'blocks';
                     if (!globalFileInput || !globalFileInput.files || globalFileInput.files.length === 0) {
-                        toastr.error('Please select a spreadsheet file (.xlsx, .csv) first.');
+                        toastr.error('Please select a Master spreadsheet file (.xlsx, .csv) first.');
                         return;
                     }
 
                     const originalText = this.innerHTML;
                     this.disabled = true;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Reading Spreadsheet...';
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Reading Master Sheets...';
 
                     const fd = new FormData();
                     fd.append('_token', '{{ csrf_token() }}');
-                    fd.append('table', table);
                     fd.append('import_file', globalFileInput.files[0]);
 
-                    fetch("{{ route('settings.global.preview') }}", {
+                    fetch("{{ route('settings.global.preview_master') }}", {
                         method: 'POST',
+                        headers: {
+                            'Accept': 'application/json'
+                        },
                         body: fd
                     })
-                    .then(res => res.json())
+                    .then(async res => {
+                        const data = await res.json();
+                        if (!res.ok || !data.success) {
+                            throw new Error(data.message || (data.errors ? Object.values(data.errors).flat().join(' ') : 'Error reading Master Excel.'));
+                        }
+                        return data;
+                    })
                     .then(data => {
                         this.disabled = false;
                         this.innerHTML = originalText;
 
-                        if (!data.success) {
-                            toastr.error(data.message || 'Error parsing spreadsheet.');
-                            return;
-                        }
+                        document.getElementById('master_import_file_path').value = data.file_path;
+                        const summaryCont = document.getElementById('master_sheets_summary_container');
+                        summaryCont.innerHTML = '';
 
-                        document.getElementById('modal_import_table_name').textContent = table.toUpperCase();
-                        document.getElementById('global_temp_file_path').value = data.file_path;
-                        document.getElementById('global_target_table').value = data.table;
-
-                        const container = document.getElementById('global_mapping_container');
-                        container.innerHTML = '';
-
-                        data.expected_headers.forEach((dbField, idx) => {
-                            const label = data.expected_labels[idx];
-                            const colDiv = document.createElement('div');
-                            colDiv.className = 'col-md-4';
-
-                            let optionsHtml = '<option value="">-- Ignore / Skip --</option>';
-                            data.headers.forEach((sheetHeader, hIdx) => {
-                                const cleanSheetH = String(sheetHeader).trim().toLowerCase();
-                                const cleanDbH = dbField.toLowerCase().replace('_', ' ');
-                                const selected = (cleanSheetH === cleanDbH || cleanSheetH === dbField.toLowerCase() || hIdx === idx) ? 'selected' : '';
-                                optionsHtml += `<option value="${hIdx}" ${selected}>Col ${hIdx + 1}: ${sheetHeader}</option>`;
-                            });
-
-                            colDiv.innerHTML = `
-                                <div class="p-3 bg-white border rounded shadow-sm">
-                                    <label class="form-label small fw-bold text-body d-block mb-1">${label}</label>
-                                    <select class="form-select form-select-sm global-map-select" data-db-field="${dbField}">
-                                        ${optionsHtml}
-                                    </select>
+                        data.sheets_summary.forEach(sheet => {
+                            const card = document.createElement('div');
+                            card.className = 'col-md-6';
+                            card.innerHTML = `
+                                <div class="card h-100 border shadow-sm rounded-3 overflow-hidden">
+                                    <div class="card-header bg-light d-flex justify-content-between align-items-center py-2 px-3">
+                                        <span class="fw-bold text-body small"><i class="fa-solid fa-table me-2 text-success"></i>${sheet.label} (${sheet.table})</span>
+                                        <span class="badge bg-success small">${sheet.record_count} valid row(s)</span>
+                                    </div>
+                                    <div class="card-body p-2 bg-white">
+                                        <div class="table-responsive" style="max-height: 140px; overflow-y: auto;">
+                                            <table class="table table-sm table-bordered mb-0" style="font-size: 0.72rem;">
+                                                <thead class="table-light"><tr>${sheet.headers.slice(0, 5).map(h => `<th class="text-truncate px-1" style="max-width:90px;">${h}</th>`).join('')}</tr></thead>
+                                                <tbody>
+                                                    ${sheet.preview_rows.slice(0, 3).map(r => `<tr>${r.slice(0, 5).map(c => `<td class="text-truncate text-muted px-1" style="max-width:90px;">${c !== null && c !== undefined ? c : ''}</td>`).join('')}</tr>`).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
                                 </div>
                             `;
-                            container.appendChild(colDiv);
+                            summaryCont.appendChild(card);
                         });
 
-                        const thead = document.getElementById('global_preview_thead');
-                        const tbody = document.getElementById('global_preview_tbody');
-                        thead.innerHTML = '';
-                        tbody.innerHTML = '';
+                        document.getElementById('master-import-step-2').classList.remove('d-none');
+                        document.getElementById('master-import-step-3').classList.add('d-none');
 
-                        let trHead = '<tr>';
-                        data.headers.forEach((h, i) => {
-                            trHead += `<th class="text-body text-truncate" style="max-width:150px;">Col ${i+1}: ${h}</th>`;
-                        });
-                        trHead += '</tr>';
-                        thead.innerHTML = trHead;
-
-                        data.preview_rows.forEach(row => {
-                            let trBody = '<tr>';
-                            data.headers.forEach((h, i) => {
-                                const cellVal = row[i] !== undefined && row[i] !== null ? row[i] : '';
-                                trBody += `<td class="text-muted small text-truncate" style="max-width:150px;">${cellVal}</td>`;
-                            });
-                            trBody += '</tr>';
-                            tbody.innerHTML += trBody;
-                        });
-
-                        const modal = new bootstrap.Modal(document.getElementById('globalImportPreviewModal'));
+                        const modal = new coreui.Modal(document.getElementById('master-import-modal'));
                         modal.show();
                     })
                     .catch(err => {
                         this.disabled = false;
                         this.innerHTML = originalText;
-                        toastr.error('Network error reading spreadsheet.');
+                        toastr.error(err.message || 'Network error reading Master Excel file.');
                     });
                 });
             }
@@ -997,7 +1019,7 @@
                     this.disabled = true;
                     this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing Records...';
 
-                    fetch("{{ route('settings.global.import') }}", {
+                    fetch("{{ route('settings.global.process') }}", {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1005,7 +1027,7 @@
                         },
                         body: JSON.stringify({
                             table: targetTable,
-                            temp_file_path: tempFilePath,
+                            file_path: tempFilePath,
                             mapping: mapping
                         })
                     })
@@ -1015,7 +1037,7 @@
                         this.innerHTML = originalText;
 
                         if (data.success) {
-                            bootstrap.Modal.getInstance(document.getElementById('globalImportPreviewModal')).hide();
+                            coreui.Modal.getInstance(document.getElementById('globalImportPreviewModal')).hide();
                             toastr.success(data.message);
                         } else {
                             toastr.error(data.message || 'Import error.');
@@ -1025,6 +1047,75 @@
                         this.disabled = false;
                         this.innerHTML = originalText;
                         toastr.error('Server error during bulk import.');
+                    });
+                });
+            }
+
+            const btnProcessMaster = document.getElementById('btn_process_master_import');
+            if (btnProcessMaster) {
+                btnProcessMaster.addEventListener('click', function() {
+                    const filePath = document.getElementById('master_import_file_path').value;
+                    const originalText = this.innerHTML;
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing & Inserting Records...';
+
+                    fetch("{{ route('settings.global.process_master') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        },
+                        body: JSON.stringify({ file_path: filePath })
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+
+                        document.getElementById('master-import-step-2').classList.add('d-none');
+                        const step3 = document.getElementById('master-import-step-3');
+                        step3.classList.remove('d-none');
+
+                        const statusBox = document.getElementById('master_import_status_box');
+                        const failCont = document.getElementById('master_import_failure_container');
+                        const failTbody = document.getElementById('master_import_failure_tbody');
+                        failTbody.innerHTML = '';
+
+                        if (data.success && data.failed_count === 0) {
+                            statusBox.innerHTML = `
+                                <div class="alert alert-success border-0 shadow-sm py-4">
+                                    <i class="fa-solid fa-circle-check text-success mb-3" style="font-size: 3.5rem;"></i>
+                                    <h4 class="fw-bold text-success mb-1">Master Bulk Import Successful!</h4>
+                                    <p class="mb-0 text-muted">${data.message}</p>
+                                </div>
+                            `;
+                            failCont.classList.add('d-none');
+                        } else {
+                            statusBox.innerHTML = `
+                                <div class="alert alert-danger border-0 shadow-sm py-4">
+                                    <i class="fa-solid fa-circle-xmark text-danger mb-3" style="font-size: 3.5rem;"></i>
+                                    <h4 class="fw-bold text-danger mb-1">Import Stopped: Conflicts or Errors Found</h4>
+                                    <p class="mb-0 text-muted">${data.message || 'Validation or duplicate entry errors prevented import.'}</p>
+                                </div>
+                            `;
+                            failCont.classList.remove('d-none');
+                            if (data.failed_records) {
+                                data.failed_records.forEach(f => {
+                                    failTbody.innerHTML += `
+                                        <tr>
+                                            <td class="fw-bold">${f.sheet}</td>
+                                            <td>${f.row}</td>
+                                            <td class="text-danger fw-semibold">${f.reason}</td>
+                                        </tr>
+                                    `;
+                                });
+                            }
+                        }
+                    })
+                    .catch(err => {
+                        this.disabled = false;
+                        this.innerHTML = originalText;
+                        toastr.error('Server error executing Master Bulk Import.');
                     });
                 });
             }

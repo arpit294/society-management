@@ -180,6 +180,12 @@ Route::middleware('auth')->group(function () {
         Route::post('settings/global-backup/preview', [GlobalImportExportController::class, 'previewImport'])->name('settings.global.preview');
         Route::post('settings/global-backup/process', [GlobalImportExportController::class, 'processImport'])->name('settings.global.process');
 
+        // Master All-in-One Import Export
+        Route::get('settings/global-backup/export-master', [GlobalImportExportController::class, 'exportMaster'])->name('settings.global.export_master');
+        Route::get('settings/global-backup/template-master', [GlobalImportExportController::class, 'templateMaster'])->name('settings.global.template_master');
+        Route::post('settings/global-backup/preview-master', [GlobalImportExportController::class, 'previewMaster'])->name('settings.global.preview_master');
+        Route::post('settings/global-backup/process-master', [GlobalImportExportController::class, 'processMaster'])->name('settings.global.process_master');
+
         // Reports
         Route::get('reports/maintenance/export', [ReportController::class, 'exportReport'])->name('reports.maintenance.export');
         Route::get('reports/maintenance', [ReportController::class, 'maintenanceReport'])->name('reports.maintenance');
