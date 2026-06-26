@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Reader\XLSX\Reader;
 use OpenSpout\Writer\XLSX\Writer;
@@ -574,7 +575,7 @@ class ResidentController extends Controller
                         $activeOwnerCache[$flat->id] = true;
                     }
 
-                    // Check or create User (with cache) 
+                    // Check or create User (with cache)
                     if (!isset($userCache[$data['email']])) {
                         $user = User::firstOrCreate(
                             ['email' => $data['email']],
@@ -625,7 +626,7 @@ class ResidentController extends Controller
 
             $reader->close();
             DB::commit();
-            \Illuminate\Support\Facades\Storage::delete($path); // Cleanup temp file
+            Storage::delete($path); // Cleanup temp file
 
             return response()->json([
                 'success' => true,
@@ -636,7 +637,7 @@ class ResidentController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Illuminate\Support\Facades\Storage::delete($path); // Cleanup temp file
+            Storage::delete($path); // Cleanup temp file
 
             return response()->json(['success' => false, 'message' => 'Error processing residents import: '.$e->getMessage()]);
         }
