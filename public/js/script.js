@@ -1235,7 +1235,7 @@ $(document).ready(function () {
 
     // Maintenance Bill Forms
     loadFormIntoModal(
-        "#btn-add-maintenance-bill",
+        "#btn-add-maintenance-bill, #btn-record-payment",
         "#maintenance-bill-modal-content",
         maintenanceBillModalInstance,
     );

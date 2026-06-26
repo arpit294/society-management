@@ -48,3 +48,8 @@ class FlatTypeSeeder extends Seeder
         }
     }
 }
+
+
+//hello my name is arpit .i am presenting my website . my site name is "SMP" . this is a website for society management. in this website we can manage our society. we can manage our flat, owner, tenant, maintenance, notice, complaint, visitor, staff and many more things. this is a very useful website for society management.
+
+
