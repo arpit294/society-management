@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('password')->nullable();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('aadhar_id')->nullable();
-            $table->enum('status', ['active', 'inactive'])->nullable();
+            $table->boolean('status')->default(true);
             $table->rememberToken();
             $table->timestamp('created_at')->nullable();
             $table->timestamp('updated_at')->nullable();

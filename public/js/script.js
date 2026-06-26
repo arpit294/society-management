@@ -6,6 +6,32 @@ const penaltyTypeSelect = document.getElementById("penalty_type");
 const discountTypeSelect = document.getElementById("discount_type");
 const applyDiscountToggle = document.getElementById("apply_discount");
 
+function getPageCurrencyCode(sourceEl = null) {
+    return (
+        sourceEl?.dataset?.currency ||
+        document.getElementById("dashboard-chart-data")?.dataset?.currency ||
+        document.getElementById("payments-chart-data")?.dataset?.currency ||
+        document.getElementById("currency_select")?.value ||
+        "INR"
+    );
+}
+
+function getPageCurrencySymbol() {
+    return (
+        document.querySelector(".currency-symbol-preview")?.textContent?.trim() ||
+        document.getElementById("dashboard-chart-data")?.dataset?.currencySymbol ||
+        document.getElementById("payments-chart-data")?.dataset?.currencySymbol ||
+        (getPageCurrencyCode() === "USD" ? "$" : "\u20B9")
+    );
+}
+
+function formatPageCurrency(value, sourceEl = null) {
+    return new Intl.NumberFormat(getPageCurrencyCode(sourceEl) === "USD" ? "en-US" : "en-IN", {
+        style: "currency",
+        currency: getPageCurrencyCode(sourceEl),
+    }).format(value);
+}
+
 function togglePenaltyFields() {
     const isChecked = applyPenaltyToggle ? applyPenaltyToggle.checked : false;
     document.querySelectorAll('input[name^="penalty_"]').forEach((input) => {
@@ -25,7 +51,7 @@ function toggleDiscountFields() {
 function updatePenaltyLabels() {
     if (!penaltyTypeSelect) return;
     const isFixed = penaltyTypeSelect.value === "fixed";
-    const suffix = isFixed ? "₹" : "%";
+    const suffix = isFixed ? getPageCurrencySymbol() : "%";
     document.querySelectorAll(".penalty-suffix").forEach((el) => {
         el.innerText = suffix;
     });
@@ -34,7 +60,7 @@ function updatePenaltyLabels() {
 function updateDiscountLabels() {
     if (!discountTypeSelect) return;
     const isFixed = discountTypeSelect.value === "fixed";
-    const suffix = isFixed ? "₹" : "%";
+    const suffix = isFixed ? getPageCurrencySymbol() : "%";
     document.querySelectorAll(".discount-suffix").forEach((el) => {
         el.innerText = suffix;
     });
@@ -214,10 +240,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 let label = context.dataset.label || "";
                                 if (label) label += ": ";
                                 if (context.parsed.y !== null) {
-                                    label += new Intl.NumberFormat("en-IN", {
-                                        style: "currency",
-                                        currency: "INR",
-                                    }).format(context.parsed.y);
+                                    label += formatPageCurrency(context.parsed.y, paymentsChartDataEl);
                                 }
                                 return label;
                             },
@@ -328,10 +351,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 let label = context.dataset.label || "";
                                 if (label) label += ": ";
                                 if (context.parsed.y !== null)
-                                    label += new Intl.NumberFormat("en-IN", {
-                                        style: "currency",
-                                        currency: "INR",
-                                    }).format(context.parsed.y);
+                                    label += formatPageCurrency(context.parsed.y, dashboardChartDataEl);
                                 return label;
                             },
                         },
@@ -388,13 +408,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     let label = context.label || "";
                                     if (label) label += ": ";
                                     if (context.parsed !== null)
-                                        label += new Intl.NumberFormat(
-                                            "en-IN",
-                                            {
-                                                style: "currency",
-                                                currency: "INR",
-                                            },
-                                        ).format(context.parsed);
+                                        label += formatPageCurrency(context.parsed, dashboardChartDataEl);
                                     return label;
                                 },
                             },
@@ -466,13 +480,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     let label = context.label || "";
                                     if (label) label += ": ";
                                     if (context.parsed !== null)
-                                        label += new Intl.NumberFormat(
-                                            "en-IN",
-                                            {
-                                                style: "currency",
-                                                currency: "INR",
-                                            },
-                                        ).format(context.parsed);
+                                        label += formatPageCurrency(context.parsed, dashboardChartDataEl);
                                     return label;
                                 },
                             },
@@ -2391,7 +2399,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const suffixes = document.querySelectorAll(suffixClass);
 
         function update() {
-            const symbol = select.value === 'percentage' ? '%' : '₹';
+            const symbol = select.value === 'percentage' ? '%' : getPageCurrencySymbol();
             suffixes.forEach(el => el.textContent = symbol);
         }
 

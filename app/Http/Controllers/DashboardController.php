@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CurrencyHelper;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Flat;
@@ -19,8 +20,7 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // dd(Auth::user());
-        // abort_if(! \Auth::user()->can('dashboard_view'), 403);
+        abort_if(! \Auth::user()->can('dashboard_view'), 403);
         $totalFlats = Flat::count();
         $totalResidents = Flat::whereHas('residents', function ($query) {
             $query->whereNull('move_out_date')->orWhere('move_out_date', '>=', now()->startOfDay());
@@ -108,7 +108,7 @@ class DashboardController extends Controller
                 return (object)[
                     'icon' => 'fa-solid fa-money-bill-wave text-success',
                     'title' => 'Payment Received',
-                    'description' => '₹' . number_format($payment->total_amount, 2) . ' from ' . ($payment->user->name ?? 'Unknown'),
+                    'description' => CurrencyHelper::formatCurrency($payment->total_amount) . ' from ' . ($payment->user->name ?? 'Unknown'),
                     'time' => $timestamp->diffForHumans(),
                     'timestamp' => $timestamp
                 ];

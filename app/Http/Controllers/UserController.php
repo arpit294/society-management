@@ -17,8 +17,9 @@ class UserController extends Controller
     public function index(UsersDataTable $dataTable)
     {
         abort_if(! auth()->user()->can('user_view'), 403);
+        $roles = \App\Models\Role::pluck('name');
 
-        return $dataTable->render('users.index');
+        return $dataTable->render('users.index', compact('roles'));
     }
 
     /**
@@ -28,8 +29,10 @@ class UserController extends Controller
     {
         abort_if(! auth()->user()->can('user_create'), 403);
         if (request()->ajax()) {
+            $roles = \App\Models\Role::pluck('name');
             return view('users.create', [
                 'user' => null,
+                'roles' => $roles,
                 'action' => route('users.store'),
             ]);
         }
@@ -64,8 +67,10 @@ class UserController extends Controller
     {
         abort_if(! auth()->user()->can('user_edit'), 403);
         if (request()->ajax()) {
+            $roles = \App\Models\Role::pluck('name');
             return view('users.edit', [
                 'user' => $user,
+                'roles' => $roles,
                 'action' => route('users.update', $user),
             ]);
         }

@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Helpers\CurrencyHelper;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -23,7 +24,7 @@ class ExpensesDataTable extends DataTable
                 return $row->created_at ? date('d-m-Y h:i A', strtotime($row->created_at)) : '-';
             })
             ->editColumn('total_amount', function ($row) {
-                return '<span class="badge bg-success fw-bold px-3 py-2 fs-6">₹'.number_format($row->total_amount, 2).'</span>';
+                return '<span class="badge bg-success fw-bold px-3 py-2 fs-6">'.CurrencyHelper::formatCurrency($row->total_amount).'</span>';
             })
             ->editColumn('invoice', function ($row) {
                 if ($row->invoice) {

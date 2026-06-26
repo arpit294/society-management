@@ -184,6 +184,7 @@
         </li>
         @endif
 
+        @can('setting_view')
         <li class="nav-group {{ request()->is('roles*') || request()->is('settings*') ? 'show' : '' }}">
             <a class="nav-link nav-group-toggle" href="#">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -227,6 +228,7 @@
                 Reports
             </a>
         </li>
+        @endcan
     </ul>
     {{-- <div class="sidebar-footer border-top d-none d-md-flex">
         <button class="sidebar-toggler" type="button" data-coreui-toggle="unfoldable"></button>

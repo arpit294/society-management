@@ -32,11 +32,11 @@
             <h6 class="fw-bold text-uppercase small text-muted mb-3">MAINTENANCE FEES</h6>
             <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
                 <span class="text-secondary" id="fee-description">Basic Maintenance Fee</span>
-                <span class="fw-medium">₹ <span id="display_monthly_fee">0.00</span></span>
+                <span class="fw-medium">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }} <span id="display_monthly_fee">0.00</span></span>
             </div>
             <div class="d-flex justify-content-between align-items-center pt-1">
                 <span class="fw-bold">Monthly Total</span>
-                <span class="fw-bold text-primary fs-5">₹ <span id="display_monthly_total">0.00</span></span>
+                <span class="fw-bold text-primary fs-5">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }} <span id="display_monthly_total">0.00</span></span>
             </div>
         </div>
 
@@ -66,28 +66,28 @@
             <div class="col-md-3 mb-3 mb-md-0">
                 <label class="form-label fw-semibold text-muted small text-uppercase">Subtotal</label>
                 <div class="input-group">
-                    <span class="input-group-text border-end-0">₹</span>
+                    <span class="input-group-text border-end-0">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
                     <input type="text" id="subtotal" class="form-control border-start-0 ps-0" readonly value="0.00">
                 </div>
             </div>
             <div class="col-md-3 mb-3 mb-md-0">
                 <label class="form-label fw-semibold text-muted small text-uppercase">Penalty Amount</label>
                 <div class="input-group">
-                    <span class="input-group-text text-danger border-end-0">₹</span>
+                    <span class="input-group-text text-danger border-end-0">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
                     <input type="number" step="0.01" name="penalty_amount" id="penalty_amount" class="form-control text-danger border-start-0 ps-0" value="0.00">
                 </div>
             </div>
             <div class="col-md-3 mb-3 mb-md-0">
                 <label class="form-label fw-semibold text-muted small text-uppercase">Discount Applied</label>
                 <div class="input-group">
-                    <span class="input-group-text text-success border-end-0">₹</span>
+                    <span class="input-group-text text-success border-end-0">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
                     <input type="number" step="0.01" name="discount_amount" id="discount_applied" class="form-control text-success border-start-0 ps-0" value="0.00">
                 </div>
             </div>
             <div class="col-md-3">
                 <label class="form-label fw-semibold text-muted small text-uppercase">Total Amount</label>
                 <div class="input-group">
-                    <span class="input-group-text bg-primary-subtle text-primary border-primary-subtle border-end-0 fw-bold">₹</span>
+                    <span class="input-group-text bg-primary-subtle text-primary border-primary-subtle border-end-0 fw-bold">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
                     <input type="text" name="total_amount" id="total_amount" class="form-control bg-primary-subtle text-primary border-primary-subtle border-start-0 ps-0 fw-bold" readonly value="0.00">
                 </div>
             </div>
@@ -121,5 +121,4 @@
         </button>
     </div>
 </form>
-
 

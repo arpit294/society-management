@@ -26,9 +26,9 @@ class RegisterRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|max:20',
+            'phone' => 'required|digits:10',
             'role' => ['required', Rule::in(config('roles.self_register'))],
-            'aadhar_id' => 'required|string|max:20',
+            'aadhar_id' => 'required|digits:12',
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'password' => 'required|string|min:6|confirmed',
         ];

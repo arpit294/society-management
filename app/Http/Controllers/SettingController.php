@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CurrencyHelper;
 use App\Models\Role;
 use App\Models\Setting;
 use App\Models\User;
@@ -55,6 +56,14 @@ class SettingController extends Controller
     {
         abort_if(! \Auth::user()->can('setting_edit'), 403);
         $data = $request->except(['_token', '_method']);
+
+        if (isset($data['currency'])) {
+            $currencies = CurrencyHelper::getAvailableCurrencies();
+            if (! isset($currencies[$data['currency']])) {
+                $data['currency'] = 'INR';
+            }
+            $data['currency_symbol'] = $currencies[$data['currency']]['symbol'] ?? $currencies['INR']['symbol'];
+        }
 
         // Update or create settings based on the provided data
         foreach ($data as $key => $value) {

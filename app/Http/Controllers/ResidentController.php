@@ -246,12 +246,26 @@ class ResidentController extends Controller
 
             // Header row matching the agreed columns
             $writer->addRow(Row::fromValues([
-                'Name', 'Email', 'Phone', 'Aadhar ID', 'Block Name', 'Flat No', 'Type (owner/rental)', 'Move In Date (YYYY-MM-DD)',
+                'Name',
+                'Email',
+                'Phone',
+                'Aadhar ID',
+                'Block Name',
+                'Flat No',
+                'Type (owner/rental)',
+                'Move In Date (YYYY-MM-DD)',
             ]));
 
             // Example row
             $writer->addRow(Row::fromValues([
-                'John Doe', 'john.doe@example.com', '9876543210', '123412341234', 'A', '101', 'owner', '2023-01-15',
+                'John Doe',
+                'john.doe@example.com',
+                '9876543210',
+                '123412341234',
+                'A',
+                '101',
+                'owner',
+                '2023-01-15',
             ]));
 
             $writer->close();
@@ -270,7 +284,7 @@ class ResidentController extends Controller
 
         $headers = [
             'Content-type' => $contentType,
-            'Content-Disposition' => 'attachment; filename=residents_export_'.date('Ymd_His').'.'.$ext,
+            'Content-Disposition' => 'attachment; filename=residents_export_' . date('Ymd_His') . '.' . $ext,
             'Pragma' => 'no-cache',
             'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
             'Expires' => '0',
@@ -375,7 +389,6 @@ class ResidentController extends Controller
                     }
 
                     $rowCount++;
-
                 }
                 break; // Only read first sheet
             }
@@ -387,7 +400,6 @@ class ResidentController extends Controller
                 'headers' => $headers,
                 'preview_rows' => $previewRows
             ]);
-
         } catch (\Exception $e) {
             Storage::delete($path);
             return response()->json([
@@ -476,7 +488,7 @@ class ResidentController extends Controller
                         'name' => 'required|string|max:255',
                         'email' => 'required|email|max:255',
                         'phone' => 'nullable|string|max:20',
-                        'aadhar_id' => 'required|string|max:20',
+                        'aadhar_id' => 'required|digits:12',
                         'block_name' => 'required|string',
                         'flat_no' => 'required|string',
                         'type' => 'required|in:owner,rental',
@@ -521,7 +533,7 @@ class ResidentController extends Controller
                     }
 
                     // Find Flat (with cache)
-                    $flatCacheKey = $block->id.'_'.$data['flat_no'];
+                    $flatCacheKey = $block->id . '_' . $data['flat_no'];
                     if (! isset($flatCache[$flatCacheKey])) {
                         $flat = Flat::where('block_id', $block->id)->where('flat_no', $data['flat_no'])->first();
 
@@ -556,7 +568,7 @@ class ResidentController extends Controller
                         if (!array_key_exists($flat->id, $activeOwnerCache)) {
                             $activeOwnerCache[$flat->id] = Resident::where('flat_id', $flat->id)
                                 ->where('type', 'owner')
-                                ->where(function($q) {
+                                ->where(function ($q) {
                                     $q->whereNull('move_out_date')->orWhere('move_out_date', '>=', now()->startOfDay());
                                 })->exists();
                         }
@@ -575,7 +587,7 @@ class ResidentController extends Controller
                         $activeOwnerCache[$flat->id] = true;
                     }
 
-                    // Check or create User (with cache) 
+                    // Check or create User (with cache)
                     if (!isset($userCache[$data['email']])) {
                         $user = User::firstOrCreate(
                             ['email' => $data['email']],
@@ -634,12 +646,11 @@ class ResidentController extends Controller
                 'failed_count' => count($failedRecords),
                 'failed_records' => $failedRecords
             ]);
-
         } catch (\Exception $e) {
             DB::rollBack();
             Storage::delete($path); // Cleanup temp file
 
-            return response()->json(['success' => false, 'message' => 'Error processing residents import: '.$e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error processing residents import: ' . $e->getMessage()]);
         }
     }
 }

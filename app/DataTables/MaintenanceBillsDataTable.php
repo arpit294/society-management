@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Helpers\CurrencyHelper;
 use App\Models\MaintenanceBill;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
@@ -43,16 +44,16 @@ class MaintenanceBillsDataTable extends DataTable
                 return '<div class="text-nowrap"><i class="fa-regular fa-calendar text-muted me-1"></i> <span class="fw-medium">'.$row->start_month.'</span></div>';
             })
             ->editColumn('amount', function ($row) {
-                return '₹'.number_format($row->amount, 2);
+                return CurrencyHelper::formatCurrency($row->amount);
             })
             ->editColumn('penalty_amount', function ($row) {
-                return '₹'.number_format($row->penalty_amount, 2);
+                return CurrencyHelper::formatCurrency($row->penalty_amount);
             })
             ->editColumn('discount_amount', function ($row) {
-                return '₹'.number_format($row->discount_amount, 2);
+                return CurrencyHelper::formatCurrency($row->discount_amount);
             })
             ->editColumn('total_amount', function ($row) {
-                return '₹'.number_format($row->total_amount, 2);
+                return CurrencyHelper::formatCurrency($row->total_amount);
             })
             ->editColumn('payment_method', function ($row) {
                 if (strtolower($row->payment_method) === 'upi' && $row->payment_slip) {

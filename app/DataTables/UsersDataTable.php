@@ -24,7 +24,8 @@ class UsersDataTable extends DataTable
                 $query->where('role', $keyword);
             })
             ->filterColumn('status', function (QueryBuilder $query, string $keyword): void {
-                $query->where('status', $keyword);
+                $val = ($keyword === 'active' || $keyword === '1' || $keyword === 1 || $keyword === true) ? 1 : 0;
+                $query->where('status', $val);
             })
             ->addColumn('action', 'users.action')
             ->editColumn('status', function (User $user) {

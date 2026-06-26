@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\CurrencyHelper;
 use App\Models\Block;
 use App\Models\Complain;
 use App\Models\Expense;
@@ -30,6 +31,8 @@ class GlobalImportExportController extends Controller
 {
     private function getTableConfigs()
     {
+        $currencySymbol = CurrencyHelper::getCurrencySymbol();
+
         return [
             'blocks' => [
                 'label' => 'Blocks',
@@ -70,14 +73,14 @@ class GlobalImportExportController extends Controller
                 'label' => 'Expenses',
                 'model' => Expense::class,
                 'headers' => ['title', 'total_amount', 'category_title', 'expense_date', 'invoice', 'user_email'],
-                'labels' => ['Title (*)', 'Total Amount (₹) (*)', 'Category Title', 'Expense Date (YYYY-MM-DD)', 'Invoice No', 'User Email'],
+                'labels' => ['Title (*)', "Total Amount ({$currencySymbol}) (*)", 'Category Title', 'Expense Date (YYYY-MM-DD)', 'Invoice No', 'User Email'],
                 'required' => ['title', 'total_amount'],
             ],
             'flat_types' => [
                 'label' => 'Flat Types',
                 'model' => FlatType::class,
                 'headers' => ['name', 'owner_maintenance_fee', 'rental_maintenance_fee', 'description', 'status'],
-                'labels' => ['Type Name (*)', 'Owner Fee (₹)', 'Rental Fee (₹)', 'Description', 'Status (active/inactive)'],
+                'labels' => ['Type Name (*)', "Owner Fee ({$currencySymbol})", "Rental Fee ({$currencySymbol})", 'Description', 'Status (active/inactive)'],
                 'required' => ['name'],
             ],
             'expense_categories' => [
@@ -91,21 +94,21 @@ class GlobalImportExportController extends Controller
                 'label' => 'Maintenance Batches',
                 'model' => Maintenance::class,
                 'headers' => ['month', 'year', 'billing_cycle', 'due_date', 'total_additional_cost', 'status'],
-                'labels' => ['Month (Jan, Feb...) (*)', 'Year (YYYY) (*)', 'Billing Cycle (Monthly/Quarterly/Yearly)', 'Due Date (YYYY-MM-DD)', 'Additional Cost (₹)', 'Status (generated/pending)'],
+                'labels' => ['Month (Jan, Feb...) (*)', 'Year (YYYY) (*)', 'Billing Cycle (Monthly/Quarterly/Yearly)', 'Due Date (YYYY-MM-DD)', "Additional Cost ({$currencySymbol})", 'Status (generated/pending)'],
                 'required' => ['month', 'year'],
             ],
             'maintenance_bills' => [
                 'label' => 'Maintenance Payments / Bills',
                 'model' => MaintenanceBill::class,
                 'headers' => ['user_email', 'block_name', 'flat_no', 'amount', 'penalty_amount', 'dynamic_penalty_amount', 'manual_penalty_amount', 'discount_amount', 'total_amount', 'generated_date', 'paid_at', 'payment_method', 'transaction_id', 'payment_slip', 'status'],
-                'labels' => ['User Email (*)', 'Block Name (*)', 'Flat No (*)', 'Amount (₹) (*)', 'Penalty Amount (₹)', 'Dynamic Penalty (₹)', 'Manual Penalty (₹)', 'Discount Amount (₹)', 'Total Amount (₹) (*)', 'Generated Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Status (pending/paid)'],
+                'labels' => ['User Email (*)', 'Block Name (*)', 'Flat No (*)', "Amount ({$currencySymbol}) (*)", "Penalty Amount ({$currencySymbol})", "Dynamic Penalty ({$currencySymbol})", "Manual Penalty ({$currencySymbol})", "Discount Amount ({$currencySymbol})", "Total Amount ({$currencySymbol}) (*)", 'Generated Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Status (pending/paid)'],
                 'required' => ['user_email', 'block_name', 'flat_no', 'total_amount'],
             ],
             'name_transfer_bills' => [
                 'label' => 'Transfer Fees',
                 'model' => NameTransferBill::class,
                 'headers' => ['block_name', 'flat_no', 'old_owner_email', 'new_owner_email', 'amount', 'transfer_date', 'paid_at', 'payment_method', 'transaction_id', 'payment_slip', 'is_approved', 'status'],
-                'labels' => ['Block Name (*)', 'Flat No (*)', 'Old Owner Email (*)', 'New Owner Email (*)', 'Transfer Fee Amount (₹) (*)', 'Transfer Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Is Approved (1/0)', 'Status (pending/paid)'],
+                'labels' => ['Block Name (*)', 'Flat No (*)', 'Old Owner Email (*)', 'New Owner Email (*)', "Transfer Fee Amount ({$currencySymbol}) (*)", 'Transfer Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Is Approved (1/0)', 'Status (pending/paid)'],
                 'required' => ['block_name', 'flat_no', 'old_owner_email', 'new_owner_email', 'amount'],
             ],
         ];
@@ -114,6 +117,9 @@ class GlobalImportExportController extends Controller
     public function export(Request $request)
     {
         abort_if(Gate::denies('setting_view'), 403);
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
+        
         $table = $request->input('table', 'blocks');
         $format = $request->input('format', 'excel');
 
@@ -287,6 +293,9 @@ class GlobalImportExportController extends Controller
     public function processImport(Request $request)
     {
         abort_if(Gate::denies('setting_edit'), 403);
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
+        
         $request->validate([
             'table' => 'required|string',
             'file_path' => 'required|string',

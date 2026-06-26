@@ -59,7 +59,7 @@ class FlatController extends Controller
             $block = Block::find($validatedData['block_id']);
             if ($block && $validatedData['floor_no'] > $block->total_floor) {
                 throw ValidationException::withMessages([
-                    'floor_no' => ['Floor No cannot be greater than '.$block->total_floor.' for the selected block.'],
+                    'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.'],
                 ]);
             }
         }
@@ -117,7 +117,7 @@ class FlatController extends Controller
             $block = Block::find($validatedData['block_id']);
             if ($block && $validatedData['floor_no'] > $block->total_floor) {
                 throw ValidationException::withMessages([
-                    'floor_no' => ['Floor No cannot be greater than '.$block->total_floor.' for the selected block.'],
+                    'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.'],
                 ]);
             }
         }
@@ -173,7 +173,7 @@ class FlatController extends Controller
             'new_owner_name' => 'required|string|max:255',
             'new_owner_email' => 'required|email',
             'new_owner_phone' => 'nullable|string|max:20',
-            'new_owner_aadhar' => 'required|string|max:20',
+            'new_owner_aadhar' => 'required|digits:12',
             'transfer_date' => 'required|date',
             'payment_method' => 'required|in:pending,cash,upi',
             'transaction_id' => 'nullable|string|max:255',
@@ -236,7 +236,7 @@ class FlatController extends Controller
 
                     if ($request->hasFile('payment_slip')) {
                         $file = $request->file('payment_slip');
-                        $filename = time().'_'.$file->getClientOriginalName();
+                        $filename = time() . '_' . $file->getClientOriginalName();
                         $file->move(public_path('uploads/invoices'), $filename);
                         $billData['payment_slip'] = $filename;
                     }
@@ -256,7 +256,7 @@ class FlatController extends Controller
 
             return response()->json([
                 'success' => false,
-                'message' => 'Error transferring ownership: '.$e->getMessage(),
+                'message' => 'Error transferring ownership: ' . $e->getMessage(),
             ], 500);
         }
     }

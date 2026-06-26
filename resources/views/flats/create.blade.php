@@ -50,7 +50,7 @@
                     <option value="">Select Flat Type</option>
                     @foreach ($flatTypes as $type)
                         <option value="{{ $type->id }}" {{ old('flat_type_id') == $type->id ? 'selected' : '' }}>
-                            {{ $type->name }} (₹{{ number_format($type->owner_maintenance_fee, 2) }})
+                            {{ $type->name }} ({{ \App\Helpers\CurrencyHelper::formatCurrency($type->owner_maintenance_fee) }})
                         </option>
                     @endforeach
                 </select>
@@ -78,4 +78,3 @@
         <button type="submit" class="btn btn-primary">Save</button>
     </div>
 </form>
-

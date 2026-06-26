@@ -68,17 +68,17 @@
                     <tbody>
                         <tr>
                             <td>Base Maintenance Fee</td>
-                            <td class="text-end">{{ \App\Models\Setting::get('currency_symbol', '$') }}{{ number_format($bill->amount, 2) }}</td>
+                            <td class="text-end">{{ \App\Helpers\CurrencyHelper::formatCurrency($bill->amount) }}</td>
                         </tr>
                         @if($bill->penalty_amount > 0)
                         <tr>
                             <td>Penalty Amount</td>
-                            <td class="text-end">{{ \App\Models\Setting::get('currency_symbol', '$') }}{{ number_format($bill->penalty_amount, 2) }}</td>
+                            <td class="text-end">{{ \App\Helpers\CurrencyHelper::formatCurrency($bill->penalty_amount) }}</td>
                         </tr>
                         @endif
                         <tr class="fw-bold">
                             <td>Total Amount</td>
-                            <td class="text-end">{{ \App\Models\Setting::get('currency_symbol', '$') }}{{ number_format($bill->total_amount, 2) }}</td>
+                            <td class="text-end">{{ \App\Helpers\CurrencyHelper::formatCurrency($bill->total_amount) }}</td>
                         </tr>
                     </tbody>
                 </table>

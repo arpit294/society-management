@@ -15,6 +15,7 @@
                     <i class="fa-solid fa-house fs-5" style="color: var(--ci-primary-color, currentcolor);"></i>
                 </a>
             </li>
+            @can('setting_view')
             <li class="nav-item">
                 <a class="nav-link py-2" href="{{ route('settings.index') }}" title="Settings">
                     <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -22,6 +23,7 @@
                     </svg>
                 </a>
             </li>
+            @endcan
 
             <li class="nav-item py-1">
                 <div class="vr h-100 mx-2 text-body text-opacity-75"></div>

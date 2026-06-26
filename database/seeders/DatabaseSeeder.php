@@ -27,19 +27,13 @@ class DatabaseSeeder extends Seeder
         Flat::truncate();
 
         // Delete dummy resident users but preserve the primary admin/test accounts
-        User::whereNotIn('email', ['arpitvadhiyari11@gmail.com', 'admin@gmail.com'])->delete();
+        User::whereNotIn('email', ['arpitvadhiyari11@gmail.com', env('ADMIN_EMAIL', 'admin@gmail.com')])->delete();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
         // Run seeders
         $this->call([
-            RoleAndPermissionSeeder::class,
-            AdminUserSeeder::class,
-            SettingSeeder::class,
-            BlockSeeder::class,
-            FlatTypeSeeder::class,
-            FlatSeeder::class,
-            UserResidentSeeder::class,
-            RolesAndPermissionsSeeder::class,
+            SystemDataSeeder::class,
+            TestingDataSeeder::class,
         ]);
     }
 }

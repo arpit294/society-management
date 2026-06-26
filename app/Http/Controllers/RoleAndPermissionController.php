@@ -13,6 +13,7 @@ class RoleAndPermissionController extends Controller
 {
     public function store(StoreRoleRequest $request): RedirectResponse
     {
+        abort_if(! auth()->user()->can('setting_edit'), 403);
         $role = Role::create([
             'name' => $request->validated('name'),
             'guard_name' => 'web',
@@ -25,11 +26,13 @@ class RoleAndPermissionController extends Controller
 
     public function edit(Role $role): View
     {
+        abort_if(! auth()->user()->can('setting_edit'), 403);
         return view('roles.edit', compact('role'));
     }
 
     public function update(UpdateRoleRequest $request, Role $role): RedirectResponse
     {
+        abort_if(! auth()->user()->can('setting_edit'), 403);
         $attributes = ['name' => $request->validated('name')];
 
         $role->update($attributes);
@@ -40,6 +43,7 @@ class RoleAndPermissionController extends Controller
 
     public function destroy(Role $role): RedirectResponse|JsonResponse
     {
+        abort_if(! auth()->user()->can('setting_edit'), 403);
         if ($role->name === 'Admin') {
             if (request()->expectsJson()) {
                 return response()->json(['message' => 'Cannot delete Admin role.'], 403);

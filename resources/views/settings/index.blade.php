@@ -1,4 +1,9 @@
 <x-user-page>
+    @php
+        $currencySymbol = \App\Helpers\CurrencyHelper::getCurrencySymbol();
+        $availableCurrencies = \App\Helpers\CurrencyHelper::getAvailableCurrencies();
+    @endphp
+
     <div class="row" id="general-settings">
         <div class="col-12">
             <div class="card mb-4">
@@ -50,8 +55,19 @@
                                 </select>
                             </div>
                             <div class="col-md-4 mb-3">
+                                <label class="form-label text-muted small fw-semibold text-uppercase">Currency</label>
+                                <select name="currency" id="currency_select" class="form-select">
+                                    @foreach ($availableCurrencies as $code => $details)
+                                        <option value="{{ $code }}"
+                                            {{ ($settings['currency'] ?? 'INR') == $code ? 'selected' : '' }}>
+                                            {{ $code }} - {{ $details['name'] }} ({{ $details['symbol'] }})
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label text-muted small fw-semibold text-uppercase">Name Transfer Fee
-                                    (₹)</label>
+                                    (<span class="currency-symbol-preview">{{ $currencySymbol }}</span>)</label>
                                 <input type="number" step="0.01" name="name_transfer_fee" class="form-control"
                                     value="{{ $settings['name_transfer_fee'] ?? '0' }}">
                             </div>
@@ -82,7 +98,7 @@
                                         Percentage (%)</option>
                                     <option value="fixed"
                                         {{ ($settings['penalty_type'] ?? 'percentage') == 'fixed' ? 'selected' : '' }}>
-                                        Fixed Amount (₹)</option>
+                                        Fixed Amount ({{ $currencySymbol }})</option>
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
@@ -190,7 +206,7 @@
                                         Percentage (%)</option>
                                     <option value="fixed"
                                         {{ ($settings['discount_type'] ?? 'percentage') == 'fixed' ? 'selected' : '' }}>
-                                        Fixed Amount (₹)</option>
+                                        Fixed Amount ({{ $currencySymbol }})</option>
                                 </select>
                             </div>
 
@@ -268,7 +284,8 @@
 
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="mb-0 fw-bold">Required Documents for Owner</h5>
-                            <button type="button" class="btn btn-sm btn-outline-primary checkall-btn" data-target="req_doc_owner_">Check All</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary checkall-btn"
+                                data-target="req_doc_owner_">Check All</button>
                         </div>
                         <div class="row mb-5">
                             @php
@@ -280,19 +297,22 @@
                                     'possession_letter' => 'Possession Letter',
                                     'tax_bill' => 'Copy of Tax Bill',
                                     'contact_no' => 'Contact No',
-                                    'email' => 'Email Address'
+                                    'email' => 'Email Address',
                                 ];
                             @endphp
-                            @foreach($ownerDocs as $key => $label)
-                            <div class="col-md-3 mb-3">
-                                <div class="form-check form-switch mt-1">
-                                    <input type="hidden" name="req_doc_owner_{{ $key }}" value="0">
-                                    <input class="form-check-input" type="checkbox" id="req_doc_owner_{{ $key }}"
-                                        name="req_doc_owner_{{ $key }}" value="1"
-                                        {{ ($settings['req_doc_owner_'.$key] ?? '0') == '1' ? 'checked' : '' }}>
-                                    <label class="form-check-label text-muted small fw-semibold ms-1" for="req_doc_owner_{{ $key }}">{{ $label }}</label>
+                            @foreach ($ownerDocs as $key => $label)
+                                <div class="col-md-3 mb-3">
+                                    <div class="form-check form-switch mt-1">
+                                        <input type="hidden" name="req_doc_owner_{{ $key }}"
+                                            value="0">
+                                        <input class="form-check-input" type="checkbox"
+                                            id="req_doc_owner_{{ $key }}"
+                                            name="req_doc_owner_{{ $key }}" value="1"
+                                            {{ ($settings['req_doc_owner_' . $key] ?? '0') == '1' ? 'checked' : '' }}>
+                                        <label class="form-check-label text-muted small fw-semibold ms-1"
+                                            for="req_doc_owner_{{ $key }}">{{ $label }}</label>
+                                    </div>
                                 </div>
-                            </div>
                             @endforeach
                         </div>
 
@@ -300,7 +320,8 @@
 
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h5 class="mb-0 fw-bold">Required Documents for Rental</h5>
-                            <button type="button" class="btn btn-sm btn-outline-primary checkall-btn" data-target="req_doc_rental_">Check All</button>
+                            <button type="button" class="btn btn-sm btn-outline-primary checkall-btn"
+                                data-target="req_doc_rental_">Check All</button>
                         </div>
                         <div class="row mb-5">
                             @php
@@ -312,19 +333,22 @@
                                     'police_verification' => 'Police Verification',
                                     'permanent_address_proof' => 'Permanent Address Proof',
                                     'contact_no' => 'Contact Number',
-                                    'email' => 'Email Address'
+                                    'email' => 'Email Address',
                                 ];
                             @endphp
-                            @foreach($rentalDocs as $key => $label)
-                            <div class="col-md-3 mb-3">
-                                <div class="form-check form-switch mt-1">
-                                    <input type="hidden" name="req_doc_rental_{{ $key }}" value="0">
-                                    <input class="form-check-input" type="checkbox" id="req_doc_rental_{{ $key }}"
-                                        name="req_doc_rental_{{ $key }}" value="1"
-                                        {{ ($settings['req_doc_rental_'.$key] ?? '0') == '1' ? 'checked' : '' }}>
-                                    <label class="form-check-label text-muted small fw-semibold ms-1" for="req_doc_rental_{{ $key }}">{{ $label }}</label>
+                            @foreach ($rentalDocs as $key => $label)
+                                <div class="col-md-3 mb-3">
+                                    <div class="form-check form-switch mt-1">
+                                        <input type="hidden" name="req_doc_rental_{{ $key }}"
+                                            value="0">
+                                        <input class="form-check-input" type="checkbox"
+                                            id="req_doc_rental_{{ $key }}"
+                                            name="req_doc_rental_{{ $key }}" value="1"
+                                            {{ ($settings['req_doc_rental_' . $key] ?? '0') == '1' ? 'checked' : '' }}>
+                                        <label class="form-check-label text-muted small fw-semibold ms-1"
+                                            for="req_doc_rental_{{ $key }}">{{ $label }}</label>
+                                    </div>
                                 </div>
-                            </div>
                             @endforeach
                         </div>
 
@@ -343,39 +367,58 @@
         <div class="col-12">
             <div class="card mb-4 border-0 shadow-sm">
                 <div class="card-header bg-white border-bottom py-3">
-                    <h4 class="mb-0"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Society Location Setting</h4>
+                    <h4 class="mb-0"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Society Location
+                        Setting</h4>
                 </div>
                 <div class="card-body p-4">
                     <form action="{{ route('settings.store') }}" method="POST">
                         @csrf
                         <p class="text-muted small mb-4">
-                            Search your location or click anywhere on the interactive map below to set your society's exact GPS coordinates. The address bar will automatically update as you move the pin.
+                            Search your location or click anywhere on the interactive map below to set your society's
+                            exact GPS coordinates. The address bar will automatically update as you move the pin.
                         </p>
-                        
-                        <input type="hidden" id="society_latitude" name="society_latitude" value="{{ $settings['society_latitude'] ?? '19.0760' }}">
-                        <input type="hidden" id="society_longitude" name="society_longitude" value="{{ $settings['society_longitude'] ?? '72.8777' }}">
+
+                        <input type="hidden" id="society_latitude" name="society_latitude"
+                            value="{{ $settings['society_latitude'] ?? '19.0760' }}">
+                        <input type="hidden" id="society_longitude" name="society_longitude"
+                            value="{{ $settings['society_longitude'] ?? '72.8777' }}">
 
                         <div class="row mb-3">
                             <div class="col-md-8 mb-3 position-relative">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Search Location / Address</label>
+                                <label class="form-label text-muted small fw-semibold text-uppercase">Search Location /
+                                    Address</label>
                                 <div class="input-group shadow-sm">
-                                    <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-                                    <input type="text" id="map_search_input" name="society_map_address" class="form-control border-start-0 ps-0 py-2" placeholder="Type city, area, society name or street..." value="{{ $settings['society_map_address'] ?? '' }}" autocomplete="off">
-                                    <button class="btn btn-primary px-4 fw-semibold" type="button" id="btn_search_location">Search</button>
+                                    <span class="input-group-text bg-white border-end-0"><i
+                                            class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                    <input type="text" id="map_search_input" name="society_map_address"
+                                        class="form-control border-start-0 ps-0 py-2"
+                                        placeholder="Type city, area, society name or street..."
+                                        value="{{ $settings['society_map_address'] ?? '' }}" autocomplete="off">
+                                    <button class="btn btn-primary px-4 fw-semibold" type="button"
+                                        id="btn_search_location">Search</button>
                                 </div>
-                                <div id="search_results_list" class="list-group position-absolute w-100 shadow-lg border-0 rounded-3 mt-1 d-none text-start bg-white" style="z-index: 1050; max-height: 300px; overflow-y: auto; left: 12px; width: calc(100% - 24px) !important;"></div>
+                                <div id="search_results_list"
+                                    class="list-group position-absolute w-100 shadow-lg border-0 rounded-3 mt-1 d-none text-start bg-white"
+                                    style="z-index: 1050; max-height: 300px; overflow-y: auto; left: 12px; width: calc(100% - 24px) !important;">
+                                </div>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">GPS Auto-Detect</label>
-                                <button type="button" class="btn btn-outline-primary w-100 fw-semibold py-2 shadow-sm" id="btn_get_my_current_location">
+                                <label class="form-label text-muted small fw-semibold text-uppercase">GPS
+                                    Auto-Detect</label>
+                                <button type="button"
+                                    class="btn btn-outline-primary w-100 fw-semibold py-2 shadow-sm"
+                                    id="btn_get_my_current_location">
                                     <i class="fa-solid fa-location-crosshairs me-2"></i>Detect Device GPS
                                 </button>
                             </div>
                         </div>
 
                         <div class="position-relative mb-4">
-                            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-                            <div id="society_location_map" style="height: 420px; width: 100%; border-radius: 12px; z-index: 1;" class="shadow-sm border"></div>
+                            <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+                                integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+                            <div id="society_location_map"
+                                style="height: 420px; width: 100%; border-radius: 12px; z-index: 1;"
+                                class="shadow-sm border"></div>
                         </div>
 
                         <div class="text-end border-top pt-3">
@@ -422,8 +465,7 @@
                     <div class="col-md-6 mb-3">
                         <div class="card border-0 shadow-sm h-100 role-card" style="cursor: pointer;"
                             data-role-id="{{ $role->id }}" data-role-name="{{ $role->name }}"
-                            data-role-permissions='@json($role->permissions->pluck("name")->values())'
-                            onclick="selectRole(this, event)">
+                            data-role-permissions='@json($role->permissions->pluck('name')->values())' onclick="selectRole(this, event)">
                             <div class="card-body p-4">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
                                     <h5 class="card-title mb-0 fw-bold border-start border-primary border-4 ps-2">
@@ -481,8 +523,8 @@
                                 <tbody>
                                     @foreach ($permissionsByModule as $moduleName => $permissions)
                                         <tr>
-                                            <td class="ps-4 align-middle fw-semibold text-body"
-                                                style="width: 250px;">{{ $moduleName ?? 'General' }}</td>
+                                            <td class="ps-4 align-middle fw-semibold text-body" style="width: 250px;">
+                                                {{ $moduleName ?? 'General' }}</td>
                                             <td>
                                                 <div class="d-flex flex-wrap gap-4 py-2">
                                                     @foreach ($permissions as $permission)
@@ -522,9 +564,12 @@
             <div class="row mt-4" id="global-import-export">
                 <div class="col-12">
                     <div class="card mb-5 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
-                        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
-                            <h4 class="mb-0 fw-bold"><i class="fa-solid fa-database text-primary me-2"></i>Global Import Export</h4>
-                            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small">All Modules Engine</span>
+                        <div
+                            class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+                            <h4 class="mb-0 fw-bold"><i class="fa-solid fa-database text-primary me-2"></i>Global
+                                Import Export</h4>
+                            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small">All
+                                Modules Engine</span>
                         </div>
                         <div class="card-body p-4">
                             <div class="row g-4">
@@ -537,40 +582,134 @@
                                             </div>
                                             <div>
                                                 <h5 class="fw-bold mb-1 text-body">Export Records</h5>
-                                                <p class="text-muted small mb-0">Download database records into Excel (.xlsx)</p>
+                                                <p class="text-muted small mb-0">Download database records into Excel
+                                                    (.xlsx)</p>
                                             </div>
                                         </div>
                                         <hr class="text-muted opacity-25 mb-4">
-                                        
-                                        <form id="global-export-form" action="{{ route('settings.global.export_master') }}" method="GET">
+
+                                        <form id="global-export-form"
+                                            action="{{ route('settings.global.export_master') }}" method="GET">
                                             <input type="hidden" name="format" value="excel">
 
                                             <div id="export_master_container" class="mb-4">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                                    <label class="form-label small fw-bold text-uppercase text-muted mb-0">Select Tables to Include</label>
+                                                    <label
+                                                        class="form-label small fw-bold text-uppercase text-muted mb-0">Select
+                                                        Tables to Include</label>
                                                     <div class="form-check form-check-sm mb-0">
-                                                        <input class="form-check-input" type="checkbox" id="export_master_select_all" checked style="cursor: pointer;">
-                                                        <label class="form-check-label small fw-bold text-primary" for="export_master_select_all" style="cursor: pointer;">Select All</label>
+                                                        <input class="form-check-input" type="checkbox"
+                                                            id="export_master_select_all" checked
+                                                            style="cursor: pointer;">
+                                                        <label class="form-check-label small fw-bold text-primary"
+                                                            for="export_master_select_all"
+                                                            style="cursor: pointer;">Select All</label>
                                                     </div>
                                                 </div>
-                                                <div class="row g-2 border border-secondary border-opacity-25 rounded p-3" style="max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.15);">
-                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="blocks" id="em_blocks" checked><label class="form-check-label text-body fw-medium" for="em_blocks">Blocks</label></div></div>
-                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="flat_types" id="em_flat_types" checked><label class="form-check-label text-body fw-medium" for="em_flat_types">Flat Types</label></div></div>
-                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="flats" id="em_flats" checked><label class="form-check-label text-body fw-medium" for="em_flats">Flats</label></div></div>
-                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="users" id="em_users" checked><label class="form-check-label text-body fw-medium" for="em_users">Staff & Users</label></div></div>
-                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="residents" id="em_residents" checked><label class="form-check-label text-body fw-medium" for="em_residents">Residents</label></div></div>
-                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="expense_categories" id="em_expense_categories" checked><label class="form-check-label text-body fw-medium" for="em_expense_categories">Expense Categories</label></div></div>
-                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="expenses" id="em_expenses" checked><label class="form-check-label text-body fw-medium" for="em_expenses">Expenses</label></div></div>
-                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="complaints" id="em_complaints" checked><label class="form-check-label text-body fw-medium" for="em_complaints">Complaints</label></div></div>
-                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="maintenances" id="em_maintenances" checked><label class="form-check-label text-body fw-medium" for="em_maintenances">Maintenance Batches</label></div></div>
-                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="maintenance_bills" id="em_maintenance_bills" checked><label class="form-check-label text-body fw-medium" for="em_maintenance_bills">Maintenance Bills</label></div></div>
-                                                    <div class="col-6"><div class="form-check small"><input class="form-check-input export-master-chk" type="checkbox" name="tables[]" value="name_transfer_bills" id="em_name_transfer_bills" checked><label class="form-check-label text-body fw-medium" for="em_name_transfer_bills">Transfer Fees</label></div></div>
+                                                <div class="row g-2 border border-secondary border-opacity-25 rounded p-3"
+                                                    style="max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.15);">
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]" value="blocks"
+                                                                id="em_blocks" checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_blocks">Blocks</label></div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]" value="flat_types"
+                                                                id="em_flat_types" checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_flat_types">Flat Types</label></div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]" value="flats"
+                                                                id="em_flats" checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_flats">Flats</label></div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]" value="users"
+                                                                id="em_users" checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_users">Staff & Users</label></div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]" value="residents"
+                                                                id="em_residents" checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_residents">Residents</label></div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]"
+                                                                value="expense_categories" id="em_expense_categories"
+                                                                checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_expense_categories">Expense Categories</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]" value="expenses"
+                                                                id="em_expenses" checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_expenses">Expenses</label></div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]" value="complaints"
+                                                                id="em_complaints" checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_complaints">Complaints</label></div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]" value="maintenances"
+                                                                id="em_maintenances" checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_maintenances">Maintenance Batches</label></div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]"
+                                                                value="maintenance_bills" id="em_maintenance_bills"
+                                                                checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_maintenance_bills">Maintenance Bills</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]"
+                                                                value="name_transfer_bills"
+                                                                id="em_name_transfer_bills" checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_name_transfer_bills">Transfer Fees</label>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
 
                                             <div class="mt-auto pt-2">
-                                                <button type="submit" id="btn_submit_export" class="btn btn-primary btn-lg w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 py-3">
-                                                    <i class="fa-solid fa-cloud-arrow-down"></i> <span id="export_btn_text">Export Master Excel (All Data)</span>
+                                                <button type="submit" id="btn_submit_export"
+                                                    class="btn btn-primary btn-lg w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 py-3">
+                                                    <i class="fa-solid fa-cloud-arrow-down"></i> <span
+                                                        id="export_btn_text">Export Master Excel (All Data)</span>
                                                 </button>
                                             </div>
                                         </form>
@@ -579,40 +718,38 @@
 
                                 <!-- Import Panel -->
                                 <div class="col-md-6">
-                                    <div class="card h-100 border shadow-sm rounded-4 p-4">
-                                        <div class="d-flex align-items-center justify-content-between mb-3">
-                                            <div class="d-flex align-items-center">
-                                                <div class="bg-success bg-opacity-10 text-success p-3 rounded-3 me-3">
-                                                    <i class="fa-solid fa-file-import fa-xl"></i>
-                                                </div>
-                                                <div>
-                                                    <h5 class="fw-bold mb-1 text-body">Bulk Import</h5>
-                                                    <p class="text-muted small mb-0">Upload Excel to add records in bulk</p>
+                                    <div
+                                        class="card h-100 border shadow-sm rounded-4 p-4 d-flex flex-column justify-content-between">
+                                        <div>
+                                            <div class="d-flex align-items-center justify-content-between mb-3">
+                                                <div class="d-flex align-items-center">
+                                                    <div
+                                                        class="bg-success bg-opacity-10 text-success p-3 rounded-3 me-3">
+                                                        <i class="fa-solid fa-file-import fa-xl"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h5 class="fw-bold mb-1 text-body">Bulk Import</h5>
+                                                        <p class="text-muted small mb-0">Upload Excel to restore
+                                                            database in bulk</p>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <a href="{{ route('settings.global.template_master') }}" id="btn_dl_template" class="btn btn-sm btn-outline-success fw-semibold d-flex align-items-center gap-1">
-                                                <i class="fa-solid fa-download"></i> <span id="template_btn_text">Master Template</span>
-                                            </a>
+                                            <hr class="text-muted opacity-25 mb-4">
+                                            <p class="text-muted small mb-4">
+                                                Upload an Excel (.xlsx) Master backup workbook to bulk restore database
+                                                records across Blocks, Flats, Residents, Staff, Expenses, Complaints,
+                                                and Settings.
+                                            </p>
                                         </div>
-                                        <hr class="text-muted opacity-25 mb-4">
 
-                                        <form id="global-import-form" onsubmit="return false;">
-                                            <div class="mb-4">
-                                                <label class="form-label small fw-bold text-uppercase text-muted">Upload Master Spreadsheet</label>
-                                                <div class="border border-2 border-dashed rounded-3 p-4 text-center position-relative" style="transition: all 0.2s;">
-                                                    <input type="file" class="position-absolute w-100 h-100 top-0 start-0 opacity-0 no-dropify" id="global_import_file" accept=".xlsx, .xls, .csv" style="cursor: pointer;">
-                                                    <i class="fa-solid fa-cloud-arrow-up text-success mb-2" style="font-size: 2.2rem;"></i>
-                                                    <h6 class="mb-1 fw-bold text-body" id="import_file_label">Click or Drag Master Excel file here</h6>
-                                                    <p class="text-muted small mb-0">Max file size: 10MB</p>
-                                                </div>
-                                            </div>
-
-                                            <div class="mt-auto pt-1">
-                                                <button type="button" id="btn_preview_global_import" class="btn btn-success btn-lg w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 py-3">
-                                                    <i class="fa-solid fa-play"></i> <span id="import_btn_text">Preview Master Database</span>
-                                                </button>
-                                            </div>
-                                        </form>
+                                        <div class="mt-auto pt-2">
+                                            <button type="button"
+                                                class="btn btn-success btn-lg w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 py-3"
+                                                data-coreui-toggle="modal" data-coreui-target="#master-import-modal">
+                                                <i class="fa-solid fa-file-import"></i> <span>Import Master
+                                                    Records</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -623,18 +760,22 @@
 
             <!-- Global Import Preview & Mapping Modal -->
             <div class="modal fade" id="globalImportPreviewModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-dialog modal-xl">
                     <div class="modal-content border-0 shadow">
                         <div class="modal-header bg-success text-white py-3">
-                            <h5 class="modal-title fw-bold"><i class="fa-solid fa-table-columns me-2"></i>Map Spreadsheet Columns (<span id="modal_import_table_name"></span>)</h5>
-                            <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal" aria-label="Close"></button>
+                            <h5 class="modal-title fw-bold"><i class="fa-solid fa-table-columns me-2"></i>Map
+                                Spreadsheet Columns (<span id="modal_import_table_name"></span>)</h5>
+                            <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
                         <div class="modal-body p-4">
                             <div class="alert alert-info border-0 shadow-sm small mb-4 d-flex align-items-center">
                                 <i class="fa-solid fa-circle-info fa-xl me-3 text-info"></i>
                                 <div>
-                                    Map your Excel sheet columns to the database fields below. Required fields are marked with <strong>(*)</strong>.<br>
-                                    <em>Note: Any duplicates or conflicts will stop import and display exact line errors.</em>
+                                    Map your Excel sheet columns to the database fields below. Required fields are
+                                    marked with <strong>(*)</strong>.<br>
+                                    <em>Note: Any duplicates or conflicts will stop import and display exact line
+                                        errors.</em>
                                 </div>
                             </div>
 
@@ -642,9 +783,11 @@
                             <div class="row g-3 mb-4" id="global_mapping_container"></div>
 
                             <h6 class="fw-bold text-body mb-3">2. Data Preview (First 5 Rows)</h6>
-                            <div class="table-responsive border rounded shadow-sm">
-                                <table class="table table-bordered table-striped table-hover mb-0 small" id="global_preview_table">
-                                    <thead class="table-light" id="global_preview_thead"></thead>
+                            <div class="table-responsive border rounded shadow-sm"
+                                style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-bordered table-striped table-hover mb-0 small"
+                                    id="global_preview_table">
+                                    <thead class="table-light sticky-top" id="global_preview_thead"></thead>
                                     <tbody id="global_preview_tbody"></tbody>
                                 </table>
                             </div>
@@ -652,8 +795,10 @@
                         <div class="modal-footer bg-light py-3">
                             <input type="hidden" id="global_temp_file_path">
                             <input type="hidden" id="global_target_table">
-                            <button type="button" class="btn btn-secondary px-4 fw-medium" data-coreui-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-success px-5 fw-bold text-white shadow-sm" id="btn_process_global_import">
+                            <button type="button" class="btn btn-secondary px-4 fw-medium"
+                                data-coreui-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-success px-5 fw-bold text-white shadow-sm"
+                                id="btn_process_global_import">
                                 <i class="fa-solid fa-check me-1"></i> Start Import
                             </button>
                         </div>
@@ -661,29 +806,78 @@
                 </div>
             </div>
             <!-- Master All-in-One Import Modal (3-Step Resident Style) -->
-            <div class="modal fade" id="master-import-modal" tabindex="-1" aria-labelledby="masterImportModalLabel" aria-hidden="true" data-coreui-backdrop="static">
-                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal fade" id="master-import-modal" tabindex="-1" aria-labelledby="masterImportModalLabel"
+                aria-hidden="true" data-coreui-backdrop="static">
+                <div class="modal-dialog modal-xl">
                     <div class="modal-content border-0 shadow">
                         <div class="modal-header bg-success text-white py-3">
-                            <h5 class="modal-title fw-bold" id="masterImportModalLabel"><i class="fa-solid fa-file-import me-2"></i>Master Database Bulk Import</h5>
-                            <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal" aria-label="Close"></button>
+                            <h5 class="modal-title fw-bold" id="masterImportModalLabel"><i
+                                    class="fa-solid fa-file-import me-2"></i>Master Database Bulk Import</h5>
+                            <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal"
+                                aria-label="Close"></button>
                         </div>
-                        
+
+                        <!-- Step 1: Upload File (Replicated Resident Style) -->
+                        <div id="master-import-step-1">
+                            <form id="master-import-preview-form" onsubmit="return false;">
+                                <div class="modal-body p-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <p class="mb-0 text-muted fw-medium">Upload a Master Excel (.xlsx) file to bulk
+                                            restore records.</p>
+                                        <a href="{{ route('settings.global.template_master') }}"
+                                            class="btn btn-sm btn-light rounded-pill text-success fw-semibold border shadow-sm">
+                                            <i class="fa-solid fa-download me-1"></i>Download Master Template
+                                        </a>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="drag-drop-zone border border-2 border-dashed rounded p-4 text-center position-relative"
+                                            id="master-drag-drop-zone"
+                                            style="background-color: #f8f9fa; cursor: pointer; transition: all 0.3s ease;">
+                                            <input type="file"
+                                                class="position-absolute w-100 h-100 top-0 start-0 opacity-0 no-dropify"
+                                                id="global_import_file" accept=".xlsx, .xls, .csv"
+                                                style="cursor: pointer;">
+                                            <i class="fa-solid fa-file-excel text-success mb-2"
+                                                style="font-size: 3rem;"></i>
+                                            <h6 class="mb-1 text-dark fw-bold" id="master-drag-drop-text">Drag & Drop
+                                                your Master Excel file here</h6>
+                                            <p class="text-muted small mb-0" id="master-drag-drop-subtext">or click to
+                                                browse</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-top-0">
+                                    <button type="button" class="btn btn-secondary"
+                                        data-coreui-dismiss="modal">Cancel</button>
+                                    <button type="button" class="btn btn-primary bg-gradient border-0"
+                                        id="btn_preview_global_import">
+                                        <i class="fa-solid fa-eye me-2"></i>Preview Master Data
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
                         <!-- Step 2: Preview Sheets & Records -->
-                        <div id="master-import-step-2">
-                            <div class="modal-body p-4" style="max-height: calc(80vh - 130px); overflow-y: auto;">
+                        <div id="master-import-step-2" class="d-none">
+                            <div class="modal-body p-4">
                                 <div class="alert alert-info border-0 shadow-sm small mb-4 d-flex align-items-center">
                                     <i class="fa-solid fa-circle-info fa-xl me-3 text-info"></i>
                                     <div>
-                                        Below is a summary of valid data rows found in each sheet of your uploaded Master Excel workbook. Click <strong>"Process Master Import"</strong> to validate and insert these records across all modules.
+                                        Below is a summary of valid data rows found in each sheet of your uploaded
+                                        Master Excel workbook. Click <strong>"Process Master Import"</strong> to
+                                        validate and insert these records across all modules.
                                     </div>
                                 </div>
                                 <input type="hidden" id="master_import_file_path">
-                                <div class="row g-3" id="master_sheets_summary_container"></div>
+                                <div class="row g-3" id="master_sheets_summary_container"
+                                    style="max-height: 450px; overflow-y: auto;"></div>
                             </div>
-                            <div class="modal-footer bg-light py-3">
-                                <button type="button" class="btn btn-secondary px-4 fw-medium" data-coreui-dismiss="modal">Cancel</button>
-                                <button type="button" class="btn btn-success px-5 fw-bold text-white shadow-sm" id="btn_process_master_import">
+                            <div class="modal-footer bg-light py-3 d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary px-4 fw-medium"
+                                    id="btn_master_back_to_step_1"><i
+                                        class="fa-solid fa-arrow-left me-2"></i>Back</button>
+                                <button type="button" class="btn btn-success px-5 fw-bold text-white shadow-sm"
+                                    id="btn_process_master_import">
                                     <i class="fa-solid fa-cloud-arrow-up me-2"></i>Process Master Import
                                 </button>
                             </div>
@@ -691,12 +885,15 @@
 
                         <!-- Step 3: Execution Summary & Errors -->
                         <div id="master-import-step-3" class="d-none">
-                            <div class="modal-body p-4 text-center py-4" style="max-height: calc(80vh - 130px); overflow-y: auto;">
+                            <div class="modal-body p-4 text-center py-4">
                                 <div id="master_import_status_box" class="mb-4"></div>
-                                
+
                                 <div id="master_import_failure_container" class="d-none text-start">
-                                    <h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-triangle-exclamation me-1"></i> Failed / Duplicate Entry Details:</h6>
-                                    <div class="table-responsive border border-danger border-opacity-25 rounded shadow-sm" style="max-height: 320px;">
+                                    <h6 class="fw-bold text-danger mb-2"><i
+                                            class="fa-solid fa-triangle-exclamation me-1"></i> Failed / Duplicate Entry
+                                        Details:</h6>
+                                    <div class="table-responsive border border-danger border-opacity-25 rounded shadow-sm"
+                                        style="max-height: 320px;">
                                         <table class="table table-sm table-hover table-striped mb-0 small">
                                             <thead class="table-danger sticky-top">
                                                 <tr>
@@ -711,7 +908,8 @@
                                 </div>
                             </div>
                             <div class="modal-footer bg-light py-3 d-flex justify-content-center">
-                                <button type="button" class="btn btn-primary px-5 fw-bold" onclick="window.location.reload();">Finish & Reload Page</button>
+                                <button type="button" class="btn btn-primary px-5 fw-bold"
+                                    onclick="window.location.reload();">Finish & Reload Page</button>
                             </div>
                         </div>
                     </div>
@@ -723,250 +921,350 @@
     <div id="settings-data" class="d-none" data-created-role-id="{{ session('created_role_id') }}"></div>
 
     @push('scripts')
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var mapElem = document.getElementById('society_location_map');
-            if (!mapElem) return;
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var currencies = @json($availableCurrencies);
+                var currencySelect = document.getElementById('currency_select');
+                var penaltyType = document.getElementById('penalty_type');
+                var discountType = document.getElementById('discount_type');
 
-            var initialLat = parseFloat("{{ $settings['society_latitude'] ?? '19.0760' }}") || 19.0760;
-            var initialLng = parseFloat("{{ $settings['society_longitude'] ?? '72.8777' }}") || 72.8777;
-
-            var map = L.map('society_location_map').setView([initialLat, initialLng], 15);
-
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(map);
-
-            var marker = L.marker([initialLat, initialLng], {
-                draggable: true
-            }).addTo(map);
-
-            function reverseGeocode(lat, lng) {
-                fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng)
-                    .then(response => response.json())
-                    .then(data => {
-                        var searchInput = document.getElementById('map_search_input');
-                        if (searchInput && data && data.display_name) {
-                            searchInput.value = data.display_name;
-                        }
-                    })
-                    .catch(err => console.log(err));
-            }
-
-            function updateCoordinates(lat, lng, doReverse = false) {
-                var latInput = document.getElementById('society_latitude');
-                var lngInput = document.getElementById('society_longitude');
-                if (latInput && lngInput) {
-                    latInput.value = lat.toFixed(6);
-                    lngInput.value = lng.toFixed(6);
-                }
-                if (doReverse) {
-                    reverseGeocode(lat, lng);
-                }
-            }
-
-            marker.on('dragend', function(e) {
-                var position = marker.getLatLng();
-                updateCoordinates(position.lat, position.lng, true);
-            });
-
-            map.on('click', function(e) {
-                marker.setLatLng(e.latlng);
-                updateCoordinates(e.latlng.lat, e.latlng.lng, true);
-            });
-
-            function renderSearchResults(results) {
-                var listElem = document.getElementById('search_results_list');
-                if (!listElem) return;
-                listElem.innerHTML = '';
-                
-                if (!results || results.length === 0) {
-                    listElem.innerHTML = '<div class="list-group-item text-muted small p-3">No societies or matching locations found in India. Try searching city name + area.</div>';
-                    listElem.classList.remove('d-none');
-                    return;
+                function currentCurrencySymbol() {
+                    var selected = currencySelect ? currencySelect.value : 'INR';
+                    return currencies[selected] ? currencies[selected].symbol : '{{ $currencySymbol }}';
                 }
 
-                results.forEach(function(place) {
-                    var item = document.createElement('a');
-                    item.href = 'javascript:void(0)';
-                    item.className = 'list-group-item list-group-item-action p-3 border-bottom d-flex align-items-center';
-                    var title = place.display_name.split(',')[0] || 'Location';
-                    item.innerHTML = '<div class="bg-light p-2 rounded-circle me-3 text-primary"><i class="fa-solid fa-location-dot"></i></div>' +
-                                     '<div class="flex-grow-1 overflow-hidden">' +
-                                         '<div class="fw-semibold text-primary mb-0 text-truncate">' + title + '</div>' +
-                                         '<div class="small text-muted text-truncate">' + place.display_name + '</div>' +
-                                     '</div>';
-                    
-                    item.addEventListener('click', function() {
-                        var lat = parseFloat(place.lat);
-                        var lon = parseFloat(place.lon);
-                        map.setView([lat, lon], 17);
-                        marker.setLatLng([lat, lon]);
-                        updateCoordinates(lat, lon, false);
-                        var searchInput = document.getElementById('map_search_input');
-                        if (searchInput) searchInput.value = place.display_name;
-                        listElem.classList.add('d-none');
-                        toastr.success('Location pin updated!');
+                function updateCurrencyPreview() {
+                    var symbol = currentCurrencySymbol();
+
+                    document.querySelectorAll('.currency-symbol-preview').forEach(function(el) {
+                        el.textContent = symbol;
                     });
 
-                    listElem.appendChild(item);
+                    document.querySelectorAll('.penalty-suffix').forEach(function(el) {
+                        el.textContent = penaltyType && penaltyType.value === 'fixed' ? symbol : '%';
+                    });
+
+                    document.querySelectorAll('.discount-suffix').forEach(function(el) {
+                        el.textContent = discountType && discountType.value === 'fixed' ? symbol : '%';
+                    });
+
+                    if (penaltyType) {
+                        var penaltyFixedOption = penaltyType.querySelector('option[value="fixed"]');
+                        if (penaltyFixedOption) penaltyFixedOption.textContent = 'Fixed Amount (' + symbol + ')';
+                    }
+
+                    if (discountType) {
+                        var discountFixedOption = discountType.querySelector('option[value="fixed"]');
+                        if (discountFixedOption) discountFixedOption.textContent = 'Fixed Amount (' + symbol + ')';
+                    }
+                }
+
+                [currencySelect, penaltyType, discountType].forEach(function(el) {
+                    if (el) el.addEventListener('change', updateCurrencyPreview);
                 });
+                updateCurrencyPreview();
 
-                listElem.classList.remove('d-none');
-            }
+                var mapElem = document.getElementById('society_location_map');
+                if (!mapElem) return;
 
-            function searchAddress(query) {
-                if (!query || !query.trim()) return;
-                toastr.info('Searching locations in India...');
-                
-                // Search Nominatim + Photon for comprehensive society & landmark matching
-                var p1 = fetch('https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=in&limit=6&q=' + encodeURIComponent(query))
-                    .then(res => res.json()).catch(() => []);
-                var p2 = fetch('https://photon.komoot.io/api/?filter=countrycode:in&limit=6&q=' + encodeURIComponent(query))
-                    .then(res => res.json()).catch(() => ({ features: [] }));
+                var initialLat = parseFloat("{{ $settings['society_latitude'] ?? '19.0760' }}") || 19.0760;
+                var initialLng = parseFloat("{{ $settings['society_longitude'] ?? '72.8777' }}") || 72.8777;
 
-                Promise.all([p1, p2]).then(function(resArray) {
-                    var nData = resArray[0] || [];
-                    var pData = resArray[1] || { features: [] };
-                    
-                    var combined = [];
-                    var seen = new Set();
+                var map = L.map('society_location_map').setView([initialLat, initialLng], 15);
 
-                    nData.forEach(function(item) {
-                        var key = parseFloat(item.lat).toFixed(3) + '_' + parseFloat(item.lon).toFixed(3);
-                        if (!seen.has(key)) {
-                            seen.add(key);
-                            combined.push({ lat: item.lat, lon: item.lon, display_name: item.display_name });
-                        }
-                    });
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                }).addTo(map);
 
-                    (pData.features || []).forEach(function(f) {
-                        if (f.geometry && f.geometry.coordinates) {
-                            var lon = f.geometry.coordinates[0];
-                            var lat = f.geometry.coordinates[1];
-                            var key = parseFloat(lat).toFixed(3) + '_' + parseFloat(lon).toFixed(3);
-                            if (!seen.has(key)) {
-                                seen.add(key);
-                                var nameParts = [f.properties.name, f.properties.street, f.properties.district, f.properties.city, f.properties.state].filter(Boolean);
-                                combined.push({ lat: lat, lon: lon, display_name: nameParts.join(', ') });
+                var marker = L.marker([initialLat, initialLng], {
+                    draggable: true
+                }).addTo(map);
+
+                function reverseGeocode(lat, lng) {
+                    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng)
+                        .then(response => response.json())
+                        .then(data => {
+                            var searchInput = document.getElementById('map_search_input');
+                            if (searchInput && data && data.display_name) {
+                                searchInput.value = data.display_name;
                             }
-                        }
-                    });
+                        })
+                        .catch(err => console.log(err));
+                }
 
-                    renderSearchResults(combined);
-                    if (combined.length > 0) toastr.success('Found ' + combined.length + ' matching locations!');
-                });
-            }
-
-            var btnSearch = document.getElementById('btn_search_location');
-            var searchInput = document.getElementById('map_search_input');
-
-            if (btnSearch && searchInput) {
-                btnSearch.addEventListener('click', function() {
-                    searchAddress(searchInput.value);
-                });
-                searchInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        searchAddress(searchInput.value);
+                function updateCoordinates(lat, lng, doReverse = false) {
+                    var latInput = document.getElementById('society_latitude');
+                    var lngInput = document.getElementById('society_longitude');
+                    if (latInput && lngInput) {
+                        latInput.value = lat.toFixed(6);
+                        lngInput.value = lng.toFixed(6);
                     }
+                    if (doReverse) {
+                        reverseGeocode(lat, lng);
+                    }
+                }
+
+                marker.on('dragend', function(e) {
+                    var position = marker.getLatLng();
+                    updateCoordinates(position.lat, position.lng, true);
                 });
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
+
+                map.on('click', function(e) {
+                    marker.setLatLng(e.latlng);
+                    updateCoordinates(e.latlng.lat, e.latlng.lng, true);
+                });
+
+                function renderSearchResults(results) {
                     var listElem = document.getElementById('search_results_list');
-                    if (listElem && !listElem.contains(e.target) && e.target !== searchInput && e.target !== btnSearch) {
-                        listElem.classList.add('d-none');
-                    }
-                });
-            }
+                    if (!listElem) return;
+                    listElem.innerHTML = '';
 
-            var btnDetect = document.getElementById('btn_get_my_current_location');
-            if (btnDetect) {
-                btnDetect.addEventListener('click', function() {
-                    if (navigator.geolocation) {
-                        toastr.info('Detecting device GPS location...');
-                        navigator.geolocation.getCurrentPosition(function(position) {
-                            var lat = position.coords.latitude;
-                            var lng = position.coords.longitude;
-                            map.setView([lat, lng], 16);
-                            marker.setLatLng([lat, lng]);
-                            updateCoordinates(lat, lng, true);
-                            toastr.success('Device location detected!');
-                        }, function(error) {
-                            toastr.error('Unable to retrieve GPS location. Check browser location permissions.');
-                        });
-                    } else {
-                        toastr.error('Geolocation is not supported by your browser.');
-                    }
-                });
-            }
-
-            // Global Import Export Hub Script
-            const emSelectAll = document.getElementById('export_master_select_all');
-            if (emSelectAll) {
-                emSelectAll.addEventListener('change', function() {
-                    document.querySelectorAll('.export-master-chk').forEach(c => c.checked = this.checked);
-                });
-            }
-
-            const globalFileInput = document.getElementById('global_import_file');
-            const globalFileLabel = document.getElementById('import_file_label');
-            if (globalFileInput && globalFileLabel) {
-                globalFileInput.addEventListener('change', function() {
-                    if (this.files && this.files.length > 0) {
-                        globalFileLabel.textContent = this.files[0].name;
-                        globalFileLabel.classList.add('text-success');
-                    } else {
-                        globalFileLabel.textContent = 'Click or Drag Master Excel file here';
-                        globalFileLabel.classList.remove('text-success');
-                    }
-                });
-            }
-
-            const btnPreviewImport = document.getElementById('btn_preview_global_import');
-            if (btnPreviewImport) {
-                btnPreviewImport.addEventListener('click', function() {
-                    if (!globalFileInput || !globalFileInput.files || globalFileInput.files.length === 0) {
-                        toastr.error('Please select a Master spreadsheet file (.xlsx, .csv) first.');
+                    if (!results || results.length === 0) {
+                        listElem.innerHTML =
+                            '<div class="list-group-item text-muted small p-3">No societies or matching locations found in India. Try searching city name + area.</div>';
+                        listElem.classList.remove('d-none');
                         return;
                     }
 
-                    const originalText = this.innerHTML;
-                    this.disabled = true;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Reading Master Sheets...';
+                    results.forEach(function(place) {
+                        var item = document.createElement('a');
+                        item.href = 'javascript:void(0)';
+                        item.className =
+                            'list-group-item list-group-item-action p-3 border-bottom d-flex align-items-center';
+                        var title = place.display_name.split(',')[0] || 'Location';
+                        item.innerHTML =
+                            '<div class="bg-light p-2 rounded-circle me-3 text-primary"><i class="fa-solid fa-location-dot"></i></div>' +
+                            '<div class="flex-grow-1 overflow-hidden">' +
+                            '<div class="fw-semibold text-primary mb-0 text-truncate">' + title + '</div>' +
+                            '<div class="small text-muted text-truncate">' + place.display_name + '</div>' +
+                            '</div>';
 
-                    const fd = new FormData();
-                    fd.append('_token', '{{ csrf_token() }}');
-                    fd.append('import_file', globalFileInput.files[0]);
+                        item.addEventListener('click', function() {
+                            var lat = parseFloat(place.lat);
+                            var lon = parseFloat(place.lon);
+                            map.setView([lat, lon], 17);
+                            marker.setLatLng([lat, lon]);
+                            updateCoordinates(lat, lon, false);
+                            var searchInput = document.getElementById('map_search_input');
+                            if (searchInput) searchInput.value = place.display_name;
+                            listElem.classList.add('d-none');
+                            toastr.success('Location pin updated!');
+                        });
 
-                    fetch("{{ route('settings.global.preview_master') }}", {
-                        method: 'POST',
-                        headers: {
-                            'Accept': 'application/json'
-                        },
-                        body: fd
-                    })
-                    .then(async res => {
-                        const data = await res.json();
-                        if (!res.ok || !data.success) {
-                            throw new Error(data.message || (data.errors ? Object.values(data.errors).flat().join(' ') : 'Error reading Master Excel.'));
+                        listElem.appendChild(item);
+                    });
+
+                    listElem.classList.remove('d-none');
+                }
+
+                function searchAddress(query) {
+                    if (!query || !query.trim()) return;
+                    toastr.info('Searching locations in India...');
+
+                    // Search Nominatim + Photon for comprehensive society & landmark matching
+                    var p1 = fetch(
+                            'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=in&limit=6&q=' +
+                            encodeURIComponent(query))
+                        .then(res => res.json()).catch(() => []);
+                    var p2 = fetch('https://photon.komoot.io/api/?filter=countrycode:in&limit=6&q=' +
+                            encodeURIComponent(query))
+                        .then(res => res.json()).catch(() => ({
+                            features: []
+                        }));
+
+                    Promise.all([p1, p2]).then(function(resArray) {
+                        var nData = resArray[0] || [];
+                        var pData = resArray[1] || {
+                            features: []
+                        };
+
+                        var combined = [];
+                        var seen = new Set();
+
+                        nData.forEach(function(item) {
+                            var key = parseFloat(item.lat).toFixed(3) + '_' + parseFloat(item.lon)
+                                .toFixed(3);
+                            if (!seen.has(key)) {
+                                seen.add(key);
+                                combined.push({
+                                    lat: item.lat,
+                                    lon: item.lon,
+                                    display_name: item.display_name
+                                });
+                            }
+                        });
+
+                        (pData.features || []).forEach(function(f) {
+                            if (f.geometry && f.geometry.coordinates) {
+                                var lon = f.geometry.coordinates[0];
+                                var lat = f.geometry.coordinates[1];
+                                var key = parseFloat(lat).toFixed(3) + '_' + parseFloat(lon).toFixed(3);
+                                if (!seen.has(key)) {
+                                    seen.add(key);
+                                    var nameParts = [f.properties.name, f.properties.street, f
+                                        .properties.district, f.properties.city, f.properties.state
+                                    ].filter(Boolean);
+                                    combined.push({
+                                        lat: lat,
+                                        lon: lon,
+                                        display_name: nameParts.join(', ')
+                                    });
+                                }
+                            }
+                        });
+
+                        renderSearchResults(combined);
+                        if (combined.length > 0) toastr.success('Found ' + combined.length +
+                            ' matching locations!');
+                    });
+                }
+
+                var btnSearch = document.getElementById('btn_search_location');
+                var searchInput = document.getElementById('map_search_input');
+
+                if (btnSearch && searchInput) {
+                    btnSearch.addEventListener('click', function() {
+                        searchAddress(searchInput.value);
+                    });
+                    searchInput.addEventListener('keypress', function(e) {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            searchAddress(searchInput.value);
                         }
-                        return data;
-                    })
-                    .then(data => {
-                        this.disabled = false;
-                        this.innerHTML = originalText;
+                    });
+                    // Close dropdown when clicking outside
+                    document.addEventListener('click', function(e) {
+                        var listElem = document.getElementById('search_results_list');
+                        if (listElem && !listElem.contains(e.target) && e.target !== searchInput && e.target !==
+                            btnSearch) {
+                            listElem.classList.add('d-none');
+                        }
+                    });
+                }
 
-                        document.getElementById('master_import_file_path').value = data.file_path;
-                        const summaryCont = document.getElementById('master_sheets_summary_container');
-                        summaryCont.innerHTML = '';
+                var btnDetect = document.getElementById('btn_get_my_current_location');
+                if (btnDetect) {
+                    btnDetect.addEventListener('click', function() {
+                        if (navigator.geolocation) {
+                            toastr.info('Detecting device GPS location...');
+                            navigator.geolocation.getCurrentPosition(function(position) {
+                                var lat = position.coords.latitude;
+                                var lng = position.coords.longitude;
+                                map.setView([lat, lng], 16);
+                                marker.setLatLng([lat, lng]);
+                                updateCoordinates(lat, lng, true);
+                                toastr.success('Device location detected!');
+                            }, function(error) {
+                                toastr.error(
+                                    'Unable to retrieve GPS location. Check browser location permissions.'
+                                    );
+                            });
+                        } else {
+                            toastr.error('Geolocation is not supported by your browser.');
+                        }
+                    });
+                }
 
-                        data.sheets_summary.forEach(sheet => {
-                            const card = document.createElement('div');
-                            card.className = 'col-md-6';
-                            card.innerHTML = `
+                // Global Import Export Hub Script
+                const emSelectAll = document.getElementById('export_master_select_all');
+                if (emSelectAll) {
+                    emSelectAll.addEventListener('change', function() {
+                        document.querySelectorAll('.export-master-chk').forEach(c => c.checked = this.checked);
+                    });
+                }
+
+                const globalFileInput = document.getElementById('global_import_file');
+                const masterDragDropText = document.getElementById('master-drag-drop-text');
+                const masterDragDropZone = document.getElementById('master-drag-drop-zone');
+                if (globalFileInput && masterDragDropText) {
+                    globalFileInput.addEventListener('change', function() {
+                        if (this.files && this.files.length > 0) {
+                            masterDragDropText.textContent = this.files[0].name;
+                            masterDragDropText.classList.add('text-success');
+                            if (masterDragDropZone) masterDragDropZone.style.backgroundColor = '#e8f5e9';
+                        } else {
+                            masterDragDropText.textContent = 'Drag & Drop your Master Excel file here';
+                            masterDragDropText.classList.remove('text-success');
+                            if (masterDragDropZone) masterDragDropZone.style.backgroundColor = '#f8f9fa';
+                        }
+                    });
+                }
+
+                const btnMasterBack = document.getElementById('btn_master_back_to_step_1');
+                if (btnMasterBack) {
+                    btnMasterBack.addEventListener('click', function() {
+                        document.getElementById('master-import-step-2').classList.add('d-none');
+                        document.getElementById('master-import-step-1').classList.remove('d-none');
+                    });
+                }
+
+                const masterModalEl = document.getElementById('master-import-modal');
+                if (masterModalEl) {
+                    masterModalEl.addEventListener('hidden.coreui.modal', function() {
+                        const s1 = document.getElementById('master-import-step-1');
+                        const s2 = document.getElementById('master-import-step-2');
+                        const s3 = document.getElementById('master-import-step-3');
+                        if (s1) s1.classList.remove('d-none');
+                        if (s2) s2.classList.add('d-none');
+                        if (s3) s3.classList.add('d-none');
+                        if (globalFileInput) globalFileInput.value = '';
+                        if (masterDragDropText) {
+                            masterDragDropText.textContent = 'Drag & Drop your Master Excel file here';
+                            masterDragDropText.classList.remove('text-success');
+                        }
+                        if (masterDragDropZone) masterDragDropZone.style.backgroundColor = '#f8f9fa';
+                    });
+                }
+
+                const btnPreviewImport = document.getElementById('btn_preview_global_import');
+                if (btnPreviewImport) {
+                    btnPreviewImport.addEventListener('click', function() {
+                        if (!globalFileInput || !globalFileInput.files || globalFileInput.files.length === 0) {
+                            toastr.error('Please select a Master spreadsheet file (.xlsx, .csv) first.');
+                            return;
+                        }
+
+                        const originalText = this.innerHTML;
+                        this.disabled = true;
+                        this.innerHTML =
+                            '<span class="spinner-border spinner-border-sm me-2"></span>Reading Master Sheets...';
+
+                        const fd = new FormData();
+                        fd.append('_token', '{{ csrf_token() }}');
+                        fd.append('import_file', globalFileInput.files[0]);
+
+                        fetch("{{ route('settings.global.preview_master') }}", {
+                                method: 'POST',
+                                headers: {
+                                    'Accept': 'application/json'
+                                },
+                                body: fd
+                            })
+                            .then(async res => {
+                                const data = await res.json();
+                                if (!res.ok || !data.success) {
+                                    throw new Error(data.message || (data.errors ? Object.values(data
+                                            .errors).flat().join(' ') :
+                                        'Error reading Master Excel.'));
+                                }
+                                return data;
+                            })
+                            .then(data => {
+                                this.disabled = false;
+                                this.innerHTML = originalText;
+
+                                document.getElementById('master_import_file_path').value = data.file_path;
+                                const summaryCont = document.getElementById(
+                                    'master_sheets_summary_container');
+                                summaryCont.innerHTML = '';
+
+                                data.sheets_summary.forEach(sheet => {
+                                    const card = document.createElement('div');
+                                    card.className = 'col-md-6';
+                                    card.innerHTML = `
                                 <div class="card h-100 border shadow-sm rounded-3 overflow-hidden">
                                     <div class="card-header bg-light d-flex justify-content-between align-items-center py-2 px-3">
                                         <span class="fw-bold text-body small"><i class="fa-solid fa-table me-2 text-success"></i>${sheet.label} (${sheet.table})</span>
@@ -984,142 +1282,145 @@
                                     </div>
                                 </div>
                             `;
-                            summaryCont.appendChild(card);
+                                    summaryCont.appendChild(card);
+                                });
+
+                                document.getElementById('master-import-step-1').classList.add('d-none');
+                                document.getElementById('master-import-step-2').classList.remove('d-none');
+                                document.getElementById('master-import-step-3').classList.add('d-none');
+                            })
+                            .catch(err => {
+                                this.disabled = false;
+                                this.innerHTML = originalText;
+                                toastr.error(err.message || 'Network error reading Master Excel file.');
+                            });
+                    });
+                }
+
+                const btnConfirmImport = document.getElementById('btn_confirm_global_import');
+                if (btnConfirmImport) {
+                    btnConfirmImport.addEventListener('click', function() {
+                        const tempFilePath = document.getElementById('global_temp_file_path').value;
+                        const targetTable = document.getElementById('global_target_table').value;
+                        const selects = document.querySelectorAll('.global-map-select');
+
+                        const mapping = {};
+                        selects.forEach(sel => {
+                            if (sel.value !== "") {
+                                mapping[sel.getAttribute('data-db-field')] = parseInt(sel.value);
+                            }
                         });
 
-                        document.getElementById('master-import-step-2').classList.remove('d-none');
-                        document.getElementById('master-import-step-3').classList.add('d-none');
+                        const originalText = this.innerHTML;
+                        this.disabled = true;
+                        this.innerHTML =
+                            '<span class="spinner-border spinner-border-sm me-2"></span>Importing Records...';
 
-                        const modal = new coreui.Modal(document.getElementById('master-import-modal'));
-                        modal.show();
-                    })
-                    .catch(err => {
-                        this.disabled = false;
-                        this.innerHTML = originalText;
-                        toastr.error(err.message || 'Network error reading Master Excel file.');
+                        fetch("{{ route('settings.global.process') }}", {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({
+                                    table: targetTable,
+                                    file_path: tempFilePath,
+                                    mapping: mapping
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                this.disabled = false;
+                                this.innerHTML = originalText;
+
+                                if (data.success) {
+                                    coreui.Modal.getInstance(document.getElementById(
+                                        'globalImportPreviewModal')).hide();
+                                    toastr.success(data.message);
+                                } else {
+                                    toastr.error(data.message || 'Import error.');
+                                }
+                            })
+                            .catch(err => {
+                                this.disabled = false;
+                                this.innerHTML = originalText;
+                                toastr.error('Server error during bulk import.');
+                            });
                     });
-                });
-            }
+                }
 
-            const btnConfirmImport = document.getElementById('btn_confirm_global_import');
-            if (btnConfirmImport) {
-                btnConfirmImport.addEventListener('click', function() {
-                    const tempFilePath = document.getElementById('global_temp_file_path').value;
-                    const targetTable = document.getElementById('global_target_table').value;
-                    const selects = document.querySelectorAll('.global-map-select');
+                const btnProcessMaster = document.getElementById('btn_process_master_import');
+                if (btnProcessMaster) {
+                    btnProcessMaster.addEventListener('click', function() {
+                        const filePath = document.getElementById('master_import_file_path').value;
+                        const originalText = this.innerHTML;
+                        this.disabled = true;
+                        this.innerHTML =
+                            '<span class="spinner-border spinner-border-sm me-2"></span>Processing & Inserting Records...';
 
-                    const mapping = {};
-                    selects.forEach(sel => {
-                        if (sel.value !== "") {
-                            mapping[sel.getAttribute('data-db-field')] = parseInt(sel.value);
-                        }
-                    });
+                        fetch("{{ route('settings.global.process_master') }}", {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                                },
+                                body: JSON.stringify({
+                                    file_path: filePath
+                                })
+                            })
+                            .then(res => res.json())
+                            .then(data => {
+                                this.disabled = false;
+                                this.innerHTML = originalText;
 
-                    const originalText = this.innerHTML;
-                    this.disabled = true;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Importing Records...';
+                                document.getElementById('master-import-step-2').classList.add('d-none');
+                                const step3 = document.getElementById('master-import-step-3');
+                                step3.classList.remove('d-none');
 
-                    fetch("{{ route('settings.global.process') }}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({
-                            table: targetTable,
-                            file_path: tempFilePath,
-                            mapping: mapping
-                        })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        this.disabled = false;
-                        this.innerHTML = originalText;
+                                const statusBox = document.getElementById('master_import_status_box');
+                                const failCont = document.getElementById('master_import_failure_container');
+                                const failTbody = document.getElementById('master_import_failure_tbody');
+                                failTbody.innerHTML = '';
 
-                        if (data.success) {
-                            coreui.Modal.getInstance(document.getElementById('globalImportPreviewModal')).hide();
-                            toastr.success(data.message);
-                        } else {
-                            toastr.error(data.message || 'Import error.');
-                        }
-                    })
-                    .catch(err => {
-                        this.disabled = false;
-                        this.innerHTML = originalText;
-                        toastr.error('Server error during bulk import.');
-                    });
-                });
-            }
-
-            const btnProcessMaster = document.getElementById('btn_process_master_import');
-            if (btnProcessMaster) {
-                btnProcessMaster.addEventListener('click', function() {
-                    const filePath = document.getElementById('master_import_file_path').value;
-                    const originalText = this.innerHTML;
-                    this.disabled = true;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing & Inserting Records...';
-
-                    fetch("{{ route('settings.global.process_master') }}", {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                        },
-                        body: JSON.stringify({ file_path: filePath })
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        this.disabled = false;
-                        this.innerHTML = originalText;
-
-                        document.getElementById('master-import-step-2').classList.add('d-none');
-                        const step3 = document.getElementById('master-import-step-3');
-                        step3.classList.remove('d-none');
-
-                        const statusBox = document.getElementById('master_import_status_box');
-                        const failCont = document.getElementById('master_import_failure_container');
-                        const failTbody = document.getElementById('master_import_failure_tbody');
-                        failTbody.innerHTML = '';
-
-                        if (data.success && data.failed_count === 0) {
-                            statusBox.innerHTML = `
+                                if (data.success && data.failed_count === 0) {
+                                    statusBox.innerHTML = `
                                 <div class="alert alert-success border-0 shadow-sm py-4">
                                     <i class="fa-solid fa-circle-check text-success mb-3" style="font-size: 3.5rem;"></i>
                                     <h4 class="fw-bold text-success mb-1">Master Bulk Import Successful!</h4>
                                     <p class="mb-0 text-muted">${data.message}</p>
                                 </div>
                             `;
-                            failCont.classList.add('d-none');
-                        } else {
-                            statusBox.innerHTML = `
+                                    failCont.classList.add('d-none');
+                                } else {
+                                    statusBox.innerHTML = `
                                 <div class="alert alert-danger border-0 shadow-sm py-4">
                                     <i class="fa-solid fa-circle-xmark text-danger mb-3" style="font-size: 3.5rem;"></i>
                                     <h4 class="fw-bold text-danger mb-1">Import Stopped: Conflicts or Errors Found</h4>
                                     <p class="mb-0 text-muted">${data.message || 'Validation or duplicate entry errors prevented import.'}</p>
                                 </div>
                             `;
-                            failCont.classList.remove('d-none');
-                            if (data.failed_records) {
-                                data.failed_records.forEach(f => {
-                                    failTbody.innerHTML += `
+                                    failCont.classList.remove('d-none');
+                                    if (data.failed_records) {
+                                        data.failed_records.forEach(f => {
+                                            failTbody.innerHTML += `
                                         <tr>
                                             <td class="fw-bold">${f.sheet}</td>
                                             <td>${f.row}</td>
                                             <td class="text-danger fw-semibold">${f.reason}</td>
                                         </tr>
                                     `;
-                                });
-                            }
-                        }
-                    })
-                    .catch(err => {
-                        this.disabled = false;
-                        this.innerHTML = originalText;
-                        toastr.error('Server error executing Master Bulk Import.');
+                                        });
+                                    }
+                                }
+                            })
+                            .catch(err => {
+                                this.disabled = false;
+                                this.innerHTML = originalText;
+                                toastr.error('Server error executing Master Bulk Import.');
+                            });
                     });
-                });
-            }
-        });
-    </script>
+                }
+            });
+        </script>
     @endpush
 </x-user-page>

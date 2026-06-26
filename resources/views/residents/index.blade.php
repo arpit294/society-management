@@ -83,7 +83,7 @@
                             </div>
                             <div class="mb-3">
                                 <div class="drag-drop-zone border border-2 border-dashed rounded p-4 text-center position-relative" id="drag-drop-zone" style="background-color: #f8f9fa; cursor: pointer; transition: all 0.3s ease;">
-                                    <input type="file" class="position-absolute w-100 h-100 top-0 start-0 opacity-0" id="excel_file" name="excel_file" accept=".xlsx, .xls" style="cursor: pointer;">
+                                    <input type="file" class="position-absolute w-100 h-100 top-0 start-0 opacity-0 no-dropify" id="excel_file" name="excel_file" accept=".xlsx, .xls" style="cursor: pointer;">
                                     <i class="fa-solid fa-file-excel text-success mb-2" style="font-size: 3rem;"></i>
                                     <h6 class="mb-1 text-dark fw-bold" id="drag-drop-text">Drag & Drop your Excel file here</h6>
                                     <p class="text-muted small mb-0" id="drag-drop-subtext">or click to browse</p>

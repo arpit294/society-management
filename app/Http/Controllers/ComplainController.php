@@ -50,7 +50,7 @@ class ComplainController extends Controller
 
     public function edit(Complain $complain)
     {
-        abort_if(! \Auth::user()->can('complain_edit'), 403);
+        abort_if(! \auth::user()->can('complain_edit'), 403);
         $users = User::all();
 
         return view('complains.edit', compact('complain', 'users'));

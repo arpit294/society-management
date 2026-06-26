@@ -13,6 +13,7 @@ class ReportController extends Controller
 {
     public function maintenanceReport(Request $request)
     {
+        abort_if(! auth()->user()->can('setting_view'), 403);
         $reportType = $request->input('report_type', 'monthly');
 
         // Get available months and years from Maintenance table
@@ -78,6 +79,7 @@ class ReportController extends Controller
 
     public function exportReport(Request $request)
     {
+        abort_if(! auth()->user()->can('setting_view'), 403);
         $reportType = $request->input('report_type', 'monthly');
 
         $latestMaintenance = Maintenance::orderBy('year', 'desc')->orderBy('id', 'desc')->first();
