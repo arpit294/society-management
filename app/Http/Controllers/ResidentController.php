@@ -353,7 +353,7 @@ class ResidentController extends Controller
 
         try {
             $reader = new Reader;
-            $reader->open(\Illuminate\Support\Facades\Storage::path($path));
+            $reader->open(Storage::path($path));
 
             $previewRows = [];
             $headers = [];
@@ -389,7 +389,7 @@ class ResidentController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Storage::delete($path);
+            Storage::delete($path);
             return response()->json([
                 'success' => false,
                 'message' => 'Error reading Excel file: ' . $e->getMessage()
@@ -407,7 +407,7 @@ class ResidentController extends Controller
         ]);
 
         $path = $request->file_path;
-        if (!\Illuminate\Support\Facades\Storage::exists($path) || !str_starts_with($path, 'temp_imports/')) {
+        if (!Storage::exists($path) || !str_starts_with($path, 'temp_imports/')) {
             return response()->json(['success' => false, 'message' => 'Temporary file not found or invalid. Please try uploading again.']);
         }
 
@@ -417,7 +417,7 @@ class ResidentController extends Controller
         $requiredFields = ['name', 'email', 'aadhar_id', 'block_name', 'flat_no', 'type'];
         foreach ($requiredFields as $field) {
             if (!isset($mapping[$field]) && $mapping[$field] !== '0' && $mapping[$field] !== 0) {
-                \Illuminate\Support\Facades\Storage::delete($path);
+                Storage::delete($path);
                 return response()->json(['success' => false, 'message' => "Required field '{$field}' is not mapped."]);
             }
         }
@@ -426,7 +426,7 @@ class ResidentController extends Controller
             DB::beginTransaction();
 
             $reader = new Reader;
-            $reader->open(\Illuminate\Support\Facades\Storage::path($path));
+            $reader->open(Storage::path($path));
 
             $isFirstRow = true;
             $successCount = 0;

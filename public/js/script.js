@@ -1945,8 +1945,8 @@ $(document).ready(function () {
 
 // --- Global Layout Scripts ---
 $(document).ready(function() {
-    if ($('input[type="file"]').length) {
-        $('input[type="file"]').dropify();
+    if ($('input[type="file"]:not(.no-dropify)').length) {
+        $('input[type="file"]:not(.no-dropify)').dropify();
     }
     const flashMessages = document.getElementById('global-flash-messages');
     if (flashMessages) {
