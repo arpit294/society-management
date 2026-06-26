@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Dompdf\Image\Cache;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Database\Eloquent\Model;
 
 class Setting extends Model
