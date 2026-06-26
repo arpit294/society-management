@@ -6,6 +6,7 @@ use App\Models\Flat;
 use App\Models\Maintenance;
 use App\Models\MaintenanceBill;
 use App\Models\Resident;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +20,7 @@ class DatabaseSeeder extends Seeder
     {
         // Truncate tables to ensure a clean slate
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        Setting::truncate();
         MaintenanceBill::truncate();
         Maintenance::truncate();
         Resident::truncate();
@@ -32,6 +34,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RoleAndPermissionSeeder::class,
             AdminUserSeeder::class,
+            SettingSeeder::class,
             BlockSeeder::class,
             FlatTypeSeeder::class,
             FlatSeeder::class,

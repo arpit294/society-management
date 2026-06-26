@@ -26,8 +26,8 @@ class SettingController extends Controller
     public function index()
     {
         abort_if(! \Auth::user()->can('setting_view'), 403);
-        // Fetch all settings and convert to a flat key-value array for easy view binding
-        $settings = Setting::all()->pluck('value', 'key')->toArray();
+        // Fetch all settings and merge over defaults so the UI is never blank
+        $settings = array_merge(Setting::defaults(), Setting::all()->pluck('value', 'key')->toArray());
 
         // Fetch roles (excluding Admin)
         $roles = Role::whereNotIn('name', ['Admin'])->get();
