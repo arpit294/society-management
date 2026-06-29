@@ -19,10 +19,11 @@ class ComplainController extends Controller
     public function create()
     {
         abort_if(! \Auth::user()->can('complain_create'), 403);
-        $users = User::all();
+        $users = User::query()->get();
 
-        return view('complains.create', compact('users'));
+        return response()->view('complains.create', compact('users'));
     }
+
 
     public function store(Request $request)
     {
@@ -50,11 +51,12 @@ class ComplainController extends Controller
 
     public function edit(Complain $complain)
     {
-        abort_if(! \auth::user()->can('complain_edit'), 403);
-        $users = User::all();
+        abort_if(! \Auth::user()->can('complain_edit'), 403);
+        $users = User::query()->get();
 
-        return view('complains.edit', compact('complain', 'users'));
+        return response()->view('complains.edit', compact('complain', 'users'));
     }
+
 
     public function update(Request $request, Complain $complain)
     {

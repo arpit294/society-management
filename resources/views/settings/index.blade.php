@@ -1,4 +1,31 @@
 <x-user-page>
+    @push('styles')
+        <style>
+            .settings-rate-option .form-check {
+                align-items: center;
+                display: flex;
+                min-height: 1.75rem;
+                padding-left: 0;
+            }
+
+            .settings-rate-option .form-check-input {
+                flex: 0 0 auto;
+                margin-left: 0;
+                margin-top: 0;
+            }
+
+            .settings-rate-option .form-check-label {
+                line-height: 1.25;
+                margin-left: .5rem;
+                min-width: 0;
+            }
+
+            .settings-rate-option .input-group {
+                width: 100%;
+            }
+        </style>
+    @endpush
+
     @php
         $currencySymbol = \App\Helpers\CurrencyHelper::getCurrencySymbol();
         $availableCurrencies = \App\Helpers\CurrencyHelper::getAvailableCurrencies();
@@ -80,12 +107,12 @@
                             <div class="col-md-12 mb-4">
                                 <label class="form-label text-muted small fw-semibold text-uppercase">Allow Late Fees
                                     Penalty</label>
-                                <div class="form-check form-switch fs-5">
+                                <div class="form-check form-switch mt-1">
                                     <input type="hidden" name="apply_penalty" value="0">
                                     <input class="form-check-input" type="checkbox" id="apply_penalty"
                                         name="apply_penalty" value="1"
                                         {{ ($settings['apply_penalty'] ?? '1') == '1' ? 'checked' : '' }}>
-                                    <label class="form-check-label fs-6 ms-2 mt-1" for="apply_penalty">Yes,
+                                    <label class="form-check-label fs-6 ms-2" for="apply_penalty">Yes,
                                         automatically apply penalty to unpaid invoices</label>
                                 </div>
                             </div>
@@ -111,7 +138,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-3 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="penalty_monthly_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" id="penalty_monthly_enabled"
@@ -123,12 +150,12 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_monthly_value"
-                                        class="form-control text-end"
+                                        class="form-control"
                                         value="{{ $settings['penalty_monthly_value'] ?? ($settings['penalty_monthly_percent'] ?? '2') }}">
                                     <span class="input-group-text penalty-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-3 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="penalty_quarterly_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" id="penalty_quarterly_enabled"
@@ -140,12 +167,12 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_quarterly_value"
-                                        class="form-control text-end"
+                                        class="form-control"
                                         value="{{ $settings['penalty_quarterly_value'] ?? ($settings['penalty_quarterly_percent'] ?? '5') }}">
                                     <span class="input-group-text penalty-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-3 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="penalty_half_yearly_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" id="penalty_half_yearly_enabled"
@@ -157,12 +184,12 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_half_yearly_value"
-                                        class="form-control text-end"
+                                        class="form-control"
                                         value="{{ $settings['penalty_half_yearly_value'] ?? ($settings['penalty_half_yearly_percent'] ?? '10') }}">
                                     <span class="input-group-text penalty-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-3 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="penalty_yearly_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" id="penalty_yearly_enabled"
@@ -174,7 +201,7 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_yearly_value"
-                                        class="form-control text-end"
+                                        class="form-control"
                                         value="{{ $settings['penalty_yearly_value'] ?? ($settings['penalty_yearly_percent'] ?? '15') }}">
                                     <span class="input-group-text penalty-suffix">%</span>
                                 </div>
@@ -188,12 +215,12 @@
                             <div class="col-md-12 mb-4">
                                 <label class="form-label text-muted small fw-semibold text-uppercase">Allow Prepayment
                                     Discount</label>
-                                <div class="form-check form-switch fs-5">
+                                <div class="form-check form-switch mt-1">
                                     <input type="hidden" name="apply_discount" value="0">
                                     <input class="form-check-input" type="checkbox" id="apply_discount"
                                         name="apply_discount" value="1"
                                         {{ ($settings['apply_discount'] ?? '1') == '1' ? 'checked' : '' }}>
-                                    <label class="form-check-label fs-6 ms-2 mt-1" for="apply_discount">Yes,
+                                    <label class="form-check-label fs-6 ms-2" for="apply_discount">Yes,
                                         automatically apply discounts to prepayments</label>
                                 </div>
                             </div>
@@ -210,7 +237,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-3 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="discount_monthly_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" id="discount_monthly_enabled"
@@ -222,12 +249,12 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_monthly_value"
-                                        class="form-control text-end"
+                                        class="form-control"
                                         value="{{ $settings['discount_monthly_value'] ?? ($settings['discount_monthly_percent'] ?? '2') }}">
                                     <span class="input-group-text discount-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-3 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="discount_quarterly_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" id="discount_quarterly_enabled"
@@ -239,12 +266,12 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_quarterly_value"
-                                        class="form-control text-end"
+                                        class="form-control"
                                         value="{{ $settings['discount_quarterly_value'] ?? ($settings['discount_quarterly_percent'] ?? '5') }}">
                                     <span class="input-group-text discount-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-3 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="discount_half_yearly_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" id="discount_half_yearly_enabled"
@@ -256,12 +283,12 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_half_yearly_value"
-                                        class="form-control text-end"
+                                        class="form-control"
                                         value="{{ $settings['discount_half_yearly_value'] ?? ($settings['discount_half_yearly_percent'] ?? '10') }}">
                                     <span class="input-group-text discount-suffix">%</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-3 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="discount_yearly_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" id="discount_yearly_enabled"
@@ -273,7 +300,7 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_yearly_value"
-                                        class="form-control text-end"
+                                        class="form-control"
                                         value="{{ $settings['discount_yearly_value'] ?? ($settings['discount_yearly_percent'] ?? '15') }}">
                                     <span class="input-group-text discount-suffix">%</span>
                                 </div>
@@ -744,10 +771,9 @@
 
                                         <div class="mt-auto pt-2">
                                             <button type="button"
-                                                class="btn btn-success btn-lg w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 py-3"
+                                                class="btn btn-primary btn-lg w-100 fw-bold text-white shadow-sm d-flex align-items-center justify-content-center gap-2 py-3"
                                                 data-coreui-toggle="modal" data-coreui-target="#master-import-modal">
-                                                <i class="fa-solid fa-file-import"></i> <span>Import Master
-                                                    Records</span>
+                                                <i class="fa-solid fa-file-import"></i> <span>Global Bulk Import</span>
                                             </button>
                                         </div>
                                     </div>
@@ -809,24 +835,22 @@
             <div class="modal fade" id="master-import-modal" tabindex="-1" aria-labelledby="masterImportModalLabel"
                 aria-hidden="true" data-coreui-backdrop="static">
                 <div class="modal-dialog modal-xl">
-                    <div class="modal-content border-0 shadow">
-                        <div class="modal-header bg-success text-white py-3">
-                            <h5 class="modal-title fw-bold" id="masterImportModalLabel"><i
-                                    class="fa-solid fa-file-import me-2"></i>Master Database Bulk Import</h5>
-                            <button type="button" class="btn-close btn-close-white" data-coreui-dismiss="modal"
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="masterImportModalLabel">Global Bulk Import</h5>
+                            <button type="button" class="btn-close" data-coreui-dismiss="modal"
                                 aria-label="Close"></button>
                         </div>
 
-                        <!-- Step 1: Upload File (Replicated Resident Style) -->
+                        <!-- Step 1: Upload File -->
                         <div id="master-import-step-1">
                             <form id="master-import-preview-form" onsubmit="return false;">
-                                <div class="modal-body p-4">
+                                <div class="modal-body">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <p class="mb-0 text-muted fw-medium">Upload a Master Excel (.xlsx) file to bulk
-                                            restore records.</p>
+                                        <p class="mb-0">Upload an Excel (.xlsx) file to bulk import global records.</p>
                                         <a href="{{ route('settings.global.template_master') }}"
-                                            class="btn btn-sm btn-light rounded-pill text-success fw-semibold border shadow-sm">
-                                            <i class="fa-solid fa-download me-1"></i>Download Master Template
+                                            class="btn btn-sm btn-light rounded-pill text-primary fw-semibold border shadow-sm">
+                                            <i class="fa-solid fa-download me-1"></i>Download Template
                                         </a>
                                     </div>
                                     <div class="mb-3">
@@ -840,7 +864,7 @@
                                             <i class="fa-solid fa-file-excel text-success mb-2"
                                                 style="font-size: 3rem;"></i>
                                             <h6 class="mb-1 text-dark fw-bold" id="master-drag-drop-text">Drag & Drop
-                                                your Master Excel file here</h6>
+                                                your Excel file here</h6>
                                             <p class="text-muted small mb-0" id="master-drag-drop-subtext">or click to
                                                 browse</p>
                                         </div>
@@ -851,7 +875,7 @@
                                         data-coreui-dismiss="modal">Cancel</button>
                                     <button type="button" class="btn btn-primary bg-gradient border-0"
                                         id="btn_preview_global_import">
-                                        <i class="fa-solid fa-eye me-2"></i>Preview Master Data
+                                        <i class="fa-solid fa-eye me-2"></i>Preview Data
                                     </button>
                                 </div>
                             </form>
@@ -859,57 +883,44 @@
 
                         <!-- Step 2: Preview Sheets & Records -->
                         <div id="master-import-step-2" class="d-none">
-                            <div class="modal-body p-4">
-                                <div class="alert alert-info border-0 shadow-sm small mb-4 d-flex align-items-center">
-                                    <i class="fa-solid fa-circle-info fa-xl me-3 text-info"></i>
-                                    <div>
-                                        Below is a summary of valid data rows found in each sheet of your uploaded
-                                        Master Excel workbook. Click <strong>"Process Master Import"</strong> to
-                                        validate and insert these records across all modules.
-                                    </div>
+                            <div class="modal-body">
+                                <div class="alert alert-info mb-3">
+                                    Below is a preview of valid data found in your Excel file. Click "Process Import" to validate and insert these records across all modules.
                                 </div>
                                 <input type="hidden" id="master_import_file_path">
-                                <div class="row g-3" id="master_sheets_summary_container"
-                                    style="max-height: 450px; overflow-y: auto;"></div>
+                                <div id="master_sheets_summary_container"></div>
                             </div>
-                            <div class="modal-footer bg-light py-3 d-flex justify-content-between">
-                                <button type="button" class="btn btn-secondary px-4 fw-medium"
+                            <div class="modal-footer border-top-0">
+                                <button type="button" class="btn btn-secondary"
                                     id="btn_master_back_to_step_1"><i
                                         class="fa-solid fa-arrow-left me-2"></i>Back</button>
-                                <button type="button" class="btn btn-success px-5 fw-bold text-white shadow-sm"
+                                <button type="button" class="btn btn-primary bg-gradient border-0"
                                     id="btn_process_master_import">
-                                    <i class="fa-solid fa-cloud-arrow-up me-2"></i>Process Master Import
+                                    <i class="fa-solid fa-cloud-arrow-up me-2"></i>Process Import
                                 </button>
                             </div>
                         </div>
 
                         <!-- Step 3: Execution Summary & Errors -->
                         <div id="master-import-step-3" class="d-none">
-                            <div class="modal-body p-4 text-center py-4">
-                                <div id="master_import_status_box" class="mb-4"></div>
+                            <div class="modal-body">
+                                <div class="alert alert-success d-none mb-3" id="master-import-success-alert"></div>
+                                <div class="alert alert-danger d-none mb-3" id="master-import-error-alert"></div>
+                                <div id="master-import-summary-container" class="mb-3 text-center">
+                                    <h5 class="fw-bold"><span id="master-import-success-count" class="text-success">0</span> record(s) imported, <span id="master-import-failed-count" class="text-danger">0</span> failed</h5>
+                                </div>
 
-                                <div id="master_import_failure_container" class="d-none text-start">
-                                    <h6 class="fw-bold text-danger mb-2"><i
-                                            class="fa-solid fa-triangle-exclamation me-1"></i> Failed / Duplicate Entry
-                                        Details:</h6>
-                                    <div class="table-responsive border border-danger border-opacity-25 rounded shadow-sm"
-                                        style="max-height: 320px;">
-                                        <table class="table table-sm table-hover table-striped mb-0 small">
-                                            <thead class="table-danger sticky-top">
-                                                <tr>
-                                                    <th>Module / Sheet</th>
-                                                    <th>Row Number</th>
-                                                    <th>Error / Conflict Reason</th>
-                                                </tr>
-                                            </thead>
+                                <div id="master_import_failure_container" class="d-none">
+                                    <h6 class="fw-bold text-danger mb-2">Failed Records Details:</h6>
+                                    <div class="table-responsive border rounded" style="max-height: 300px;">
+                                        <table class="table table-sm table-hover table-striped mb-0" style="font-size: 0.875rem;">
                                             <tbody id="master_import_failure_tbody"></tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
-                            <div class="modal-footer bg-light py-3 d-flex justify-content-center">
-                                <button type="button" class="btn btn-primary px-5 fw-bold"
-                                    onclick="window.location.reload();">Finish & Reload Page</button>
+                            <div class="modal-footer border-top-0">
+                                <button type="button" class="btn btn-primary" onclick="window.location.reload();">Finish & Reload</button>
                             </div>
                         </div>
                     </div>
@@ -924,503 +935,18 @@
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var currencies = @json($availableCurrencies);
-                var currencySelect = document.getElementById('currency_select');
-                var penaltyType = document.getElementById('penalty_type');
-                var discountType = document.getElementById('discount_type');
-
-                function currentCurrencySymbol() {
-                    var selected = currencySelect ? currencySelect.value : 'INR';
-                    return currencies[selected] ? currencies[selected].symbol : '{{ $currencySymbol }}';
+            window.SMP_SETTINGS_CONFIG = {
+                availableCurrencies: @json($availableCurrencies),
+                currencySymbol: '{{ $currencySymbol }}',
+                societyLat: parseFloat("{{ $settings['society_latitude'] ?? '19.0760' }}") || 19.0760,
+                societyLng: parseFloat("{{ $settings['society_longitude'] ?? '72.8777' }}") || 72.8777,
+                csrfToken: '{{ csrf_token() }}',
+                routes: {
+                    previewMaster: "{{ route('settings.global.preview_master') }}",
+                    processGlobal: "{{ route('settings.global.process') }}",
+                    processMaster: "{{ route('settings.global.process_master') }}"
                 }
-
-                function updateCurrencyPreview() {
-                    var symbol = currentCurrencySymbol();
-
-                    document.querySelectorAll('.currency-symbol-preview').forEach(function(el) {
-                        el.textContent = symbol;
-                    });
-
-                    document.querySelectorAll('.penalty-suffix').forEach(function(el) {
-                        el.textContent = penaltyType && penaltyType.value === 'fixed' ? symbol : '%';
-                    });
-
-                    document.querySelectorAll('.discount-suffix').forEach(function(el) {
-                        el.textContent = discountType && discountType.value === 'fixed' ? symbol : '%';
-                    });
-
-                    if (penaltyType) {
-                        var penaltyFixedOption = penaltyType.querySelector('option[value="fixed"]');
-                        if (penaltyFixedOption) penaltyFixedOption.textContent = 'Fixed Amount (' + symbol + ')';
-                    }
-
-                    if (discountType) {
-                        var discountFixedOption = discountType.querySelector('option[value="fixed"]');
-                        if (discountFixedOption) discountFixedOption.textContent = 'Fixed Amount (' + symbol + ')';
-                    }
-                }
-
-                [currencySelect, penaltyType, discountType].forEach(function(el) {
-                    if (el) el.addEventListener('change', updateCurrencyPreview);
-                });
-                updateCurrencyPreview();
-
-                var mapElem = document.getElementById('society_location_map');
-                if (!mapElem) return;
-
-                var initialLat = parseFloat("{{ $settings['society_latitude'] ?? '19.0760' }}") || 19.0760;
-                var initialLng = parseFloat("{{ $settings['society_longitude'] ?? '72.8777' }}") || 72.8777;
-
-                var map = L.map('society_location_map').setView([initialLat, initialLng], 15);
-
-                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                }).addTo(map);
-
-                var marker = L.marker([initialLat, initialLng], {
-                    draggable: true
-                }).addTo(map);
-
-                function reverseGeocode(lat, lng) {
-                    fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng)
-                        .then(response => response.json())
-                        .then(data => {
-                            var searchInput = document.getElementById('map_search_input');
-                            if (searchInput && data && data.display_name) {
-                                searchInput.value = data.display_name;
-                            }
-                        })
-                        .catch(err => console.log(err));
-                }
-
-                function updateCoordinates(lat, lng, doReverse = false) {
-                    var latInput = document.getElementById('society_latitude');
-                    var lngInput = document.getElementById('society_longitude');
-                    if (latInput && lngInput) {
-                        latInput.value = lat.toFixed(6);
-                        lngInput.value = lng.toFixed(6);
-                    }
-                    if (doReverse) {
-                        reverseGeocode(lat, lng);
-                    }
-                }
-
-                marker.on('dragend', function(e) {
-                    var position = marker.getLatLng();
-                    updateCoordinates(position.lat, position.lng, true);
-                });
-
-                map.on('click', function(e) {
-                    marker.setLatLng(e.latlng);
-                    updateCoordinates(e.latlng.lat, e.latlng.lng, true);
-                });
-
-                function renderSearchResults(results) {
-                    var listElem = document.getElementById('search_results_list');
-                    if (!listElem) return;
-                    listElem.innerHTML = '';
-
-                    if (!results || results.length === 0) {
-                        listElem.innerHTML =
-                            '<div class="list-group-item text-muted small p-3">No societies or matching locations found in India. Try searching city name + area.</div>';
-                        listElem.classList.remove('d-none');
-                        return;
-                    }
-
-                    results.forEach(function(place) {
-                        var item = document.createElement('a');
-                        item.href = 'javascript:void(0)';
-                        item.className =
-                            'list-group-item list-group-item-action p-3 border-bottom d-flex align-items-center';
-                        var title = place.display_name.split(',')[0] || 'Location';
-                        item.innerHTML =
-                            '<div class="bg-light p-2 rounded-circle me-3 text-primary"><i class="fa-solid fa-location-dot"></i></div>' +
-                            '<div class="flex-grow-1 overflow-hidden">' +
-                            '<div class="fw-semibold text-primary mb-0 text-truncate">' + title + '</div>' +
-                            '<div class="small text-muted text-truncate">' + place.display_name + '</div>' +
-                            '</div>';
-
-                        item.addEventListener('click', function() {
-                            var lat = parseFloat(place.lat);
-                            var lon = parseFloat(place.lon);
-                            map.setView([lat, lon], 17);
-                            marker.setLatLng([lat, lon]);
-                            updateCoordinates(lat, lon, false);
-                            var searchInput = document.getElementById('map_search_input');
-                            if (searchInput) searchInput.value = place.display_name;
-                            listElem.classList.add('d-none');
-                            toastr.success('Location pin updated!');
-                        });
-
-                        listElem.appendChild(item);
-                    });
-
-                    listElem.classList.remove('d-none');
-                }
-
-                function searchAddress(query) {
-                    if (!query || !query.trim()) return;
-                    toastr.info('Searching locations in India...');
-
-                    // Search Nominatim + Photon for comprehensive society & landmark matching
-                    var p1 = fetch(
-                            'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&countrycodes=in&limit=6&q=' +
-                            encodeURIComponent(query))
-                        .then(res => res.json()).catch(() => []);
-                    var p2 = fetch('https://photon.komoot.io/api/?filter=countrycode:in&limit=6&q=' +
-                            encodeURIComponent(query))
-                        .then(res => res.json()).catch(() => ({
-                            features: []
-                        }));
-
-                    Promise.all([p1, p2]).then(function(resArray) {
-                        var nData = resArray[0] || [];
-                        var pData = resArray[1] || {
-                            features: []
-                        };
-
-                        var combined = [];
-                        var seen = new Set();
-
-                        nData.forEach(function(item) {
-                            var key = parseFloat(item.lat).toFixed(3) + '_' + parseFloat(item.lon)
-                                .toFixed(3);
-                            if (!seen.has(key)) {
-                                seen.add(key);
-                                combined.push({
-                                    lat: item.lat,
-                                    lon: item.lon,
-                                    display_name: item.display_name
-                                });
-                            }
-                        });
-
-                        (pData.features || []).forEach(function(f) {
-                            if (f.geometry && f.geometry.coordinates) {
-                                var lon = f.geometry.coordinates[0];
-                                var lat = f.geometry.coordinates[1];
-                                var key = parseFloat(lat).toFixed(3) + '_' + parseFloat(lon).toFixed(3);
-                                if (!seen.has(key)) {
-                                    seen.add(key);
-                                    var nameParts = [f.properties.name, f.properties.street, f
-                                        .properties.district, f.properties.city, f.properties.state
-                                    ].filter(Boolean);
-                                    combined.push({
-                                        lat: lat,
-                                        lon: lon,
-                                        display_name: nameParts.join(', ')
-                                    });
-                                }
-                            }
-                        });
-
-                        renderSearchResults(combined);
-                        if (combined.length > 0) toastr.success('Found ' + combined.length +
-                            ' matching locations!');
-                    });
-                }
-
-                var btnSearch = document.getElementById('btn_search_location');
-                var searchInput = document.getElementById('map_search_input');
-
-                if (btnSearch && searchInput) {
-                    btnSearch.addEventListener('click', function() {
-                        searchAddress(searchInput.value);
-                    });
-                    searchInput.addEventListener('keypress', function(e) {
-                        if (e.key === 'Enter') {
-                            e.preventDefault();
-                            searchAddress(searchInput.value);
-                        }
-                    });
-                    // Close dropdown when clicking outside
-                    document.addEventListener('click', function(e) {
-                        var listElem = document.getElementById('search_results_list');
-                        if (listElem && !listElem.contains(e.target) && e.target !== searchInput && e.target !==
-                            btnSearch) {
-                            listElem.classList.add('d-none');
-                        }
-                    });
-                }
-
-                var btnDetect = document.getElementById('btn_get_my_current_location');
-                if (btnDetect) {
-                    btnDetect.addEventListener('click', function() {
-                        if (navigator.geolocation) {
-                            toastr.info('Detecting device GPS location...');
-                            navigator.geolocation.getCurrentPosition(function(position) {
-                                var lat = position.coords.latitude;
-                                var lng = position.coords.longitude;
-                                map.setView([lat, lng], 16);
-                                marker.setLatLng([lat, lng]);
-                                updateCoordinates(lat, lng, true);
-                                toastr.success('Device location detected!');
-                            }, function(error) {
-                                toastr.error(
-                                    'Unable to retrieve GPS location. Check browser location permissions.'
-                                    );
-                            });
-                        } else {
-                            toastr.error('Geolocation is not supported by your browser.');
-                        }
-                    });
-                }
-
-                // Global Import Export Hub Script
-                const emSelectAll = document.getElementById('export_master_select_all');
-                if (emSelectAll) {
-                    emSelectAll.addEventListener('change', function() {
-                        document.querySelectorAll('.export-master-chk').forEach(c => c.checked = this.checked);
-                    });
-                }
-
-                const globalFileInput = document.getElementById('global_import_file');
-                const masterDragDropText = document.getElementById('master-drag-drop-text');
-                const masterDragDropZone = document.getElementById('master-drag-drop-zone');
-                if (globalFileInput && masterDragDropText) {
-                    globalFileInput.addEventListener('change', function() {
-                        if (this.files && this.files.length > 0) {
-                            masterDragDropText.textContent = this.files[0].name;
-                            masterDragDropText.classList.add('text-success');
-                            if (masterDragDropZone) masterDragDropZone.style.backgroundColor = '#e8f5e9';
-                        } else {
-                            masterDragDropText.textContent = 'Drag & Drop your Master Excel file here';
-                            masterDragDropText.classList.remove('text-success');
-                            if (masterDragDropZone) masterDragDropZone.style.backgroundColor = '#f8f9fa';
-                        }
-                    });
-                }
-
-                const btnMasterBack = document.getElementById('btn_master_back_to_step_1');
-                if (btnMasterBack) {
-                    btnMasterBack.addEventListener('click', function() {
-                        document.getElementById('master-import-step-2').classList.add('d-none');
-                        document.getElementById('master-import-step-1').classList.remove('d-none');
-                    });
-                }
-
-                const masterModalEl = document.getElementById('master-import-modal');
-                if (masterModalEl) {
-                    masterModalEl.addEventListener('hidden.coreui.modal', function() {
-                        const s1 = document.getElementById('master-import-step-1');
-                        const s2 = document.getElementById('master-import-step-2');
-                        const s3 = document.getElementById('master-import-step-3');
-                        if (s1) s1.classList.remove('d-none');
-                        if (s2) s2.classList.add('d-none');
-                        if (s3) s3.classList.add('d-none');
-                        if (globalFileInput) globalFileInput.value = '';
-                        if (masterDragDropText) {
-                            masterDragDropText.textContent = 'Drag & Drop your Master Excel file here';
-                            masterDragDropText.classList.remove('text-success');
-                        }
-                        if (masterDragDropZone) masterDragDropZone.style.backgroundColor = '#f8f9fa';
-                    });
-                }
-
-                const btnPreviewImport = document.getElementById('btn_preview_global_import');
-                if (btnPreviewImport) {
-                    btnPreviewImport.addEventListener('click', function() {
-                        if (!globalFileInput || !globalFileInput.files || globalFileInput.files.length === 0) {
-                            toastr.error('Please select a Master spreadsheet file (.xlsx, .csv) first.');
-                            return;
-                        }
-
-                        const originalText = this.innerHTML;
-                        this.disabled = true;
-                        this.innerHTML =
-                            '<span class="spinner-border spinner-border-sm me-2"></span>Reading Master Sheets...';
-
-                        const fd = new FormData();
-                        fd.append('_token', '{{ csrf_token() }}');
-                        fd.append('import_file', globalFileInput.files[0]);
-
-                        fetch("{{ route('settings.global.preview_master') }}", {
-                                method: 'POST',
-                                headers: {
-                                    'Accept': 'application/json'
-                                },
-                                body: fd
-                            })
-                            .then(async res => {
-                                const data = await res.json();
-                                if (!res.ok || !data.success) {
-                                    throw new Error(data.message || (data.errors ? Object.values(data
-                                            .errors).flat().join(' ') :
-                                        'Error reading Master Excel.'));
-                                }
-                                return data;
-                            })
-                            .then(data => {
-                                this.disabled = false;
-                                this.innerHTML = originalText;
-
-                                document.getElementById('master_import_file_path').value = data.file_path;
-                                const summaryCont = document.getElementById(
-                                    'master_sheets_summary_container');
-                                summaryCont.innerHTML = '';
-
-                                data.sheets_summary.forEach(sheet => {
-                                    const card = document.createElement('div');
-                                    card.className = 'col-md-6';
-                                    card.innerHTML = `
-                                <div class="card h-100 border shadow-sm rounded-3 overflow-hidden">
-                                    <div class="card-header bg-light d-flex justify-content-between align-items-center py-2 px-3">
-                                        <span class="fw-bold text-body small"><i class="fa-solid fa-table me-2 text-success"></i>${sheet.label} (${sheet.table})</span>
-                                        <span class="badge bg-success small">${sheet.record_count} valid row(s)</span>
-                                    </div>
-                                    <div class="card-body p-2 bg-white">
-                                        <div class="table-responsive" style="max-height: 140px; overflow-y: auto;">
-                                            <table class="table table-sm table-bordered mb-0" style="font-size: 0.72rem;">
-                                                <thead class="table-light"><tr>${sheet.headers.slice(0, 5).map(h => `<th class="text-truncate px-1" style="max-width:90px;">${h}</th>`).join('')}</tr></thead>
-                                                <tbody>
-                                                    ${sheet.preview_rows.slice(0, 3).map(r => `<tr>${r.slice(0, 5).map(c => `<td class="text-truncate text-muted px-1" style="max-width:90px;">${c !== null && c !== undefined ? c : ''}</td>`).join('')}</tr>`).join('')}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                                    summaryCont.appendChild(card);
-                                });
-
-                                document.getElementById('master-import-step-1').classList.add('d-none');
-                                document.getElementById('master-import-step-2').classList.remove('d-none');
-                                document.getElementById('master-import-step-3').classList.add('d-none');
-                            })
-                            .catch(err => {
-                                this.disabled = false;
-                                this.innerHTML = originalText;
-                                toastr.error(err.message || 'Network error reading Master Excel file.');
-                            });
-                    });
-                }
-
-                const btnConfirmImport = document.getElementById('btn_confirm_global_import');
-                if (btnConfirmImport) {
-                    btnConfirmImport.addEventListener('click', function() {
-                        const tempFilePath = document.getElementById('global_temp_file_path').value;
-                        const targetTable = document.getElementById('global_target_table').value;
-                        const selects = document.querySelectorAll('.global-map-select');
-
-                        const mapping = {};
-                        selects.forEach(sel => {
-                            if (sel.value !== "") {
-                                mapping[sel.getAttribute('data-db-field')] = parseInt(sel.value);
-                            }
-                        });
-
-                        const originalText = this.innerHTML;
-                        this.disabled = true;
-                        this.innerHTML =
-                            '<span class="spinner-border spinner-border-sm me-2"></span>Importing Records...';
-
-                        fetch("{{ route('settings.global.process') }}", {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                },
-                                body: JSON.stringify({
-                                    table: targetTable,
-                                    file_path: tempFilePath,
-                                    mapping: mapping
-                                })
-                            })
-                            .then(res => res.json())
-                            .then(data => {
-                                this.disabled = false;
-                                this.innerHTML = originalText;
-
-                                if (data.success) {
-                                    coreui.Modal.getInstance(document.getElementById(
-                                        'globalImportPreviewModal')).hide();
-                                    toastr.success(data.message);
-                                } else {
-                                    toastr.error(data.message || 'Import error.');
-                                }
-                            })
-                            .catch(err => {
-                                this.disabled = false;
-                                this.innerHTML = originalText;
-                                toastr.error('Server error during bulk import.');
-                            });
-                    });
-                }
-
-                const btnProcessMaster = document.getElementById('btn_process_master_import');
-                if (btnProcessMaster) {
-                    btnProcessMaster.addEventListener('click', function() {
-                        const filePath = document.getElementById('master_import_file_path').value;
-                        const originalText = this.innerHTML;
-                        this.disabled = true;
-                        this.innerHTML =
-                            '<span class="spinner-border spinner-border-sm me-2"></span>Processing & Inserting Records...';
-
-                        fetch("{{ route('settings.global.process_master') }}", {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                                },
-                                body: JSON.stringify({
-                                    file_path: filePath
-                                })
-                            })
-                            .then(res => res.json())
-                            .then(data => {
-                                this.disabled = false;
-                                this.innerHTML = originalText;
-
-                                document.getElementById('master-import-step-2').classList.add('d-none');
-                                const step3 = document.getElementById('master-import-step-3');
-                                step3.classList.remove('d-none');
-
-                                const statusBox = document.getElementById('master_import_status_box');
-                                const failCont = document.getElementById('master_import_failure_container');
-                                const failTbody = document.getElementById('master_import_failure_tbody');
-                                failTbody.innerHTML = '';
-
-                                if (data.success && data.failed_count === 0) {
-                                    statusBox.innerHTML = `
-                                <div class="alert alert-success border-0 shadow-sm py-4">
-                                    <i class="fa-solid fa-circle-check text-success mb-3" style="font-size: 3.5rem;"></i>
-                                    <h4 class="fw-bold text-success mb-1">Master Bulk Import Successful!</h4>
-                                    <p class="mb-0 text-muted">${data.message}</p>
-                                </div>
-                            `;
-                                    failCont.classList.add('d-none');
-                                } else {
-                                    statusBox.innerHTML = `
-                                <div class="alert alert-danger border-0 shadow-sm py-4">
-                                    <i class="fa-solid fa-circle-xmark text-danger mb-3" style="font-size: 3.5rem;"></i>
-                                    <h4 class="fw-bold text-danger mb-1">Import Stopped: Conflicts or Errors Found</h4>
-                                    <p class="mb-0 text-muted">${data.message || 'Validation or duplicate entry errors prevented import.'}</p>
-                                </div>
-                            `;
-                                    failCont.classList.remove('d-none');
-                                    if (data.failed_records) {
-                                        data.failed_records.forEach(f => {
-                                            failTbody.innerHTML += `
-                                        <tr>
-                                            <td class="fw-bold">${f.sheet}</td>
-                                            <td>${f.row}</td>
-                                            <td class="text-danger fw-semibold">${f.reason}</td>
-                                        </tr>
-                                    `;
-                                        });
-                                    }
-                                }
-                            })
-                            .catch(err => {
-                                this.disabled = false;
-                                this.innerHTML = originalText;
-                                toastr.error('Server error executing Master Bulk Import.');
-                            });
-                    });
-                }
-            });
+            };
         </script>
     @endpush
 </x-user-page>

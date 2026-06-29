@@ -8,6 +8,7 @@ use App\Models\Flat;
 use App\Models\MaintenanceBill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class BlockController extends Controller
 {
@@ -77,6 +78,13 @@ class BlockController extends Controller
             'total_floor' => 'required|integer|min:0',
             'total_flats' => 'required|integer|min:0',
         ]);
+
+        $existingFlats = Flat::where('block_id', $block->id)->count();
+        if ($validatedData['total_flats'] < $existingFlats) {
+            throw ValidationException::withMessages([
+                'total_flats' => ["Total flats cannot be less than the {$existingFlats} flat records already created for this block."],
+            ]);
+        }
 
         $block->update($validatedData);
 

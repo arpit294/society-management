@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 
 class FlatTypeController extends Controller
 {
+    private const FLAT_TYPE_NAMES = ['1BHK', '2BHK', '3BHK', '4BHK', '5BHK'];
+
     public function index(FlatTypesDataTable $dataTable)
     {
         abort_if(! \Auth::user()->can('flat_type_view'), 403);
@@ -24,7 +26,7 @@ class FlatTypeController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_type_create'), 403);
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255|unique:flat_types,name',
+            'name' => 'required|string|in:'.implode(',', self::FLAT_TYPE_NAMES).'|unique:flat_types,name',
             'owner_maintenance_fee' => 'required|numeric|min:0',
             'rental_maintenance_fee' => 'required|numeric|min:0',
             'status' => 'required|in:active,inactive',
@@ -48,7 +50,7 @@ class FlatTypeController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_type_edit'), 403);
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255|unique:flat_types,name,'.$flatType->id,
+            'name' => 'required|string|in:'.implode(',', self::FLAT_TYPE_NAMES).'|unique:flat_types,name,'.$flatType->id,
             'owner_maintenance_fee' => 'required|numeric|min:0',
             'rental_maintenance_fee' => 'required|numeric|min:0',
             'status' => 'required|in:active,inactive',

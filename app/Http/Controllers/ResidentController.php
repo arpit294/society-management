@@ -372,23 +372,32 @@ class ResidentController extends Controller
             $previewRows = [];
             $headers = [];
             $rowCount = 0;
+            $consecutiveEmpty = 0;
 
             foreach ($reader->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
                     if ($rowCount === 0) {
                         $headers = $row->toArray();
+                        $rowCount++;
                     } else {
-                        // Sometimes dates are objects in Spout, we must convert to string for JSON preview
                         $cells = $row->toArray();
+                        $isEmptyRow = true;
                         foreach ($cells as &$cell) {
                             if ($cell instanceof \DateTime) {
                                 $cell = $cell->format('Y-m-d');
                             }
+                            if (trim((string)$cell) !== '') $isEmptyRow = false;
                         }
+                        if ($isEmptyRow) {
+                            $consecutiveEmpty++;
+                            if ($consecutiveEmpty > 20) break;
+                            continue;
+                        }
+                        $consecutiveEmpty = 0;
                         $previewRows[] = $cells;
+                        $rowCount++;
                     }
-
-                    $rowCount++;
+                    if (count($previewRows) >= 6 || $rowCount > 50) break;
                 }
                 break; // Only read first sheet
             }
@@ -451,6 +460,7 @@ class ResidentController extends Controller
             $activeOwnerCache = [];
             $userCache = [];
 
+            $consecutiveEmpty = 0;
             foreach ($reader->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
                     if ($isFirstRow) {
@@ -460,6 +470,17 @@ class ResidentController extends Controller
                     }
 
                     $cells = $row->toArray();
+                    $isEmptyRow = true;
+                    foreach ($cells as $cell) {
+                        if (trim((string)$cell) !== '') { $isEmptyRow = false; break; }
+                    }
+                    if ($isEmptyRow) {
+                        $consecutiveEmpty++;
+                        if ($consecutiveEmpty > 20) break;
+                        $rowIndex++;
+                        continue;
+                    }
+                    $consecutiveEmpty = 0;
 
                     // Safely grab using mapped indices
                     $name = isset($mapping['name']) && isset($cells[$mapping['name']]) ? trim($cells[$mapping['name']]) : null;

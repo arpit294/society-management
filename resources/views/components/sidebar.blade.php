@@ -87,7 +87,7 @@
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M224 48H32v128h192V48zm0 192H32v224h192V240zm64-192v224h192V48H288zm0 288v160h192V336H288z" />
                 </svg>
-                Flat Types
+                Maintenance Rates
             </a>
         </li>
         @endcan

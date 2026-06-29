@@ -66,7 +66,7 @@ class GlobalImportExportController extends Controller
                 'label' => 'Complaints',
                 'model' => Complain::class,
                 'headers' => ['subject', 'description', 'user_email', 'category', 'status', 'resolution_notes'],
-                'labels' => ['Subject (*)', 'Description (*)', 'User Email (*)', 'Category', 'Status (Pending/In Progress/Resolved)', 'Resolution Notes'],
+                'labels' => ['Subject (*)', 'Description (*)', 'User Email (*)', 'Category (Maintenance Issues/Security Issues/Cleanliness & Housekeeping/Common Facilities/other)', 'Status (pending/in-progress/resolved)', 'Resolution Notes'],
                 'required' => ['subject', 'description', 'user_email'],
             ],
             'expenses' => [
@@ -86,22 +86,22 @@ class GlobalImportExportController extends Controller
             'expense_categories' => [
                 'label' => 'Expense Categories',
                 'model' => ExpenseCategory::class,
-                'headers' => ['title', 'slug', 'status'],
-                'labels' => ['Category Title (*)', 'Slug', 'Status (active/inactive)'],
+                'headers' => ['title', 'status'],
+                'labels' => ['Category Title (*)', 'Status (active/inactive)'],
                 'required' => ['title'],
             ],
             'maintenances' => [
                 'label' => 'Maintenance Batches',
                 'model' => Maintenance::class,
                 'headers' => ['month', 'year', 'billing_cycle', 'due_date', 'total_additional_cost', 'status'],
-                'labels' => ['Month (Jan, Feb...) (*)', 'Year (YYYY) (*)', 'Billing Cycle (Monthly/Quarterly/Yearly)', 'Due Date (YYYY-MM-DD)', "Additional Cost ({$currencySymbol})", 'Status (generated/pending)'],
+                'labels' => ['Month (Jan, Feb...) (*)', 'Year (YYYY) (*)', 'Billing Cycle (monthly/quarterly/yearly)', 'Due Date (YYYY-MM-DD)', "Additional Cost ({$currencySymbol})", 'Status (draft/published)'],
                 'required' => ['month', 'year'],
             ],
             'maintenance_bills' => [
                 'label' => 'Maintenance Payments / Bills',
                 'model' => MaintenanceBill::class,
-                'headers' => ['user_email', 'block_name', 'flat_no', 'amount', 'penalty_amount', 'dynamic_penalty_amount', 'manual_penalty_amount', 'discount_amount', 'total_amount', 'generated_date', 'paid_at', 'payment_method', 'transaction_id', 'payment_slip', 'status'],
-                'labels' => ['User Email (*)', 'Block Name (*)', 'Flat No (*)', "Amount ({$currencySymbol}) (*)", "Penalty Amount ({$currencySymbol})", "Dynamic Penalty ({$currencySymbol})", "Manual Penalty ({$currencySymbol})", "Discount Amount ({$currencySymbol})", "Total Amount ({$currencySymbol}) (*)", 'Generated Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Status (pending/paid)'],
+                'headers' => ['user_email', 'block_name', 'flat_no', 'amount', 'penalty_amount', 'discount_amount', 'total_amount', 'generated_date', 'paid_at', 'payment_method', 'transaction_id', 'payment_slip', 'status'],
+                'labels' => ['User Email (*)', 'Block Name (*)', 'Flat No (*)', "Amount ({$currencySymbol}) (*)", "Penalty Amount ({$currencySymbol})", "Discount Amount ({$currencySymbol})", "Total Amount ({$currencySymbol}) (*)", 'Generated Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Status (pending/paid)'],
                 'required' => ['user_email', 'block_name', 'flat_no', 'total_amount'],
             ],
             'name_transfer_bills' => [
@@ -119,9 +119,10 @@ class GlobalImportExportController extends Controller
         abort_if(Gate::denies('setting_view'), 403);
         set_time_limit(0);
         ini_set('memory_limit', '-1');
-        
+
         $table = $request->input('table', 'blocks');
-        $format = $request->input('format', 'excel');
+        $format = strtolower((string) $request->input('format', 'excel'));
+
 
         $configs = $this->getTableConfigs();
         if (!isset($configs[$table])) {
@@ -129,7 +130,7 @@ class GlobalImportExportController extends Controller
         }
 
         $config = $configs[$table];
-        $ext = $format === 'csv' ? 'csv' : 'xlsx'; 
+        $ext = $format === 'csv' ? 'csv' : 'xlsx';
         $contentType = $format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
         $headers = [
@@ -143,6 +144,8 @@ class GlobalImportExportController extends Controller
         $callback = function () use ($table, $config, $format) {
             $writer = $format === 'csv' ? new CSVWriter() : new Writer();
             $writer->openToFile('php://output');
+            // No-op: OpenSpout handles writing/closing on its own.
+
             $writer->addRow(Row::fromValues($config['labels']));
 
             $modelClass = $config['model'];
@@ -164,6 +167,8 @@ class GlobalImportExportController extends Controller
 
     private function getRecordExportValue($table, $header, $record)
     {
+        // Return export value; guard against missing relations
+
         if ($table === 'flats') {
             if ($header === 'block_name') return $record->block->block_name ?? 'N/A';
             if ($header === 'flat_type_name') return $record->flatType->name ?? 'N/A';
@@ -251,22 +256,32 @@ class GlobalImportExportController extends Controller
             $previewRows = [];
             $headers = [];
             $rowCount = 0;
+            $consecutiveEmpty = 0;
 
             foreach ($reader->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
                     if ($rowCount === 0) {
                         $headers = $row->toArray();
+                        $rowCount++;
                     } else {
                         $cells = $row->toArray();
+                        $isEmptyRow = true;
                         foreach ($cells as &$cell) {
                             if ($cell instanceof \DateTime) {
                                 $cell = $cell->format('Y-m-d');
                             }
+                            if (trim((string)$cell) !== '') $isEmptyRow = false;
                         }
+                        if ($isEmptyRow) {
+                            $consecutiveEmpty++;
+                            if ($consecutiveEmpty > 20) break;
+                            continue;
+                        }
+                        $consecutiveEmpty = 0;
                         $previewRows[] = $cells;
+                        $rowCount++;
                     }
-                    $rowCount++;
-                    if ($rowCount > 6) break;
+                    if (count($previewRows) >= 6 || $rowCount > 50) break;
                 }
                 break;
             }
@@ -295,7 +310,7 @@ class GlobalImportExportController extends Controller
         abort_if(Gate::denies('setting_edit'), 403);
         set_time_limit(0);
         ini_set('memory_limit', '-1');
-        
+
         $request->validate([
             'table' => 'required|string',
             'file_path' => 'required|string',
@@ -319,16 +334,19 @@ class GlobalImportExportController extends Controller
             }
         }
 
-        $ext = pathinfo($path, PATHINFO_EXTENSION);
+        $ext = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
 
         try {
             DB::beginTransaction();
+
 
             $reader = $ext === 'csv' ? new CSVReader() : new Reader();
             $reader->open(Storage::path($path));
 
             $rowCount = 0;
             $importedCount = 0;
+            $failedRows = [];
+            $consecutiveEmpty = 0;
 
             foreach ($reader->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
@@ -338,11 +356,21 @@ class GlobalImportExportController extends Controller
                     }
 
                     $cells = $row->toArray();
+                    $isEmptyRow = true;
                     foreach ($cells as &$cell) {
                         if ($cell instanceof \DateTime) {
                             $cell = $cell->format('Y-m-d');
                         }
+                        if (trim((string)$cell) !== '') $isEmptyRow = false;
                     }
+
+                    if ($isEmptyRow) {
+                        $consecutiveEmpty++;
+                        if ($consecutiveEmpty > 20) break;
+                        $rowCount++;
+                        continue;
+                    }
+                    $consecutiveEmpty = 0;
 
                     $rowNum = $rowCount + 1;
                     $rowValues = [];
@@ -356,15 +384,29 @@ class GlobalImportExportController extends Controller
 
                     $errorMsg = $this->validateRowConflicts($table, $rowValues, $rowNum);
                     if ($errorMsg) {
-                        DB::rollBack();
-                        Storage::delete($path);
-                        return response()->json(['success' => false, 'message' => $errorMsg]);
+                        $failedRows[] = [
+                            'sheet' => $config['label'],
+                            'row' => $rowNum,
+                            'record' => $this->extractRecordIdentifier($rowValues),
+                            'reason' => preg_replace('/^Row \d+:\s*/', '', $errorMsg),
+                        ];
+                        $rowCount++;
+                        continue;
                     }
 
-                    $this->insertTableRecord($table, $rowValues);
+                    try {
+                        $this->insertTableRecord($table, $rowValues);
+                        $importedCount++;
+                    } catch (\Exception $ex) {
+                        $failedRows[] = [
+                            'sheet' => $config['label'],
+                            'row' => $rowNum,
+                            'record' => $this->extractRecordIdentifier($rowValues),
+                            'reason' => "Database error: " . $ex->getMessage(),
+                        ];
+                    }
 
                     $rowCount++;
-                    $importedCount++;
                 }
                 break;
             }
@@ -375,7 +417,10 @@ class GlobalImportExportController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => "Successfully imported {$importedCount} records into {$config['label']}.",
+                'success_count' => $importedCount,
+                'failed_count' => count($failedRows),
+                'failed_records' => $failedRows,
+                'message' => "Successfully processed {$config['label']} import.",
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -406,6 +451,9 @@ class GlobalImportExportController extends Controller
             if (Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->exists()) {
                 return "Row {$rowNum}: Flat '{$flatNo}' in Block '{$blockName}' already exists.";
             }
+            if ($block->total_flats > 0 && Flat::where('block_id', $block->id)->count() >= $block->total_flats) {
+                return "Row {$rowNum}: Block '{$blockName}' already has the maximum {$block->total_flats} flats.";
+            }
         }
 
         if ($table === 'users') {
@@ -432,8 +480,9 @@ class GlobalImportExportController extends Controller
             if (Resident::where('flat_id', $flat->id)->whereNull('move_out_date')->exists()) {
                 return "Row {$rowNum}: Flat '{$flatNo}' is already occupied by an active resident.";
             }
-            if (User::where('aadhar_id', $aadhar)->exists()) {
-                return "Row {$rowNum}: Resident with Aadhar ID '{$aadhar}' already exists.";
+            $existingUserWithAadhar = User::where('aadhar_id', $aadhar)->first();
+            if ($existingUserWithAadhar && $existingUserWithAadhar->email !== $email) {
+                return "Row {$rowNum}: Aadhar ID '{$aadhar}' is already registered to another user ({$existingUserWithAadhar->email}).";
             }
         }
 
@@ -507,6 +556,11 @@ class GlobalImportExportController extends Controller
 
     private function insertTableRecord($table, $data)
     {
+        static $defaultPasswordHash = null;
+        if ($defaultPasswordHash === null) {
+            $defaultPasswordHash = Hash::make('password123');
+        }
+
         if ($table === 'blocks') {
             Block::create([
                 'block_name' => $data['block_name'],
@@ -515,6 +569,9 @@ class GlobalImportExportController extends Controller
             ]);
         } elseif ($table === 'flats') {
             $block = Block::where('block_name', $data['block_name'])->first();
+            if ($block->total_flats > 0 && Flat::where('block_id', $block->id)->count() >= $block->total_flats) {
+                throw new \Exception("Block '{$data['block_name']}' already has the maximum {$block->total_flats} flats.");
+            }
             $flatType = null;
             if (!empty($data['flat_type_name'])) {
                 $flatType = FlatType::firstOrCreate(['name' => $data['flat_type_name']], ['status' => 'active']);
@@ -522,67 +579,93 @@ class GlobalImportExportController extends Controller
             Flat::create([
                 'block_id' => $block->id,
                 'flat_no' => $data['flat_no'],
-                'floor_no' => $data['floor_no'] ?? '1',
+                'floor_no' => !empty($data['floor_no']) ? $data['floor_no'] : '1',
                 'flat_type_id' => $flatType ? $flatType->id : null,
-                'status' => $data['status'] ?? 'vacant',
+                'status' => !empty($data['status']) ? $data['status'] : 'vacant',
             ]);
         } elseif ($table === 'users') {
             User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
-                'phone' => $data['phone'] ?? null,
-                'role' => $data['role'] ?? 'Resident',
-                'status' => $data['status'] ?? 'active',
-                'password' => !empty($data['password']) ? $data['password'] : Hash::make('password123'),
-                'aadhar_id' => $data['aadhar_id'] ?? null,
+                'phone' => !empty($data['phone']) ? $data['phone'] : null,
+                'role' => !empty($data['role']) ? $data['role'] : 'Resident',
+                // Default status should always be active for new users.
+                'status' => 'active',
+                'password' => !empty($data['password']) ? $data['password'] : $defaultPasswordHash,
+                'aadhar_id' => !empty($data['aadhar_id']) ? $data['aadhar_id'] : null,
+
             ]);
         } elseif ($table === 'residents') {
             $user = User::firstOrCreate(
                 ['email' => $data['email']],
                 [
                     'name' => $data['name'],
-                    'phone' => $data['phone'] ?? null,
+                    'phone' => !empty($data['phone']) ? $data['phone'] : null,
                     'aadhar_id' => $data['aadhar_id'],
                     'role' => 'Resident',
                     'status' => 'active',
-                    'password' => Hash::make('password123'),
+                    'password' => $defaultPasswordHash,
                 ]
             );
             $block = Block::where('block_name', $data['block_name'])->first();
             $flat = Flat::where('block_id', $block->id)->where('flat_no', $data['flat_no'])->first();
             $flat->update(['status' => 'occupied']);
 
+            $resType = !empty($data['type']) ? strtolower(trim($data['type'])) : 'owner';
+            if (!in_array($resType, ['owner', 'rental'])) $resType = 'owner';
+
             Resident::create([
                 'user_id' => $user->id,
                 'block_id' => $block->id,
                 'flat_id' => $flat->id,
-                'type' => strtolower($data['type'] ?? 'owner'),
-                'move_in_date' => $data['move_in_date'] ?? date('Y-m-d'),
+                'type' => $resType,
+                'move_in_date' => !empty($data['move_in_date']) ? $data['move_in_date'] : date('Y-m-d'),
                 'move_out_date' => !empty($data['move_out_date']) ? $data['move_out_date'] : null,
             ]);
         } elseif ($table === 'flat_types') {
+            $ftStatus = !empty($data['status']) ? strtolower(trim($data['status'])) : 'active';
+            if (!in_array($ftStatus, ['active', 'inactive'])) $ftStatus = 'active';
+
             FlatType::create([
                 'name' => $data['name'],
                 'owner_maintenance_fee' => (float)($data['owner_maintenance_fee'] ?? 0),
                 'rental_maintenance_fee' => (float)($data['rental_maintenance_fee'] ?? 0),
-                'description' => $data['description'] ?? null,
-                'status' => $data['status'] ?? 'active',
+                'description' => !empty($data['description']) ? $data['description'] : null,
+                'status' => $ftStatus,
             ]);
         } elseif ($table === 'expense_categories') {
+            $ecStatus = !empty($data['status']) ? strtolower(trim($data['status'])) : 'active';
+            if (!in_array($ecStatus, ['active', 'inactive'])) $ecStatus = 'active';
+
             ExpenseCategory::create([
                 'title' => $data['title'],
                 'slug' => !empty($data['slug']) ? $data['slug'] : Str::slug($data['title']),
-                'status' => $data['status'] ?? 'active',
+                'status' => $ecStatus,
             ]);
         } elseif ($table === 'complaints') {
             $user = User::where('email', $data['user_email'])->first();
+
+            $cat = !empty($data['category']) ? trim($data['category']) : 'other';
+            if (stripos($cat, 'maint') !== false) $cat = 'Maintenance Issues';
+            elseif (stripos($cat, 'secu') !== false) $cat = 'Security Issues';
+            elseif (stripos($cat, 'clean') !== false || stripos($cat, 'house') !== false) $cat = 'Cleanliness & Housekeeping';
+            elseif (stripos($cat, 'facil') !== false || stripos($cat, 'common') !== false) $cat = 'Common Facilities';
+            elseif (!in_array($cat, ['Maintenance Issues', 'Security Issues', 'Cleanliness & Housekeeping', 'Common Facilities', 'other'])) {
+                $cat = 'other';
+            }
+
+            $rawStatus = !empty($data['status']) ? strtolower(trim($data['status'])) : 'pending';
+            if ($rawStatus === 'in progress' || $rawStatus === 'in_progress' || stripos($rawStatus, 'progress') !== false) $rawStatus = 'in-progress';
+            elseif (stripos($rawStatus, 'resolv') !== false) $rawStatus = 'resolved';
+            else $rawStatus = 'pending';
+
             Complain::create([
                 'user_id' => $user->id,
                 'subject' => $data['subject'],
                 'description' => $data['description'],
-                'category' => $data['category'] ?? 'General',
-                'status' => $data['status'] ?? 'Pending',
-                'resolution_notes' => $data['resolution_notes'] ?? null,
+                'category' => $cat,
+                'status' => $rawStatus,
+                'resolution_notes' => !empty($data['resolution_notes']) ? $data['resolution_notes'] : null,
             ]);
         } elseif ($table === 'expenses') {
             $cat = null;
@@ -595,23 +678,33 @@ class GlobalImportExportController extends Controller
                 'category_id' => $cat ? $cat->id : null,
                 'title' => $data['title'],
                 'total_amount' => (float)$data['total_amount'],
-                'expense_date' => $data['expense_date'] ?? date('Y-m-d'),
-                'invoice' => $data['invoice'] ?? null,
+                'expense_date' => !empty($data['expense_date']) ? $data['expense_date'] : date('Y-m-d'),
+                'invoice' => !empty($data['invoice']) ? $data['invoice'] : null,
             ]);
         } elseif ($table === 'maintenances') {
+            $bc = !empty($data['billing_cycle']) ? strtolower(trim($data['billing_cycle'])) : 'monthly';
+            if (!in_array($bc, ['monthly', 'quarterly', 'yearly'])) $bc = 'monthly';
+
+            $st = !empty($data['status']) ? strtolower(trim($data['status'])) : 'draft';
+            if (!in_array($st, ['draft', 'published'])) $st = 'draft';
+
             Maintenance::create([
                 'month' => $data['month'],
                 'year' => $data['year'],
-                'billing_cycle' => $data['billing_cycle'] ?? 'Monthly',
-                'due_date' => $data['due_date'] ?? date('Y-m-d', strtotime('+15 days')),
+                'billing_cycle' => $bc,
+                'due_date' => !empty($data['due_date']) ? $data['due_date'] : date('Y-m-d', strtotime('+15 days')),
                 'total_additional_cost' => (float)($data['total_additional_cost'] ?? 0),
-                'status' => $data['status'] ?? 'generated',
+                'status' => $st,
             ]);
         } elseif ($table === 'maintenance_bills') {
             $user = User::where('email', $data['user_email'])->first();
             $block = Block::where('block_name', $data['block_name'])->first();
             $flat = Flat::where('block_id', $block->id)->where('flat_no', $data['flat_no'])->first();
             $maintenance = Maintenance::latest()->first();
+
+            $st = !empty($data['status']) ? strtolower(trim($data['status'])) : 'due';
+            if (!in_array($st, ['paid', 'due', 'pending'])) $st = 'due';
+
             MaintenanceBill::create([
                 'maintenance_id' => $maintenance ? $maintenance->id : 1,
                 'user_id' => $user->id,
@@ -619,34 +712,36 @@ class GlobalImportExportController extends Controller
                 'flat_id' => $flat->id,
                 'amount' => (float)($data['amount'] ?? $data['total_amount']),
                 'penalty_amount' => (float)($data['penalty_amount'] ?? 0),
-                'dynamic_penalty_amount' => (float)($data['dynamic_penalty_amount'] ?? 0),
-                'manual_penalty_amount' => (float)($data['manual_penalty_amount'] ?? 0),
                 'discount_amount' => (float)($data['discount_amount'] ?? 0),
                 'total_amount' => (float)$data['total_amount'],
-                'generated_date' => $data['generated_date'] ?? date('Y-m-d'),
+                'generated_date' => !empty($data['generated_date']) ? $data['generated_date'] : date('Y-m-d'),
                 'paid_at' => !empty($data['paid_at']) ? $data['paid_at'] : null,
-                'payment_method' => $data['payment_method'] ?? null,
-                'transaction_id' => $data['transaction_id'] ?? null,
-                'payment_slip' => $data['payment_slip'] ?? null,
-                'status' => $data['status'] ?? 'pending',
+                'payment_method' => !empty($data['payment_method']) ? $data['payment_method'] : null,
+                'transaction_id' => !empty($data['transaction_id']) ? $data['transaction_id'] : null,
+                'payment_slip' => !empty($data['payment_slip']) ? $data['payment_slip'] : null,
+                'status' => $st,
             ]);
         } elseif ($table === 'name_transfer_bills') {
             $block = Block::where('block_name', $data['block_name'])->first();
             $flat = Flat::where('block_id', $block->id)->where('flat_no', $data['flat_no'])->first();
             $oldOwner = User::where('email', $data['old_owner_email'])->first();
             $newOwner = User::where('email', $data['new_owner_email'])->first();
+
+            $st = !empty($data['status']) ? strtolower(trim($data['status'])) : 'pending';
+            if (!in_array($st, ['pending', 'paid', 'cancelled'])) $st = 'pending';
+
             NameTransferBill::create([
                 'flat_id' => $flat->id,
                 'old_owner_id' => $oldOwner->id,
                 'new_owner_id' => $newOwner->id,
                 'amount' => (float)$data['amount'],
-                'transfer_date' => $data['transfer_date'] ?? date('Y-m-d'),
+                'transfer_date' => !empty($data['transfer_date']) ? $data['transfer_date'] : date('Y-m-d'),
                 'paid_at' => !empty($data['paid_at']) ? $data['paid_at'] : null,
-                'payment_method' => $data['payment_method'] ?? null,
-                'transaction_id' => $data['transaction_id'] ?? null,
-                'payment_slip' => $data['payment_slip'] ?? null,
-                'status' => $data['status'] ?? 'pending',
-                'is_approved' => isset($data['is_approved']) ? (int)$data['is_approved'] : (($data['status'] ?? 'pending') === 'paid' ? 1 : 0),
+                'payment_method' => !empty($data['payment_method']) ? $data['payment_method'] : null,
+                'transaction_id' => !empty($data['transaction_id']) ? $data['transaction_id'] : null,
+                'payment_slip' => !empty($data['payment_slip']) ? $data['payment_slip'] : null,
+                'status' => $st,
+                'is_approved' => isset($data['is_approved']) && $data['is_approved'] !== '' ? (int)$data['is_approved'] : ($st === 'paid' ? 1 : 0),
             ]);
         }
     }
@@ -824,7 +919,7 @@ class GlobalImportExportController extends Controller
                     foreach ($config['sample'] as $sVal) $sampleRow[] = $sVal;
                     $hasSample = true;
                 } else {
-                    for ($i=0; $i<count($config['labels']); $i++) $sampleRow[] = '';
+                    for ($i = 0; $i < count($config['labels']); $i++) $sampleRow[] = '';
                 }
                 $sampleRow[] = '';
             }
@@ -859,19 +954,41 @@ class GlobalImportExportController extends Controller
             $reader->open(Storage::path($path));
 
             $allRows = [];
+            $consecutiveEmpty = 0;
             foreach ($reader->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
                     $cells = $row->toArray();
+                    $isEmptyRow = true;
                     foreach ($cells as &$c) {
                         if ($c instanceof \DateTime) {
                             $c = $c->format('Y-m-d');
                         }
+                        if (trim((string)$c) !== '') $isEmptyRow = false;
+                    }
+                    if ($isEmptyRow) {
+                        $consecutiveEmpty++;
+                        if ($consecutiveEmpty > 20 && count($allRows) >= 2) break;
+                    } else {
+                        $consecutiveEmpty = 0;
                     }
                     $allRows[] = $cells;
                 }
                 break; // First sheet
             }
             $reader->close();
+
+            while (!empty($allRows) && count($allRows) > 2) {
+                $lastRow = end($allRows);
+                $isEmpty = true;
+                foreach ($lastRow as $c) {
+                    if (trim((string)$c) !== '') {
+                        $isEmpty = false;
+                        break;
+                    }
+                }
+                if ($isEmpty) array_pop($allRows);
+                else break;
+            }
 
             if (count($allRows) < 2) {
                 return response()->json(['success' => false, 'message' => 'Spreadsheet is empty or missing headers.'], 400);
@@ -906,13 +1023,16 @@ class GlobalImportExportController extends Controller
                 for ($r = 2; $r < count($allRows); $r++) {
                     $cells = array_slice($allRows[$r], $range['start'], $range['end'] - $range['start'] + 1);
                     $isEmpty = true;
-                    foreach ($cells as $v) { if (trim((string)$v) !== '') { $isEmpty = false; break; } }
+                    foreach ($cells as $v) {
+                        if (trim((string)$v) !== '') {
+                            $isEmpty = false;
+                            break;
+                        }
+                    }
                     if ($isEmpty) continue;
 
                     $validCount++;
-                    if (count($previewRows) < 5) {
-                        $previewRows[] = $cells;
-                    }
+                    $previewRows[] = $cells;
                 }
 
                 $sheetsSummary[] = [
@@ -962,19 +1082,41 @@ class GlobalImportExportController extends Controller
             $reader->open(Storage::path($path));
 
             $allRows = [];
+            $consecutiveEmpty = 0;
             foreach ($reader->getSheetIterator() as $sheet) {
                 foreach ($sheet->getRowIterator() as $row) {
                     $cells = $row->toArray();
+                    $isEmptyRow = true;
                     foreach ($cells as &$c) {
                         if ($c instanceof \DateTime) {
                             $c = $c->format('Y-m-d');
                         }
+                        if (trim((string)$c) !== '') $isEmptyRow = false;
+                    }
+                    if ($isEmptyRow) {
+                        $consecutiveEmpty++;
+                        if ($consecutiveEmpty > 20 && count($allRows) >= 2) break;
+                    } else {
+                        $consecutiveEmpty = 0;
                     }
                     $allRows[] = $cells;
                 }
                 break;
             }
             $reader->close();
+
+            while (!empty($allRows) && count($allRows) > 2) {
+                $lastRow = end($allRows);
+                $isEmpty = true;
+                foreach ($lastRow as $c) {
+                    if (trim((string)$c) !== '') {
+                        $isEmpty = false;
+                        break;
+                    }
+                }
+                if ($isEmpty) array_pop($allRows);
+                else break;
+            }
 
             if (count($allRows) < 2) {
                 return response()->json(['success' => false, 'message' => 'Spreadsheet is empty or missing headers.']);
@@ -1011,7 +1153,12 @@ class GlobalImportExportController extends Controller
                     $rawCells = array_slice($allRows[$r], $range['start'], $range['end'] - $range['start'] + 1);
 
                     $isEmpty = true;
-                    foreach ($rawCells as $v) { if (trim((string)$v) !== '') { $isEmpty = false; break; } }
+                    foreach ($rawCells as $v) {
+                        if (trim((string)$v) !== '') {
+                            $isEmpty = false;
+                            break;
+                        }
+                    }
                     if ($isEmpty) continue;
 
                     $rowValues = [];
@@ -1019,12 +1166,14 @@ class GlobalImportExportController extends Controller
                         $rowValues[$dbField] = isset($rawCells[$colIdx]) ? trim((string)$rawCells[$colIdx]) : null;
                     }
 
+                    $recId = $this->extractRecordIdentifier($rowValues);
                     $missingReq = false;
                     foreach ($config['required'] as $reqField) {
                         if (!isset($rowValues[$reqField]) || $rowValues[$reqField] === '') {
                             $failedRows[] = [
                                 'sheet' => $config['label'],
-                                'row' => "Row {$rowNum}",
+                                'row' => $rowNum,
+                                'record' => $recId,
                                 'reason' => "Required field '{$reqField}' is missing.",
                             ];
                             $missingReq = true;
@@ -1037,8 +1186,9 @@ class GlobalImportExportController extends Controller
                     if ($conflictError) {
                         $failedRows[] = [
                             'sheet' => $config['label'],
-                            'row' => "Row {$rowNum}",
-                            'reason' => $conflictError,
+                            'row' => $rowNum,
+                            'record' => $recId,
+                            'reason' => preg_replace('/^Row \d+:\s*/', '', $conflictError),
                         ];
                         continue;
                     }
@@ -1049,32 +1199,24 @@ class GlobalImportExportController extends Controller
                     } catch (\Exception $ex) {
                         $failedRows[] = [
                             'sheet' => $config['label'],
-                            'row' => "Row {$rowNum}",
+                            'row' => $rowNum,
+                            'record' => $recId,
                             'reason' => "Database error: " . $ex->getMessage(),
                         ];
                     }
                 }
             }
 
-            if (!empty($failedRows)) {
-                DB::rollBack();
-                Storage::delete($path);
-                return response()->json([
-                    'success' => true,
-                    'success_count' => 0,
-                    'failed_count' => count($failedRows),
-                    'failed_records' => $failedRows,
-                ]);
-            }
-
             DB::commit();
             Storage::delete($path);
 
+            $failedCount = count($failedRows);
+
             return response()->json([
-                'success' => true,
+                'success' => $failedCount === 0,
                 'success_count' => $importedCount,
-                'failed_count' => 0,
-                'failed_records' => [],
+                'failed_count' => $failedCount,
+                'failed_records' => $failedRows,
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
@@ -1084,5 +1226,13 @@ class GlobalImportExportController extends Controller
                 'message' => 'Master import processing failed: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    private function extractRecordIdentifier($rowValues)
+    {
+        if (isset($rowValues['block_name']) && isset($rowValues['flat_no'])) {
+            return $rowValues['block_name'] . ' - ' . $rowValues['flat_no'];
+        }
+        return $rowValues['name'] ?? $rowValues['title'] ?? $rowValues['block_name'] ?? $rowValues['flat_no'] ?? $rowValues['category_name'] ?? $rowValues['email'] ?? $rowValues['phone'] ?? $rowValues['user_email'] ?? '-';
     }
 }

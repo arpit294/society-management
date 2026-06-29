@@ -63,17 +63,8 @@
             @enderror
         </div>
 
-        <div class="mb-3">
-            <label class="form-label text-warning fw-semibold">Status</label>
-            <select name="status" class="form-select @error('status') is-invalid @enderror">
-                @foreach (['active', 'inactive'] as $status)
-                    <option value="{{ $status }}" @selected(old('status', $user->status ?? 'active') === $status)>{{ ucfirst($status) }}</option>
-                @endforeach
-            </select>
-            @error('status')
-                <div class="invalid-feedback d-block field-error">{{ $message }}</div>
-            @enderror
-        </div>
+        <input type="hidden" name="status" value="active">
+
 
         <div class="mb-3">
             <label class="form-label text-danger fw-semibold">Password <span class="opacity-50 small">(Leave blank to

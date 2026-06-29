@@ -9,7 +9,14 @@
         <div class="row">
             <div class="col-md-12 mb-3">
                 <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="name" name="name" value="{{ $flatType->name }}" required>
+                <select class="form-select" id="name" name="name" required>
+                    <option value="">Select Flat Type</option>
+                    @for ($i = 1; $i <= 5; $i++)
+                        <option value="{{ $i }}BHK" {{ old('name', $flatType->name) === $i . 'BHK' ? 'selected' : '' }}>
+                            {{ $i }}BHK
+                        </option>
+                    @endfor
+                </select>
             </div>
             
             <div class="col-md-4 mb-3">

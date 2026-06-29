@@ -17,6 +17,27 @@ use Illuminate\Validation\ValidationException;
 
 class FlatController extends Controller
 {
+    private function ensureBlockHasFlatCapacity(int $blockId, ?int $ignoreFlatId = null): void
+    {
+        $block = Block::find($blockId);
+
+        if (! $block || $block->total_flats <= 0) {
+            return;
+        }
+
+        $flatCountQuery = Flat::where('block_id', $block->id);
+
+        if ($ignoreFlatId) {
+            $flatCountQuery->where('id', '!=', $ignoreFlatId);
+        }
+
+        if ($flatCountQuery->count() >= $block->total_flats) {
+            throw ValidationException::withMessages([
+                'block_id' => ["Block {$block->block_name} already has the maximum {$block->total_flats} flats."],
+            ]);
+        }
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -62,6 +83,8 @@ class FlatController extends Controller
                     'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.'],
                 ]);
             }
+
+            $this->ensureBlockHasFlatCapacity((int) $validatedData['block_id']);
         }
 
         Flat::create($validatedData);
@@ -120,6 +143,8 @@ class FlatController extends Controller
                     'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.'],
                 ]);
             }
+
+            $this->ensureBlockHasFlatCapacity((int) $validatedData['block_id'], $flat->id);
         }
 
         $flat->update($validatedData);
