@@ -26,13 +26,19 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'phone' => 'required|string|max:10',
+            'phone' => 'required|digits:10',
             'role' => [
                 'required',
-                Rule::in(config('roles.all')),
+                'exists:roles,name',
             ],
             'password' => 'required|string|min:6',
-            'aadhar_id' => 'required|string|max:20',
+            'aadhar_id' => [
+                'required',
+                'digits:12',
+                Rule::unique('users', 'aadhar_id')->where(function ($query) {
+                    return $query;
+                }),
+            ],
             'status' => [
                 'required',
                 Rule::in(['active', 'inactive']),

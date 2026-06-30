@@ -33,7 +33,7 @@
                                 <div class="row">
 
                                     <div class="col-md-6 mb-4">
-                                        <label class="form-label fw-semibold">
+                                        <label class="form-label text-primary fw-semibold">
                                             Name
                                         </label>
 
@@ -49,13 +49,13 @@
                                     </div>
 
                                     <div class="col-md-6 mb-4">
-                                        <label class="form-label fw-semibold">
+                                        <label class="form-label text-primary fw-semibold">
                                             Email
                                         </label>
 
                                         <input type="email" name="email"
                                             class="form-control @error('email') is-invalid @enderror"
-                                            placeholder="Enter email" value="{{ old('email') }}">
+                                            placeholder="user@example.com" value="{{ old('email') }}">
 
                                         @error('email')
                                             <div class="invalid-feedback">
@@ -65,13 +65,13 @@
                                     </div>
 
                                     <div class="col-md-6 mb-4">
-                                        <label class="form-label fw-semibold">
+                                        <label class="form-label text-info fw-semibold">
                                             Phone
                                         </label>
 
-                                        <input type="text" name="phone"
+                                        <input type="tel" name="phone"
                                             class="form-control @error('phone') is-invalid @enderror"
-                                            placeholder="Enter phone number" value="{{ old('phone') }}">
+                                            placeholder="+91 9876543210" value="{{ old('phone') }}">
 
                                         @error('phone')
                                             <div class="invalid-feedback">
@@ -81,15 +81,17 @@
                                     </div>
 
                                     <div class="col-md-6 mb-4">
-                                        <label class="form-label fw-semibold">
+                                        <label class="form-label text-warning fw-semibold">
                                             Role
                                         </label>
 
-                                        <select class="form-select @error('role') is-invalid @enderror" id="role" name="role" required>
+                                        <select class="form-select @error('role') is-invalid @enderror" id="role"
+                                            name="role" required>
                                             <option value="">Select role</option>
                                             @foreach (config('roles.self_register') as $role)
-                                                <option value="{{ $role }}" {{ old('role') == $role ? 'selected' : '' }}>
-                                                    {{ config('roles.labels.'.$role, ucfirst(str_replace('_', ' ', $role))) }}
+                                                <option value="{{ $role }}"
+                                                    {{ old('role') == $role ? 'selected' : '' }}>
+                                                    {{ config('roles.labels.' . $role, ucfirst(str_replace('_', ' ', $role))) }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -102,13 +104,15 @@
                                     </div>
 
                                     <div class="col-md-6 mb-4">
-                                        <label class="form-label fw-semibold">
-                                            Aadhar ID
+                                        <label class="form-label text-success fw-semibold">
+                                            Aadhar ID <span class="text-danger">*</span>
                                         </label>
 
-                                        <input type="password" name="aadhar_id"
+                                        <input type="text" name="aadhar_id"
                                             class="form-control @error('aadhar_id') is-invalid @enderror"
-                                            placeholder="Enter Aadhar ID" value="{{ old('aadhar_id') }}">
+                                            placeholder="12-digit Aadhar" inputmode="numeric" pattern="[0-9]{12}"
+                                            maxlength="12" value="{{ old('aadhar_id') }}">
+                                        <small class="field-hint">Must be exactly 12 digits</small>
 
                                         @error('aadhar_id')
                                             <div class="invalid-feedback">
@@ -118,7 +122,7 @@
                                     </div>
 
                                     <div class="col-md-6 mb-4">
-                                        <label class="form-label fw-semibold">
+                                        <label class="form-label text-warning fw-semibold">
                                             Status
                                         </label>
 
@@ -140,13 +144,13 @@
                                     </div>
 
                                     <div class="col-md-6 mb-4">
-                                        <label class="form-label fw-semibold">
+                                        <label class="form-label text-danger fw-semibold">
                                             Password
                                         </label>
 
                                         <input type="password" name="password"
                                             class="form-control @error('password') is-invalid @enderror"
-                                            placeholder="Enter password">
+                                            placeholder="Enter secure password">
 
                                         @error('password')
                                             <div class="invalid-feedback">
@@ -156,7 +160,7 @@
                                     </div>
 
                                     <div class="col-md-6 mb-4">
-                                        <label class="form-label fw-semibold">
+                                        <label class="form-label text-danger fw-semibold">
                                             Confirm Password
                                         </label>
 

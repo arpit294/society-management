@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Helpers\CurrencyHelper;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -20,10 +21,10 @@ class FlatTypesDataTable extends DataTable
                 return $row->created_at ? date('d-m-Y h:i A', strtotime($row->created_at)) : '-';
             })
             ->editColumn('owner_maintenance_fee', function ($row) {
-                return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">$'.number_format($row->owner_maintenance_fee, 2).'</span>';
+                return '<span class="badge bg-primary fw-bold px-3 py-2 fs-6">'.CurrencyHelper::formatCurrency($row->owner_maintenance_fee).'</span>';
             })
             ->editColumn('rental_maintenance_fee', function ($row) {
-                return '<span class="badge bg-info fw-bold px-3 py-2 fs-6">$'.number_format($row->rental_maintenance_fee, 2).'</span>';
+                return '<span class="badge bg-info fw-bold px-3 py-2 fs-6">'.CurrencyHelper::formatCurrency($row->rental_maintenance_fee).'</span>';
             })
             ->editColumn('status', function ($row) {
                 if ($row->status === 'active') {

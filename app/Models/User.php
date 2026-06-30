@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 use Spatie\Permission\Traits\HasRoles;
+use Spatie\Permission\Models\Role;
 
 class User extends Authenticatable
 {
@@ -57,6 +59,14 @@ class User extends Authenticatable
             'password' => 'hashed',
             'created_at' => 'datetime',
         ];
+    }
+
+    protected function status(): Attribute
+    {
+        return Attribute::make(
+            get: fn($value) => ($value === 1 || $value === true || $value === '1' || $value === 'active') ? 'active' : 'inactive',
+            set: fn($value) => ($value === 1 || $value === true || $value === '1' || $value === 'active' || strtolower((string)$value) === 'active') ? 1 : 0,
+        );
     }
 
     public function complains()
@@ -121,16 +131,15 @@ class User extends Authenticatable
      */
     protected static function booted(): void
     {
-        // Automatically sync the string 'role' column with Spatie's permission tables.
-        // This ensures the local column and permission system are always in lockstep.
-        static::saved(function (User $user): void {
-            if ($user->role && Role::where('name', $user->role)->where('guard_name', 'web')->exists()) {
-                $user->syncRoles([$user->role]);
-            } else {
-                $user->syncRoles([]);
-            }
-        });
+        // Prevent automatic role syncing.
+        // Your UI/seeders should assign roles explicitly through Spatie.
+        // Automatic syncing from the `role` column causes unwanted pivot rows
+        // (and makes it look like roles are being assigned even when they shouldn't).
+        //
+        // Keep this method intentionally empty.
     }
+
+
 
     public function roleModel()
     {

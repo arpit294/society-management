@@ -3,9 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Models\Permission;
+use Spatie\Permission\Models\Permission;
 use Illuminate\Database\Seeder;
-use App\Models\Role;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
@@ -100,10 +100,9 @@ class RolesAndPermissionsSeeder extends Seeder
         // 2. Create permissions in the database
         foreach ($permissionsByModule as $moduleName => $permissions) {
             foreach ($permissions as $permissionName) {
-                Permission::updateOrCreate(
-                    ['name' => $permissionName, 'guard_name' => 'web'],
-                    ['module_name' => $moduleName]
-                );
+                $permission = Permission::firstOrNew(['name' => $permissionName, 'guard_name' => 'web']);
+                $permission->module_name = $moduleName;
+                $permission->save();
             }
         }
 

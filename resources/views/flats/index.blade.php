@@ -31,9 +31,9 @@
                 <label class="form-label mb-1" for="flats-filter-type">Filter by Flat Type</label>
                 <select id="flats-filter-type" class="form-select" style="max-width: 320px;">
                     <option value="">All Flat Types</option>
-                    <option value="1BHK">1BHK</option>
-                    <option value="2BHK">2BHK</option>
-                    <option value="3BHK">3BHK</option>
+                    @for ($i = 1; $i <= 5; $i++)
+                        <option value="{{ $i }}BHK">{{ $i }}BHK</option>
+                    @endfor
                 </select>
             </div>
             <div class="filter-col" style="min-width: 220px;">

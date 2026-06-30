@@ -5,7 +5,7 @@
         <div class="card dash-card card-complaints h-100 shadow-sm border-0">
             <div class="card-body d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-bold">₹{{ number_format($totalExpenses, 2) }}</div>
+                    <div class="fs-4 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalExpenses) }}</div>
                     <div class="text-uppercase fw-semibold small opacity-75">Total Expenses</div>
                 </div>
                 <div class="fs-1">
@@ -20,7 +20,7 @@
         <div class="card dash-card card-residents h-100 shadow-sm border-0">
             <div class="card-body d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-bold">₹{{ number_format($thisMonthExpenses, 2) }}</div>
+                    <div class="fs-4 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($thisMonthExpenses) }}</div>
                     <div class="text-uppercase fw-semibold small opacity-75">This Month</div>
                 </div>
                 <div class="fs-1">
@@ -50,7 +50,7 @@
         <div class="card dash-card card-revenue h-100 shadow-sm border-0">
             <div class="card-body d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-4 fw-bold">₹{{ number_format($totalMaintenanceIncome, 2) }}</div>
+                    <div class="fs-4 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalMaintenanceIncome) }}</div>
                     <div class="text-uppercase fw-semibold small opacity-75">Maintenance Income</div>
                 </div>
                 <div class="fs-1">

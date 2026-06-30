@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class StoreMaintenanceBillRequest extends FormRequest
@@ -18,6 +19,21 @@ class StoreMaintenanceBillRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        if (! in_array(strtolower((string) $this->input('payment_method')), ['upi'], true)) {
+            $this->merge(['transaction_id' => null]);
+
+            return;
+        }
+
+        if ($this->has('transaction_id')) {
+            $this->merge([
+                'transaction_id' => trim((string) $this->input('transaction_id')),
+            ]);
+        }
     }
 
     /**
@@ -33,10 +49,33 @@ class StoreMaintenanceBillRequest extends FormRequest
             'start_month' => 'required|string',
             'start_year' => 'required|integer',
             'payment_method' => 'required|in:cash,upi,CASH,UPI',
-            'transaction_id' => 'nullable|string',
+            'transaction_id' => [
+                'nullable',
+                'required_if:payment_method,upi,UPI',
+                'digits:12',
+                Rule::unique('maintenance_bills', 'transaction_id'),
+                Rule::unique('name_transfer_bills', 'transaction_id'),
+                Rule::unique('prepaid_maintenances', 'transaction_id'),
+            ],
             'payment_slip' => 'required_if:payment_method,upi,UPI|image|mimes:jpeg,png,jpg|max:2048',
             'discount_amount' => 'nullable|numeric|min:0',
             'penalty_amount' => 'nullable|numeric|min:0',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'transaction_id.required_if' => 'The UTR number is required for UPI payments.',
+            'transaction_id.digits' => 'The UTR number must be exactly 12 digits.',
+            'transaction_id.unique' => 'This UTR number has already been used.',
+        ];
+    }
+
+    public function attributes(): array
+    {
+        return [
+            'transaction_id' => 'UTR number',
         ];
     }
 

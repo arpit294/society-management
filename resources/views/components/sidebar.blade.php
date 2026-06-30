@@ -50,7 +50,6 @@
                         class="ci-primary" />
                 </svg>
                 Dashboard
-                <span class="badge badge-sm bg-info ms-auto">NEW</span>
             </a>
         </li>
         @endcan
@@ -87,7 +86,7 @@
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M224 48H32v128h192V48zm0 192H32v224h192V240zm64-192v224h192V48H288zm0 288v160h192V336H288z" />
                 </svg>
-                Flat Types
+                Maintenance Rates
             </a>
         </li>
         @endcan
@@ -184,6 +183,7 @@
         </li>
         @endif
 
+        @can('setting_view')
         <li class="nav-group {{ request()->is('roles*') || request()->is('settings*') ? 'show' : '' }}">
             <a class="nav-link nav-group-toggle" href="#">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -227,6 +227,7 @@
                 Reports
             </a>
         </li>
+        @endcan
     </ul>
     {{-- <div class="sidebar-footer border-top d-none d-md-flex">
         <button class="sidebar-toggler" type="button" data-coreui-toggle="unfoldable"></button>

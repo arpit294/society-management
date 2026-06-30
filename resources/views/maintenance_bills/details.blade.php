@@ -47,7 +47,7 @@
                         <strong>Paid At:</strong> {{ $bill->paid_at ? $bill->paid_at->format('d M, Y h:i A') : 'N/A' }}<br>
                         <strong>Payment Mode:</strong> {{ ucfirst($bill->payment_method) ?? 'N/A' }}<br>
                         @if($bill->payment_method === 'upi')
-                            <strong>Transaction ID:</strong> {{ $bill->transaction_id ?? 'N/A' }}<br>
+                            <strong>UTR Number:</strong> {{ $bill->transaction_id ?? 'N/A' }}<br>
                             @if($bill->payment_slip)
                                 <strong>Payment Slip:</strong> <a href="{{ asset('storage/' . $bill->payment_slip) }}" target="_blank">View Screenshot</a>
                             @endif
@@ -68,17 +68,17 @@
                     <tbody>
                         <tr>
                             <td>Base Maintenance Fee</td>
-                            <td class="text-end">{{ \App\Models\Setting::get('currency_symbol', '$') }}{{ number_format($bill->amount, 2) }}</td>
+                            <td class="text-end">{{ \App\Helpers\CurrencyHelper::formatCurrency($bill->amount) }}</td>
                         </tr>
                         @if($bill->penalty_amount > 0)
                         <tr>
                             <td>Penalty Amount</td>
-                            <td class="text-end">{{ \App\Models\Setting::get('currency_symbol', '$') }}{{ number_format($bill->penalty_amount, 2) }}</td>
+                            <td class="text-end">{{ \App\Helpers\CurrencyHelper::formatCurrency($bill->penalty_amount) }}</td>
                         </tr>
                         @endif
                         <tr class="fw-bold">
                             <td>Total Amount</td>
-                            <td class="text-end">{{ \App\Models\Setting::get('currency_symbol', '$') }}{{ number_format($bill->total_amount, 2) }}</td>
+                            <td class="text-end">{{ \App\Helpers\CurrencyHelper::formatCurrency($bill->total_amount) }}</td>
                         </tr>
                     </tbody>
                 </table>

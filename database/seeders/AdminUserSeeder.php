@@ -13,7 +13,7 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
+        $user = User::updateOrCreate(
             ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Administrator',
@@ -24,5 +24,9 @@ class AdminUserSeeder extends Seeder
                 'status' => 'active',
             ]
         );
+
+        if (class_exists(\Spatie\Permission\Models\Role::class) && \Spatie\Permission\Models\Role::where('name', 'Admin')->exists()) {
+            $user->syncRoles(['Admin']);
+        }
     }
 }

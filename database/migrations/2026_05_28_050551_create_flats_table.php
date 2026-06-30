@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('flats', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('block_id')->nullable();
+            $table->unsignedBigInteger('block_id');
             $table->string('flat_no');
             $table->string('floor_no');
-            $table->unsignedBigInteger('flat_type_id')->nullable();
+            $table->unsignedBigInteger('flat_type_id');
             $table->string('status');
             $table->timestamps();
         });

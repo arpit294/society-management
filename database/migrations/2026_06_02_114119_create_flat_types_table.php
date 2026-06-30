@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('flat_types', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
-            $table->decimal('owner_maintenance_fee', 10, 2)->default(0);
-            $table->decimal('rental_maintenance_fee', 10, 2)->default(0);
+            $table->decimal('owner_maintenance_fee', 10, 2)->unsigned()->default(0);
+            $table->decimal('rental_maintenance_fee', 10, 2)->unsigned()->default(0);
             $table->text('description')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();

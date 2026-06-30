@@ -8,6 +8,9 @@ use App\Models\Flat;
 use App\Models\MaintenanceBill;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class BlockController extends Controller
 {
@@ -17,17 +20,30 @@ class BlockController extends Controller
     public function index(BlocksDataTable $dataTable)
     {
         abort_if(! \Auth::user()->can('block_view'), 403);
-        $blocks = Block::withCount([
-            'flats',
-            'flats as occupied_flats_count' => function ($query) {
-                $query->where('status', 'occupied');
-            },
-        ])->get();
-        $totalFlats = Block::sum('total_flats');
-        $totalActualFlats = Flat::count();
-        $totalOccupiedFlats = Flat::where('status', 'occupied')->count();
+        try {
+            $blocks = Block::withCount([
+                'flats',
+                'flats as occupied_flats_count' => function ($query) {
+                    $query->where('status', config('status.flats.occupied'));
+                },
+            ])->get();
+            $totalFlats = Block::sum('total_flats');
+            $totalActualFlats = Flat::count();
+            $totalOccupiedFlats = Flat::where('status', config('status.flats.occupied'))->count();
 
-        return $dataTable->render('blocks.index', compact('blocks', 'totalFlats', 'totalActualFlats', 'totalOccupiedFlats'));
+            return $dataTable->render('blocks.index', compact('blocks', 'totalFlats', 'totalActualFlats', 'totalOccupiedFlats'));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in BlockController@index: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -36,7 +52,20 @@ class BlockController extends Controller
     public function create()
     {
         abort_if(! \Auth::user()->can('block_create'), 403);
-        return view('blocks.create');
+        try {
+            return view('blocks.create');
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in BlockController@create: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -45,25 +74,50 @@ class BlockController extends Controller
     public function store(Request $request)
     {
         abort_if(! \Auth::user()->can('block_create'), 403);
-        $validatedData = $request->validate([
-            'block_name' => 'required|string|max:255',
-            'total_floor' => 'required|integer|min:0',
-            'total_flats' => 'required|integer|min:0',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'block_name' => 'required|string|max:255',
+                'total_floor' => 'required|integer|min:0',
+                'total_flats' => 'required|integer|min:0',
+            ]);
 
-        Block::create($validatedData);
+            Block::create($validatedData);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Block created successfully.',
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Block created successfully.',
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in BlockController@store: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     //  Show the form for editing the specified resource.
     public function edit(Block $block)
     {
         abort_if(! \Auth::user()->can('block_edit'), 403);
-        return view('blocks.edit', compact('block'));
+        try {
+            return view('blocks.edit', compact('block'));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in BlockController@edit: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -72,18 +126,37 @@ class BlockController extends Controller
     public function update(Request $request, Block $block)
     {
         abort_if(! \Auth::user()->can('block_edit'), 403);
-        $validatedData = $request->validate([
-            'block_name' => 'required|string|max:255',
-            'total_floor' => 'required|integer|min:0',
-            'total_flats' => 'required|integer|min:0',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'block_name' => 'required|string|max:255',
+                'total_floor' => 'required|integer|min:0',
+                'total_flats' => 'required|integer|min:0',
+            ]);
 
-        $block->update($validatedData);
+            $existingFlats = Flat::where('block_id', $block->id)->count();
+            if ($validatedData['total_flats'] < $existingFlats) {
+                throw ValidationException::withMessages([
+                    'total_flats' => ["Total flats cannot be less than the {$existingFlats} flat records already created for this block."],
+                ]);
+            }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Block updated successfully.',
-        ]);
+            $block->update($validatedData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Block updated successfully.',
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in BlockController@update: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -92,21 +165,33 @@ class BlockController extends Controller
     public function destroy(Block $block)
     {
         abort_if(! \Auth::user()->can('block_delete'), 403);
-        DB::transaction(function () use ($block) {
-            // Delete related maintenance bills
-            MaintenanceBill::where('block_id', $block->id)->delete();
+        try {
+            DB::transaction(function () use ($block) {
+                // Delete related maintenance bills
+                MaintenanceBill::where('block_id', $block->id)->delete();
 
-            // Delete related flats (this will cascade delete residents in DB via foreign key constraints)
-            Flat::where('block_id', $block->id)->delete();
+                // Delete related flats (this will cascade delete residents in DB via foreign key constraints)
+                Flat::where('block_id', $block->id)->delete();
 
-            // Delete the block itself
-            $block->delete();
-        });
+                // Delete the block itself
+                $block->delete();
+            });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Block deleted successfully.',
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Block deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in BlockController@destroy: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
 

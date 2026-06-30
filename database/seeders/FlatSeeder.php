@@ -33,9 +33,10 @@ class FlatSeeder extends Seeder
                 for ($i = 1; $i <= $flatsPerFloor; $i++) {
                     $flatNo = sprintf('%d%02d', $floor, $i);
 
-                    Flat::create([
+                    Flat::updateOrCreate([
                         'block_id' => $block->id,
                         'flat_no' => $flatNo,
+                    ], [
                         'floor_no' => $floor,
                         'flat_type_id' => $flatTypes[array_rand($flatTypes)],
                         'status' => $statuses[array_rand($statuses)],

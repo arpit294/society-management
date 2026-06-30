@@ -7,7 +7,7 @@
         <div class="card dash-card card-revenue h-100 shadow-sm border-0">
             <div class="card-body d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-3 fw-bold">₹{{ number_format($totalCollected, 2) }}</div>
+                    <div class="fs-3 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalCollected) }}</div>
                     <div class="text-uppercase fw-semibold small opacity-75">Total Collected</div>
                 </div>
                 <div class="fs-1">
@@ -21,7 +21,7 @@
         <div class="card dash-card card-flats h-100 shadow-sm border-0">
             <div class="card-body d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-3 fw-bold">₹{{ number_format($cashCollected, 2) }}</div>
+                    <div class="fs-3 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($cashCollected) }}</div>
                     <div class="text-uppercase fw-semibold small opacity-75">Cash Collections</div>
                 </div>
                 <div class="fs-1">
@@ -35,7 +35,7 @@
         <div class="card dash-card card-residents h-100 shadow-sm border-0">
             <div class="card-body d-flex justify-content-between align-items-start">
                 <div>
-                    <div class="fs-3 fw-bold">₹{{ number_format($upiCollected, 2) }}</div>
+                    <div class="fs-3 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($upiCollected) }}</div>
                     <div class="text-uppercase fw-semibold small opacity-75">UPI Collections</div>
                 </div>
                 <div class="fs-1">
@@ -64,6 +64,8 @@
 <div id="payments-chart-data" 
      data-months="{{ json_encode($months) }}" 
      data-revenue="{{ json_encode($chartDataRevenue) }}"
+     data-currency="{{ \App\Helpers\CurrencyHelper::getCurrencyCode() }}"
+     data-currency-symbol="{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}"
      class="d-none"></div>
 
 <div class="row">

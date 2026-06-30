@@ -55,7 +55,7 @@
                         <div class="card border-0 border-start border-4 border-info shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title fw-normal mb-2">Total Expected Amount</h5>
-                                <h3 class="text-info fw-bold mb-0">{{ number_format($reportType == 'yearly' ? $yearlyExpected : $totalExpected, 2) }}</h3>
+                                <h3 class="text-info fw-bold mb-0">{{ \App\Helpers\CurrencyHelper::formatCurrency($reportType == 'yearly' ? $yearlyExpected : $totalExpected) }}</h3>
                             </div>
                         </div>
                     </div>
@@ -63,7 +63,7 @@
                         <div class="card border-0 border-start border-4 border-success shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title fw-normal mb-2">Total Paid Amount</h5>
-                                <h3 class="text-success fw-bold mb-0">{{ number_format($reportType == 'yearly' ? $yearlyPaid : $totalPaid, 2) }}</h3>
+                                <h3 class="text-success fw-bold mb-0">{{ \App\Helpers\CurrencyHelper::formatCurrency($reportType == 'yearly' ? $yearlyPaid : $totalPaid) }}</h3>
                             </div>
                         </div>
                     </div>
@@ -71,7 +71,7 @@
                         <div class="card border-0 border-start border-4 border-danger shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title fw-normal mb-2">Total Pending Amount</h5>
-                                <h3 class="text-danger fw-bold mb-0">{{ number_format($reportType == 'yearly' ? $yearlyPending : $totalPending, 2) }}</h3>
+                                <h3 class="text-danger fw-bold mb-0">{{ \App\Helpers\CurrencyHelper::formatCurrency($reportType == 'yearly' ? $yearlyPending : $totalPending) }}</h3>
                             </div>
                         </div>
                     </div>
@@ -105,7 +105,7 @@
                                             <tr>
                                                 <td>{{ $bill->user->name ?? 'N/A' }}</td>
                                                 <td>{{ $bill->block->block_name ?? 'N/A' }} - {{ $bill->flat->flat_no ?? 'N/A' }}</td>
-                                                <td>{{ number_format($bill->total_amount, 2) }}</td>
+                                                <td>{{ \App\Helpers\CurrencyHelper::formatCurrency($bill->total_amount) }}</td>
                                                 <td>{{ ucfirst($bill->payment_method) }}</td>
                                                 <td>{{ $bill->paid_at ? $bill->paid_at->format('d M Y') : 'N/A' }}</td>
                                             </tr>
@@ -133,9 +133,9 @@
                                             <tr>
                                                 <td>{{ $bill->user->name ?? 'N/A' }}</td>
                                                 <td>{{ $bill->block->block_name ?? 'N/A' }} - {{ $bill->flat->flat_no ?? 'N/A' }}</td>
-                                                <td>{{ number_format($bill->amount, 2) }}</td>
-                                                <td>{{ number_format($bill->penalty_amount, 2) }}</td>
-                                                <td>{{ number_format($bill->total_amount, 2) }}</td>
+                                                <td>{{ \App\Helpers\CurrencyHelper::formatCurrency($bill->amount) }}</td>
+                                                <td>{{ \App\Helpers\CurrencyHelper::formatCurrency($bill->penalty_amount) }}</td>
+                                                <td>{{ \App\Helpers\CurrencyHelper::formatCurrency($bill->total_amount) }}</td>
                                                 <td><span class="badge bg-danger">{{ ucfirst($bill->status) }}</span></td>
                                             </tr>
                                         @endforeach
@@ -164,18 +164,18 @@
                                         @foreach($monthlyBreakdown as $data)
                                             <tr>
                                                 <td><strong>{{ $data->month }}</strong></td>
-                                                <td class="text-end">{{ number_format($data->expected, 2) }}</td>
-                                                <td class="text-end text-success">{{ number_format($data->paid, 2) }}</td>
-                                                <td class="text-end text-danger">{{ number_format($data->pending, 2) }}</td>
+                                                <td class="text-end">{{ \App\Helpers\CurrencyHelper::formatCurrency($data->expected) }}</td>
+                                                <td class="text-end text-success">{{ \App\Helpers\CurrencyHelper::formatCurrency($data->paid) }}</td>
+                                                <td class="text-end text-danger">{{ \App\Helpers\CurrencyHelper::formatCurrency($data->pending) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
                                     <tfoot class="table-light font-weight-bold">
                                         <tr>
                                             <td><strong>Total</strong></td>
-                                            <td class="text-end"><strong>{{ number_format($yearlyExpected, 2) }}</strong></td>
-                                            <td class="text-end text-success"><strong>{{ number_format($yearlyPaid, 2) }}</strong></td>
-                                            <td class="text-end text-danger"><strong>{{ number_format($yearlyPending, 2) }}</strong></td>
+                                            <td class="text-end"><strong>{{ \App\Helpers\CurrencyHelper::formatCurrency($yearlyExpected) }}</strong></td>
+                                            <td class="text-end text-success"><strong>{{ \App\Helpers\CurrencyHelper::formatCurrency($yearlyPaid) }}</strong></td>
+                                            <td class="text-end text-danger"><strong>{{ \App\Helpers\CurrencyHelper::formatCurrency($yearlyPending) }}</strong></td>
                                         </tr>
                                     </tfoot>
                                 </table>

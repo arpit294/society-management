@@ -83,7 +83,7 @@
                             </div>
                             <div class="mb-3">
                                 <div class="drag-drop-zone border border-2 border-dashed rounded p-4 text-center position-relative" id="drag-drop-zone" style="background-color: #f8f9fa; cursor: pointer; transition: all 0.3s ease;">
-                                    <input type="file" class="position-absolute w-100 h-100 top-0 start-0 opacity-0" id="excel_file" name="excel_file" accept=".xlsx, .xls" style="cursor: pointer;">
+                                    <input type="file" class="position-absolute w-100 h-100 top-0 start-0 opacity-0 no-dropify" id="excel_file" name="excel_file" accept=".xlsx, .xls" style="cursor: pointer;">
                                     <i class="fa-solid fa-file-excel text-success mb-2" style="font-size: 3rem;"></i>
                                     <h6 class="mb-1 text-dark fw-bold" id="drag-drop-text">Drag & Drop your Excel file here</h6>
                                     <p class="text-muted small mb-0" id="drag-drop-subtext">or click to browse</p>
@@ -225,61 +225,5 @@
 
     @push('scripts')
         {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
-        <script type="module">
-            document.addEventListener('DOMContentLoaded', function() {
-                const blockFilter = document.getElementById('residents-filter-block');
-                const modalExportBlock = document.getElementById('modal_export_block');
-
-                if (blockFilter && modalExportBlock) {
-                    blockFilter.addEventListener('change', function() {
-                        modalExportBlock.value = blockFilter.value;
-                    });
-                }
-
-                const allCb = document.getElementById('export-all-fields');
-                const fieldCbs = document.querySelectorAll('.export-field-cb');
-                if (allCb && fieldCbs.length) {
-                    allCb.addEventListener('change', function() {
-                        fieldCbs.forEach(cb => cb.checked = allCb.checked);
-                    });
-                    fieldCbs.forEach(cb => {
-                        cb.addEventListener('change', function() {
-                            allCb.checked = Array.from(fieldCbs).every(c => c.checked);
-                        });
-                    });
-                }
-
-                // Drag and drop zone UI
-                const excelFile = document.getElementById('excel_file');
-                const dragDropZone = document.getElementById('drag-drop-zone');
-                const dragDropText = document.getElementById('drag-drop-text');
-                const dragDropSubtext = document.getElementById('drag-drop-subtext');
-
-                if (excelFile && dragDropZone) {
-                    excelFile.addEventListener('change', function() {
-                        if (this.files && this.files.length > 0) {
-                            dragDropText.innerHTML = `<span class="text-success"><i class="fa-solid fa-check-circle me-1"></i> ${this.files[0].name}</span>`;
-                            dragDropSubtext.innerHTML = 'Click to change file';
-                            dragDropZone.style.backgroundColor = 'rgba(25, 135, 84, 0.05)';
-                            dragDropZone.style.borderColor = '#198754';
-                        } else {
-                            dragDropText.innerHTML = 'Drag & Drop your Excel file here';
-                            dragDropSubtext.innerHTML = 'or click to browse';
-                            dragDropZone.style.backgroundColor = '#f8f9fa';
-                            dragDropZone.style.borderColor = '#dee2e6';
-                        }
-                    });
-
-                    dragDropZone.addEventListener('dragover', (e) => {
-                        dragDropZone.style.backgroundColor = '#e9ecef';
-                    });
-                    dragDropZone.addEventListener('dragleave', (e) => {
-                        if(!excelFile.files || !excelFile.files.length) {
-                            dragDropZone.style.backgroundColor = '#f8f9fa';
-                        }
-                    });
-                }
-            });
-        </script>
     @endpush
 </x-user-page>

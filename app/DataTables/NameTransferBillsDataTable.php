@@ -2,6 +2,7 @@
 
 namespace App\DataTables;
 
+use App\Helpers\CurrencyHelper;
 use App\Models\NameTransferBill;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
@@ -33,7 +34,7 @@ class NameTransferBillsDataTable extends DataTable
                 return $model->newOwner ? $model->newOwner->name : '-';
             })
             ->editColumn('amount', function ($model) {
-                return '<span class="fw-bold">₹' . number_format($model->amount, 2) . '</span>';
+                return '<span class="fw-bold">' . CurrencyHelper::formatCurrency($model->amount) . '</span>';
             })
             ->editColumn('status', function ($model) {
                 $class = $model->status === 'paid' ? 'bg-success' : ($model->status === 'cancelled' ? 'bg-danger' : 'bg-warning');

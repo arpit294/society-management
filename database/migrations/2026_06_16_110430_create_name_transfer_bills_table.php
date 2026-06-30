@@ -16,11 +16,14 @@ return new class extends Migration
             $table->foreignId('flat_id')->constrained()->onDelete('cascade');
             $table->foreignId('old_owner_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('new_owner_id')->constrained('users')->onDelete('cascade');
-            $table->decimal('amount', 10, 2)->default(0);
+            $table->decimal('amount', 10, 2)->unsigned()->default(0);
+            $table->date('transfer_date')->nullable();
             $table->enum('status', ['pending', 'paid', 'cancelled'])->default('pending');
             $table->timestamp('paid_at')->nullable();
             $table->string('payment_method')->nullable();
+            $table->string('transaction_id')->nullable();
             $table->string('payment_slip')->nullable();
+            $table->boolean('is_approved')->default(false);
             $table->timestamps();
         });
     }

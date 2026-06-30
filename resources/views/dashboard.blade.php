@@ -65,10 +65,10 @@
                             <div class="card-body d-flex justify-content-between align-items-center p-4">
                                 <div>
                                     <div class="text-uppercase fw-bold small opacity-75 mb-1 tracking-wide">Total Revenue</div>
-                                    <div class="fs-2 fw-bolder">₹<span class="counter-animate" data-target="{{ $totalRevenue }}">0</span></div>
+                                    <div class="fs-2 fw-bolder">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}<span class="counter-animate" data-target="{{ $totalRevenue }}">0</span></div>
                                 </div>
                                 <div class="dash-icon-bg">
-                                    <i class="fas fa-dollar-sign"></i>
+                                    <i class="fas {{ \App\Helpers\CurrencyHelper::getCurrencyIconClass() }}"></i>
                                 </div>
                             </div>
                         </div>
@@ -164,7 +164,9 @@
          data-status='{{ json_encode($billStatusData) }}'
          data-occupancy='{{ json_encode($occupancyData) }}'
          data-expense-labels='{{ json_encode($expenseBreakdownLabels) }}'
-         data-expense-data='{{ json_encode($expenseBreakdownData) }}'>
+         data-expense-data='{{ json_encode($expenseBreakdownData) }}'
+         data-currency="{{ \App\Helpers\CurrencyHelper::getCurrencyCode() }}"
+         data-currency-symbol="{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}">
     </div>
 
 

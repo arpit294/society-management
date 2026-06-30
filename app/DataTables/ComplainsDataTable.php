@@ -20,18 +20,23 @@ class ComplainsDataTable extends DataTable
                 return $row->created_at ? date('d-m-Y h:i A', strtotime($row->created_at)) : '-';
             })
             ->filterColumn('category', function ($query, $keyword) {
+                $keyword = trim((string) $keyword);
+                if ($keyword === '') {
+                    return;
+                }
+
                 $query->where('complains.category', 'like', "%{$keyword}%");
             })
             ->editColumn('status', function ($row) {
-                if ($row->status === 'resolved') {
+                if ($row->status === config('status.complaints.resolved')) {
                     $class = 'bg-success';
-                } elseif ($row->status === 'in-progress') {
+                } elseif ($row->status === config('status.complaints.in_progress')) {
                     $class = 'bg-info';
                 } else {
                     $class = 'bg-warning';
                 }
 
-                return '<span class="badge '.$class.'">'.ucfirst($row->status).'</span>';
+                return '<span class="badge ' . $class . '">' . ucfirst($row->status) . '</span>';
             })
             ->rawColumns(['status', 'action'])
             ->setRowId('id');
@@ -91,6 +96,6 @@ class ComplainsDataTable extends DataTable
 
     protected function filename(): string
     {
-        return 'Complains_'.date('YmdHis');
+        return 'Complains_' . date('YmdHis');
     }
 }

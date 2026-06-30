@@ -8,13 +8,20 @@
         <div class="row">
             <div class="col-md-12 mb-3">
                 <label for="name" class="form-label">Name <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="name" name="name" required placeholder="e.g., 2BHK">
+                <select class="form-select" id="name" name="name" required>
+                    <option value="">Select Flat Type</option>
+                    @for ($i = 1; $i <= 5; $i++)
+                        <option value="{{ $i }}BHK" {{ old('name') === $i . 'BHK' ? 'selected' : '' }}>
+                            {{ $i }}BHK
+                        </option>
+                    @endfor
+                </select>
             </div>
             
             <div class="col-md-4 mb-3">
                 <label for="owner_maintenance_fee" class="form-label">Owner Fee <span class="text-danger">*</span></label>
                 <div class="input-group">
-                    <span class="input-group-text">₹</span>
+                    <span class="input-group-text">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
                     <input type="number" step="0.01" class="form-control" id="owner_maintenance_fee" name="owner_maintenance_fee" required placeholder="0.00">
                 </div>
             </div>
@@ -22,7 +29,7 @@
             <div class="col-md-4 mb-3">
                 <label for="rental_maintenance_fee" class="form-label">Rental Fee <span class="text-danger">*</span></label>
                 <div class="input-group">
-                    <span class="input-group-text">₹</span>
+                    <span class="input-group-text">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
                     <input type="number" step="0.01" class="form-control" id="rental_maintenance_fee" name="rental_maintenance_fee" required placeholder="0.00">
                 </div>
             </div>

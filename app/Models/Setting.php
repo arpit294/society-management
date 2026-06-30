@@ -16,6 +16,8 @@ class Setting extends Model
             'society_address' => '123 Palm Avenue, Green Valley',
             'contact_email' => 'admin@royalpalms.com',
             'contact_phone' => '+91 9876543210',
+            'currency' => 'INR',
+            'currency_symbol' => "\u{20B9}",
             'financial_year_start' => '04',
             'name_transfer_fee' => '5000',
             'apply_penalty' => '1',

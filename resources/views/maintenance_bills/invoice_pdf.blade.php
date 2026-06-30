@@ -79,7 +79,7 @@
                                 <strong>Type:</strong> {{ $bill->flat->flatType->name ?? 'N/A' }}<br>
                                 <strong>Method:</strong> {{ strtoupper($bill->payment_method) }}
                                 @if($bill->transaction_id)
-                                    <br><strong>Trx ID:</strong> {{ $bill->transaction_id }}
+                                    <br><strong>UTR Number:</strong> {{ $bill->transaction_id }}
                                 @endif
                             </span>
                         </div>
@@ -115,7 +115,7 @@
                                 @endif
                             </div>
                         </td>
-                        <td class="text-right">{{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($totalBase, 2) }}</td>
+                        <td class="text-right">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalBase) }}</td>
                     </tr>
                     @if($totalPenalty > 0)
                     <tr>
@@ -123,7 +123,7 @@
                             <div class="item-desc-title">Penalty Amount</div>
                             <div class="item-desc-sub">Late Fee applied</div>
                         </td>
-                        <td class="text-right text-danger">+ {{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($totalPenalty, 2) }}</td>
+                        <td class="text-right text-danger">+ {{ \App\Helpers\CurrencyHelper::formatCurrency($totalPenalty) }}</td>
                     </tr>
                     @endif
                     @if($totalDiscount > 0)
@@ -131,7 +131,7 @@
                         <td>
                             <div class="item-desc-title">Discount Applied</div>
                         </td>
-                        <td class="text-right text-success">- {{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($totalDiscount, 2) }}</td>
+                        <td class="text-right text-success">- {{ \App\Helpers\CurrencyHelper::formatCurrency($totalDiscount) }}</td>
                     </tr>
                     @endif
                 </tbody>
@@ -143,17 +143,17 @@
             <table class="totals-table">
                 <tr>
                     <td style="color: #666; font-weight: bold;">Subtotal</td>
-                    <td class="text-right" style="font-weight: bold;">{{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($totalBase + $totalPenalty, 2) }}</td>
+                    <td class="text-right" style="font-weight: bold;">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalBase + $totalPenalty) }}</td>
                 </tr>
                 @if($totalDiscount > 0)
                 <tr>
                     <td style="color: #666; font-weight: bold;">Discount</td>
-                    <td class="text-right text-success">- {{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($totalDiscount, 2) }}</td>
+                    <td class="text-right text-success">- {{ \App\Helpers\CurrencyHelper::formatCurrency($totalDiscount) }}</td>
                 </tr>
                 @endif
                 <tr class="total-row">
                     <td style="padding: 15px;">TOTAL</td>
-                    <td class="text-right" style="padding: 15px;">{{ \App\Models\Setting::get('currency_symbol', '₹') }}{{ number_format($grandTotal, 2) }}</td>
+                    <td class="text-right" style="padding: 15px;">{{ \App\Helpers\CurrencyHelper::formatCurrency($grandTotal) }}</td>
                 </tr>
             </table>
         </div>
