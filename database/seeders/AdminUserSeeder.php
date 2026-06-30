@@ -13,16 +13,20 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
-            ['email' => env('ADMIN_EMAIL', 'admin@gmail.com')],
+        $user = User::updateOrCreate(
+            ['email' => 'admin@gmail.com'],
             [
                 'name' => 'Administrator',
-                'password' => Hash::make(env('ADMIN_PASSWORD', '123456')),
+                'password' => Hash::make('123456'),
                 'role' => 'Admin',
                 'phone' => null,
                 'aadhar_id' => '',
                 'status' => 'active',
             ]
         );
+
+        if (class_exists(\Spatie\Permission\Models\Role::class) && \Spatie\Permission\Models\Role::where('name', 'Admin')->exists()) {
+            $user->syncRoles(['Admin']);
+        }
     }
 }

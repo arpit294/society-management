@@ -15,152 +15,158 @@ use App\Models\NameTransferBill;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
     public function index()
     {
         abort_if(! \Auth::user()->can('dashboard_view'), 403);
-        $totalFlats = Flat::count();
-        $totalResidents = Flat::whereHas('residents', function ($query) {
-            $query->whereNull('move_out_date')->orWhere('move_out_date', '>=', now()->startOfDay());
-        })->count();
-        $totalComplaints = Complain::where('status', '!=', 'resolved')->count();
+        try {
+            $totalFlats = Flat::count();
+            $totalResidents = Flat::whereHas('residents', function ($query) {
+                $query->whereNull('move_out_date')->orWhere('move_out_date', '>=', now()->startOfDay());
+            })->count();
+            $totalComplaints = Complain::where('status', '!=', config('status.complaints.resolved'))->count();
 
-        $totalRevenue = MaintenanceBill::where('status', 'paid')->sum('total_amount')
-            + NameTransferBill::where('status', 'paid')->sum('amount');
-        $totalExpenses = Expense::sum('total_amount');
+            $totalRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->sum('total_amount')
+                + NameTransferBill::where('status', config('status.name_transfer_bills.paid'))->sum('amount');
+            $totalExpenses = Expense::sum('total_amount');
 
-        // Revenue Chart Data (Current Year)
-        $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+            // Revenue Chart Data (Current Year)
+            $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-        $monthlyRevenueDB = MaintenanceBill::where('maintenance_bills.status', 'paid')
-            ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
-            ->where('maintenances.year', date('Y'))
-            ->selectRaw('maintenances.month, sum(maintenance_bills.total_amount) as total')
-            ->groupBy('maintenances.month')
-            ->pluck('total', 'month')
-            ->toArray();
+            $monthlyRevenueDB = MaintenanceBill::where('maintenance_bills.status', config('status.maintenance_bills.paid'))
+                ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
+                ->where('maintenances.year', date('Y'))
+                ->selectRaw('maintenances.month, sum(maintenance_bills.total_amount) as total')
+                ->groupBy('maintenances.month')
+                ->pluck('total', 'month')
+                ->toArray();
 
-        // Expense Chart Data (Current Year)
-        $monthlyExpensesDB = Expense::whereYear('created_at', date('Y'))
-            ->selectRaw('MONTHNAME(created_at) as month, sum(total_amount) as total')
-            ->groupBy('month')
-            ->pluck('total', 'month')
-            ->toArray();
+            // Expense Chart Data (Current Year)
+            $monthlyExpensesDB = Expense::whereYear('created_at', date('Y'))
+                ->selectRaw('MONTHNAME(created_at) as month, sum(total_amount) as total')
+                ->groupBy('month')
+                ->pluck('total', 'month')
+                ->toArray();
 
-        $chartDataRevenue = [];
-        $chartDataExpenses = [];
+            $chartDataRevenue = [];
+            $chartDataExpenses = [];
 
-        foreach ($months as $m) {
-            $chartDataRevenue[] = $monthlyRevenueDB[$m] ?? 0;
-            $chartDataExpenses[] = $monthlyExpensesDB[$m] ?? 0;
+            foreach ($months as $month) {
+                $chartDataRevenue[] = $monthlyRevenueDB[$month] ?? 0;
+                $chartDataExpenses[] = $monthlyExpensesDB[$month] ?? 0;
+            }
+
+            // Bill Status Chart Data
+            $paidBills = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->count();
+            $pendingBills = MaintenanceBill::where('status', config('status.maintenance_bills.pending'))->count();
+            $overdueBills = MaintenanceBill::where('status', config('status.maintenance_bills.overdue'))->count();
+            $billStatusData = [
+                'paid' => $paidBills,
+                'pending' => $pendingBills,
+                'overdue' => $overdueBills,
+            ];
+
+            // Flat Occupancy Chart Data
+            $occupiedFlats = Flat::where('status', config('status.flats.occupied'))->count();
+            $emptyFlats = Flat::where('status', config('status.flats.empty'))->count();
+            $occupancyData = [
+                'occupied' => $occupiedFlats,
+                'empty' => $emptyFlats,
+            ];
+
+            // Expense Breakdown Chart Data
+            $expensesByCategory = Expense::join('expense_categories', 'expenses.category_id', '=', 'expense_categories.id')
+                ->selectRaw('expense_categories.title, sum(expenses.total_amount) as total')
+                ->groupBy('expense_categories.title')
+                ->pluck('total', 'title');
+
+            $expenseBreakdownLabels = $expensesByCategory->keys()->toArray();
+            $expenseBreakdownData = $expensesByCategory->values()->toArray();
+
+            // Recent Activity Feed
+            $recentPayments = MaintenanceBill::with('user', 'flat')
+                ->where('status', config('status.maintenance_bills.paid'))
+                ->latest('updated_at')
+                ->take(4)
+                ->get()
+                ->map(function ($bill) {
+                    $residentName = $bill->user?->name ?? 'Unknown Resident';
+                    $flatNo = $bill->flat?->flat_no ?? 'N/A';
+                    return (object) [
+                        'type' => 'payment',
+                        'icon' => 'fa-solid fa-money-bill-wave text-success',
+                        'title' => 'Payment Received',
+                        'description' => "{$residentName} (Flat #{$flatNo}) paid " . CurrencyHelper::formatCurrency($bill->total_amount),
+                        'time' => $bill->updated_at->diffForHumans(),
+                        'timestamp' => $bill->updated_at
+                    ];
+                });
+
+            $recentComplaints = Complain::with('user')
+                ->latest('created_at')
+                ->take(4)
+                ->get()
+                ->map(function ($complain) {
+                    $userName = $complain->user?->name ?? 'Resident';
+                    return (object) [
+                        'type' => 'complain',
+                        'icon' => 'fa-solid fa-exclamation-circle text-danger',
+                        'title' => 'New Complaint Logged',
+                        'description' => "{$userName}: \"{$complain->subject}\"",
+                        'time' => $complain->created_at->diffForHumans(),
+                        'timestamp' => $complain->created_at
+                    ];
+                });
+
+            $recentUsers = User::latest('created_at')
+                ->take(3)
+                ->get()
+                ->map(function ($user) {
+                    $roleLabel = ucfirst($user->role);
+                    return (object) [
+                        'type' => 'user',
+                        'icon' => 'fa-solid fa-user-check text-primary',
+                        'title' => 'New Resident Registered',
+                        'description' => "{$user->name} joined as {$roleLabel}",
+                        'time' => $user->created_at->diffForHumans(),
+                        'timestamp' => $user->created_at
+                    ];
+                });
+
+            $activities = $recentPayments->concat($recentComplaints)->concat($recentUsers)
+                ->sortByDesc('timestamp')
+                ->take(6)
+                ->values();
+
+            return view('dashboard', compact(
+                'totalResidents',
+                'totalFlats',
+                'totalComplaints',
+                'totalRevenue',
+                'totalExpenses',
+                'months',
+                'chartDataRevenue',
+                'chartDataExpenses',
+                'billStatusData',
+                'occupancyData',
+                'expenseBreakdownLabels',
+                'expenseBreakdownData',
+                'activities'
+            ));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in DashboardController@index: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred loading the dashboard: ' . $e->getMessage());
         }
-
-        // Financial Upgrade: Maintenance Collected vs Pending (Based on Latest Maintenance)
-        $latestMaintenance = Maintenance::orderBy('year', 'desc')->orderBy('id', 'desc')->first();
-        $maintenanceId = $latestMaintenance ? $latestMaintenance->id : null;
-
-        $billStatusData = [
-            'paid' => 0,
-            'pending' => 0,
-        ];
-        if ($maintenanceId) {
-            $billStatusData['paid'] = (float) MaintenanceBill::where('maintenance_id', $maintenanceId)->where('status', 'paid')->sum('total_amount');
-            $billStatusData['pending'] = (float) MaintenanceBill::where('maintenance_id', $maintenanceId)->where('status', 'pending')->sum('total_amount');
-        }
-
-        // Occupancy Rates (Empty vs Occupied Flats)
-        $occupiedFlatsCount = $totalResidents;
-        $emptyFlatsCount = max(0, $totalFlats - $occupiedFlatsCount);
-
-        $occupancyData = [
-            'occupied' => $occupiedFlatsCount,
-            'empty' => $emptyFlatsCount,
-        ];
-
-        // Expense Breakdown (Pie Chart) - Current Year
-        $expenseCategories = ExpenseCategory::all()->keyBy('id');
-        $expensesByCategory = Expense::whereYear('created_at', date('Y'))
-            ->selectRaw('category_id, sum(total_amount) as total')
-            ->groupBy('category_id')
-            ->get();
-
-        $expenseBreakdownLabels = [];
-        $expenseBreakdownData = [];
-        foreach ($expensesByCategory as $expense) {
-            $catName = isset($expenseCategories[$expense->category_id]) ? $expenseCategories[$expense->category_id]->title : 'Uncategorized';
-            $expenseBreakdownLabels[] = $catName;
-            $expenseBreakdownData[] = (float) $expense->total;
-        }
-
-        // Fetch Recent Activities
-        $recentPayments = MaintenanceBill::with('user')
-            ->where('status', 'paid')
-            ->select('batch_id', 'user_id', DB::raw('MAX(status) as status'), DB::raw('MAX(updated_at) as updated_at'), DB::raw('SUM(total_amount) as total_amount'))
-            ->groupBy('batch_id', 'user_id')
-            ->orderBy('updated_at', 'desc')
-            ->take(5)
-            ->get()
-            ->map(function ($payment) {
-                // Ensure updated_at is a Carbon instance since MAX() might return a string
-                $timestamp = Carbon::parse($payment->updated_at);
-                return (object)[
-                    'icon' => 'fa-solid fa-money-bill-wave text-success',
-                    'title' => 'Payment Received',
-                    'description' => CurrencyHelper::formatCurrency($payment->total_amount) . ' from ' . ($payment->user->name ?? 'Unknown'),
-                    'time' => $timestamp->diffForHumans(),
-                    'timestamp' => $timestamp
-                ];
-            });
-
-        $recentComplaints = Complain::with('user')
-            ->where('status', '!=', 'resolved')
-            ->latest()
-            ->take(5)
-            ->get()
-            ->map(function ($complain) {
-                return (object)[
-                    'icon' => 'fa-solid fa-triangle-exclamation text-warning',
-                    'title' => 'New Complaint',
-                    'description' => $complain->title . ' by ' . ($complain->user->name ?? 'Unknown'),
-                    'time' => $complain->created_at->diffForHumans(),
-                    'timestamp' => $complain->created_at
-                ];
-            });
-
-        $recentUsers = User::latest()
-            ->take(5)
-            ->get()
-            ->map(function ($user) {
-                return (object)[
-                    'icon' => 'fa-solid fa-user-plus text-info',
-                    'title' => 'New Resident',
-                    'description' => $user->name . ' joined the system',
-                    'time' => $user->created_at->diffForHumans(),
-                    'timestamp' => $user->created_at
-                ];
-            });
-
-        $activities = $recentPayments->concat($recentComplaints)->concat($recentUsers)
-            ->sortByDesc('timestamp')
-            ->take(6)
-            ->values();
-
-        return view('dashboard', compact(
-            'totalResidents',
-            'totalFlats',
-            'totalComplaints',
-            'totalRevenue',
-            'totalExpenses',
-            'months',
-            'chartDataRevenue',
-            'chartDataExpenses',
-            'billStatusData',
-            'occupancyData',
-            'expenseBreakdownLabels',
-            'expenseBreakdownData',
-            'activities'
-        ));
     }
 }

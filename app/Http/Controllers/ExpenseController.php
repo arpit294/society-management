@@ -10,120 +10,197 @@ use App\DataTables\ExpensesDataTable;
 use App\Models\MaintenanceBill;
 use App\Models\NameTransferBill;
 
+use Illuminate\Support\Facades\Log;
+
 class ExpenseController extends Controller
 {
     public function index(ExpensesDataTable $dataTable)
     {
         abort_if(! \Auth::user()->can('expense_view'), 403);
-        $totalExpenses = Expense::sum('total_amount');
-        $thisMonthExpenses = Expense::whereMonth('created_at', date('m'))
-                                    ->whereYear('created_at', date('Y'))
-                                    ->sum('total_amount');
-        $totalInvoices = Expense::whereNotNull('invoice')->count();
-        $totalMaintenanceIncome = MaintenanceBill::where('status', 'paid')->sum('total_amount')
-                                + NameTransferBill::where('status', 'paid')->sum('amount');
-        $categories = ExpenseCategory::all();
-        $users = User::whereIn('role', ['Admin', 'secretary', 'committee_member'])->get();
+        try {
+            $totalExpenses = Expense::sum('total_amount');
+            $thisMonthExpenses = Expense::whereMonth('created_at', date('m'))
+                                        ->whereYear('created_at', date('Y'))
+                                        ->sum('total_amount');
+            $totalInvoices = Expense::whereNotNull('invoice')->count();
+            $totalMaintenanceIncome = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->sum('total_amount')
+                                    + NameTransferBill::where('status', config('status.name_transfer_bills.paid'))->sum('amount');
+            $categories = ExpenseCategory::all();
+            $users = User::whereIn('role', ['Admin', 'secretary', 'committee_member'])->get();
 
-        return $dataTable->render('expenses.index', compact('totalExpenses', 'thisMonthExpenses', 'totalInvoices', 'totalMaintenanceIncome', 'categories', 'users'));
+            return $dataTable->render('expenses.index', compact('totalExpenses', 'thisMonthExpenses', 'totalInvoices', 'totalMaintenanceIncome', 'categories', 'users'));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ExpenseController@index: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     public function create()
     {
         abort_if(! \Auth::user()->can('expense_create'), 403);
-        $users = User::whereIn('role', ['Admin', 'secretary', 'committee_member'])->get();
-        $categories = ExpenseCategory::where('status', 'active')->get();
-        return view('expenses.create', compact('users', 'categories'));
+        try {
+            $users = User::whereIn('role', ['Admin', 'secretary', 'committee_member'])->get();
+            $categories = ExpenseCategory::where('status', 'active')->get();
+            return view('expenses.create', compact('users', 'categories'));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ExpenseController@create: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     public function store(Request $request)
     {
         abort_if(! \Auth::user()->can('expense_create'), 403);
-        if ($request->has('expense_date') && strlen($request->expense_date) === 7) {
-            $request->merge(['expense_date' => $request->expense_date . '-01']);
+        try {
+            if ($request->has('expense_date') && strlen($request->expense_date) === 7) {
+                $request->merge(['expense_date' => $request->expense_date . '-01']);
+            }
+
+            $validatedData = $request->validate([
+                'title' => 'required|string|max:255',
+                'total_amount' => 'required|numeric|min:0',
+                'expense_date' => 'required|date',
+                'user_id' => 'required|exists:users,id',
+                'category_id' => 'required|exists:expense_categories,id',
+                'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
+            ]);
+
+            if ($request->hasFile('invoice')) {
+                $file = $request->file('invoice');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $file->move(public_path('uploads/invoices'), $filename);
+                $validatedData['invoice'] = $filename;
+            }
+
+            Expense::create($validatedData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Expense logged successfully.',
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ExpenseController@store: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'total_amount' => 'required|numeric|min:0',
-            'expense_date' => 'required|date',
-            'user_id' => 'required|exists:users,id',
-            'category_id' => 'required|exists:expense_categories,id',
-            'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
-        ]);
-
-        if ($request->hasFile('invoice')) {
-            $file = $request->file('invoice');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('uploads/invoices'), $filename);
-            $validatedData['invoice'] = $filename;
-        }
-
-        Expense::create($validatedData);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Expense logged successfully.',
-        ]);
     }
 
     public function edit(Expense $expense)
     {
         abort_if(! \Auth::user()->can('expense_edit'), 403);
-        $users = User::whereIn('role', ['secretary', 'committee_member'])->get();
-        $categories = ExpenseCategory::where('status', 'active')->get();
-        return view('expenses.edit', compact('expense', 'users', 'categories'));
+        try {
+            $users = User::whereIn('role', ['secretary', 'committee_member'])->get();
+            $categories = ExpenseCategory::where('status', 'active')->get();
+            return view('expenses.edit', compact('expense', 'users', 'categories'));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ExpenseController@edit: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     public function update(Request $request, Expense $expense)
     {
         abort_if(! \Auth::user()->can('expense_edit'), 403);
-        if ($request->has('expense_date') && strlen($request->expense_date) === 7) {
-            $request->merge(['expense_date' => $request->expense_date . '-01']);
-        }
-
-        $validatedData = $request->validate([
-            'title' => 'required|string|max:255',
-            'total_amount' => 'required|numeric|min:0',
-            'expense_date' => 'required|date',
-            'user_id' => 'required|exists:users,id',
-            'category_id' => 'required|exists:expense_categories,id',
-            'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
-        ]);
-        
-        // Delete old file if exists
-        if ($request->hasFile('invoice')) {
-
-            if ($expense->invoice && file_exists(public_path('uploads/invoices/' . $expense->invoice))) {
-                unlink(public_path('uploads/invoices/' . $expense->invoice));
+        try {
+            if ($request->has('expense_date') && strlen($request->expense_date) === 7) {
+                $request->merge(['expense_date' => $request->expense_date . '-01']);
             }
-            $file = $request->file('invoice');
-            $filename = time() . '_' . $file->getClientOriginalName();
-            $file->move(public_path('uploads/invoices'), $filename);
-            $validatedData['invoice'] = $filename;
+
+            $validatedData = $request->validate([
+                'title' => 'required|string|max:255',
+                'total_amount' => 'required|numeric|min:0',
+                'expense_date' => 'required|date',
+                'user_id' => 'required|exists:users,id',
+                'category_id' => 'required|exists:expense_categories,id',
+                'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
+            ]);
+            
+            // Delete old file if exists
+            if ($request->hasFile('invoice')) {
+
+                if ($expense->invoice && file_exists(public_path('uploads/invoices/' . $expense->invoice))) {
+                    unlink(public_path('uploads/invoices/' . $expense->invoice));
+                }
+                $file = $request->file('invoice');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $file->move(public_path('uploads/invoices'), $filename);
+                $validatedData['invoice'] = $filename;
+            }
+
+            $expense->update($validatedData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Expense updated successfully.',
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ExpenseController@update: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $expense->update($validatedData);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Expense updated successfully.',
-        ]);
     }
 
     public function destroy(Expense $expense)
     {
         abort_if(! \Auth::user()->can('expense_delete'), 403);
-        // Delete  invoice file if exists
-        if ($expense->invoice && file_exists(public_path('uploads/invoices/' . $expense->invoice))) {
-            unlink(public_path('uploads/invoices/' . $expense->invoice));
-        }
-        $expense->delete();
+        try {
+            // Delete  invoice file if exists
+            if ($expense->invoice && file_exists(public_path('uploads/invoices/' . $expense->invoice))) {
+                unlink(public_path('uploads/invoices/' . $expense->invoice));
+            }
+            $expense->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Expense deleted successfully.',
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Expense deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ExpenseController@destroy: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
 

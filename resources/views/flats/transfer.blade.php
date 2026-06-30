@@ -67,9 +67,11 @@
                 <div class="row" id="upi_details_container" style="display: none;">
                     <div class="col-md-6 mb-3">
                         <label for="transaction_id"
-                            class="form-label text-muted small fw-semibold text-uppercase">Transfer ID
-                            (Optional)</label>
-                        <input type="text" class="form-control" id="transaction_id" name="transaction_id">
+                            class="form-label text-muted small fw-semibold text-uppercase">UTR Number <span
+                                class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="transaction_id" name="transaction_id"
+                            inputmode="numeric" pattern="[0-9]{12}" maxlength="12"
+                            placeholder="Enter 12 digit UTR number">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label for="payment_slip"

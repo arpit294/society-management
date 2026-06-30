@@ -17,13 +17,15 @@ class MaintenanceBillsDataTable extends DataTable
     {
         return (new EloquentDataTable($query))
             ->addColumn('action', function ($row) {
+                $billIdentifier = $row->batch_id ?: $row->id;
+
                 // If payment is paid, we can download invoice
                 $downloadBtn = '';
                 if ($row->status === 'paid') {
-                    $downloadBtn = '<a href="'.route('maintenance-bills.download-invoice', $row->batch_id).'" class="btn btn-sm btn-outline-info me-1" data-coreui-toggle="tooltip" title="Download Invoice"><i class="fa-solid fa-download"></i></a>';
+                    $downloadBtn = '<a href="'.route('maintenance-bills.download-invoice', $billIdentifier).'" class="btn btn-sm btn-outline-info me-1" data-coreui-toggle="tooltip" title="Download Invoice"><i class="fa-solid fa-download"></i></a>';
                 }
 
-                $deleteBtn = '<button type="button" class="btn btn-sm btn-outline-danger btn-delete-maintenance-bill" data-url="'.route('maintenance-bills.destroy', $row->batch_id).'" data-coreui-toggle="tooltip" title="Delete Payment Batch"><i class="fa-solid fa-trash"></i></button>';
+                $deleteBtn = '<button type="button" class="btn btn-sm btn-outline-danger btn-delete-maintenance-bill" data-url="'.route('maintenance-bills.destroy', $billIdentifier).'" data-coreui-toggle="tooltip" title="Delete Payment Batch"><i class="fa-solid fa-trash"></i></button>';
 
                 return '<div class="d-flex justify-content-center align-items-center">'.$downloadBtn.$deleteBtn.'</div>';
             })
@@ -80,7 +82,9 @@ class MaintenanceBillsDataTable extends DataTable
                 $query->whereRaw('(SELECT CONCAT(month, " ", year) FROM maintenances WHERE id = maintenance_bills.maintenance_id) LIKE ?', ["%{$keyword}%"]);
             })
             ->rawColumns(['action', 'payment_method', 'month_year'])
-            ->setRowId('batch_id');
+            ->setRowId(function ($row) {
+                return $row->batch_id ?: $row->id;
+            });
     }
 
     public function query(MaintenanceBill $model): QueryBuilder

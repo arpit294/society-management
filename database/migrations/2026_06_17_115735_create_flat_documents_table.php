@@ -14,12 +14,10 @@ return new class extends Migration
         Schema::create('flat_documents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('flat_id')->constrained('flats')->cascadeOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->cascadeOnDelete();
+            $table->enum('resident_type', ['owner', 'rental'])->default('owner');
+            $table->json('documents')->nullable();
             $table->foreignId('uploaded_by')->constrained('users')->cascadeOnDelete();
-            $table->string('title');
-            $table->text('description')->nullable();
-            $table->string('file_path');
-            $table->string('file_type')->nullable(); // e.g. pdf, png
-            $table->integer('file_size')->nullable(); // in bytes
             $table->timestamps();
         });
     }

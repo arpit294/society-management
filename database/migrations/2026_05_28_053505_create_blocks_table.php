@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('blocks', function (Blueprint $table) {
             $table->id();
             $table->string('block_name');
-            $table->integer('total_floor');
-            $table->integer('total_flats');
+            $table->integer('total_floor')->unsigned();
+            $table->integer('total_flats')->unsigned();
             $table->timestamp('created_at');
         });
     }

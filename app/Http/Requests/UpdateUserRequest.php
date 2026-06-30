@@ -33,10 +33,14 @@ class UpdateUserRequest extends FormRequest
             'phone' => 'required|digits:10',
             'role' => [
                 'required',
-                Rule::in(config('roles.all')),
+                'exists:roles,name',
             ],
             'password' => 'nullable|string|min:6',
-            'aadhar_id' => 'required|digits:12',
+            'aadhar_id' => [
+                'required',
+                'digits:12',
+                Rule::unique('users', 'aadhar_id')->ignore(optional($this->route('user'))->id),
+            ],
             'status' => [
                 'required',
                 Rule::in(['active', 'inactive']),

@@ -19,6 +19,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Laravel\Mcp\Response;
 
 class MaintenanceBillController extends Controller
@@ -33,51 +34,64 @@ class MaintenanceBillController extends Controller
     public function index(MaintenanceBillsDataTable $dataTable)
     {
         abort_if(! \Auth::user()->can('maintenance_bill_view'), 403);
-        // 1. Calculate overall collection statistics for the top cards
-        $totalCollected = MaintenanceBill::where('status', 'paid')->sum('total_amount');
-        $cashCollected = MaintenanceBill::where('status', 'paid')->where('payment_method', 'CASH')->sum('total_amount');
-        $upiCollected = MaintenanceBill::where('status', 'paid')->where('payment_method', 'UPI')->sum('total_amount');
+        try {
+            // 1. Calculate overall collection statistics for the top cards
+            $totalCollected = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->sum('total_amount');
+            $cashCollected = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->where('payment_method', 'CASH')->sum('total_amount');
+            $upiCollected = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->where('payment_method', 'UPI')->sum('total_amount');
 
-        // 2. Prepare data for the monthly revenue chart (current year)
-        $months = [
-            'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December',
-        ];
+            // 2. Prepare data for the monthly revenue chart (current year)
+            $months = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December',
+            ];
 
-        $monthlyRevenueDB = MaintenanceBill::query()
-            ->where('maintenance_bills.status', 'paid')
-            ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
-            ->where('maintenances.year', Carbon::now()->year)
-            ->selectRaw('maintenances.month, SUM(maintenance_bills.total_amount) as total')
-            ->groupBy('maintenances.month')
-            ->pluck('total', 'month')
-            ->toArray();
+            $monthlyRevenueDB = MaintenanceBill::query()
+                ->where('maintenance_bills.status', config('status.maintenance_bills.paid'))
+                ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
+                ->where('maintenances.year', Carbon::now()->year)
+                ->selectRaw('maintenances.month, SUM(maintenance_bills.total_amount) as total')
+                ->groupBy('maintenances.month')
+                ->pluck('total', 'month')
+                ->toArray();
 
-        // Map database results to the 12-month array format required by the chart
-        $chartDataRevenue = array_map(function ($month) use ($monthlyRevenueDB) {
-            return $monthlyRevenueDB[$month] ?? 0;
-        }, $months);
+            // Map database results to the 12-month array format required by the chart
+            $chartDataRevenue = array_map(function ($month) use ($monthlyRevenueDB) {
+                return $monthlyRevenueDB[$month] ?? 0;
+            }, $months);
 
-        // 3. Fetch data for dropdown filters (Blocks, Residents, Years)
-        $blocks = Block::orderBy('block_name')->get();
-        $residents = $this->getUniqueActiveResidents();
+            // 3. Fetch data for dropdown filters (Blocks, Residents, Years)
+            $blocks = Block::orderBy('block_name')->get();
+            $residents = $this->getUniqueActiveResidents();
 
-        $dbYears = Maintenance::select('year')->distinct()->pluck('year')->toArray();
-        $currentYear = Carbon::now()->year;
-        $rangeYears = range(2024, $currentYear + 1);
-        $years = collect(array_merge($dbYears, $rangeYears))->unique()->sortDesc()->values();
+            $dbYears = Maintenance::select('year')->distinct()->pluck('year')->toArray();
+            $currentYear = Carbon::now()->year;
+            $rangeYears = range(2024, $currentYear + 1);
+            $years = collect(array_merge($dbYears, $rangeYears))->unique()->sortDesc()->values();
 
-        // Render the page with all necessary data
-        return $dataTable->render('maintenance_bills.index', compact(
-            'totalCollected',
-            'cashCollected',
-            'upiCollected',
-            'months',
-            'chartDataRevenue',
-            'blocks',
-            'residents',
-            'years'
-        ));
+            // Render the page with all necessary data
+            return $dataTable->render('maintenance_bills.index', compact(
+                'totalCollected',
+                'cashCollected',
+                'upiCollected',
+                'months',
+                'chartDataRevenue',
+                'blocks',
+                'residents',
+                'years'
+            ));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in MaintenanceBillController@index: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred loading maintenance bills: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -89,26 +103,39 @@ class MaintenanceBillController extends Controller
     public function create()
     {
         abort_if(! \Auth::user()->can('maintenance_bill_create'), 403);
-        // Get all active residents (filtering out old owners if a tenant lives there)
-        $residents = $this->getUniqueActiveResidents();
+        try {
+            // Get all active residents (filtering out old owners if a tenant lives there)
+            $residents = $this->getUniqueActiveResidents();
 
-        // Pre-calculate the base monthly fee for each resident based on flat type (Owner vs Tenant rate)
-        $residentFees = $residents->mapWithKeys(function ($resident) {
-            $fee = 0;
-            if ($resident->flat && $resident->flat->flatType) {
-                $fee = ($resident->type === 'owner')
-                    ? $resident->flat->flatType->owner_maintenance_fee
-                    : $resident->flat->flatType->rental_maintenance_fee;
+            // Pre-calculate the base monthly fee for each resident based on flat type (Owner vs Tenant rate)
+            $residentFees = $residents->mapWithKeys(function ($resident) {
+                $fee = 0;
+                if ($resident->flat && $resident->flat->flatType) {
+                    $fee = ($resident->type === 'owner')
+                        ? $resident->flat->flatType->owner_maintenance_fee
+                        : $resident->flat->flatType->rental_maintenance_fee;
+                }
+
+                return [$resident->id => $fee];
+            });
+
+            // Load the global penalty and discount settings to pass to the frontend JavaScript
+            $discountSettings = $this->getSettingValues('discount');
+            $penaltySettings = $this->getSettingValues('penalty');
+
+            return view('maintenance_bills.create', compact('residents', 'residentFees', 'discountSettings', 'penaltySettings'));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in MaintenanceBillController@create: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
             }
 
-            return [$resident->id => $fee];
-        });
-
-        // Load the global penalty and discount settings to pass to the frontend JavaScript
-        $discountSettings = $this->getSettingValues('discount');
-        $penaltySettings = $this->getSettingValues('penalty');
-
-        return view('maintenance_bills.create', compact('residents', 'residentFees', 'discountSettings', 'penaltySettings'));
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -210,6 +237,10 @@ class MaintenanceBillController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in MaintenanceBillController@store: ' . $e->getMessage());
             $message = 'Error recording payment: '.$e->getMessage();
 
             return $request->ajax()
@@ -227,24 +258,31 @@ class MaintenanceBillController extends Controller
     public function destroy($id)
     {
         abort_if(! \Auth::user()->can('maintenance_bill_delete'), 403);
-        $bills = MaintenanceBill::where('batch_id', $id)->get();
+        try {
+            $bills = MaintenanceBill::where(function ($query) use ($id) {
+                $query->where('batch_id', $id)
+                    ->orWhere('id', $id);
+            })->get();
 
-        if ($bills->isEmpty()) {
-            $bills = MaintenanceBill::where('id', $id)->get();
+            if ($bills->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'Bill(s) not found.'], 404);
+            }
+
+            foreach ($bills as $bill) {
+                $bill->delete();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in MaintenanceBillController@destroy: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
         }
-
-        if ($bills->isEmpty()) {
-            return response()->json(['success' => false, 'message' => 'Bill(s) not found.'], 404);
-        }
-
-        foreach ($bills as $bill) {
-            $bill->delete();
-        }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Payment deleted successfully.',
-        ]);
     }
 
     /**
@@ -256,13 +294,21 @@ class MaintenanceBillController extends Controller
     public function destroyIndividual($id)
     {
         abort_if(! \Auth::user()->can('maintenance_bill_delete'), 403);
-        $bill = MaintenanceBill::findOrFail($id);
-        $bill->delete();
+        try {
+            $bill = MaintenanceBill::findOrFail($id);
+            $bill->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Maintenance bill deleted successfully.',
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Maintenance bill deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in MaintenanceBillController@destroyIndividual: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -275,72 +321,85 @@ class MaintenanceBillController extends Controller
     public function updateStatus(UpdateMaintenanceBillStatusRequest $request, $id)
     {
         abort_if(! \Auth::user()->can('maintenance_bill_create'), 403);
-        $maintenanceBill = MaintenanceBill::findOrFail($id);
+        try {
+            $maintenanceBill = MaintenanceBill::findOrFail($id);
 
-        if ($request->status === 'paid' && $maintenanceBill->status !== 'paid') {
+            if ($request->status === config('status.maintenance_bills.paid') && $maintenanceBill->status !== config('status.maintenance_bills.paid')) {
 
-            // Re-fetch the correct monthly fee based on user type
-            $monthlyFee = ($maintenanceBill->resident->type === 'owner')
-                ? $maintenanceBill->flat->flatType->owner_maintenance_fee
-                : $maintenanceBill->flat->flatType->rental_maintenance_fee;
+                // Re-fetch the correct monthly fee based on user type
+                $monthlyFee = ($maintenanceBill->resident->type === 'owner')
+                    ? $maintenanceBill->flat->flatType->owner_maintenance_fee
+                    : $maintenanceBill->flat->flatType->rental_maintenance_fee;
 
-            $currentDate = Carbon::createFromDate(
-                $maintenanceBill->maintenance->year,
-                Carbon::parse($maintenanceBill->maintenance->month)->month,
-                1
-            );
+                $currentDate = Carbon::createFromDate(
+                    $maintenanceBill->maintenance->year,
+                    Carbon::parse($maintenanceBill->maintenance->month)->month,
+                    1
+                );
 
-            // Force recalculation of penalty and discount based on the ACTUAL date it was marked 'paid'
-            [$totalPenaltyAmount, $totalDiscountAmount] = $this->calculatePenaltyAndDiscount(
-                $request, $monthlyFee, 1, $currentDate, true
-            );
+                // Force recalculation of penalty and discount based on the ACTUAL date it was marked 'paid'
+                [$totalPenaltyAmount, $totalDiscountAmount] = $this->calculatePenaltyAndDiscount(
+                    $request, $monthlyFee, 1, $currentDate, true
+                );
 
-            $maintenanceBill->status = 'paid';
-            $maintenanceBill->paid_at = now();
-            $maintenanceBill->payment_method = $request->payment_method;
-            $maintenanceBill->transaction_id = $request->transaction_id;
+                $maintenanceBill->status = config('status.maintenance_bills.paid');
+                $maintenanceBill->paid_at = now();
+                $maintenanceBill->payment_method = $request->payment_method;
+                $maintenanceBill->transaction_id = $request->transaction_id;
 
-            if ($request->hasFile('payment_slip')) {
-                $maintenanceBill->payment_slip = $request->file('payment_slip')->store('payment_slips', 'public');
+                if ($request->hasFile('payment_slip')) {
+                    $maintenanceBill->payment_slip = $request->file('payment_slip')->store('payment_slips', 'public');
+                }
+
+                // Lock in the dynamically calculated amounts so they never change again
+                $maintenanceBill->penalty_amount = $totalPenaltyAmount;
+                $maintenanceBill->discount_amount = $totalDiscountAmount;
+                $maintenanceBill->total_amount = $monthlyFee + $totalPenaltyAmount - $totalDiscountAmount;
+
+            } elseif ($request->status !== config('status.maintenance_bills.paid')) {
+                // Revert back to unpaid state
+                $maintenanceBill->status = $request->status;
+                $maintenanceBill->paid_at = null;
+                $maintenanceBill->payment_method = null;
+                $maintenanceBill->transaction_id = null;
+                $maintenanceBill->payment_slip = null;
+
+                // Reset modifiers
+                $maintenanceBill->penalty_amount = 0;
+                $maintenanceBill->discount_amount = 0;
+                // The total_amount should revert back to just the base fee (adjusted as needed by business rules)
             }
 
-            // Lock in the dynamically calculated amounts so they never change again
-            $maintenanceBill->penalty_amount = $totalPenaltyAmount;
-            $maintenanceBill->discount_amount = $totalDiscountAmount;
-            $maintenanceBill->total_amount = $monthlyFee + $totalPenaltyAmount - $totalDiscountAmount;
+            $maintenanceBill->save();
 
-        } elseif ($request->status !== 'paid') {
-            // Revert back to unpaid state
-            $maintenanceBill->status = $request->status;
-            $maintenanceBill->paid_at = null;
-            $maintenanceBill->payment_method = null;
-            $maintenanceBill->transaction_id = null;
-            $maintenanceBill->payment_slip = null;
+            if ($request->ajax() || $request->expectsJson()) {
+                $maintenance = Maintenance::with('maintenanceBills')->findOrFail($maintenanceBill->maintenance_id);
+                $paidCount = $maintenance->maintenanceBills->where('status', config('status.maintenance_bills.paid'))->count();
+                $totalCount = $maintenance->maintenanceBills->count();
+                $totalAmountExpected = $maintenance->maintenanceBills->sum('total_amount');
 
-            // Reset modifiers
-            $maintenanceBill->penalty_amount = 0;
-            $maintenanceBill->discount_amount = 0;
-            // The total_amount should revert back to just the base fee (adjusted as needed by business rules)
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Status updated successfully.',
+                    'paidCount' => $paidCount,
+                    'totalCount' => $totalCount,
+                    'totalAmountExpected' => number_format($totalAmountExpected, 2),
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Status updated successfully.');
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in MaintenanceBillController@updateStatus: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred updating status: ' . $e->getMessage());
         }
-
-        $maintenanceBill->save();
-
-        if ($request->ajax() || $request->expectsJson()) {
-            $maintenance = Maintenance::with('maintenanceBills')->findOrFail($maintenanceBill->maintenance_id);
-            $paidCount = $maintenance->maintenanceBills->where('status', 'paid')->count();
-            $totalCount = $maintenance->maintenanceBills->count();
-            $totalAmountExpected = $maintenance->maintenanceBills->sum('total_amount');
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Status updated successfully.',
-                'paidCount' => $paidCount,
-                'totalCount' => $totalCount,
-                'totalAmountExpected' => number_format($totalAmountExpected, 2),
-            ]);
-        }
-
-        return redirect()->back()->with('success', 'Status updated successfully.');
     }
 
     /**
@@ -352,9 +411,18 @@ class MaintenanceBillController extends Controller
     public function details($id)
     {
         abort_if(! \Auth::user()->can('maintenance_bill_view'), 403);
-        $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
+        try {
+            $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
 
-        return view('maintenance_bills.details', compact('bill'));
+            return view('maintenance_bills.details', compact('bill'));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in MaintenanceBillController@details: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'An error occurred loading bill details: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -366,25 +434,32 @@ class MaintenanceBillController extends Controller
     public function downloadInvoice($id)
     {
         abort_if(! \Auth::user()->can('maintenance_bill_view'), 403);
-        $bills = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])
-            ->where('batch_id', $id)
-            ->orderBy('id', 'asc')
-            ->get();
-
-        if ($bills->isEmpty()) {
+        try {
             $bills = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])
-                ->where('id', $id)
+                ->where(function ($query) use ($id) {
+                    $query->where('batch_id', $id)
+                        ->orWhere('id', $id);
+                })
+                ->orderBy('id', 'asc')
                 ->get();
+
             if ($bills->isEmpty()) {
                 abort(404);
             }
+
+            $bill = $bills->first();
+            $pdf = Pdf::loadView('maintenance_bills.invoice_pdf', compact('bills', 'bill'));
+            $fileName = 'invoice_'.($bill->flat->block->block_name ?? '').'-'.($bill->flat->flat_no ?? '').'_'.now()->format('Ymd_His').'.pdf';
+
+            return $pdf->download($fileName);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in MaintenanceBillController@downloadInvoice: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'An error occurred downloading invoice: ' . $e->getMessage());
         }
-
-        $bill = $bills->first();
-        $pdf = Pdf::loadView('maintenance_bills.invoice_pdf', compact('bills', 'bill'));
-        $fileName = 'invoice_'.($bill->flat->block->block_name ?? '').'-'.($bill->flat->flat_no ?? '').'_'.now()->format('Ymd_His').'.pdf';
-
-        return $pdf->download($fileName);
     }
 
     /**
@@ -397,27 +472,36 @@ class MaintenanceBillController extends Controller
     public function getResidentInfo($userId)
     {
         abort_if(! \Auth::user()->can('maintenance_bill_view'), 403);
-        $resident = Resident::with('flat.flatType')
-            ->where('user_id', $userId)
-            ->where(function (Builder $query) {
-                $query->whereNull('move_out_date')
-                    ->orWhere('move_out_date', '>=', Carbon::now()->startOfDay());
-            })->first();
+        try {
+            $resident = Resident::with('flat.flatType')
+                ->where('user_id', $userId)
+                ->where(function (Builder $query) {
+                    $query->whereNull('move_out_date')
+                        ->orWhere('move_out_date', '>=', Carbon::now()->startOfDay());
+                })->first();
 
-        if ($resident && $resident->flat && $resident->flat->flatType) {
-            $amount = ($resident->type === 'owner')
-                ? $resident->flat->flatType->owner_maintenance_fee
-                : $resident->flat->flatType->rental_maintenance_fee;
+            if ($resident && $resident->flat && $resident->flat->flatType) {
+                $amount = ($resident->type === 'owner')
+                    ? $resident->flat->flatType->owner_maintenance_fee
+                    : $resident->flat->flatType->rental_maintenance_fee;
 
-            return response()->json([
-                'success' => true,
-                'block_id' => $resident->block_id,
-                'flat_id' => $resident->flat_id,
-                'amount' => $amount,
-            ]);
+                return response()->json([
+                    'success' => true,
+                    'block_id' => $resident->block_id,
+                    'flat_id' => $resident->flat_id,
+                    'amount' => $amount,
+                ]);
+            }
+
+            return response()->json(['success' => false, 'message' => 'Resident not found or flat/flat type missing.']);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in MaintenanceBillController@getResidentInfo: ' . $e->getMessage());
+
+            return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
         }
-
-        return response()->json(['success' => false, 'message' => 'Resident not found or flat/flat type missing.']);
     }
 
     // =========================================================================
@@ -432,15 +516,17 @@ class MaintenanceBillController extends Controller
      */
     private function getSettingValues(string $type): array
     {
+        $defaults = \App\Models\Setting::defaults();
+
         return [
             "apply_{$type}" => \App\Models\Setting::get("apply_{$type}", '1'),
             'type' => \App\Models\Setting::get("{$type}_type", 'percentage'),
 
             // Values (percentages or fixed amounts)
-            'yearly_value' => (float) \App\Models\Setting::get("{$type}_yearly_value", \App\Models\Setting::get("{$type}_yearly_percent", ($type === 'penalty' ? 15 : 10))),
-            'half_yearly_value' => (float) \App\Models\Setting::get("{$type}_half_yearly_value", \App\Models\Setting::get("{$type}_half_yearly_percent", ($type === 'penalty' ? 10 : 0))),
-            'quarterly_value' => (float) \App\Models\Setting::get("{$type}_quarterly_value", \App\Models\Setting::get("{$type}_quarterly_percent", 5)),
-            'monthly_value' => (float) \App\Models\Setting::get("{$type}_monthly_value", \App\Models\Setting::get("{$type}_monthly_percent", 2)),
+            'yearly_value' => (float) \App\Models\Setting::get("{$type}_yearly_value", $defaults["{$type}_yearly_value"] ?? 0),
+            'half_yearly_value' => (float) \App\Models\Setting::get("{$type}_half_yearly_value", $defaults["{$type}_half_yearly_value"] ?? 0),
+            'quarterly_value' => (float) \App\Models\Setting::get("{$type}_quarterly_value", $defaults["{$type}_quarterly_value"] ?? 0),
+            'monthly_value' => (float) \App\Models\Setting::get("{$type}_monthly_value", $defaults["{$type}_monthly_value"] ?? 0),
 
             // Toggle Switches
             'yearly_enabled' => \App\Models\Setting::get("{$type}_yearly_enabled", '1') == '1',

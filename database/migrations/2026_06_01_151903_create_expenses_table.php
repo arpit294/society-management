@@ -15,9 +15,10 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->string('invoice')->nullable();
-            $table->decimal('total_amount', 10, 2);
+            $table->decimal('total_amount', 10, 2)->unsigned();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('category_id')->constrained('expense_categories')->onDelete('cascade');
+            $table->date('expense_date')->nullable();
             $table->timestamps();
         });
     }

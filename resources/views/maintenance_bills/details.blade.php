@@ -47,7 +47,7 @@
                         <strong>Paid At:</strong> {{ $bill->paid_at ? $bill->paid_at->format('d M, Y h:i A') : 'N/A' }}<br>
                         <strong>Payment Mode:</strong> {{ ucfirst($bill->payment_method) ?? 'N/A' }}<br>
                         @if($bill->payment_method === 'upi')
-                            <strong>Transaction ID:</strong> {{ $bill->transaction_id ?? 'N/A' }}<br>
+                            <strong>UTR Number:</strong> {{ $bill->transaction_id ?? 'N/A' }}<br>
                             @if($bill->payment_slip)
                                 <strong>Payment Slip:</strong> <a href="{{ asset('storage/' . $bill->payment_slip) }}" target="_blank">View Screenshot</a>
                             @endif

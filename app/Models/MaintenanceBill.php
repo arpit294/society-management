@@ -87,15 +87,16 @@ class MaintenanceBill extends Model
         if ($dueDate->endOfDay()->isPast()) {
             $baseAmount = (float)$this->amount;
             $billingCycle = $this->maintenance->billing_cycle ?? 'monthly';
+            $defaults = Setting::defaults();
             $penaltyValue = 0;
 
             // Fetch the appropriate penalty value based on billing cycle and global settings
             if ($billingCycle === 'monthly' && \App\Models\Setting::get('penalty_monthly_enabled', '1') == '1') {
-                $penaltyValue = (float)\App\Models\Setting::get('penalty_monthly_value', \App\Models\Setting::get('penalty_monthly_percent', 5));
+                $penaltyValue = (float)\App\Models\Setting::get('penalty_monthly_value', $defaults['penalty_monthly_value']);
             } elseif ($billingCycle === 'quarterly' && \App\Models\Setting::get('penalty_quarterly_enabled', '1') == '1') {
-                $penaltyValue = (float)\App\Models\Setting::get('penalty_quarterly_value', \App\Models\Setting::get('penalty_quarterly_percent', 10));
+                $penaltyValue = (float)\App\Models\Setting::get('penalty_quarterly_value', $defaults['penalty_quarterly_value']);
             } elseif ($billingCycle === 'yearly' && \App\Models\Setting::get('penalty_yearly_enabled', '1') == '1') {
-                $penaltyValue = (float)\App\Models\Setting::get('penalty_yearly_value', \App\Models\Setting::get('penalty_yearly_percent', 15));
+                $penaltyValue = (float)\App\Models\Setting::get('penalty_yearly_value', $defaults['penalty_yearly_value']);
             }
 
             // 4. Apply either as a fixed dollar amount or as a percentage multiplier
@@ -143,5 +144,10 @@ class MaintenanceBill extends Model
     public function block()
     {
         return $this->belongsTo(Block::class);
+    }
+
+    public function resident()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use OpenSpout\Common\Entity\Row;
@@ -117,52 +118,65 @@ class GlobalImportExportController extends Controller
     public function export(Request $request)
     {
         abort_if(Gate::denies('setting_view'), 403);
-        set_time_limit(0);
-        ini_set('memory_limit', '-1');
+        try {
+            set_time_limit(0);
+            ini_set('memory_limit', '-1');
 
-        $table = $request->input('table', 'blocks');
-        $format = strtolower((string) $request->input('format', 'excel'));
+            $table = $request->input('table', 'blocks');
+            $format = strtolower((string) $request->input('format', 'excel'));
 
 
-        $configs = $this->getTableConfigs();
-        if (!isset($configs[$table])) {
-            abort(404, 'Selected module not found.');
-        }
-
-        $config = $configs[$table];
-        $ext = $format === 'csv' ? 'csv' : 'xlsx';
-        $contentType = $format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-
-        $headers = [
-            'Content-type' => $contentType,
-            'Content-Disposition' => 'attachment; filename=' . $table . '_export_' . date('Ymd_His') . '.' . $ext,
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
-
-        $callback = function () use ($table, $config, $format) {
-            $writer = $format === 'csv' ? new CSVWriter() : new Writer();
-            $writer->openToFile('php://output');
-            // No-op: OpenSpout handles writing/closing on its own.
-
-            $writer->addRow(Row::fromValues($config['labels']));
-
-            $modelClass = $config['model'];
-            $records = $modelClass::all();
-
-            foreach ($records as $record) {
-                $rowValues = [];
-                foreach ($config['headers'] as $h) {
-                    $rowValues[] = $this->getRecordExportValue($table, $h, $record);
-                }
-                $writer->addRow(Row::fromValues($rowValues));
+            $configs = $this->getTableConfigs();
+            if (!isset($configs[$table])) {
+                abort(404, 'Selected module not found.');
             }
 
-            $writer->close();
-        };
+            $config = $configs[$table];
+            $ext = $format === 'csv' ? 'csv' : 'xlsx';
+            $contentType = $format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-        return response()->stream($callback, 200, $headers);
+            $headers = [
+                'Content-type' => $contentType,
+                'Content-Disposition' => 'attachment; filename=' . $table . '_export_' . date('Ymd_His') . '.' . $ext,
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0',
+            ];
+
+            $callback = function () use ($table, $config, $format) {
+                $writer = $format === 'csv' ? new CSVWriter() : new Writer();
+                $writer->openToFile('php://output');
+                // No-op: OpenSpout handles writing/closing on its own.
+
+                $writer->addRow(Row::fromValues($config['labels']));
+
+                $modelClass = $config['model'];
+                $records = $modelClass::all();
+
+                foreach ($records as $record) {
+                    $rowValues = [];
+                    foreach ($config['headers'] as $h) {
+                        $rowValues[] = $this->getRecordExportValue($table, $h, $record);
+                    }
+                    $writer->addRow(Row::fromValues($rowValues));
+                }
+
+                $writer->close();
+            };
+
+            return response()->stream($callback, 200, $headers);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in GlobalImportExportController@export: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred during export: ' . $e->getMessage());
+        }
     }
 
     private function getRecordExportValue($table, $header, $record)
@@ -206,29 +220,42 @@ class GlobalImportExportController extends Controller
     public function downloadTemplate(Request $request)
     {
         abort_if(Gate::denies('setting_view'), 403);
-        $table = $request->input('table', 'blocks');
-        $configs = $this->getTableConfigs();
-        if (!isset($configs[$table])) {
-            abort(404, 'Selected module not found.');
+        try {
+            $table = $request->input('table', 'blocks');
+            $configs = $this->getTableConfigs();
+            if (!isset($configs[$table])) {
+                abort(404, 'Selected module not found.');
+            }
+
+            $config = $configs[$table];
+            $headers = [
+                'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename=' . $table . '_import_template.xlsx',
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0',
+            ];
+
+            $callback = function () use ($config) {
+                $writer = new Writer();
+                $writer->openToFile('php://output');
+                $writer->addRow(Row::fromValues($config['labels']));
+                $writer->close();
+            };
+
+            return response()->stream($callback, 200, $headers);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in GlobalImportExportController@downloadTemplate: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred downloading template: ' . $e->getMessage());
         }
-
-        $config = $configs[$table];
-        $headers = [
-            'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename=' . $table . '_import_template.xlsx',
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
-
-        $callback = function () use ($config) {
-            $writer = new Writer();
-            $writer->openToFile('php://output');
-            $writer->addRow(Row::fromValues($config['labels']));
-            $writer->close();
-        };
-
-        return response()->stream($callback, 200, $headers);
     }
 
     public function previewImport(Request $request)
@@ -654,10 +681,10 @@ class GlobalImportExportController extends Controller
                 $cat = 'other';
             }
 
-            $rawStatus = !empty($data['status']) ? strtolower(trim($data['status'])) : 'pending';
-            if ($rawStatus === 'in progress' || $rawStatus === 'in_progress' || stripos($rawStatus, 'progress') !== false) $rawStatus = 'in-progress';
-            elseif (stripos($rawStatus, 'resolv') !== false) $rawStatus = 'resolved';
-            else $rawStatus = 'pending';
+            $rawStatus = !empty($data['status']) ? strtolower(trim($data['status'])) : config('status.complaints.pending');
+            if ($rawStatus === 'in progress' || $rawStatus === 'in_progress' || stripos($rawStatus, 'progress') !== false) $rawStatus = config('status.complaints.in_progress');
+            elseif (stripos($rawStatus, 'resolv') !== false) $rawStatus = config('status.complaints.resolved');
+            else $rawStatus = config('status.complaints.pending');
 
             Complain::create([
                 'user_id' => $user->id,
@@ -749,189 +776,215 @@ class GlobalImportExportController extends Controller
     public function exportMaster(Request $request)
     {
         abort_if(Gate::denies('setting_view'), 403);
-        set_time_limit(0);
-        ini_set('memory_limit', '-1');
-        DB::disableQueryLog();
-        $selectedTables = $request->input('tables');
-        if (!is_array($selectedTables) || empty($selectedTables)) {
-            $selectedTables = array_keys($this->getTableConfigs());
-        }
-
-        $configs = $this->getTableConfigs();
-        $dependencyOrder = ['blocks', 'flat_types', 'flats', 'users', 'residents', 'expense_categories', 'expenses', 'complaints', 'maintenances', 'maintenance_bills', 'name_transfer_bills'];
-
-        $orderedTables = [];
-        foreach ($dependencyOrder as $tbl) {
-            if (in_array($tbl, $selectedTables) && isset($configs[$tbl])) {
-                $orderedTables[] = $tbl;
-            }
-        }
-
-        $headers = [
-            'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename=master_database_backup_' . date('Ymd_His') . '.xlsx',
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
-
-        $callback = function () use ($orderedTables, $configs) {
-            $writer = new Writer();
-            $writer->openToFile('php://output');
-
-            $sheet = $writer->getCurrentSheet();
-            $sheet->setName('Master Horizontal');
-
-            $row1 = [];
-            $row2 = [];
-
-            foreach ($orderedTables as $table) {
-                $config = $configs[$table];
-                $labels = $config['labels'];
-                $colCount = count($labels);
-
-                $row1[] = '### MODULE: ' . strtoupper($table) . ' ###';
-                for ($i = 1; $i < $colCount; $i++) {
-                    $row1[] = '';
-                }
-                $row1[] = ''; // Gap column
-
-                foreach ($labels as $lbl) {
-                    $row2[] = $lbl;
-                }
-                $row2[] = ''; // Gap column
+        try {
+            set_time_limit(0);
+            ini_set('memory_limit', '-1');
+            DB::disableQueryLog();
+            $selectedTables = $request->input('tables');
+            if (!is_array($selectedTables) || empty($selectedTables)) {
+                $selectedTables = array_keys($this->getTableConfigs());
             }
 
-            if (!empty($row1)) {
-                array_pop($row1);
-                array_pop($row2);
-            }
+            $configs = $this->getTableConfigs();
+            $dependencyOrder = ['blocks', 'flat_types', 'flats', 'users', 'residents', 'expense_categories', 'expenses', 'complaints', 'maintenances', 'maintenance_bills', 'name_transfer_bills'];
 
-            $writer->addRow(Row::fromValues($row1));
-            $writer->addRow(Row::fromValues($row2));
-
-            // Fetch records
-            $tableRecords = [];
-            $maxRows = 0;
-
-            foreach ($orderedTables as $table) {
-                $modelClass = $configs[$table]['model'];
-                $recs = $modelClass::all()->values();
-                $tableRecords[$table] = $recs;
-                if ($recs->count() > $maxRows) {
-                    $maxRows = $recs->count();
+            $orderedTables = [];
+            foreach ($dependencyOrder as $tbl) {
+                if (in_array($tbl, $selectedTables) && isset($configs[$tbl])) {
+                    $orderedTables[] = $tbl;
                 }
             }
 
-            for ($r = 0; $r < $maxRows; $r++) {
-                $dataRow = [];
+            $headers = [
+                'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename=master_database_backup_' . date('Ymd_His') . '.xlsx',
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0',
+            ];
+
+            $callback = function () use ($orderedTables, $configs) {
+                $writer = new Writer();
+                $writer->openToFile('php://output');
+
+                $sheet = $writer->getCurrentSheet();
+                $sheet->setName('Master Horizontal');
+
+                $row1 = [];
+                $row2 = [];
+
                 foreach ($orderedTables as $table) {
                     $config = $configs[$table];
-                    $recs = $tableRecords[$table];
-                    $record = $recs[$r] ?? null;
+                    $labels = $config['labels'];
+                    $colCount = count($labels);
 
-                    foreach ($config['headers'] as $h) {
-                        if ($record) {
-                            $dataRow[] = $this->getRecordExportValue($table, $h, $record);
-                        } else {
-                            $dataRow[] = '';
-                        }
+                    $row1[] = '### MODULE: ' . strtoupper($table) . ' ###';
+                    for ($i = 1; $i < $colCount; $i++) {
+                        $row1[] = '';
                     }
-                    $dataRow[] = ''; // Gap
+                    $row1[] = ''; // Gap column
+
+                    foreach ($labels as $lbl) {
+                        $row2[] = $lbl;
+                    }
+                    $row2[] = ''; // Gap column
                 }
-                if (!empty($dataRow)) array_pop($dataRow);
-                $writer->addRow(Row::fromValues($dataRow));
+
+                if (!empty($row1)) {
+                    array_pop($row1);
+                    array_pop($row2);
+                }
+
+                $writer->addRow(Row::fromValues($row1));
+                $writer->addRow(Row::fromValues($row2));
+
+                // Fetch records
+                $tableRecords = [];
+                $maxRows = 0;
+
+                foreach ($orderedTables as $table) {
+                    $modelClass = $configs[$table]['model'];
+                    $recs = $modelClass::all()->values();
+                    $tableRecords[$table] = $recs;
+                    if ($recs->count() > $maxRows) {
+                        $maxRows = $recs->count();
+                    }
+                }
+
+                for ($r = 0; $r < $maxRows; $r++) {
+                    $dataRow = [];
+                    foreach ($orderedTables as $table) {
+                        $config = $configs[$table];
+                        $recs = $tableRecords[$table];
+                        $record = $recs[$r] ?? null;
+
+                        foreach ($config['headers'] as $h) {
+                            if ($record) {
+                                $dataRow[] = $this->getRecordExportValue($table, $h, $record);
+                            } else {
+                                $dataRow[] = '';
+                            }
+                        }
+                        $dataRow[] = ''; // Gap
+                    }
+                    if (!empty($dataRow)) array_pop($dataRow);
+                    $writer->addRow(Row::fromValues($dataRow));
+                }
+
+                $writer->close();
+            };
+
+            return response()->stream($callback, 200, $headers);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in GlobalImportExportController@exportMaster: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
             }
 
-            $writer->close();
-        };
-
-        return response()->stream($callback, 200, $headers);
+            return redirect()->back()->with('error', 'An error occurred during master export: ' . $e->getMessage());
+        }
     }
 
     public function templateMaster(Request $request)
     {
         abort_if(Gate::denies('setting_view'), 403);
-        $selectedTables = $request->input('tables');
-        if (!is_array($selectedTables) || empty($selectedTables)) {
-            $selectedTables = array_keys($this->getTableConfigs());
+        try {
+            $selectedTables = $request->input('tables');
+            if (!is_array($selectedTables) || empty($selectedTables)) {
+                $selectedTables = array_keys($this->getTableConfigs());
+            }
+
+            $configs = $this->getTableConfigs();
+            $dependencyOrder = ['blocks', 'flat_types', 'flats', 'users', 'residents', 'expense_categories', 'expenses', 'complaints', 'maintenances', 'maintenance_bills', 'name_transfer_bills'];
+
+            $orderedTables = [];
+            foreach ($dependencyOrder as $tbl) {
+                if (in_array($tbl, $selectedTables) && isset($configs[$tbl])) {
+                    $orderedTables[] = $tbl;
+                }
+            }
+
+            $headers = [
+                'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename=master_database_template.xlsx',
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0',
+            ];
+
+            $callback = function () use ($orderedTables, $configs) {
+                $writer = new Writer();
+                $writer->openToFile('php://output');
+
+                $sheet = $writer->getCurrentSheet();
+                $sheet->setName('Master Template');
+
+                $row1 = [];
+                $row2 = [];
+
+                foreach ($orderedTables as $table) {
+                    $config = $configs[$table];
+                    $labels = $config['labels'];
+                    $colCount = count($labels);
+
+                    $row1[] = '### MODULE: ' . strtoupper($table) . ' ###';
+                    for ($i = 1; $i < $colCount; $i++) {
+                        $row1[] = '';
+                    }
+                    $row1[] = ''; // Gap column
+
+                    foreach ($labels as $lbl) {
+                        $row2[] = $lbl;
+                    }
+                    $row2[] = ''; // Gap column
+                }
+
+                if (!empty($row1)) {
+                    array_pop($row1);
+                    array_pop($row2);
+                }
+
+                $writer->addRow(Row::fromValues($row1));
+                $writer->addRow(Row::fromValues($row2));
+
+                // Sample row
+                $sampleRow = [];
+                $hasSample = false;
+                foreach ($orderedTables as $table) {
+                    $config = $configs[$table];
+                    if (isset($config['sample']) && is_array($config['sample'])) {
+                        foreach ($config['sample'] as $sVal) $sampleRow[] = $sVal;
+                        $hasSample = true;
+                    } else {
+                        for ($i = 0; $i < count($config['labels']); $i++) $sampleRow[] = '';
+                    }
+                    $sampleRow[] = '';
+                }
+                if (!empty($sampleRow)) array_pop($sampleRow);
+                if ($hasSample) {
+                    $writer->addRow(Row::fromValues($sampleRow));
+                }
+
+                $writer->close();
+            };
+
+            return response()->stream($callback, 200, $headers);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in GlobalImportExportController@templateMaster: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred downloading master template: ' . $e->getMessage());
         }
-
-        $configs = $this->getTableConfigs();
-        $dependencyOrder = ['blocks', 'flat_types', 'flats', 'users', 'residents', 'expense_categories', 'expenses', 'complaints', 'maintenances', 'maintenance_bills', 'name_transfer_bills'];
-
-        $orderedTables = [];
-        foreach ($dependencyOrder as $tbl) {
-            if (in_array($tbl, $selectedTables) && isset($configs[$tbl])) {
-                $orderedTables[] = $tbl;
-            }
-        }
-
-        $headers = [
-            'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename=master_database_template.xlsx',
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
-
-        $callback = function () use ($orderedTables, $configs) {
-            $writer = new Writer();
-            $writer->openToFile('php://output');
-
-            $sheet = $writer->getCurrentSheet();
-            $sheet->setName('Master Template');
-
-            $row1 = [];
-            $row2 = [];
-
-            foreach ($orderedTables as $table) {
-                $config = $configs[$table];
-                $labels = $config['labels'];
-                $colCount = count($labels);
-
-                $row1[] = '### MODULE: ' . strtoupper($table) . ' ###';
-                for ($i = 1; $i < $colCount; $i++) {
-                    $row1[] = '';
-                }
-                $row1[] = ''; // Gap column
-
-                foreach ($labels as $lbl) {
-                    $row2[] = $lbl;
-                }
-                $row2[] = ''; // Gap column
-            }
-
-            if (!empty($row1)) {
-                array_pop($row1);
-                array_pop($row2);
-            }
-
-            $writer->addRow(Row::fromValues($row1));
-            $writer->addRow(Row::fromValues($row2));
-
-            // Sample row
-            $sampleRow = [];
-            $hasSample = false;
-            foreach ($orderedTables as $table) {
-                $config = $configs[$table];
-                if (isset($config['sample']) && is_array($config['sample'])) {
-                    foreach ($config['sample'] as $sVal) $sampleRow[] = $sVal;
-                    $hasSample = true;
-                } else {
-                    for ($i = 0; $i < count($config['labels']); $i++) $sampleRow[] = '';
-                }
-                $sampleRow[] = '';
-            }
-            if (!empty($sampleRow)) array_pop($sampleRow);
-            if ($hasSample) {
-                $writer->addRow(Row::fromValues($sampleRow));
-            }
-
-            $writer->close();
-        };
-
-        return response()->stream($callback, 200, $headers);
     }
 
     public function previewMaster(Request $request)

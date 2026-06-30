@@ -29,6 +29,8 @@
     @php
         $currencySymbol = \App\Helpers\CurrencyHelper::getCurrencySymbol();
         $availableCurrencies = \App\Helpers\CurrencyHelper::getAvailableCurrencies();
+        $penaltyRateSuffix = ($settings['penalty_type'] ?? 'percentage') === 'fixed' ? $currencySymbol : '%';
+        $discountRateSuffix = ($settings['discount_type'] ?? 'percentage') === 'fixed' ? $currencySymbol : '%';
     @endphp
 
     <div class="row" id="general-settings">
@@ -150,9 +152,8 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_monthly_value"
-                                        class="form-control"
-                                        value="{{ $settings['penalty_monthly_value'] ?? ($settings['penalty_monthly_percent'] ?? '2') }}">
-                                    <span class="input-group-text penalty-suffix">%</span>
+                                        class="form-control" value="{{ $settings['penalty_monthly_value'] }}">
+                                    <span class="input-group-text penalty-suffix">{{ $penaltyRateSuffix }}</span>
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3 settings-rate-option">
@@ -167,9 +168,8 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_quarterly_value"
-                                        class="form-control"
-                                        value="{{ $settings['penalty_quarterly_value'] ?? ($settings['penalty_quarterly_percent'] ?? '5') }}">
-                                    <span class="input-group-text penalty-suffix">%</span>
+                                        class="form-control" value="{{ $settings['penalty_quarterly_value'] }}">
+                                    <span class="input-group-text penalty-suffix">{{ $penaltyRateSuffix }}</span>
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3 settings-rate-option">
@@ -184,9 +184,8 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_half_yearly_value"
-                                        class="form-control"
-                                        value="{{ $settings['penalty_half_yearly_value'] ?? ($settings['penalty_half_yearly_percent'] ?? '10') }}">
-                                    <span class="input-group-text penalty-suffix">%</span>
+                                        class="form-control" value="{{ $settings['penalty_half_yearly_value'] }}">
+                                    <span class="input-group-text penalty-suffix">{{ $penaltyRateSuffix }}</span>
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3 settings-rate-option">
@@ -201,9 +200,8 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="penalty_yearly_value"
-                                        class="form-control"
-                                        value="{{ $settings['penalty_yearly_value'] ?? ($settings['penalty_yearly_percent'] ?? '15') }}">
-                                    <span class="input-group-text penalty-suffix">%</span>
+                                        class="form-control" value="{{ $settings['penalty_yearly_value'] }}">
+                                    <span class="input-group-text penalty-suffix">{{ $penaltyRateSuffix }}</span>
                                 </div>
                             </div>
                         </div>
@@ -249,9 +247,8 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_monthly_value"
-                                        class="form-control"
-                                        value="{{ $settings['discount_monthly_value'] ?? ($settings['discount_monthly_percent'] ?? '2') }}">
-                                    <span class="input-group-text discount-suffix">%</span>
+                                        class="form-control" value="{{ $settings['discount_monthly_value'] }}">
+                                    <span class="input-group-text discount-suffix">{{ $discountRateSuffix }}</span>
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3 settings-rate-option">
@@ -266,9 +263,8 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_quarterly_value"
-                                        class="form-control"
-                                        value="{{ $settings['discount_quarterly_value'] ?? ($settings['discount_quarterly_percent'] ?? '5') }}">
-                                    <span class="input-group-text discount-suffix">%</span>
+                                        class="form-control" value="{{ $settings['discount_quarterly_value'] }}">
+                                    <span class="input-group-text discount-suffix">{{ $discountRateSuffix }}</span>
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3 settings-rate-option">
@@ -283,9 +279,8 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_half_yearly_value"
-                                        class="form-control"
-                                        value="{{ $settings['discount_half_yearly_value'] ?? ($settings['discount_half_yearly_percent'] ?? '10') }}">
-                                    <span class="input-group-text discount-suffix">%</span>
+                                        class="form-control" value="{{ $settings['discount_half_yearly_value'] }}">
+                                    <span class="input-group-text discount-suffix">{{ $discountRateSuffix }}</span>
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3 settings-rate-option">
@@ -300,9 +295,8 @@
                                 </div>
                                 <div class="input-group">
                                     <input type="number" step="0.01" name="discount_yearly_value"
-                                        class="form-control"
-                                        value="{{ $settings['discount_yearly_value'] ?? ($settings['discount_yearly_percent'] ?? '15') }}">
-                                    <span class="input-group-text discount-suffix">%</span>
+                                        class="form-control" value="{{ $settings['discount_yearly_value'] }}">
+                                    <span class="input-group-text discount-suffix">{{ $discountRateSuffix }}</span>
                                 </div>
                             </div>
                         </div>
@@ -323,8 +317,8 @@
                                     'index_copy' => 'Index Copy',
                                     'possession_letter' => 'Possession Letter',
                                     'tax_bill' => 'Copy of Tax Bill',
-                                    'contact_no' => 'Contact No',
-                                    'email' => 'Email Address',
+                                    // 'contact_no' => 'Contact No',
+                                    // 'email' => 'Email Address',
                                 ];
                             @endphp
                             @foreach ($ownerDocs as $key => $label)
@@ -359,8 +353,8 @@
                                     'rent_agreement' => 'Rent Agreement',
                                     'police_verification' => 'Police Verification',
                                     'permanent_address_proof' => 'Permanent Address Proof',
-                                    'contact_no' => 'Contact Number',
-                                    'email' => 'Email Address',
+                                    // 'contact_no' => 'Contact Number',
+                                    // 'email' => 'Email Address',
                                 ];
                             @endphp
                             @foreach ($rentalDocs as $key => $label)
@@ -847,7 +841,8 @@
                             <form id="master-import-preview-form" onsubmit="return false;">
                                 <div class="modal-body">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
-                                        <p class="mb-0">Upload an Excel (.xlsx) file to bulk import global records.</p>
+                                        <p class="mb-0">Upload an Excel (.xlsx) file to bulk import global records.
+                                        </p>
                                         <a href="{{ route('settings.global.template_master') }}"
                                             class="btn btn-sm btn-light rounded-pill text-primary fw-semibold border shadow-sm">
                                             <i class="fa-solid fa-download me-1"></i>Download Template
@@ -885,14 +880,14 @@
                         <div id="master-import-step-2" class="d-none">
                             <div class="modal-body">
                                 <div class="alert alert-info mb-3">
-                                    Below is a preview of valid data found in your Excel file. Click "Process Import" to validate and insert these records across all modules.
+                                    Below is a preview of valid data found in your Excel file. Click "Process Import" to
+                                    validate and insert these records across all modules.
                                 </div>
                                 <input type="hidden" id="master_import_file_path">
                                 <div id="master_sheets_summary_container"></div>
                             </div>
                             <div class="modal-footer border-top-0">
-                                <button type="button" class="btn btn-secondary"
-                                    id="btn_master_back_to_step_1"><i
+                                <button type="button" class="btn btn-secondary" id="btn_master_back_to_step_1"><i
                                         class="fa-solid fa-arrow-left me-2"></i>Back</button>
                                 <button type="button" class="btn btn-primary bg-gradient border-0"
                                     id="btn_process_master_import">
@@ -907,20 +902,24 @@
                                 <div class="alert alert-success d-none mb-3" id="master-import-success-alert"></div>
                                 <div class="alert alert-danger d-none mb-3" id="master-import-error-alert"></div>
                                 <div id="master-import-summary-container" class="mb-3 text-center">
-                                    <h5 class="fw-bold"><span id="master-import-success-count" class="text-success">0</span> record(s) imported, <span id="master-import-failed-count" class="text-danger">0</span> failed</h5>
+                                    <h5 class="fw-bold"><span id="master-import-success-count"
+                                            class="text-success">0</span> record(s) imported, <span
+                                            id="master-import-failed-count" class="text-danger">0</span> failed</h5>
                                 </div>
 
                                 <div id="master_import_failure_container" class="d-none">
                                     <h6 class="fw-bold text-danger mb-2">Failed Records Details:</h6>
                                     <div class="table-responsive border rounded" style="max-height: 300px;">
-                                        <table class="table table-sm table-hover table-striped mb-0" style="font-size: 0.875rem;">
+                                        <table class="table table-sm table-hover table-striped mb-0"
+                                            style="font-size: 0.875rem;">
                                             <tbody id="master_import_failure_tbody"></tbody>
                                         </table>
                                     </div>
                                 </div>
                             </div>
                             <div class="modal-footer border-top-0">
-                                <button type="button" class="btn btn-primary" onclick="window.location.reload();">Finish & Reload</button>
+                                <button type="button" class="btn btn-primary"
+                                    onclick="window.location.reload();">Finish & Reload</button>
                             </div>
                         </div>
                     </div>

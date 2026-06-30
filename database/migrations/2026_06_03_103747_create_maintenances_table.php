@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('maintenances', function (Blueprint $table) {
             $table->id();
             $table->string('month');
-            $table->integer('year');
+            $table->integer('year')->unsigned();
             $table->enum('billing_cycle', ['monthly', 'quarterly', 'yearly'])->default('monthly');
             $table->date('due_date');
-            $table->decimal('total_additional_cost', 10, 2)->default(0);
+            $table->decimal('total_additional_cost', 10, 2)->unsigned()->default(0);
             $table->enum('status', ['draft', 'published'])->default('draft');
             $table->timestamps();
         });
@@ -49,7 +49,7 @@ return new class extends Migration
             $table->dropForeign(['maintenance_id']);
             $table->dropColumn('maintenance_id');
             $table->string('month')->nullable();
-            $table->integer('year')->nullable();
+            $table->integer('year')->unsigned()->nullable();
         });
 
         Schema::dropIfExists('maintenances');

@@ -90,6 +90,36 @@ if (discountTypeSelect) {
     updateDiscountLabels();
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+    const sidebarNav = document.querySelector("#sidebar .sidebar-nav");
+    if (!sidebarNav) return;
+
+    const storageKey = "smp.sidebar.scrollTop";
+    const getScrollElement = () =>
+        sidebarNav.querySelector(".simplebar-content-wrapper") || sidebarNav;
+
+    const restoreSidebarScroll = () => {
+        const savedScrollTop = sessionStorage.getItem(storageKey);
+        if (savedScrollTop === null) return;
+
+        getScrollElement().scrollTop = Number(savedScrollTop) || 0;
+        sessionStorage.removeItem(storageKey);
+    };
+
+    sidebarNav.addEventListener("click", function (event) {
+        const link = event.target.closest(".nav-link");
+        if (!link || link.classList.contains("nav-group-toggle")) return;
+
+        const href = link.getAttribute("href") || "";
+        if (!href || href === "#") return;
+
+        sessionStorage.setItem(storageKey, String(getScrollElement().scrollTop));
+    });
+
+    requestAnimationFrame(restoreSidebarScroll);
+    window.setTimeout(restoreSidebarScroll, 100);
+});
+
 $(document).on("click", ".toggle-password-btn", function () {
     const input = $(this).closest(".input-group").find("input")[0];
     if (input.type === "password") {
@@ -371,7 +401,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     },
                 },
                 scales: {
-                    y: { beginAtZero: true, grid: { borderDash: [4, 4] } },
+                    y: {
+                        beginAtZero: true,
+                        suggestedMax: 1000,
+                        grid: { borderDash: [4, 4] },
+                        ticks: {
+                            callback: function (value) {
+                                return formatPageCurrency(value, dashboardChartDataEl);
+                            },
+                        },
+                    },
                     x: { grid: { display: false } },
                 },
             },
@@ -384,16 +423,31 @@ document.addEventListener("DOMContentLoaded", function () {
                 .getElementById("statusChart")
                 .getContext("2d");
             const statusData = JSON.parse(
-                dashboardChartDataEl.getAttribute("data-status"),
+                dashboardChartDataEl.getAttribute("data-status") || "{}",
             );
+
+            let paidCount = statusData.paid !== undefined ? Number(statusData.paid) : Number(statusData[0] || 0);
+            let pendingCount = statusData.pending !== undefined ? Number(statusData.pending) : Number(statusData[1] || 0);
+
+            let labels = ["Collected", "Pending"];
+            let data = [paidCount, pendingCount];
+            let colors = ["#10b981", "#f59e0b"];
+
+            const totalBillsCount = paidCount + pendingCount;
+            if (totalBillsCount === 0) {
+                labels = ["No Bills Generated Yet"];
+                data = [1];
+                colors = ["#334155"];
+            }
+
             statusChart = new Chart(statusChartCtx, {
                 type: "doughnut",
                 data: {
-                    labels: ["Collected", "Pending"],
+                    labels: labels,
                     datasets: [
                         {
-                            data: [statusData.paid, statusData.pending],
-                            backgroundColor: ["#10b981", "#f59e0b"],
+                            data: data,
+                            backgroundColor: colors,
                             borderWidth: 0,
                             hoverOffset: 10,
                         },
@@ -418,6 +472,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             cornerRadius: 8,
                             callbacks: {
                                 label: function (context) {
+                                    if (totalBillsCount === 0) {
+                                        return " No bills generated";
+                                    }
                                     let label = context.label || "";
                                     if (label) label += ": ";
                                     if (context.parsed !== null)
@@ -442,15 +499,14 @@ document.addEventListener("DOMContentLoaded", function () {
             const expenseChartCtx = document
                 .getElementById("expenseBreakdownChart")
                 .getContext("2d");
-            const expenseLabels = JSON.parse(
-                dashboardChartDataEl.getAttribute("data-expense-labels"),
+            let expenseLabels = JSON.parse(
+                dashboardChartDataEl.getAttribute("data-expense-labels") || "[]",
             );
-            const expenseData = JSON.parse(
-                dashboardChartDataEl.getAttribute("data-expense-data"),
+            let expenseData = JSON.parse(
+                dashboardChartDataEl.getAttribute("data-expense-data") || "[]",
             );
 
-            // Vibrant color palette for expense categories
-            const vibrantColors = [
+            let vibrantColors = [
                 "#6366f1",
                 "#ec4899",
                 "#f59e0b",
@@ -460,6 +516,13 @@ document.addEventListener("DOMContentLoaded", function () {
                 "#0ea5e9",
                 "#14b8a6",
             ];
+
+            const totalExpenseSum = expenseData.reduce((acc, val) => acc + Number(val || 0), 0);
+            if (!expenseData.length || totalExpenseSum === 0) {
+                expenseLabels = ["No Expenses Recorded Yet"];
+                expenseData = [1];
+                vibrantColors = ["#334155"];
+            }
 
             expenseChart = new Chart(expenseChartCtx, {
                 type: "pie",
@@ -493,6 +556,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             cornerRadius: 8,
                             callbacks: {
                                 label: function (context) {
+                                    if (totalExpenseSum === 0) {
+                                        return " No expenses logged";
+                                    }
                                     let label = context.label || "";
                                     if (label) label += ": ";
                                     if (context.parsed !== null)
@@ -517,17 +583,31 @@ document.addEventListener("DOMContentLoaded", function () {
                 .getElementById("occupancyChart")
                 .getContext("2d");
             const occupancyData = JSON.parse(
-                dashboardChartDataEl.getAttribute("data-occupancy"),
+                dashboardChartDataEl.getAttribute("data-occupancy") || "{}",
             );
+
+            let occupiedCount = occupancyData.occupied !== undefined ? Number(occupancyData.occupied) : Number(occupancyData[0] || 0);
+            let emptyCount = occupancyData.empty !== undefined ? Number(occupancyData.empty) : Number(occupancyData[1] || 0);
+
+            let labels = ["Occupied", "Empty"];
+            let data = [occupiedCount, emptyCount];
+            let colors = ["#3b82f6", "#e2e8f0"];
+
+            const totalFlatsCount = occupiedCount + emptyCount;
+            if (totalFlatsCount === 0) {
+                labels = ["No Flats Registered Yet"];
+                data = [1];
+                colors = ["#334155"];
+            }
 
             occupancyChart = new Chart(occupancyChartCtx, {
                 type: "doughnut",
                 data: {
-                    labels: ["Occupied", "Empty"],
+                    labels: labels,
                     datasets: [
                         {
-                            data: [occupancyData.occupied, occupancyData.empty],
-                            backgroundColor: ["#3b82f6", "#e2e8f0"], // Blue for occupied, slate for empty
+                            data: data,
+                            backgroundColor: colors,
                             borderWidth: 0,
                             hoverOffset: 10,
                         },
@@ -552,6 +632,9 @@ document.addEventListener("DOMContentLoaded", function () {
                             cornerRadius: 8,
                             callbacks: {
                                 label: function (context) {
+                                    if (totalFlatsCount === 0) {
+                                        return " No flats registered";
+                                    }
                                     let label = context.label || "";
                                     if (label) label += ": ";
                                     if (context.parsed !== null)
@@ -1754,13 +1837,16 @@ $(document).ready(function () {
         const paymentMethod = $("#payment_method").val();
         const upiDetails = $("#upi-details");
         const paymentSlip = $("#payment_slip");
+        const transactionId = $("#transaction_id");
 
         if (paymentMethod === "upi") {
             upiDetails.removeClass("d-none");
             paymentSlip.attr("required", "required");
+            transactionId.attr("required", "required");
         } else {
             upiDetails.addClass("d-none");
             paymentSlip.removeAttr("required");
+            transactionId.removeAttr("required");
         }
     }
 
@@ -1823,7 +1909,9 @@ $(document).ready(function () {
             }
         }
         // Update calculated duration display and hidden input
-        $("#calculated_duration").val(`${months} Month(s)`);
+        $("#calculated_duration").text(
+            `${months} ${months === 1 ? "Month" : "Month(s)"}`,
+        );
         $("#hidden_months").val(months);
 
         if (
@@ -2289,9 +2377,11 @@ $(document).on("change", "#transfer_payment_method", function () {
     if ($(this).val() === "upi") {
         $("#upi_details_container").show();
         $("#payment_slip").prop("required", true);
+        $("#transaction_id").prop("required", true);
     } else {
         $("#upi_details_container").hide();
         $("#payment_slip").prop("required", false);
+        $("#transaction_id").prop("required", false);
     }
 });
 
@@ -2329,7 +2419,13 @@ $(document).on("submit", "#flat-transfer-form", function (e) {
                         false,
                     );
                 }
-                showToast("success", response.message);
+                toastr.success(response.message || "Ownership transferred successfully.");
+            } else {
+                submitBtn.html(originalText).prop("disabled", false);
+                toastr.error(
+                    response.message ||
+                        "An error occurred while transferring ownership.",
+                );
             }
         },
         error: function (xhr) {
@@ -2353,7 +2449,7 @@ $(document).on("submit", "#flat-transfer-form", function (e) {
                     xhr.responseJSON && xhr.responseJSON.message
                         ? xhr.responseJSON.message
                         : "An error occurred while transferring ownership.";
-                showToast("danger", msg);
+                toastr.error(msg);
             }
         },
     });
@@ -2397,11 +2493,11 @@ $(document).on("submit", "#status-form", function (e) {
                         "nametransferbills-table"
                     ].ajax.reload(null, false);
                 }
-                showToast("success", response.message);
+                toastr.success(response.message || "Status updated successfully.");
             }
         },
         error: function (xhr) {
-            showToast("danger", "Error updating status");
+            toastr.error("Error updating status");
         },
         complete: function () {
             btn.html(originalText).prop("disabled", false);
@@ -2512,9 +2608,6 @@ document.addEventListener("DOMContentLoaded", function () {
             // Add event listener for changes
             checkbox.addEventListener("change", function () {
                 input.disabled = !this.checked;
-                if (!this.checked) {
-                    input.value = ""; // Optional: clear value when unchecked
-                }
             });
         }
     }

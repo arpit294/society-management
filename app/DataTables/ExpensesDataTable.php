@@ -24,18 +24,18 @@ class ExpensesDataTable extends DataTable
                 return $row->created_at ? date('d-m-Y h:i A', strtotime($row->created_at)) : '-';
             })
             ->editColumn('total_amount', function ($row) {
-                return '<span class="badge bg-success fw-bold px-3 py-2 fs-6">'.CurrencyHelper::formatCurrency($row->total_amount).'</span>';
+                return '<span class="badge bg-success fw-bold px-3 py-2 fs-6">' . CurrencyHelper::formatCurrency($row->total_amount) . '</span>';
             })
             ->editColumn('invoice', function ($row) {
                 if ($row->invoice) {
-                    $url = asset('uploads/invoices/'.$row->invoice);
+                    $url = asset('uploads/invoices/' . $row->invoice);
                     $ext = strtolower(pathinfo($row->invoice, PATHINFO_EXTENSION));
 
                     if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
-                        return '<a href="'.$url.'" target="_blank"><img src="'.$url.'" alt="Invoice" class="img-thumbnail" style="height: 50px; width: 50px; object-fit: cover;"></a>';
+                        return '<a href="' . $url . '" target="_blank"><img src="' . $url . '" alt="Invoice" class="img-thumbnail" style="height: 50px; width: 50px; object-fit: cover;"></a>';
                     } else {
                         // For PDF or others
-                        return '<a href="'.$url.'" target="_blank" class="btn btn-sm btn-outline-info"><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>';
+                        return '<a href="' . $url . '" target="_blank" class="btn btn-sm btn-outline-info"><i class="fa-solid fa-file-pdf me-1"></i> View PDF</a>';
                     }
                 }
 
@@ -49,10 +49,18 @@ class ExpensesDataTable extends DataTable
                 $query->where('users.name', 'like', "%{$keyword}%");
             })
             ->filterColumn('expense_date', function ($query, $keyword) {
-                $query->where(function($q) use ($keyword) {
+                $query->where(function ($q) use ($keyword) {
                     $q->whereRaw("DATE_FORMAT(expenses.expense_date, '%b %Y') like ?", ["%{$keyword}%"])
-                      ->orWhereRaw("DATE_FORMAT(expenses.expense_date, '%Y-%m') like ?", ["%{$keyword}%"]);
+                        ->orWhereRaw("DATE_FORMAT(expenses.expense_date, '%Y-%m') like ?", ["%{$keyword}%"]);
                 });
+            })
+            ->filterColumn('expense_month', function ($query, $keyword) {
+                if (empty($keyword)) {
+                    return;
+                }
+
+                // keyword is expected as YYYY-MM from the <input type="month">
+                $query->whereRaw("DATE_FORMAT(expenses.expense_date, '%Y-%m') = ?", [$keyword]);
             })
             ->rawColumns(['action', 'invoice', 'total_amount'])
             ->setRowId('id');
@@ -118,6 +126,6 @@ class ExpensesDataTable extends DataTable
 
     protected function filename(): string
     {
-        return 'Expenses_'.date('YmdHis');
+        return 'Expenses_' . date('YmdHis');
     }
 }

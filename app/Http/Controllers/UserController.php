@@ -6,7 +6,9 @@ use App\DataTables\UsersDataTable;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\User;
+use Spatie\Permission\Models\Role;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -17,9 +19,22 @@ class UserController extends Controller
     public function index(UsersDataTable $dataTable)
     {
         abort_if(! auth()->user()->can('user_view'), 403);
-        $roles = \App\Models\Role::pluck('name');
+        try {
+            $roles = Role::pluck('name');
 
-        return $dataTable->render('users.index', compact('roles'));
+            return $dataTable->render('users.index', compact('roles'));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in UserController@index: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -28,16 +43,29 @@ class UserController extends Controller
     public function create()
     {
         abort_if(! auth()->user()->can('user_create'), 403);
-        if (request()->ajax()) {
-            $roles = \App\Models\Role::pluck('name');
-            return view('users.create', [
-                'user' => null,
-                'roles' => $roles,
-                'action' => route('users.store'),
-            ]);
-        }
+        try {
+            if (request()->ajax()) {
+                $roles = Role::pluck('name');
+                return view('users.create', [
+                    'user' => null,
+                    'roles' => $roles,
+                    'action' => route('users.store'),
+                ]);
+            }
 
-        return redirect()->route('users.index');
+            return redirect()->route('users.index');
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in UserController@create: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -46,18 +74,34 @@ class UserController extends Controller
     public function store(StoreUserRequest $request)
     {
         abort_if(! auth()->user()->can('user_create'), 403);
-        User::create($request->validated());
+        try {
+            $user = User::create($request->validated());
+            if ($request->filled('role')) {
+                $user->syncRoles([$request->role]);
+            }
 
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'User created successfully.',
-            ]);
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'User created successfully.',
+                ]);
+            }
+
+            return redirect()
+                ->route('users.index')
+                ->with('success', 'User created successfully.');
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in UserController@store: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred creating user: ' . $e->getMessage());
         }
-
-        return redirect()
-            ->route('users.index')
-            ->with('success', 'User created successfully.');
     }
 
     /**
@@ -66,16 +110,29 @@ class UserController extends Controller
     public function edit(User $user)
     {
         abort_if(! auth()->user()->can('user_edit'), 403);
-        if (request()->ajax()) {
-            $roles = \App\Models\Role::pluck('name');
-            return view('users.edit', [
-                'user' => $user,
-                'roles' => $roles,
-                'action' => route('users.update', $user),
-            ]);
-        }
+        try {
+            if (request()->ajax()) {
+                $roles = Role::pluck('name');
+                return view('users.edit', [
+                    'user' => $user,
+                    'roles' => $roles,
+                    'action' => route('users.update', $user),
+                ]);
+            }
 
-        return redirect()->route('users.index');
+            return redirect()->route('users.index');
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in UserController@edit: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -84,43 +141,59 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user)
     {
         abort_if(! auth()->user()->can('user_edit'), 403);
-        $validatedData = $request->validated();
+        try {
+            $validatedData = $request->validated();
 
-        // TRICKY: If the user didn't type a new password in the edit form,
-        // we remove 'password' from the array so we don't accidentally overwrite
-        // their current password with an empty string!
-        // (Note: Hashing is handled automatically by the 'hashed' cast in the User model)
-        // Prevent removing the last secretary
-        if ($user->role === 'secretary' && $validatedData['role'] !== 'secretary') {
-            $secretaryCount = User::where('role', 'secretary')->count();
-            if ($secretaryCount <= 1) {
-                if ($request->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'You cannot remove the secretary role from the last remaining secretary.',
-                    ], 403);
+            // TRICKY: If the user didn't type a new password in the edit form,
+            // we remove 'password' from the array so we don't accidentally overwrite
+            // their current password with an empty string!
+            // (Note: Hashing is handled automatically by the 'hashed' cast in the User model)
+            // Prevent removing the last secretary
+            if ($user->role === 'secretary' && $validatedData['role'] !== 'secretary') {
+                $secretaryCount = User::where('role', 'secretary')->count();
+                if ($secretaryCount <= 1) {
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'You cannot remove the secretary role from the last remaining secretary.',
+                        ], 403);
+                    }
+
+                    return redirect()->back()->with('error', 'You cannot remove the secretary role from the last remaining secretary.');
                 }
-
-                return redirect()->back()->with('error', 'You cannot remove the secretary role from the last remaining secretary.');
             }
+
+            if (empty($validatedData['password'])) {
+                unset($validatedData['password']);
+            }
+
+            $user->update($validatedData);
+            if (isset($validatedData['role'])) {
+                $user->syncRoles([$validatedData['role']]);
+            }
+
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'User updated successfully.',
+                ]);
+            }
+
+            return redirect()
+                ->route('users.index')
+                ->with('success', 'User updated successfully.');
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in UserController@update: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred updating user: ' . $e->getMessage());
         }
-
-        if (empty($validatedData['password'])) {
-            unset($validatedData['password']);
-        }
-
-        $user->update($validatedData);
-
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'User updated successfully.',
-            ]);
-        }
-
-        return redirect()
-            ->route('users.index')
-            ->with('success', 'User updated successfully.');
     }
 
     /**
@@ -129,32 +202,45 @@ class UserController extends Controller
     public function destroy(Request $request, User $user)
     {
         abort_if(! auth()->user()->can('user_delete'), 403);
-        if (auth()->id() === $user->id) {
+        try {
+            if (auth()->id() === $user->id) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'You cannot delete your own account.',
+                    ], 403);
+                }
+
+                return redirect()
+                    ->route('users.index')
+                    ->with('error', 'You cannot delete your own account.');
+            }
+
+            $id = $user->id;
+            $user->delete();
+
             if ($request->ajax()) {
                 return response()->json([
-                    'success' => false,
-                    'message' => 'You cannot delete your own account.',
-                ], 403);
+                    'success' => true,
+                    'message' => 'User deleted successfully.',
+                    'id' => $id,
+                ]);
             }
 
             return redirect()
                 ->route('users.index')
-                ->with('error', 'You cannot delete your own account.');
+                ->with('success', 'User deleted successfully.');
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in UserController@destroy: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred deleting user: ' . $e->getMessage());
         }
-
-        $id = $user->id;
-        $user->delete();
-
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'User deleted successfully.',
-                'id' => $id,
-            ]);
-        }
-
-        return redirect()
-            ->route('users.index')
-            ->with('success', 'User deleted successfully.');
     }
 }

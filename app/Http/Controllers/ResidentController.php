@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Reader\XLSX\Reader;
@@ -25,347 +26,463 @@ class ResidentController extends Controller
     public function index(ResidentsDataTable $dataTable)
     {
         abort_if(Gate::denies('resident_view'), 403);
-        $blocks = Block::all();
+        try {
+            $blocks = Block::all();
 
-        return $dataTable->render('residents.index', compact('blocks'));
+            return $dataTable->render('residents.index', compact('blocks'));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ResidentController@index: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     // Show the form for creating a new resource.
     public function create()
     {
         abort_if(Gate::denies('resident_create'), 403);
-        $blocks = Block::all();
-        $users = User::with(['resident.flat.block'])->get();
+        try {
+            $blocks = Block::all();
+            $users = User::with(['resident.flat.block'])->get();
 
-        return view('residents.create', compact('blocks', 'users'));
+            return view('residents.create', compact('blocks', 'users'));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ResidentController@create: ' . $e->getMessage());
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred: ' . $e->getMessage());
+        }
     }
 
     // Store a newly created resource in storage.
     public function store(Request $request)
     {
         abort_if(Gate::denies('resident_create'), 403);
-        // Check if the flat already has an owner
-        $flatHasOwner = Resident::where('flat_id', $request->flat_id)->where('type', 'owner')->exists();
+        try {
+            // Check if the flat already has an owner
+            $flatHasOwner = Resident::where('flat_id', $request->flat_id)->where('type', 'owner')->exists();
 
-        // Check if flat is already occupied
-        $isOccupied = Resident::where('flat_id', $request->flat_id)
-            ->whereNull('move_out_date')
-            ->exists();
+            // Check if flat is already occupied
+            $isOccupied = Resident::where('flat_id', $request->flat_id)
+                ->whereNull('move_out_date')
+                ->exists();
 
-        if ($isOccupied) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This flat is already occupied by an active resident. Please move them out first before adding a new one.',
-            ], 422);
-        }
+            if ($isOccupied) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This flat is already occupied by an active resident. Please move them out first before adding a new one.',
+                ], 422);
+            }
 
-        $rules = [
-            'block_id' => 'required|exists:blocks,id',
-            'flat_id' => 'required|exists:flats,id',
-            'type' => 'required|string|in:owner,rental',
-            'user_id' => 'required|exists:users,id',
-            'move_in_date' => 'required|date',
-            'move_out_date' => 'nullable|date',
-        ];
+            $rules = [
+                'block_id' => 'required|exists:blocks,id',
+                'flat_id' => 'required|exists:flats,id',
+                'type' => 'required|string|in:owner,rental',
+                'user_id' => 'required|exists:users,id',
+                'move_in_date' => 'required|date',
+                'move_out_date' => 'nullable|date',
+            ];
 
-        // If it's a rental and flat doesn't have an owner, they must provide one.
-        if ($request->type === 'rental' && ! $flatHasOwner) {
-            $rules['owner_user_id'] = 'required|exists:users,id';
-        }
+            // If it's a rental and flat doesn't have an owner, they must provide one.
+            if ($request->type === 'rental' && ! $flatHasOwner) {
+                $rules['owner_user_id'] = 'required|exists:users,id';
+            }
 
-        $validatedData = $request->validate($rules, [
-            'owner_user_id.required' => 'A flat must have an owner before it can be rented. Please assign an owner.',
-        ]);
-
-        // Remove owner_user_id from validatedData before creating the tenant
-        $ownerUserId = $validatedData['owner_user_id'] ?? null;
-        unset($validatedData['owner_user_id']);
-
-        Resident::create($validatedData);
-
-        // If owner_user_id was provided, create the owner resident
-        if ($request->type === 'rental' && ! $flatHasOwner && $ownerUserId) {
-            Resident::create([
-                'block_id' => $validatedData['block_id'],
-                'flat_id' => $validatedData['flat_id'],
-                'user_id' => $ownerUserId,
-                'type' => 'owner',
-                'move_in_date' => $validatedData['move_in_date'],
+            $validatedData = $request->validate($rules, [
+                'owner_user_id.required' => 'A flat must have an owner before it can be rented. Please assign an owner.',
             ]);
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Resident created successfully.',
-        ]);
+            // Remove owner_user_id from validatedData before creating the tenant
+            $ownerUserId = $validatedData['owner_user_id'] ?? null;
+            unset($validatedData['owner_user_id']);
+
+            Resident::create($validatedData);
+
+            // If owner_user_id was provided, create the owner resident
+            if ($request->type === 'rental' && ! $flatHasOwner && $ownerUserId) {
+                Resident::create([
+                    'block_id' => $validatedData['block_id'],
+                    'flat_id' => $validatedData['flat_id'],
+                    'user_id' => $ownerUserId,
+                    'type' => 'owner',
+                    'move_in_date' => $validatedData['move_in_date'],
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Resident created successfully.',
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ResidentController@store: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred creating resident: ' . $e->getMessage());
+        }
     }
 
     // Show the form for editing the specified resource.
     public function edit(Resident $resident)
     {
         abort_if(Gate::denies('resident_edit'), 403);
-        $blocks = Block::all();
-        $flats = Flat::where('block_id', $resident->block_id)->get();
-        $users = User::with(['resident.flat.block'])->get();
+        try {
+            $blocks = Block::all();
+            $flats = Flat::where('block_id', $resident->block_id)->get();
+            $users = User::with(['resident.flat.block'])->get();
 
-        return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
+            return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ResidentController@edit: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'An error occurred loading edit form: ' . $e->getMessage());
+        }
     }
 
     // Update the specified resource in storage.
     public function update(Request $request, Resident $resident)
     {
         abort_if(Gate::denies('resident_edit'), 403);
-        $flatHasOwner = Resident::query()->where('flat_id', $request->flat_id)
-            ->where('type', 'owner')
-            ->where(function ($q) {
-                $q->whereNull('move_out_date')
-                    ->orWhere('move_out_date', '>=', now()->startOfDay());
-            })
-            ->where('id', '!=', $resident->id)
-            ->exists();
+        try {
+            $flatHasOwner = Resident::query()->where('flat_id', $request->flat_id)
+                ->where('type', 'owner')
+                ->where(function ($q) {
+                    $q->whereNull('move_out_date')
+                        ->orWhere('move_out_date', '>=', now()->startOfDay());
+                })
+                ->where('id', '!=', $resident->id)
+                ->exists();
 
-        // Check if flat is already occupied by another resident
-        $isOccupied = Resident::where('flat_id', $request->flat_id)
-            ->whereNull('move_out_date')
-            ->where('id', '!=', $resident->id)
-            ->exists();
+            // Check if flat is already occupied by another resident
+            $isOccupied = Resident::where('flat_id', $request->flat_id)
+                ->whereNull('move_out_date')
+                ->where('id', '!=', $resident->id)
+                ->exists();
 
-        if ($isOccupied) {
-            return response()->json([
-                'success' => false,
-                'message' => 'This flat is already occupied by an active resident. Please move them out first.',
-            ], 422);
-        }
+            if ($isOccupied) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This flat is already occupied by an active resident. Please move them out first.',
+                ], 422);
+            }
 
-        $rules = [
-            'block_id' => 'required|exists:blocks,id',
-            'flat_id' => 'required|exists:flats,id',
-            'type' => 'required|string|in:owner,rental',
-            'user_id' => 'required|exists:users,id',
-            'move_in_date' => 'required|date',
-            'move_out_date' => 'nullable|date',
-        ];
+            $rules = [
+                'block_id' => 'required|exists:blocks,id',
+                'flat_id' => 'required|exists:flats,id',
+                'type' => 'required|string|in:owner,rental',
+                'user_id' => 'required|exists:users,id',
+                'move_in_date' => 'required|date',
+                'move_out_date' => 'nullable|date',
+            ];
 
-        // If it's a rental and flat doesn't have an owner, they must provide one.
-        if ($request->type === 'rental' && ! $flatHasOwner) {
-            $rules['owner_user_id'] = 'required|exists:users,id';
-        }
+            // If it's a rental and flat doesn't have an owner, they must provide one.
+            if ($request->type === 'rental' && ! $flatHasOwner) {
+                $rules['owner_user_id'] = 'required|exists:users,id';
+            }
 
-        $validatedData = $request->validate($rules, [
-            'owner_user_id.required' => 'A flat must have an owner before it can be rented. Please assign an owner.',
-        ]);
-
-        // Remove owner_user_id from validatedData before updating the tenant
-        $ownerUserId = $validatedData['owner_user_id'] ?? null;
-        unset($validatedData['owner_user_id']);
-
-        $resident->update($validatedData);
-
-        // If owner_user_id was provided, create the owner resident
-        if ($request->type === 'rental' && ! $flatHasOwner && $ownerUserId) {
-            Resident::create([
-                'block_id' => $validatedData['block_id'],
-                'flat_id' => $validatedData['flat_id'],
-                'user_id' => $ownerUserId,
-                'type' => 'owner',
-                'move_in_date' => $validatedData['move_in_date'],
+            $validatedData = $request->validate($rules, [
+                'owner_user_id.required' => 'A flat must have an owner before it can be rented. Please assign an owner.',
             ]);
-        }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Resident updated successfully.',
-        ]);
+            // Remove owner_user_id from validatedData before updating the tenant
+            $ownerUserId = $validatedData['owner_user_id'] ?? null;
+            unset($validatedData['owner_user_id']);
+
+            $resident->update($validatedData);
+
+            // If owner_user_id was provided, create the owner resident
+            if ($request->type === 'rental' && ! $flatHasOwner && $ownerUserId) {
+                Resident::create([
+                    'block_id' => $validatedData['block_id'],
+                    'flat_id' => $validatedData['flat_id'],
+                    'user_id' => $ownerUserId,
+                    'type' => 'owner',
+                    'move_in_date' => $validatedData['move_in_date'],
+                ]);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Resident updated successfully.',
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ResidentController@update: ' . $e->getMessage());
+
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+            }
+
+            return redirect()->back()->with('error', 'An error occurred updating resident: ' . $e->getMessage());
+        }
     }
 
     // Remove the specified resource from storage.
     public function destroy(Resident $resident)
     {
         abort_if(Gate::denies('resident_delete'), 403);
-        $resident->delete();
+        try {
+            $resident->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Resident deleted successfully.',
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Resident deleted successfully.',
+            ]);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ResidentController@destroy: ' . $e->getMessage());
+
+            return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
     }
 
     // API Methods
     public function getFlatsByBlock($block_id)
     {
         abort_if(Gate::denies('resident_view'), 403);
-        $flats = Flat::where('block_id', $block_id)->get();
+        try {
+            $flats = Flat::where('block_id', $block_id)->get();
 
-        return response()->json($flats);
+            return response()->json($flats);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ResidentController@getFlatsByBlock: ' . $e->getMessage());
+
+            return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
     }
 
     public function getFlatOwner($flat_id)
     {
         abort_if(Gate::denies('resident_view'), 403);
-        $ownerResident = Resident::where('flat_id', $flat_id)->where('type', 'owner')->first();
-        if ($ownerResident) {
-            return response()->json(['has_owner' => true, 'user_id' => $ownerResident->user_id]);
-        }
+        try {
+            $ownerResident = Resident::where('flat_id', $flat_id)->where('type', 'owner')->first();
+            if ($ownerResident) {
+                return response()->json(['has_owner' => true, 'user_id' => $ownerResident->user_id]);
+            }
 
-        return response()->json(['has_owner' => false]);
+            return response()->json(['has_owner' => false]);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ResidentController@getFlatOwner: ' . $e->getMessage());
+
+            return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
     }
 
     public function getFlatUsers($flat_id)
     {
         abort_if(Gate::denies('resident_view'), 403);
-        $residents = Resident::with('user')->where('flat_id', $flat_id)->get();
+        try {
+            $residents = Resident::with('user')->where('flat_id', $flat_id)->get();
 
-        $users = $residents->map(function ($resident) {
-            return [
-                'id' => $resident->user->id,
-                'name' => $resident->user->name,
-                'email' => $resident->user->email,
-                'phone' => $resident->user->phone,
-                'resident_type' => $resident->type,
-            ];
-        });
+            $users = $residents->map(function ($resident) {
+                return [
+                    'id' => $resident->user->id,
+                    'name' => $resident->user->name,
+                    'email' => $resident->user->email,
+                    'phone' => $resident->user->phone,
+                    'resident_type' => $resident->type,
+                ];
+            });
 
-        return response()->json($users);
+            return response()->json($users);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ResidentController@getFlatUsers: ' . $e->getMessage());
+
+            return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
+        }
     }
 
     // Bulk Import Methods
     public function downloadTemplate()
     {
         abort_if(Gate::denies('resident_create'), 403);
-        $headers = [
-            'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => 'attachment; filename=residents_import_template.xlsx',
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
+        try {
+            $headers = [
+                'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename=residents_import_template.xlsx',
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0',
+            ];
 
-        $callback = function () {
-            $writer = new Writer;
-            $writer->openToFile('php://output');
+            $callback = function () {
+                $writer = new Writer;
+                $writer->openToFile('php://output');
 
-            // Header row matching the agreed columns
-            $writer->addRow(Row::fromValues([
-                'Name',
-                'Email',
-                'Phone',
-                'Aadhar ID',
-                'Block Name',
-                'Flat No',
-                'Type (owner/rental)',
-                'Move In Date (YYYY-MM-DD)',
-            ]));
+                // Header row matching the agreed columns
+                $writer->addRow(Row::fromValues([
+                    'Name',
+                    'Email',
+                    'Phone',
+                    'Aadhar ID',
+                    'Block Name',
+                    'Flat No',
+                    'Type (owner/rental)',
+                    'Move In Date (YYYY-MM-DD)',
+                ]));
 
-            // Example row
-            $writer->addRow(Row::fromValues([
-                'John Doe',
-                'john.doe@example.com',
-                '9876543210',
-                '123412341234',
-                'A',
-                '101',
-                'owner',
-                '2023-01-15',
-            ]));
+                // Example row
+                $writer->addRow(Row::fromValues([
+                    'John Doe',
+                    'john.doe@example.com',
+                    '9876543210',
+                    '123412341234',
+                    'A',
+                    '101',
+                    'owner',
+                    '2023-01-15',
+                ]));
 
-            $writer->close();
-        };
+                $writer->close();
+            };
 
-        return response()->stream($callback, 200, $headers);
+            return response()->stream($callback, 200, $headers);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ResidentController@downloadTemplate: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'An error occurred downloading template: ' . $e->getMessage());
+        }
     }
 
     // Export Residents to Excel
     public function export(Request $request)
     {
         abort_if(Gate::denies('resident_view'), 403);
-        $exportType = $request->input('export_type', 'excel');
-        $ext = $exportType === 'csv' ? 'csv' : 'xlsx';
-        $contentType = $exportType === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        try {
+            $exportType = $request->input('export_type', 'excel');
+            $ext = $exportType === 'csv' ? 'csv' : 'xlsx';
+            $contentType = $exportType === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-        $headers = [
-            'Content-type' => $contentType,
-            'Content-Disposition' => 'attachment; filename=residents_export_' . date('Ymd_His') . '.' . $ext,
-            'Pragma' => 'no-cache',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ];
-
-        $callback = function () use ($request, $exportType) {
-            $writer = $exportType === 'csv' ? new CSVWriter() : new Writer();
-            $writer->openToFile('php://output');
-
-            $allFieldsMap = [
-                'name' => ['label' => 'Name', 'getter' => fn($r) => $r->user->name ?? 'N/A'],
-                'email' => ['label' => 'Email', 'getter' => fn($r) => $r->user->email ?? 'N/A'],
-                'phone' => ['label' => 'Mobile', 'getter' => fn($r) => $r->user->phone ?? 'N/A'],
-                'aadhar_id' => ['label' => 'Aadhar ID', 'getter' => fn($r) => $r->user->aadhar_id ?? 'N/A'],
-                'block_name' => ['label' => 'Block Name', 'getter' => fn($r) => $r->block->block_name ?? 'N/A'],
-                'flat_no' => ['label' => 'Flat No', 'getter' => fn($r) => $r->flat->flat_no ?? 'N/A'],
-                'type' => ['label' => 'Resident Type', 'getter' => fn($r) => ucfirst($r->type)],
-                'status' => ['label' => 'Status', 'getter' => fn($r) => $r->move_out_date && $r->move_out_date < date('Y-m-d') ? 'Former' : 'Active'],
-                'move_in_date' => ['label' => 'Move In Date', 'getter' => fn($r) => $r->move_in_date ? date('Y-m-d', strtotime($r->move_in_date)) : ''],
-                'move_out_date' => ['label' => 'Move Out Date', 'getter' => fn($r) => $r->move_out_date ? date('Y-m-d', strtotime($r->move_out_date)) : ''],
+            $headers = [
+                'Content-type' => $contentType,
+                'Content-Disposition' => 'attachment; filename=residents_export_' . date('Ymd_His') . '.' . $ext,
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0',
             ];
 
-            // Determine which fields to include based on request or default to all
-            $selectedFields = $request->input('fields');
-            if (!is_array($selectedFields) || empty($selectedFields)) {
-                $selectedFields = array_keys($allFieldsMap);
-            }
+            $callback = function () use ($request, $exportType) {
+                $writer = $exportType === 'csv' ? new CSVWriter() : new Writer();
+                $writer->openToFile('php://output');
 
-            $headerRow = [];
-            foreach ($selectedFields as $f) {
-                if (isset($allFieldsMap[$f])) {
-                    $headerRow[] = $allFieldsMap[$f]['label'];
+                $allFieldsMap = [
+                    'name' => ['label' => 'Name', 'getter' => fn($r) => $r->user->name ?? 'N/A'],
+                    'email' => ['label' => 'Email', 'getter' => fn($r) => $r->user->email ?? 'N/A'],
+                    'phone' => ['label' => 'Mobile', 'getter' => fn($r) => $r->user->phone ?? 'N/A'],
+                    'aadhar_id' => ['label' => 'Aadhar ID', 'getter' => fn($r) => $r->user->aadhar_id ?? 'N/A'],
+                    'block_name' => ['label' => 'Block Name', 'getter' => fn($r) => $r->block->block_name ?? 'N/A'],
+                    'flat_no' => ['label' => 'Flat No', 'getter' => fn($r) => $r->flat->flat_no ?? 'N/A'],
+                    'type' => ['label' => 'Resident Type', 'getter' => fn($r) => ucfirst($r->type)],
+                    'status' => ['label' => 'Status', 'getter' => fn($r) => $r->move_out_date && $r->move_out_date < date('Y-m-d') ? 'Former' : 'Active'],
+                    'move_in_date' => ['label' => 'Move In Date', 'getter' => fn($r) => $r->move_in_date ? date('Y-m-d', strtotime($r->move_in_date)) : ''],
+                    'move_out_date' => ['label' => 'Move Out Date', 'getter' => fn($r) => $r->move_out_date ? date('Y-m-d', strtotime($r->move_out_date)) : ''],
+                ];
+
+                // Determine which fields to include based on request or default to all
+                $selectedFields = $request->input('fields');
+                if (!is_array($selectedFields) || empty($selectedFields)) {
+                    $selectedFields = array_keys($allFieldsMap);
                 }
-            }
 
-            $writer->addRow(Row::fromValues($headerRow));
-
-            $query = Resident::with(['user', 'block', 'flat']);
-
-            if ($request->filled('block')) {
-                $query->whereHas('block', function ($q) use ($request) {
-                    $q->where('block_name', $request->block);
-                });
-            }
-            if ($request->filled('type')) {
-                $query->where('type', $request->type);
-            }
-
-            // Use chunking to handle large datasets efficiently
-            $query->chunk(200, function ($residents) use ($writer, $selectedFields, $allFieldsMap) {
-                foreach ($residents as $resident) {
-                    $rowValues = [];
-                    foreach ($selectedFields as $f) {
-                        if (isset($allFieldsMap[$f])) {
-                            $rowValues[] = ($allFieldsMap[$f]['getter'])($resident);
-                        }
+                $headerRow = [];
+                foreach ($selectedFields as $f) {
+                    if (isset($allFieldsMap[$f])) {
+                        $headerRow[] = $allFieldsMap[$f]['label'];
                     }
-                    $writer->addRow(Row::fromValues($rowValues));
                 }
-            });
 
-            $writer->close();
-        };
+                $writer->addRow(Row::fromValues($headerRow));
 
-        return response()->stream($callback, 200, $headers);
+                $query = Resident::with(['user', 'block', 'flat']);
+
+                if ($request->filled('block')) {
+                    $query->whereHas('block', function ($q) use ($request) {
+                        $q->where('block_name', $request->block);
+                    });
+                }
+                if ($request->filled('type')) {
+                    $query->where('type', $request->type);
+                }
+
+                // Use chunking to handle large datasets efficiently
+                $query->chunk(200, function ($residents) use ($writer, $selectedFields, $allFieldsMap) {
+                    foreach ($residents as $resident) {
+                        $rowValues = [];
+                        foreach ($selectedFields as $f) {
+                            if (isset($allFieldsMap[$f])) {
+                                $rowValues[] = ($allFieldsMap[$f]['getter'])($resident);
+                            }
+                        }
+                        $writer->addRow(Row::fromValues($rowValues));
+                    }
+                });
+
+                $writer->close();
+            };
+
+            return response()->stream($callback, 200, $headers);
+        } catch (\Exception $e) {
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            Log::error('Error in ResidentController@export: ' . $e->getMessage());
+
+            return redirect()->back()->with('error', 'An error occurred exporting residents: ' . $e->getMessage());
+        }
     }
 
     // Handle the preview of residents from Excel file
     public function previewImport(Request $request)
     {
         abort_if(Gate::denies('resident_create'), 403);
-        $request->validate([
-            'excel_file' => 'required|file|mimes:xlsx,xls|max:5120',
-        ]);
-
-        $file = $request->file('excel_file');
-
-        // Store the file temporarily
-        $path = $file->storeAs('temp_imports', 'residents_import_' . time() . '.' . $file->getClientOriginalExtension());
-
+        $path = null;
         try {
+            $request->validate([
+                'excel_file' => 'required|file|mimes:xlsx,xls|max:5120',
+            ]);
+
+            $file = $request->file('excel_file');
+
+            // Store the file temporarily
+            $path = $file->storeAs('temp_imports', 'residents_import_' . time() . '.' . $file->getClientOriginalExtension());
+
             $reader = new Reader;
             $reader->open(Storage::path($path));
 
@@ -388,18 +505,20 @@ class ResidentController extends Controller
                             }
                             if (trim((string)$cell) !== '') $isEmptyRow = false;
                         }
+
                         if ($isEmptyRow) {
                             $consecutiveEmpty++;
-                            if ($consecutiveEmpty > 20) break;
+                            if ($consecutiveEmpty >= 10) break;
                             continue;
                         }
+
                         $consecutiveEmpty = 0;
                         $previewRows[] = $cells;
                         $rowCount++;
+                        if ($rowCount > 11) break; // header + 10 rows
                     }
-                    if (count($previewRows) >= 6 || $rowCount > 50) break;
                 }
-                break; // Only read first sheet
+                break; // Only preview first sheet
             }
             $reader->close();
 
@@ -410,7 +529,13 @@ class ResidentController extends Controller
                 'preview_rows' => $previewRows
             ]);
         } catch (\Exception $e) {
-            Storage::delete($path);
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            if ($path) {
+                Storage::delete($path);
+            }
+            Log::error('Error in ResidentController@previewImport: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error reading Excel file: ' . $e->getMessage()
@@ -422,28 +547,29 @@ class ResidentController extends Controller
     public function processImport(Request $request)
     {
         abort_if(Gate::denies('resident_create'), 403);
-        $request->validate([
-            'file_path' => 'required|string',
-            'mapping' => 'required|array',
-        ]);
-
-        $path = $request->file_path;
-        if (!Storage::exists($path) || !str_starts_with($path, 'temp_imports/')) {
-            return response()->json(['success' => false, 'message' => 'Temporary file not found or invalid. Please try uploading again.']);
-        }
-
-        $mapping = $request->mapping;
-
-        // Ensure required mappings are present
-        $requiredFields = ['name', 'email', 'aadhar_id', 'block_name', 'flat_no', 'type'];
-        foreach ($requiredFields as $field) {
-            if (!isset($mapping[$field]) && $mapping[$field] !== '0' && $mapping[$field] !== 0) {
-                Storage::delete($path);
-                return response()->json(['success' => false, 'message' => "Required field '{$field}' is not mapped."]);
-            }
-        }
-
+        $path = null;
         try {
+            $request->validate([
+                'file_path' => 'required|string',
+                'mapping' => 'required|array',
+            ]);
+
+            $path = $request->file_path;
+            if (!Storage::exists($path) || !str_starts_with($path, 'temp_imports/')) {
+                return response()->json(['success' => false, 'message' => 'Temporary file not found or invalid. Please try uploading again.']);
+            }
+
+            $mapping = $request->mapping;
+
+            // Ensure required mappings are present
+            $requiredFields = ['name', 'email', 'aadhar_id', 'block_name', 'flat_no', 'type'];
+            foreach ($requiredFields as $field) {
+                if (!isset($mapping[$field]) && $mapping[$field] !== '0' && $mapping[$field] !== 0) {
+                    Storage::delete($path);
+                    return response()->json(['success' => false, 'message' => "Required field '{$field}' is not mapped."]);
+                }
+            }
+
             DB::beginTransaction();
 
             $reader = new Reader;
@@ -472,7 +598,10 @@ class ResidentController extends Controller
                     $cells = $row->toArray();
                     $isEmptyRow = true;
                     foreach ($cells as $cell) {
-                        if (trim((string)$cell) !== '') { $isEmptyRow = false; break; }
+                        if (trim((string)$cell) !== '') {
+                            $isEmptyRow = false;
+                            break;
+                        }
                     }
                     if ($isEmptyRow) {
                         $consecutiveEmpty++;
@@ -608,6 +737,19 @@ class ResidentController extends Controller
                         $activeOwnerCache[$flat->id] = true;
                     }
 
+                    // Check/validate duplicate Aadhaar across users
+                    $existingUserWithAadhar = User::where('aadhar_id', $data['aadhar_id'])->first();
+                    if ($existingUserWithAadhar && $existingUserWithAadhar->email !== $data['email']) {
+                        $failedRecords[] = [
+                            'name' => $data['name'] ?? 'Unknown',
+                            'block' => $data['block_name'] ?? 'Unknown',
+                            'flat' => $data['flat_no'] ?? 'Unknown',
+                            'reason' => 'Duplicate Aadhaar ID already exists for another user.',
+                        ];
+                        $rowIndex++;
+                        continue;
+                    }
+
                     // Check or create User (with cache)
                     if (!isset($userCache[$data['email']])) {
                         $user = User::firstOrCreate(
@@ -669,9 +811,15 @@ class ResidentController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Storage::delete($path); // Cleanup temp file
+            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+                throw $e;
+            }
+            if ($path) {
+                Storage::delete($path); // Cleanup temp file
+            }
+            Log::error('Error in ResidentController@processImport: ' . $e->getMessage());
 
-            return response()->json(['success' => false, 'message' => 'Error processing residents import: ' . $e->getMessage()]);
+            return response()->json(['success' => false, 'message' => 'Error processing residents import: ' . $e->getMessage()], 500);
         }
     }
 }

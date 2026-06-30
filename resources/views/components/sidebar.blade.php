@@ -50,7 +50,6 @@
                         class="ci-primary" />
                 </svg>
                 Dashboard
-                <span class="badge badge-sm bg-info ms-auto">NEW</span>
             </a>
         </li>
         @endcan

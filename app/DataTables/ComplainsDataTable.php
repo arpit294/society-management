@@ -28,9 +28,9 @@ class ComplainsDataTable extends DataTable
                 $query->where('complains.category', 'like', "%{$keyword}%");
             })
             ->editColumn('status', function ($row) {
-                if ($row->status === 'resolved') {
+                if ($row->status === config('status.complaints.resolved')) {
                     $class = 'bg-success';
-                } elseif ($row->status === 'in-progress') {
+                } elseif ($row->status === config('status.complaints.in_progress')) {
                     $class = 'bg-info';
                 } else {
                     $class = 'bg-warning';

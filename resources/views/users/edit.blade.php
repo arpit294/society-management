@@ -63,7 +63,16 @@
             @enderror
         </div>
 
-        <input type="hidden" name="status" value="active">
+        <div class="mb-3">
+            <label class="form-label text-warning fw-semibold">Status <span class="text-danger">*</span></label>
+            <select name="status" class="form-select @error('status') is-invalid @enderror">
+                <option value="active" @selected(old('status', $user->status ?? 'active') === 'active')>Active</option>
+                <option value="inactive" @selected(old('status', $user->status ?? 'active') === 'inactive')>Inactive</option>
+            </select>
+            @error('status')
+                <div class="invalid-feedback d-block field-error">{{ $message }}</div>
+            @enderror
+        </div>
 
 
         <div class="mb-3">
