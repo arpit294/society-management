@@ -16193,3 +16193,53 @@ textarea.form-control:focus {
     animation: themeToggleSpin 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* Extracted Blade utilities */
+.header-toggler-offset {
+    margin-inline-start: -14px;
+}
+
+.role-card {
+    cursor: pointer;
+}
+
+.settings-rate-option .form-check {
+    align-items: center;
+    display: flex;
+    min-height: 1.75rem;
+    padding-left: 0;
+}
+
+.settings-rate-option .form-check-input {
+    flex: 0 0 auto;
+    margin-left: 0;
+    margin-top: 0;
+}
+
+.settings-rate-option .form-check-label {
+    line-height: 1.25;
+    margin-left: 0.5rem;
+    min-width: 0;
+}
+
+.settings-rate-option .input-group {
+    width: 100%;
+}
+
+.form-control,
+.form-select {
+    color: white;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.export-resident-submit {
+    background: #6c5ce7;
+    border-color: #6c5ce7;
+}

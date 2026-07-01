@@ -9,7 +9,7 @@
                 <form method="GET" action="{{ route('reports.maintenance') }}" class="row g-3 mb-4 align-items-end" id="filterForm">
                     <div class="col-md-3">
                         <label class="form-label">Report Type</label>
-                        <select name="report_type" class="form-select" id="reportTypeSelect" onchange="this.form.submit()">
+                        <select name="report_type" class="form-select js-auto-submit" id="reportTypeSelect">
                             <option value="monthly" {{ $reportType == 'monthly' ? 'selected' : '' }}>Monthly</option>
                             <option value="yearly" {{ $reportType == 'yearly' ? 'selected' : '' }}>Yearly</option>
                         </select>
@@ -17,7 +17,7 @@
 
                     <div class="col-md-3" id="monthContainer" style="display: {{ $reportType == 'yearly' ? 'none' : 'block' }};">
                         <label class="form-label">Month</label>
-                        <select name="month" class="form-select" onchange="this.form.submit()">
+                        <select name="month" class="form-select js-auto-submit">
                             @foreach(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as $month)
                                 <option value="{{ $month }}" {{ isset($selectedMonth) && $selectedMonth == $month ? 'selected' : '' }}>{{ $month }}</option>
                             @endforeach
@@ -26,7 +26,7 @@
 
                     <div class="col-md-3">
                         <label class="form-label">Year</label>
-                        <select name="year" class="form-select" onchange="this.form.submit()">
+                        <select name="year" class="form-select js-auto-submit">
                             @php 
                                 $currentYear = date('Y');
                                 $years = $availableDates->pluck('year')->push($currentYear)->unique()->sortDesc();

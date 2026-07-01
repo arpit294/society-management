@@ -1,44 +1,5 @@
 <x-user-page>
-    @push('styles')
-        <style>
-            .settings-rate-option .form-check {
-                align-items: center;
-                display: flex;
-                min-height: 1.75rem;
-                padding-left: 0;
-            }
-
-            .settings-rate-option .form-check-input {
-                flex: 0 0 auto;
-                margin-left: 0;
-                margin-top: 0;
-            }
-
-            .settings-rate-option .form-check-label {
-                line-height: 1.25;
-                margin-left: .5rem;
-                min-width: 0;
-            }
-
-            .settings-rate-option .input-group {
-                width: 100%;
-            }
-
-            .form-control,
-            .form-select {
-                color: white;
-            }
-
-            .form-control::placeholder {
-                color: rgba(255, 255, 255, 0.6);
-            }
-
-            .form-control:disabled,
-            .form-select:disabled {
-                color: rgba(255, 255, 255, 0.5);
-            }
-        </style>
-    @endpush
+    {{-- Styles moved to public/css/custom-premium.css --}}
 
     @php
         $currencySymbol = \App\Helpers\CurrencyHelper::getCurrencySymbol();
@@ -115,13 +76,15 @@
                                     value="{{ $settings['name_transfer_fee'] ?? '0' }}">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Laravel Debugger</label>
+                                <label class="form-label text-body small fw-semibold text-uppercase">Laravel
+                                    Debugger</label>
                                 <div class="form-check form-switch mt-1">
                                     <input type="hidden" name="enable_debugger" value="0">
                                     <input class="form-check-input" type="checkbox" id="enable_debugger"
                                         name="enable_debugger" value="1"
                                         {{ ($settings['enable_debugger'] ?? '0') == '1' ? 'checked' : '' }}>
-                                    <label class="form-check-label fs-6 ms-2" for="enable_debugger">Enable Debug Toolbar</label>
+                                    <label class="form-check-label fs-6 ms-2" for="enable_debugger">Enable Debug
+                                        Toolbar</label>
                                 </div>
                             </div>
                         </div>
@@ -987,7 +950,9 @@
                                 'X-CSRF-TOKEN': "{{ csrf_token() }}",
                                 'Accept': 'application/json'
                             },
-                            body: JSON.stringify({ enable_debugger: val })
+                            body: JSON.stringify({
+                                enable_debugger: val
+                            })
                         }).then(response => {
                             if (response.ok) {
                                 window.location.reload();
