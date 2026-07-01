@@ -120,18 +120,22 @@ document.addEventListener("DOMContentLoaded", function () {
     window.setTimeout(restoreSidebarScroll, 100);
 });
 
-$(document).on("click", ".toggle-password-btn", function () {
-    const input = $(this).closest(".input-group").find("input")[0];
+$(document).on("click", ".toggle-password-btn, .toggle-password", function () {
+    const container = $(this).closest(".input-group, .position-relative, div");
+    const input = container.find("input")[0];
+    if (!input) return;
     if (input.type === "password") {
         input.type = "text";
         $(this)
             .attr("aria-label", "Hide password")
             .attr("data-coreui-original-title", "Hide password");
+        $(this).find(".fa-eye").removeClass("fa-eye").addClass("fa-eye-slash");
     } else {
         input.type = "password";
         $(this)
             .attr("aria-label", "Show password")
             .attr("data-coreui-original-title", "Show password");
+        $(this).find(".fa-eye-slash").removeClass("fa-eye-slash").addClass("fa-eye");
     }
 });
 
@@ -1334,11 +1338,15 @@ $(document).ready(function () {
         "#expense-ajax-form",
         expenseModalInstance,
         "#expenses-table",
+        "Saved successfully.",
+        true,
     );
     setupDeleteHandler(
         "#expenses-table .btn-delete-expense",
         "#expenses-table",
         "This expense will be deleted permanently!",
+        "Deleted successfully.",
+        true,
     );
 
     // Expense Category Forms
@@ -1715,18 +1723,22 @@ $(document).ready(function () {
     });
 
     // Password Visibility Toggle
-    $(document).on("click", ".toggle-password", function () {
-        const input = $(this).closest(".input-group").find("input")[0];
+    $(document).on("click", ".toggle-password, .toggle-password-btn", function () {
+        const container = $(this).closest(".input-group, .position-relative, div");
+        const input = container.find("input")[0];
+        if (!input) return;
         if (input.type === "password") {
             input.type = "text";
             $(this)
                 .attr("aria-label", "Hide password")
                 .attr("data-coreui-original-title", "Hide password");
+            $(this).find(".fa-eye").removeClass("fa-eye").addClass("fa-eye-slash");
         } else {
             input.type = "password";
             $(this)
                 .attr("aria-label", "Show password")
                 .attr("data-coreui-original-title", "Show password");
+            $(this).find(".fa-eye-slash").removeClass("fa-eye-slash").addClass("fa-eye");
         }
     });
 

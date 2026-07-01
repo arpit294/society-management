@@ -48,9 +48,15 @@
                                 Password
                             </label>
 
-                            <input type="password" name="password"
-                                class="form-control @error('password') is-invalid @enderror"
-                                placeholder="Enter your password">
+                            <div class="position-relative">
+                                <input type="password" name="password" id="login-password"
+                                    class="form-control @error('password') is-invalid @enderror"
+                                    placeholder="Enter your password" style="padding-right: 2.75rem;">
+                                <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent toggle-password"
+                                    tabindex="-1" aria-label="Show password" title="Show password" style="padding: 0 0.85rem; z-index: 10; color: #94a3b8;">
+                                    <i class="fa-regular fa-eye fs-5"></i>
+                                </button>
+                            </div>
 
                             @error('password')
                                 <div class="invalid-feedback d-block">

@@ -105,6 +105,13 @@ class NameTransferBillController extends Controller
                 ], 400);
             }
 
+            if ($bill->status !== config('status.name_transfer_bills.paid', 'paid')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot approve transfer: Payment has not been received yet.',
+                ], 400);
+            }
+
             $transferDate = $bill->transfer_date ?? $bill->created_at->format('Y-m-d');
 
             DB::beginTransaction();

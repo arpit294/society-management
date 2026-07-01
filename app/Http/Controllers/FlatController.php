@@ -359,7 +359,7 @@ class FlatController extends Controller
                 );
 
                 // 2. Generate Name Transfer Request (Bill)
-                $settings = Setting::pluck('value', 'key');
+                $settings = Setting::getAll();
                 $fee = isset($settings['name_transfer_fee']) ? (float) $settings['name_transfer_fee'] : 0;
 
                 $status = $validatedData['payment_method'] === 'pending' ? config('status.name_transfer_bills.pending') : config('status.name_transfer_bills.paid');

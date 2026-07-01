@@ -35,14 +35,17 @@ class SettingController extends Controller
         abort_if(! \Auth::user()->can('setting_view'), 403);
         try {
             // Fetch all settings and merge over defaults so the UI is never blank
-            $settings = array_merge(Setting::defaults(), Setting::all()->pluck('value', 'key')->toArray());
+            $settings = array_merge(Setting::defaults(), Setting::getAll());
 
-            // Fetch roles (excluding Admin)
-            $roles = Role::whereNotIn('name', ['Admin'])->get();
+            // Fetch roles (excluding Admin) along with eager loaded permissions
+            $roles = Role::whereNotIn('name', ['Admin'])->with('permissions')->get();
 
-            // Map over roles to add the count from the User model's role column
-            $roles->map(function ($role) {
-                $role->setAttribute('users_count', User::where('role', $role->name)->count());
+            // Fetch user counts grouped by role in a single query to eliminate N+1 queries
+            $userCounts = User::selectRaw('role, count(*) as count')->groupBy('role')->pluck('count', 'role');
+
+            // Map over roles to add the count from the pre-fetched array
+            $roles->map(function ($role) use ($userCounts) {
+                $role->setAttribute('users_count', $userCounts[$role->name] ?? 0);
                 return $role;
             });
 
@@ -96,7 +99,11 @@ class SettingController extends Controller
             }
 
             // Clear the global settings cache so the new values apply immediately across the app
-            Cache::forget('global_settings');
+            Setting::clearCache();
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json(['success' => true, 'message' => 'Settings updated successfully.']);
+            }
 
             return redirect()->back()->with('success', 'Settings updated successfully.');
         } catch (\Exception $e) {
