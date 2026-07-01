@@ -155,7 +155,7 @@
                         </div>
                     </div>
                     <div class="modal-footer border-top-0">
-                        <button type="button" class="btn btn-primary" onclick="window.location.reload();">Finish & Reload</button>
+                        <button type="button" class="btn btn-primary js-reload-page">Finish & Reload</button>
                     </div>
                 </div>
             </div>
@@ -214,7 +214,7 @@
                     </div>
 
                     <div class="modal-footer border-top-0 pt-0 px-4 pb-4">
-                        <button type="submit" class="btn px-4 py-2 rounded-3 text-white fw-bold shadow-sm" style="background: #6c5ce7; border-color: #6c5ce7;" id="btn-process-export-residents" onclick="setTimeout(()=> coreui.Modal.getInstance(document.getElementById('export-resident-modal')).hide(), 500);">
+                        <button type="submit" class="btn px-4 py-2 rounded-3 text-white fw-bold shadow-sm export-resident-submit js-hide-export-resident-modal" id="btn-process-export-residents">
                             <i class="fa-solid fa-download me-2"></i>Export
                         </button>
                     </div>

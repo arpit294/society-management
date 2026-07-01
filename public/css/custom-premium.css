@@ -1,1 +1,47 @@
-/* Styles moved to style.css */
+/* ============================================
+   Custom Application Styles
+   ============================================ */
+
+/* ---- Settings Page Styles ---- */
+
+.settings-rate-option .form-check {
+    align-items: center;
+    display: flex;
+    min-height: 1.75rem;
+    padding-left: 0;
+}
+
+.settings-rate-option .form-check-input {
+    flex: 0 0 auto;
+    margin-left: 0;
+    margin-top: 0;
+}
+
+.settings-rate-option .form-check-label {
+    line-height: 1.25;
+    margin-left: .5rem;
+    min-width: 0;
+}
+
+.settings-rate-option .input-group {
+    width: 100%;
+}
+
+/* Form Control Text Colors - White text for form inputs */
+.form-control,
+.form-select {
+    color: white;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* ============================================
+   End of Custom Application Styles
+   ============================================ */

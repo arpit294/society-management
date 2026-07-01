@@ -1,8 +1,6 @@
 <header class="header header-sticky p-0 mb-4">
     <div class="container-fluid border-bottom px-4">
-        <button class="header-toggler" type="button"
-            onclick="(function(){const sidebar=document.getElementById('sidebar');if(!sidebar||!window.coreui?.Sidebar)return;const instance=window.coreui.Sidebar.getInstance(sidebar);instance?.toggle();})()"
-            style="margin-inline-start: -14px">
+        <button class="header-toggler header-toggler-offset js-sidebar-toggle" type="button">
             <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                 <path fill="var(--ci-primary-color, currentcolor)"
                     d="M80 96h352v32H80zm0 144h352v32H80zm0 144h352v32H80z" class="ci-primary" />

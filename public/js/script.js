@@ -39,6 +39,118 @@ function formatPageCurrency(value, sourceEl = null) {
     ).format(value);
 }
 
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.content || "";
+}
+
+function parseJsonData(value, fallback = {}) {
+    if (!value) return fallback;
+    try {
+        return JSON.parse(value);
+    } catch (error) {
+        console.error("Invalid JSON data attribute", error);
+        return fallback;
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    if (!sidebar || !window.coreui?.Sidebar) return;
+    const instance = window.coreui.Sidebar.getInstance(sidebar);
+    instance?.toggle();
+}
+
+function toggleResidentOwnerSection(select) {
+    const target = select.dataset.ownerSection;
+    if (!target) return;
+    document.querySelector(target)?.classList.toggle("d-none", select.value !== "rental");
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    const settingsData = document.getElementById("settings-data");
+    if (settingsData) {
+        window.SMP_SETTINGS_CONFIG = {
+            availableCurrencies: parseJsonData(settingsData.dataset.availableCurrencies),
+            currencySymbol: settingsData.dataset.currencySymbol || "\u20B9",
+            societyLat: parseFloat(settingsData.dataset.societyLat) || 19.076,
+            societyLng: parseFloat(settingsData.dataset.societyLng) || 72.8777,
+            csrfToken: getCsrfToken(),
+            routes: parseJsonData(settingsData.dataset.routes),
+        };
+    }
+
+    document.querySelectorAll(".js-resident-type-toggle").forEach((select) => {
+        toggleResidentOwnerSection(select);
+    });
+
+    const debuggerSwitch = document.getElementById("enable_debugger");
+    if (debuggerSwitch && window.SMP_SETTINGS_CONFIG?.routes?.settingsStore) {
+        debuggerSwitch.addEventListener("change", function () {
+            const val = this.checked ? "1" : "0";
+            if (val === "0") {
+                const bar = document.querySelector(".phpdebugbar");
+                if (bar) bar.style.display = "none";
+            }
+
+            fetch(window.SMP_SETTINGS_CONFIG.routes.settingsStore, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRF-TOKEN": getCsrfToken(),
+                    Accept: "application/json",
+                },
+                body: JSON.stringify({ enable_debugger: val }),
+            }).then((response) => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            });
+        });
+    }
+});
+
+document.addEventListener("click", function (event) {
+    if (event.target.closest(".js-sidebar-toggle")) {
+        toggleSidebar();
+        return;
+    }
+
+    if (event.target.closest(".js-reload-page")) {
+        window.location.reload();
+        return;
+    }
+
+    const exportHideButton = event.target.closest(".js-hide-export-resident-modal");
+    if (exportHideButton) {
+        window.setTimeout(() => {
+            const modal = document.getElementById("export-resident-modal");
+            if (!modal || !window.coreui?.Modal) return;
+            window.coreui.Modal.getInstance(modal)?.hide();
+        }, 500);
+    }
+
+    const roleCard = event.target.closest(".role-card");
+    if (roleCard && typeof window.selectRole === "function") {
+        window.selectRole(roleCard, event);
+    }
+});
+
+document.addEventListener("change", function (event) {
+    if (event.target.matches(".js-auto-submit")) {
+        event.target.form?.submit();
+    }
+
+    if (event.target.matches(".js-resident-type-toggle")) {
+        toggleResidentOwnerSection(event.target);
+    }
+});
+
+document.addEventListener("submit", function (event) {
+    if (event.target.matches(".js-prevent-submit")) {
+        event.preventDefault();
+    }
+});
+
 function togglePenaltyFields() {
     const isChecked = applyPenaltyToggle ? applyPenaltyToggle.checked : false;
     document.querySelectorAll('input[name^="penalty_"]').forEach((input) => {

@@ -35,7 +35,7 @@
 
             <div class="col-md-12">
                 <label for="type" class="form-label">Resident Type <span class="text-danger">*</span></label>
-                <select class="form-select" id="type" name="type" onchange="document.getElementById('owner-details-section').classList.toggle('d-none', this.value !== 'rental')">
+                <select class="form-select js-resident-type-toggle" id="type" name="type" data-owner-section="#owner-details-section">
                     <option value="">Select Type</option>
                     <option value="owner">Owner</option>
                     <option value="rental">Rental</option>
@@ -74,5 +74,4 @@
         <button type="submit" class="btn btn-primary">Save changes</button>
     </div>
 </form>
-
 

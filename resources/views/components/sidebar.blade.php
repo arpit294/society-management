@@ -34,8 +34,7 @@
                 </g>
             </svg>
         </div>
-        <button class="btn-close d-lg-none" type="button" data-coreui-theme="dark" aria-label="Close"
-            onclick="(function(){const sidebar=document.getElementById('sidebar');if(!sidebar||!window.coreui?.Sidebar)return;const instance=window.coreui.Sidebar.getInstance(sidebar);instance?.toggle();})()"></button>
+        <button class="btn-close d-lg-none js-sidebar-toggle" type="button" data-coreui-theme="dark" aria-label="Close"></button>
     </div>
     <ul class="sidebar-nav" data-coreui="navigation" data-simplebar>
         @can('dashboard_view')
