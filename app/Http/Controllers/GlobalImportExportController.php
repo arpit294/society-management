@@ -22,11 +22,13 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Nette\Schema\ValidationException;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Reader\XLSX\Reader;
 use OpenSpout\Reader\CSV\Reader as CSVReader;
 use OpenSpout\Writer\XLSX\Writer;
 use OpenSpout\Writer\CSV\Writer as CSVWriter;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class GlobalImportExportController extends Controller
 {
@@ -166,7 +168,7 @@ class GlobalImportExportController extends Controller
 
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in GlobalImportExportController@export: ' . $e->getMessage());
@@ -245,7 +247,7 @@ class GlobalImportExportController extends Controller
 
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in GlobalImportExportController@downloadTemplate: ' . $e->getMessage());
@@ -876,7 +878,7 @@ class GlobalImportExportController extends Controller
 
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in GlobalImportExportController@exportMaster: ' . $e->getMessage());
@@ -974,7 +976,7 @@ class GlobalImportExportController extends Controller
 
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in GlobalImportExportController@templateMaster: ' . $e->getMessage());

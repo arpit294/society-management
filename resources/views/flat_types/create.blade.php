@@ -11,8 +11,8 @@
                 <select class="form-select" id="name" name="name" required>
                     <option value="">Select Flat Type</option>
                     @for ($i = 1; $i <= 5; $i++)
-                        <option value="{{ $i }}BHK" {{ old('name') === $i . 'BHK' ? 'selected' : '' }}>
-                            {{ $i }}BHK
+                        <option value="{{ $i }} BHK" {{ old('name') === $i . ' BHK' ? 'selected' : '' }}>
+                            {{ $i }} BHK
                         </option>
                     @endfor
                 </select>

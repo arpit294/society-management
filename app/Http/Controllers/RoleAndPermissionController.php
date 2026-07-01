@@ -9,6 +9,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Nette\Schema\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class RoleAndPermissionController extends Controller
 {
@@ -25,7 +27,7 @@ class RoleAndPermissionController extends Controller
                 ->with('success', 'Role created successfully. Select the role to assign permissions.')
                 ->with('created_role_id', $role->id);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in RoleAndPermissionController@store: ' . $e->getMessage());
@@ -44,7 +46,7 @@ class RoleAndPermissionController extends Controller
         try {
             return view('roles.edit', compact('role'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in RoleAndPermissionController@edit: ' . $e->getMessage());
@@ -68,7 +70,7 @@ class RoleAndPermissionController extends Controller
 
             return redirect(route('settings.index') . '#role-settings')->with('success', 'Role updated successfully.');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof  HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in RoleAndPermissionController@update: ' . $e->getMessage());
@@ -101,7 +103,7 @@ class RoleAndPermissionController extends Controller
 
             return redirect(route('settings.index') . '#role-settings')->with('success', 'Role deleted successfully.');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in RoleAndPermissionController@destroy: ' . $e->getMessage());

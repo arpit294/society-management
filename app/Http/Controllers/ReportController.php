@@ -7,8 +7,10 @@ use App\Models\Maintenance;
 use App\Models\MaintenanceBill;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Nette\Schema\ValidationException;
 use OpenSpout\Writer\XLSX\Writer;
 use OpenSpout\Common\Entity\Row;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ReportController extends Controller
 {
@@ -78,7 +80,7 @@ class ReportController extends Controller
                 'availableDates' => $availableDates,
             ], $stats));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ReportController@maintenanceReport: ' . $e->getMessage());
@@ -108,8 +110,8 @@ class ReportController extends Controller
                           ->orWhere('move_out_date', '>=', now()->startOfDay());
                 })->get();
 
-            $filename = $reportType === 'monthly' 
-                ? "maintenance_report_{$selectedMonth}_{$selectedYear}.xlsx" 
+            $filename = $reportType === 'monthly'
+                ? "maintenance_report_{$selectedMonth}_{$selectedYear}.xlsx"
                 : "maintenance_report_yearly_{$selectedYear}.xlsx";
 
             $headers = [
@@ -189,7 +191,7 @@ class ReportController extends Controller
 
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ReportController@exportReport: ' . $e->getMessage());
@@ -223,7 +225,7 @@ class ReportController extends Controller
 
             foreach ($allBills as $bill) {
                 $processedFlatIds[] = $bill->flat_id;
-                
+
                 if ($bill->status === 'paid') {
                     $paidBills->push((object)[
                         'user' => $bill->user,
@@ -246,7 +248,7 @@ class ReportController extends Controller
                         'status' => $bill->status,
                     ]);
                     $totalPending += $bill->total_amount;
-                    $totalExpected += $bill->amount; 
+                    $totalExpected += $bill->amount;
                 }
             }
         }
@@ -272,7 +274,7 @@ class ReportController extends Controller
                 'total_amount' => $baseAmount,
                 'status' => 'pending',
             ]);
-            
+
             $totalExpected += $baseAmount;
             $totalPending += $baseAmount;
         }

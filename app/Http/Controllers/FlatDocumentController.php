@@ -9,6 +9,8 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Nette\Schema\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class FlatDocumentController extends Controller
 {
@@ -20,7 +22,7 @@ class FlatDocumentController extends Controller
 
             return $dataTable->render('flat_documents.index', compact('blocks'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatDocumentController@index: ' . $e->getMessage());
@@ -43,7 +45,7 @@ class FlatDocumentController extends Controller
 
             return view('flat_documents.create', compact('blocks', 'settings', 'documentRequirements'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatDocumentController@create: ' . $e->getMessage());
@@ -134,7 +136,7 @@ class FlatDocumentController extends Controller
                 'message' => 'Documents uploaded successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatDocumentController@store: ' . $e->getMessage());
@@ -152,7 +154,7 @@ class FlatDocumentController extends Controller
         try {
             return view('flat_documents.show', compact('flatDocument'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatDocumentController@show: ' . $e->getMessage());
@@ -183,7 +185,7 @@ class FlatDocumentController extends Controller
 
             return response()->download($filePath, $doc['original_name']);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatDocumentController@download: ' . $e->getMessage());
@@ -214,7 +216,7 @@ class FlatDocumentController extends Controller
                 'message' => 'Document submission deleted successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatDocumentController@destroy: ' . $e->getMessage());
@@ -251,7 +253,7 @@ class FlatDocumentController extends Controller
                 'message' => 'Document not found.',
             ], 404);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatDocumentController@deleteDocument: ' . $e->getMessage());
@@ -312,7 +314,7 @@ class FlatDocumentController extends Controller
 
             return response()->json(['success' => false, 'message' => 'No file provided.'], 400);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatDocumentController@updateDocument: ' . $e->getMessage());

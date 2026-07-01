@@ -8,6 +8,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Nette\Schema\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ComplainController extends Controller
 {
@@ -17,7 +19,7 @@ class ComplainController extends Controller
         try {
             return $dataTable->render('complains.index');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ComplainController@index: ' . $e->getMessage());
@@ -38,7 +40,7 @@ class ComplainController extends Controller
 
             return response()->view('complains.create', compact('users'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ComplainController@create: ' . $e->getMessage());
@@ -76,7 +78,7 @@ class ComplainController extends Controller
                 'message' => 'Complaint created successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ComplainController@store: ' . $e->getMessage());
@@ -96,7 +98,7 @@ class ComplainController extends Controller
 
             return response()->view('complains.edit', compact('complain', 'users'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ComplainController@edit: ' . $e->getMessage());
@@ -136,7 +138,7 @@ class ComplainController extends Controller
                 'message' => 'Complaint updated successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ComplainController@update: ' . $e->getMessage());
@@ -159,7 +161,7 @@ class ComplainController extends Controller
                 'message' => 'Complaint deleted successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ComplainController@destroy: ' . $e->getMessage());

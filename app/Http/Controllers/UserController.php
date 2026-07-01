@@ -9,6 +9,8 @@ use App\Models\User;
 use Spatie\Permission\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Nette\Schema\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class UserController extends Controller
 {
@@ -24,7 +26,7 @@ class UserController extends Controller
 
             return $dataTable->render('users.index', compact('roles'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in UserController@index: ' . $e->getMessage());
@@ -55,7 +57,7 @@ class UserController extends Controller
 
             return redirect()->route('users.index');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in UserController@create: ' . $e->getMessage());
@@ -70,7 +72,7 @@ class UserController extends Controller
 
     /**
      * Store a newly created resource in storage.
-     */ 
+     */
     public function store(StoreUserRequest $request)
     {
         abort_if(! auth()->user()->can('user_create'), 403);
@@ -91,7 +93,7 @@ class UserController extends Controller
                 ->route('users.index')
                 ->with('success', 'User created successfully.');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in UserController@store: ' . $e->getMessage());
@@ -122,7 +124,7 @@ class UserController extends Controller
 
             return redirect()->route('users.index');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in UserController@edit: ' . $e->getMessage());
@@ -183,7 +185,7 @@ class UserController extends Controller
                 ->route('users.index')
                 ->with('success', 'User updated successfully.');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in UserController@update: ' . $e->getMessage());
@@ -231,7 +233,7 @@ class UserController extends Controller
                 ->route('users.index')
                 ->with('success', 'User deleted successfully.');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in UserController@destroy: ' . $e->getMessage());

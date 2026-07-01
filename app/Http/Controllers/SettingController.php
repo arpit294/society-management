@@ -15,7 +15,8 @@ use App\Http\Requests\StoreSettingsRequest;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
-
+use Nette\Schema\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
  * Class SettingController
@@ -55,7 +56,7 @@ class SettingController extends Controller
 
             return view('settings.index', compact('settings', 'roles', 'permissionsByModule'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in SettingController@index: ' . $e->getMessage());
@@ -107,7 +108,7 @@ class SettingController extends Controller
 
             return redirect()->back()->with('success', 'Settings updated successfully.');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in SettingController@store: ' . $e->getMessage());

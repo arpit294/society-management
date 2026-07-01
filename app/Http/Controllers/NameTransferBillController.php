@@ -8,6 +8,8 @@ use App\DataTables\NameTransferBillsDataTable;
 use App\Models\Resident;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Nette\Schema\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class NameTransferBillController extends Controller
 {
@@ -17,7 +19,7 @@ class NameTransferBillController extends Controller
         try {
             return $dataTable->render('name_transfer_bills.index');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in NameTransferBillController@index: ' . $e->getMessage());
@@ -59,7 +61,7 @@ class NameTransferBillController extends Controller
                 'message' => 'Status updated successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in NameTransferBillController@updateStatus: ' . $e->getMessage());
@@ -81,7 +83,7 @@ class NameTransferBillController extends Controller
                 'message' => 'Bill deleted successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in NameTransferBillController@destroy: ' . $e->getMessage());
@@ -150,7 +152,7 @@ class NameTransferBillController extends Controller
                 throw $e;
             }
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in NameTransferBillController@approve: ' . $e->getMessage());

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class LoginController extends Controller
 {
@@ -17,7 +18,7 @@ class LoginController extends Controller
         try {
             return view('authentication.login');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in LoginController@create: ' . $e->getMessage());
@@ -44,7 +45,7 @@ class LoginController extends Controller
 
             return redirect('/')->with('success', 'Logged in successfully.');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in LoginController@store: ' . $e->getMessage());
@@ -68,7 +69,7 @@ class LoginController extends Controller
 
             return redirect()->route('login')->with('success', 'Logged out successfully.');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in LoginController@destroy: ' . $e->getMessage());
