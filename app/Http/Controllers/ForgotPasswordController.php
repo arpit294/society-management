@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
+use Nette\Schema\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ForgotPasswordController extends Controller
 {
@@ -25,7 +27,7 @@ class ForgotPasswordController extends Controller
                 ? back()->with(['status' => __($status)])
                 : back()->withErrors(['email' => __($status)]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ForgotPasswordController@submit: ' . $e->getMessage());
@@ -59,7 +61,7 @@ class ForgotPasswordController extends Controller
                 ? redirect()->route('login')->with('success', __('Password reset successful.'))
                 : back()->withErrors(['email' => [__($status)]]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ForgotPasswordController@reset: ' . $e->getMessage());

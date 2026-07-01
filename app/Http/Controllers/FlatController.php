@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class FlatController extends Controller
 {
@@ -48,10 +49,11 @@ class FlatController extends Controller
         abort_if(! \Auth::user()->can('flat_view'), 403);
         try {
             $blocks = Block::all();
+            $flatTypes = FlatType::where('status', config('status.general.active'))->get();
 
-            return $dataTable->render('flats.index', compact('blocks'));
+            return $dataTable->render('flats.index', compact('blocks', 'flatTypes'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatController@index: ' . $e->getMessage());
@@ -78,7 +80,7 @@ class FlatController extends Controller
 
             return view('flats.create', compact('blocks', 'flatTypes'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatController@create: ' . $e->getMessage());
@@ -123,7 +125,7 @@ class FlatController extends Controller
                 'message' => 'Flat created successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatController@store: ' . $e->getMessage());
@@ -149,7 +151,7 @@ class FlatController extends Controller
 
             return view('flats.history', compact('flat', 'history'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatController@show: ' . $e->getMessage());
@@ -174,7 +176,7 @@ class FlatController extends Controller
 
             return view('flats.edit', compact('flat', 'blocks', 'flatTypes'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatController@edit: ' . $e->getMessage());
@@ -221,7 +223,7 @@ class FlatController extends Controller
                 'message' => 'Flat updated successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatController@update: ' . $e->getMessage());
@@ -247,7 +249,7 @@ class FlatController extends Controller
                 'message' => 'Flat deleted successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatController@destroy: ' . $e->getMessage());
@@ -281,7 +283,7 @@ class FlatController extends Controller
 
             return view('flats.transfer', compact('flat', 'currentOwner'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatController@transferCreate: ' . $e->getMessage());
@@ -406,7 +408,7 @@ class FlatController extends Controller
                 throw $e;
             }
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in FlatController@transferStore: ' . $e->getMessage());

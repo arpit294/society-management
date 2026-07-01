@@ -16,7 +16,7 @@ class ExpenseCategoryController extends Controller
         try {
             return $dataTable->render('expense_categories.index');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseCategoryController@index: ' . $e->getMessage());
@@ -35,7 +35,7 @@ class ExpenseCategoryController extends Controller
         try {
             return view('expense_categories.create');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseCategoryController@create: ' . $e->getMessage());
@@ -65,7 +65,7 @@ class ExpenseCategoryController extends Controller
                 'message' => 'Expense Category created successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseCategoryController@store: ' . $e->getMessage());
@@ -83,7 +83,7 @@ class ExpenseCategoryController extends Controller
         try {
             return view('expense_categories.edit', compact('expenseCategory'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseCategoryController@edit: ' . $e->getMessage());
@@ -113,7 +113,7 @@ class ExpenseCategoryController extends Controller
                 'message' => 'Expense Category updated successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseCategoryController@update: ' . $e->getMessage());
@@ -136,7 +136,7 @@ class ExpenseCategoryController extends Controller
                 'message' => 'Expense Category deleted successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseCategoryController@destroy: ' . $e->getMessage());

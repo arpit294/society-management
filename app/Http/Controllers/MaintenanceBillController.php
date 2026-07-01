@@ -10,6 +10,7 @@ use App\Models\Flat;
 use App\Models\Maintenance;
 use App\Models\MaintenanceBill;
 use App\Models\Resident;
+use App\Models\Setting;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -21,6 +22,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Laravel\Mcp\Response;
+use Nette\Schema\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class MaintenanceBillController extends Controller
 {
@@ -81,7 +84,7 @@ class MaintenanceBillController extends Controller
                 'years'
             ));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in MaintenanceBillController@index: ' . $e->getMessage());
@@ -125,7 +128,7 @@ class MaintenanceBillController extends Controller
 
             return view('maintenance_bills.create', compact('residents', 'residentFees', 'discountSettings', 'penaltySettings'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in MaintenanceBillController@create: ' . $e->getMessage());
@@ -237,7 +240,7 @@ class MaintenanceBillController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in MaintenanceBillController@store: ' . $e->getMessage());
@@ -303,7 +306,7 @@ class MaintenanceBillController extends Controller
                 'message' => 'Maintenance bill deleted successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in MaintenanceBillController@destroyIndividual: ' . $e->getMessage());
@@ -389,7 +392,7 @@ class MaintenanceBillController extends Controller
 
             return redirect()->back()->with('success', 'Status updated successfully.');
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in MaintenanceBillController@updateStatus: ' . $e->getMessage());
@@ -416,7 +419,7 @@ class MaintenanceBillController extends Controller
 
             return view('maintenance_bills.details', compact('bill'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in MaintenanceBillController@details: ' . $e->getMessage());
@@ -453,7 +456,7 @@ class MaintenanceBillController extends Controller
 
             return $pdf->download($fileName);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in MaintenanceBillController@downloadInvoice: ' . $e->getMessage());
@@ -495,7 +498,7 @@ class MaintenanceBillController extends Controller
 
             return response()->json(['success' => false, 'message' => 'Resident not found or flat/flat type missing.']);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in MaintenanceBillController@getResidentInfo: ' . $e->getMessage());
@@ -516,23 +519,23 @@ class MaintenanceBillController extends Controller
      */
     private function getSettingValues(string $type): array
     {
-        $defaults = \App\Models\Setting::defaults();
+        $defaults = Setting::defaults();
 
         return [
-            "apply_{$type}" => \App\Models\Setting::get("apply_{$type}", '1'),
-            'type' => \App\Models\Setting::get("{$type}_type", 'percentage'),
+            "apply_{$type}" => Setting::get("apply_{$type}", '1'),
+            'type' => Setting::get("{$type}_type", 'percentage'),
 
             // Values (percentages or fixed amounts)
-            'yearly_value' => (float) \App\Models\Setting::get("{$type}_yearly_value", $defaults["{$type}_yearly_value"] ?? 0),
-            'half_yearly_value' => (float) \App\Models\Setting::get("{$type}_half_yearly_value", $defaults["{$type}_half_yearly_value"] ?? 0),
-            'quarterly_value' => (float) \App\Models\Setting::get("{$type}_quarterly_value", $defaults["{$type}_quarterly_value"] ?? 0),
-            'monthly_value' => (float) \App\Models\Setting::get("{$type}_monthly_value", $defaults["{$type}_monthly_value"] ?? 0),
+            'yearly_value' => (float) Setting::get("{$type}_yearly_value", $defaults["{$type}_yearly_value"] ?? 0),
+            'half_yearly_value' => (float) Setting::get("{$type}_half_yearly_value", $defaults["{$type}_half_yearly_value"] ?? 0),
+            'quarterly_value' => (float) Setting::get("{$type}_quarterly_value", $defaults["{$type}_quarterly_value"] ?? 0),
+            'monthly_value' => (float) Setting::get("{$type}_monthly_value", $defaults["{$type}_monthly_value"] ?? 0),
 
             // Toggle Switches
-            'yearly_enabled' => \App\Models\Setting::get("{$type}_yearly_enabled", '1') == '1',
-            'half_yearly_enabled' => \App\Models\Setting::get("{$type}_half_yearly_enabled", '1') == '1',
-            'quarterly_enabled' => \App\Models\Setting::get("{$type}_quarterly_enabled", '1') == '1',
-            'monthly_enabled' => \App\Models\Setting::get("{$type}_monthly_enabled", '1') == '1',
+            'yearly_enabled' => Setting::get("{$type}_yearly_enabled", '1') == '1',
+            'half_yearly_enabled' => Setting::get("{$type}_half_yearly_enabled", '1') == '1',
+            'quarterly_enabled' => Setting::get("{$type}_quarterly_enabled", '1') == '1',
+            'monthly_enabled' => Setting::get("{$type}_monthly_enabled", '1') == '1',
         ];
     }
 

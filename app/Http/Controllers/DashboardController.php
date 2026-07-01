@@ -16,6 +16,8 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Nette\Schema\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class DashboardController extends Controller
 {
@@ -45,7 +47,7 @@ class DashboardController extends Controller
                 ->toArray();
 
             // Expense Chart Data (Current Year)
-            $monthlyExpensesDB = Expense::whereYear(\Illuminate\Support\Facades\DB::raw('COALESCE(expense_date, created_at)'), date('Y'))
+            $monthlyExpensesDB = Expense::whereYear(DB::raw('COALESCE(expense_date, created_at)'), date('Y'))
                 ->selectRaw('MONTHNAME(COALESCE(expense_date, created_at)) as month, sum(total_amount) as total')
                 ->groupBy('month')
                 ->pluck('total', 'month')
@@ -167,7 +169,7 @@ class DashboardController extends Controller
                 'activities'
             ));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in DashboardController@index: ' . $e->getMessage());

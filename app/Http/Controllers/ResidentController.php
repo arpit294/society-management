@@ -15,10 +15,12 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Nette\Schema\ValidationException;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Reader\XLSX\Reader;
 use OpenSpout\Writer\XLSX\Writer;
 use OpenSpout\Writer\CSV\Writer as CSVWriter;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ResidentController extends Controller
 {
@@ -31,7 +33,7 @@ class ResidentController extends Controller
 
             return $dataTable->render('residents.index', compact('blocks'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ResidentController@index: ' . $e->getMessage());
@@ -54,7 +56,7 @@ class ResidentController extends Controller
 
             return view('residents.create', compact('blocks', 'users'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ResidentController@create: ' . $e->getMessage());
@@ -127,7 +129,7 @@ class ResidentController extends Controller
                 'message' => 'Resident created successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ResidentController@store: ' . $e->getMessage());
@@ -151,7 +153,7 @@ class ResidentController extends Controller
 
             return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ResidentController@edit: ' . $e->getMessage());
@@ -227,7 +229,7 @@ class ResidentController extends Controller
                 'message' => 'Resident updated successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ResidentController@update: ' . $e->getMessage());
@@ -252,7 +254,7 @@ class ResidentController extends Controller
                 'message' => 'Resident deleted successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ResidentController@destroy: ' . $e->getMessage());
@@ -270,7 +272,7 @@ class ResidentController extends Controller
 
             return response()->json($flats);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ResidentController@getFlatsByBlock: ' . $e->getMessage());
@@ -290,7 +292,7 @@ class ResidentController extends Controller
 
             return response()->json(['has_owner' => false]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ResidentController@getFlatOwner: ' . $e->getMessage());
@@ -317,7 +319,7 @@ class ResidentController extends Controller
 
             return response()->json($users);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ResidentController@getFlatUsers: ' . $e->getMessage());
@@ -372,7 +374,7 @@ class ResidentController extends Controller
 
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ResidentController@downloadTemplate: ' . $e->getMessage());
@@ -459,7 +461,7 @@ class ResidentController extends Controller
 
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ResidentController@export: ' . $e->getMessage());
@@ -529,7 +531,7 @@ class ResidentController extends Controller
                 'preview_rows' => $previewRows
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             if ($path) {
@@ -811,7 +813,7 @@ class ResidentController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             if ($path) {

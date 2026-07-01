@@ -11,6 +11,8 @@ use App\Models\MaintenanceBill;
 use App\Models\NameTransferBill;
 
 use Illuminate\Support\Facades\Log;
+use Nette\Schema\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ExpenseController extends Controller
 {
@@ -38,7 +40,7 @@ class ExpenseController extends Controller
 
             return $dataTable->render('expenses.index', compact('totalExpenses', 'thisMonthExpenses', 'totalInvoices', 'totalMaintenanceIncome', 'categories', 'users'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseController@index: ' . $e->getMessage());
@@ -59,7 +61,7 @@ class ExpenseController extends Controller
             $categories = ExpenseCategory::where('status', 'active')->get();
             return view('expenses.create', compact('users', 'categories'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseController@create: ' . $e->getMessage());
@@ -103,7 +105,7 @@ class ExpenseController extends Controller
                 'message' => 'Expense logged successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseController@store: ' . $e->getMessage());
@@ -123,7 +125,7 @@ class ExpenseController extends Controller
             $categories = ExpenseCategory::where('status', 'active')->get();
             return view('expenses.edit', compact('expense', 'users', 'categories'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseController@edit: ' . $e->getMessage());
@@ -152,7 +154,7 @@ class ExpenseController extends Controller
                 'category_id' => 'required|exists:expense_categories,id',
                 'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
             ]);
-            
+
             // Delete old file if exists
             if ($request->hasFile('invoice')) {
 
@@ -172,7 +174,7 @@ class ExpenseController extends Controller
                 'message' => 'Expense updated successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseController@update: ' . $e->getMessage());
@@ -199,7 +201,7 @@ class ExpenseController extends Controller
                 'message' => 'Expense deleted successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in ExpenseController@destroy: ' . $e->getMessage());
