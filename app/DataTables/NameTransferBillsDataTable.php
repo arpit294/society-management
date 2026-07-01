@@ -41,7 +41,13 @@ class NameTransferBillsDataTable extends DataTable
                 return '<span class="badge ' . $class . '">' . ucfirst($model->status) . '</span>';
             })
             ->addColumn('approval', function ($model) {
-                return $model->is_approved ? '<span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Approved</span>' : '<span class="badge bg-secondary">Pending Approval</span>';
+                if ($model->is_approved) {
+                    return '<span class="badge bg-success"><i class="fa-solid fa-check me-1"></i>Approved</span>';
+                }
+                if ($model->status !== 'paid') {
+                    return '<span class="badge bg-warning text-dark"><i class="fa-solid fa-lock me-1"></i>Payment Required</span>';
+                }
+                return '<span class="badge bg-info text-dark"><i class="fa-regular fa-clock me-1"></i>Pending Approval</span>';
             })
             ->editColumn('paid_at', function ($model) {
                 return $model->paid_at ? $model->paid_at->format('d M Y h:i A') : '-';

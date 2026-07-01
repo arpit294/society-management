@@ -45,8 +45,8 @@ class DashboardController extends Controller
                 ->toArray();
 
             // Expense Chart Data (Current Year)
-            $monthlyExpensesDB = Expense::whereYear('created_at', date('Y'))
-                ->selectRaw('MONTHNAME(created_at) as month, sum(total_amount) as total')
+            $monthlyExpensesDB = Expense::whereYear(\Illuminate\Support\Facades\DB::raw('COALESCE(expense_date, created_at)'), date('Y'))
+                ->selectRaw('MONTHNAME(COALESCE(expense_date, created_at)) as month, sum(total_amount) as total')
                 ->groupBy('month')
                 ->pluck('total', 'month')
                 ->toArray();
@@ -87,23 +87,33 @@ class DashboardController extends Controller
             $expenseBreakdownData = $expensesByCategory->values()->toArray();
 
             // Recent Activity Feed
-            $recentPayments = MaintenanceBill::with('user', 'flat')
+            $recentPayments = MaintenanceBill::with('user', 'flat', 'block')
                 ->where('status', config('status.maintenance_bills.paid'))
                 ->latest('updated_at')
-                ->take(4)
+                ->take(30)
                 ->get()
-                ->map(function ($bill) {
+                ->groupBy(function ($bill) {
+                    return !empty($bill->batch_id) ? $bill->batch_id : 'id_' . $bill->id;
+                })
+                ->take(4)
+                ->map(function ($billsGroup) {
+                    $bill = $billsGroup->first();
+                    $totalAmount = $billsGroup->sum('total_amount');
+                    $monthsCount = $billsGroup->count();
                     $residentName = $bill->user?->name ?? 'Unknown Resident';
-                    $flatNo = $bill->flat?->flat_no ?? 'N/A';
+                    $flatNo = ($bill->block ? $bill->block->block_name . '-' : '') . ($bill->flat?->flat_no ?? 'N/A');
+                    $durationText = $monthsCount > 1 ? " ({$monthsCount} months)" : "";
+
                     return (object) [
                         'type' => 'payment',
                         'icon' => 'fa-solid fa-money-bill-wave text-success',
                         'title' => 'Payment Received',
-                        'description' => "{$residentName} (Flat #{$flatNo}) paid " . CurrencyHelper::formatCurrency($bill->total_amount),
+                        'description' => "{$residentName} (Flat #{$flatNo}) paid " . CurrencyHelper::formatCurrency($totalAmount) . $durationText,
                         'time' => $bill->updated_at->diffForHumans(),
                         'timestamp' => $bill->updated_at
                     ];
-                });
+                })
+                ->values();
 
             $recentComplaints = Complain::with('user')
                 ->latest('created_at')

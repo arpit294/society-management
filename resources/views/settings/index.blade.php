@@ -23,6 +23,20 @@
             .settings-rate-option .input-group {
                 width: 100%;
             }
+
+            .form-control,
+            .form-select {
+                color: white;
+            }
+
+            .form-control::placeholder {
+                color: rgba(255, 255, 255, 0.6);
+            }
+
+            .form-control:disabled,
+            .form-select:disabled {
+                color: rgba(255, 255, 255, 0.5);
+            }
         </style>
     @endpush
 
@@ -48,31 +62,31 @@
                         <h5 class="mb-3 fw-bold">General Settings</h5>
                         <div class="row mb-5">
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Society
+                                <label class="form-label text-body small fw-semibold text-uppercase">Society
                                     Name</label>
                                 <input type="text" name="society_name" class="form-control"
                                     value="{{ $settings['society_name'] ?? 'My Society' }}">
                             </div>
                             <div class="col-md-8 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Society
+                                <label class="form-label text-body small fw-semibold text-uppercase">Society
                                     Address</label>
                                 <input type="text" name="society_address" class="form-control"
                                     value="{{ $settings['society_address'] ?? '' }}">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Contact
+                                <label class="form-label text-body small fw-semibold text-uppercase">Contact
                                     Email</label>
                                 <input type="email" name="contact_email" class="form-control"
                                     value="{{ $settings['contact_email'] ?? '' }}">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Contact
+                                <label class="form-label text-body small fw-semibold text-uppercase">Contact
                                     Phone</label>
                                 <input type="text" name="contact_phone" class="form-control"
                                     value="{{ $settings['contact_phone'] ?? '' }}">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Financial Year
+                                <label class="form-label text-body small fw-semibold text-uppercase">Financial Year
                                     Start</label>
                                 <select name="financial_year_start" class="form-select">
                                     <option value="january_1"
@@ -84,7 +98,7 @@
                                 </select>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Currency</label>
+                                <label class="form-label text-body small fw-semibold text-uppercase">Currency</label>
                                 <select name="currency" id="currency_select" class="form-select">
                                     @foreach ($availableCurrencies as $code => $details)
                                         <option value="{{ $code }}"
@@ -95,10 +109,20 @@
                                 </select>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Name Transfer Fee
+                                <label class="form-label text-body small fw-semibold text-uppercase">Name Transfer Fee
                                     (<span class="currency-symbol-preview">{{ $currencySymbol }}</span>)</label>
                                 <input type="number" step="0.01" name="name_transfer_fee" class="form-control"
                                     value="{{ $settings['name_transfer_fee'] ?? '0' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Laravel Debugger</label>
+                                <div class="form-check form-switch mt-1">
+                                    <input type="hidden" name="enable_debugger" value="0">
+                                    <input class="form-check-input" type="checkbox" id="enable_debugger"
+                                        name="enable_debugger" value="1"
+                                        {{ ($settings['enable_debugger'] ?? '0') == '1' ? 'checked' : '' }}>
+                                    <label class="form-check-label fs-6 ms-2" for="enable_debugger">Enable Debug Toolbar</label>
+                                </div>
                             </div>
                         </div>
 
@@ -107,7 +131,7 @@
                         <h5 class="mb-3 fw-bold">Late Penalty Settings</h5>
                         <div class="row mb-5">
                             <div class="col-md-12 mb-4">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Allow Late Fees
+                                <label class="form-label text-body small fw-semibold text-uppercase">Allow Late Fees
                                     Penalty</label>
                                 <div class="form-check form-switch mt-1">
                                     <input type="hidden" name="apply_penalty" value="0">
@@ -119,7 +143,7 @@
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Penalty Charge
+                                <label class="form-label text-body small fw-semibold text-uppercase">Penalty Charge
                                     Type</label>
                                 <select name="penalty_type" id="penalty_type" class="form-select">
                                     <option value="percentage"
@@ -131,12 +155,12 @@
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Penalty Grace
+                                <label class="form-label text-body small fw-semibold text-uppercase">Penalty Grace
                                     Days</label>
                                 <div class="input-group">
                                     <input type="number" name="penalty_due_days" class="form-control"
                                         value="{{ $settings['penalty_due_days'] ?? '15' }}">
-                                    <span class="input-group-text text-muted">days after due date</span>
+                                    <span class="input-group-text text-body">days after due date</span>
                                 </div>
                             </div>
 
@@ -147,7 +171,7 @@
                                         name="penalty_monthly_enabled" value="1"
                                         {{ ($settings['penalty_monthly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
                                     <label
-                                        class="form-check-label text-muted small fw-semibold text-uppercase label-penalty"
+                                        class="form-check-label text-body small fw-semibold text-uppercase label-penalty"
                                         for="penalty_monthly_enabled">Monthly (1 Month)</label>
                                 </div>
                                 <div class="input-group">
@@ -163,7 +187,7 @@
                                         name="penalty_quarterly_enabled" value="1"
                                         {{ ($settings['penalty_quarterly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
                                     <label
-                                        class="form-check-label text-muted small fw-semibold text-uppercase label-penalty"
+                                        class="form-check-label text-body small fw-semibold text-uppercase label-penalty"
                                         for="penalty_quarterly_enabled">Quarterly (3 Months)</label>
                                 </div>
                                 <div class="input-group">
@@ -179,7 +203,7 @@
                                         name="penalty_half_yearly_enabled" value="1"
                                         {{ ($settings['penalty_half_yearly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
                                     <label
-                                        class="form-check-label text-muted small fw-semibold text-uppercase label-penalty"
+                                        class="form-check-label text-body small fw-semibold text-uppercase label-penalty"
                                         for="penalty_half_yearly_enabled">Half-Yearly (6 Months)</label>
                                 </div>
                                 <div class="input-group">
@@ -195,7 +219,7 @@
                                         name="penalty_yearly_enabled" value="1"
                                         {{ ($settings['penalty_yearly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
                                     <label
-                                        class="form-check-label text-muted small fw-semibold text-uppercase label-penalty"
+                                        class="form-check-label text-body small fw-semibold text-uppercase label-penalty"
                                         for="penalty_yearly_enabled">Yearly (12 Months)</label>
                                 </div>
                                 <div class="input-group">
@@ -211,7 +235,7 @@
                         <h5 class="mb-3 fw-bold">Prepayment Discount Settings</h5>
                         <div class="row mb-5">
                             <div class="col-md-12 mb-4">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Allow Prepayment
+                                <label class="form-label text-body small fw-semibold text-uppercase">Allow Prepayment
                                     Discount</label>
                                 <div class="form-check form-switch mt-1">
                                     <input type="hidden" name="apply_discount" value="0">
@@ -223,7 +247,7 @@
                                 </div>
                             </div>
                             <div class="col-md-12 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Discount Charge
+                                <label class="form-label text-body small fw-semibold text-uppercase">Discount Charge
                                     Type</label>
                                 <select name="discount_type" id="discount_type" class="form-select">
                                     <option value="percentage"
@@ -242,7 +266,7 @@
                                         name="discount_monthly_enabled" value="1"
                                         {{ ($settings['discount_monthly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
                                     <label
-                                        class="form-check-label text-muted small fw-semibold text-uppercase label-discount"
+                                        class="form-check-label text-body small fw-semibold text-uppercase label-discount"
                                         for="discount_monthly_enabled">Monthly (1 Month)</label>
                                 </div>
                                 <div class="input-group">
@@ -258,7 +282,7 @@
                                         name="discount_quarterly_enabled" value="1"
                                         {{ ($settings['discount_quarterly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
                                     <label
-                                        class="form-check-label text-muted small fw-semibold text-uppercase label-discount"
+                                        class="form-check-label text-body small fw-semibold text-uppercase label-discount"
                                         for="discount_quarterly_enabled">Quarterly (3 Months)</label>
                                 </div>
                                 <div class="input-group">
@@ -274,7 +298,7 @@
                                         name="discount_half_yearly_enabled" value="1"
                                         {{ ($settings['discount_half_yearly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
                                     <label
-                                        class="form-check-label text-muted small fw-semibold text-uppercase label-discount"
+                                        class="form-check-label text-body small fw-semibold text-uppercase label-discount"
                                         for="discount_half_yearly_enabled">Half-Yearly (6 Months)</label>
                                 </div>
                                 <div class="input-group">
@@ -290,7 +314,7 @@
                                         name="discount_yearly_enabled" value="1"
                                         {{ ($settings['discount_yearly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
                                     <label
-                                        class="form-check-label text-muted small fw-semibold text-uppercase label-discount"
+                                        class="form-check-label text-body small fw-semibold text-uppercase label-discount"
                                         for="discount_yearly_enabled">Yearly (12 Months)</label>
                                 </div>
                                 <div class="input-group">
@@ -330,7 +354,7 @@
                                             id="req_doc_owner_{{ $key }}"
                                             name="req_doc_owner_{{ $key }}" value="1"
                                             {{ ($settings['req_doc_owner_' . $key] ?? '0') == '1' ? 'checked' : '' }}>
-                                        <label class="form-check-label text-muted small fw-semibold ms-1"
+                                        <label class="form-check-label text-body small fw-semibold ms-1"
                                             for="req_doc_owner_{{ $key }}">{{ $label }}</label>
                                     </div>
                                 </div>
@@ -366,7 +390,7 @@
                                             id="req_doc_rental_{{ $key }}"
                                             name="req_doc_rental_{{ $key }}" value="1"
                                             {{ ($settings['req_doc_rental_' . $key] ?? '0') == '1' ? 'checked' : '' }}>
-                                        <label class="form-check-label text-muted small fw-semibold ms-1"
+                                        <label class="form-check-label text-body small fw-semibold ms-1"
                                             for="req_doc_rental_{{ $key }}">{{ $label }}</label>
                                     </div>
                                 </div>
@@ -394,7 +418,7 @@
                 <div class="card-body p-4">
                     <form action="{{ route('settings.store') }}" method="POST">
                         @csrf
-                        <p class="text-muted small mb-4">
+                        <p class="text-body small mb-4">
                             Search your location or click anywhere on the interactive map below to set your society's
                             exact GPS coordinates. The address bar will automatically update as you move the pin.
                         </p>
@@ -406,11 +430,11 @@
 
                         <div class="row mb-3">
                             <div class="col-md-8 mb-3 position-relative">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">Search Location /
+                                <label class="form-label text-body small fw-semibold text-uppercase">Search Location /
                                     Address</label>
                                 <div class="input-group shadow-sm">
                                     <span class="input-group-text bg-white border-end-0"><i
-                                            class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                            class="fa-solid fa-magnifying-glass text-body"></i></span>
                                     <input type="text" id="map_search_input" name="society_map_address"
                                         class="form-control border-start-0 ps-0 py-2"
                                         placeholder="Type city, area, society name or street..."
@@ -424,7 +448,7 @@
                                 </div>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-muted small fw-semibold text-uppercase">GPS
+                                <label class="form-label text-body small fw-semibold text-uppercase">GPS
                                     Auto-Detect</label>
                                 <button type="button"
                                     class="btn btn-outline-primary w-100 fw-semibold py-2 shadow-sm"
@@ -492,7 +516,7 @@
                                     <h5 class="card-title mb-0 fw-bold border-start border-primary border-4 ps-2">
                                         {{ $role->name }}</h5>
                                     <div class="dropdown">
-                                        <button class="btn btn-link text-muted p-0" type="button"
+                                        <button class="btn btn-link text-body p-0" type="button"
                                             data-coreui-toggle="dropdown">
                                             <i class="fa-solid fa-ellipsis"></i>
                                         </button>
@@ -512,11 +536,11 @@
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
-                                    <span class="text-muted small">Permission</span>
+                                    <span class="text-body small">Permission</span>
                                     <span class="text-primary small fw-medium">View</span>
                                 </div>
                                 <div class="d-flex justify-content-between">
-                                    <span class="text-muted small">Member :</span>
+                                    <span class="text-body small">Member :</span>
                                     <span class="fw-bold small">{{ $role->users_count ?? 0 }}</span>
                                 </div>
                             </div>
@@ -576,8 +600,8 @@
 
             <div class="card border-0 shadow-sm mb-5 text-center py-5" id="no-role-selected">
                 <div class="card-body py-5">
-                    <i class="fa-solid fa-list-check fa-3x text-muted mb-3" style="opacity: 0.1;"></i>
-                    <p class="text-muted fw-medium mb-0">Select a role to assign permissions</p>
+                    <i class="fa-solid fa-list-check fa-3x text-body mb-3" style="opacity: 0.1;"></i>
+                    <p class="text-body fw-medium mb-0">Select a role to assign permissions</p>
                 </div>
             </div>
 
@@ -603,11 +627,11 @@
                                             </div>
                                             <div>
                                                 <h5 class="fw-bold mb-1 text-body">Export Records</h5>
-                                                <p class="text-muted small mb-0">Download database records into Excel
+                                                <p class="text-body small mb-0">Download database records into Excel
                                                     (.xlsx)</p>
                                             </div>
                                         </div>
-                                        <hr class="text-muted opacity-25 mb-4">
+                                        <hr class="text-body opacity-25 mb-4">
 
                                         <form id="global-export-form"
                                             action="{{ route('settings.global.export_master') }}" method="GET">
@@ -616,7 +640,7 @@
                                             <div id="export_master_container" class="mb-4">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                                     <label
-                                                        class="form-label small fw-bold text-uppercase text-muted mb-0">Select
+                                                        class="form-label small fw-bold text-uppercase text-body mb-0">Select
                                                         Tables to Include</label>
                                                     <div class="form-check form-check-sm mb-0">
                                                         <input class="form-check-input" type="checkbox"
@@ -750,13 +774,13 @@
                                                     </div>
                                                     <div>
                                                         <h5 class="fw-bold mb-1 text-body">Bulk Import</h5>
-                                                        <p class="text-muted small mb-0">Upload Excel to restore
+                                                        <p class="text-body small mb-0">Upload Excel to restore
                                                             database in bulk</p>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <hr class="text-muted opacity-25 mb-4">
-                                            <p class="text-muted small mb-4">
+                                            <hr class="text-body opacity-25 mb-4">
+                                            <p class="text-body small mb-4">
                                                 Upload an Excel (.xlsx) Master backup workbook to bulk restore database
                                                 records across Blocks, Flats, Residents, Staff, Expenses, Complaints,
                                                 and Settings.
@@ -860,7 +884,7 @@
                                                 style="font-size: 3rem;"></i>
                                             <h6 class="mb-1 text-dark fw-bold" id="master-drag-drop-text">Drag & Drop
                                                 your Excel file here</h6>
-                                            <p class="text-muted small mb-0" id="master-drag-drop-subtext">or click to
+                                            <p class="text-body small mb-0" id="master-drag-drop-subtext">or click to
                                                 browse</p>
                                         </div>
                                     </div>
@@ -946,6 +970,32 @@
                     processMaster: "{{ route('settings.global.process_master') }}"
                 }
             };
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const debuggerSwitch = document.getElementById('enable_debugger');
+                if (debuggerSwitch) {
+                    debuggerSwitch.addEventListener('change', function() {
+                        const val = this.checked ? '1' : '0';
+                        if (val === '0') {
+                            const bar = document.querySelector('.phpdebugbar');
+                            if (bar) bar.style.display = 'none';
+                        }
+                        fetch("{{ route('settings.store') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ enable_debugger: val })
+                        }).then(response => {
+                            if (response.ok) {
+                                window.location.reload();
+                            }
+                        });
+                    });
+                }
+            });
         </script>
     @endpush
 </x-user-page>

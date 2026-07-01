@@ -60,14 +60,34 @@ class Setting extends Model
             'req_doc_rental_permanent_address_proof' => '1',
             'req_doc_rental_contact_no' => '1',
             'req_doc_rental_email' => '1',
+            'enable_debugger' => '0',
         ];
+    }
+
+    protected static $cachedSettings = null;
+
+    public static function getAll(): array
+    {
+        if (self::$cachedSettings !== null) {
+            return self::$cachedSettings;
+        }
+
+        self::$cachedSettings = Cache::rememberForever('global_settings', function () {
+            return self::all()->pluck('value', 'key')->toArray();
+        });
+
+        return self::$cachedSettings;
+    }
+
+    public static function clearCache(): void
+    {
+        self::$cachedSettings = null;
+        Cache::forget('global_settings');
     }
 
     public static function get($key, $default = null)
     {
-        $settings = Cache::rememberForever('global_settings', function () {
-            return self::all()->pluck('value', 'key')->toArray();
-        });
+        $settings = self::getAll();
 
         return $settings[$key] ?? (self::defaults()[$key] ?? $default);
     }

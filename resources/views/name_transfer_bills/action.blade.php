@@ -1,11 +1,19 @@
 <div class="d-flex gap-2 justify-content-center">
     @can('name_transfer_bill_view')
         @if(!$is_approved)
-        <button type="button" class="btn btn-sm btn-outline-success btn-approve" 
-            data-url="{{ route('name-transfer-bills.approve', $id, false) }}"
-            data-coreui-toggle="tooltip" title="Approve Transfer">
-            <i class="fa-solid fa-check"></i>
-        </button>
+            @if($status === 'paid')
+            <button type="button" class="btn btn-sm btn-outline-success btn-approve" 
+                data-url="{{ route('name-transfer-bills.approve', $id, false) }}"
+                data-coreui-toggle="tooltip" title="Approve Transfer">
+                <i class="fa-solid fa-check"></i>
+            </button>
+            @else
+            <span class="d-inline-block" tabindex="0" data-coreui-toggle="tooltip" title="Payment required before approval">
+                <button type="button" class="btn btn-sm btn-outline-secondary opacity-50" disabled style="pointer-events: none;">
+                    <i class="fa-solid fa-lock me-1"></i><i class="fa-solid fa-check"></i>
+                </button>
+            </span>
+            @endif
         @endif
         <button type="button" class="btn btn-sm btn-outline-primary btn-status" 
             data-url="{{ route('name-transfer-bills.update-status', $id, false) }}" 

@@ -19,9 +19,17 @@ class ExpenseController extends Controller
         abort_if(! \Auth::user()->can('expense_view'), 403);
         try {
             $totalExpenses = Expense::sum('total_amount');
-            $thisMonthExpenses = Expense::whereMonth('created_at', date('m'))
-                                        ->whereYear('created_at', date('Y'))
-                                        ->sum('total_amount');
+            $thisMonthExpenses = Expense::where(function ($q) {
+                $q->where(function ($sub) {
+                    $sub->whereNotNull('expense_date')
+                        ->whereMonth('expense_date', date('m'))
+                        ->whereYear('expense_date', date('Y'));
+                })->orWhere(function ($sub) {
+                    $sub->whereNull('expense_date')
+                        ->whereMonth('created_at', date('m'))
+                        ->whereYear('created_at', date('Y'));
+                });
+            })->sum('total_amount');
             $totalInvoices = Expense::whereNotNull('invoice')->count();
             $totalMaintenanceIncome = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->sum('total_amount')
                                     + NameTransferBill::where('status', config('status.name_transfer_bills.paid'))->sum('amount');

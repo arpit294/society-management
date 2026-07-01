@@ -107,7 +107,7 @@ class BlockController extends Controller
         try {
             return view('blocks.edit', compact('block'));
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in BlockController@edit: ' . $e->getMessage());
@@ -147,7 +147,7 @@ class BlockController extends Controller
                 'message' => 'Block updated successfully.',
             ]);
         } catch (\Exception $e) {
-            if ($e instanceof \Illuminate\Validation\ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
+            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
             Log::error('Error in BlockController@update: ' . $e->getMessage());

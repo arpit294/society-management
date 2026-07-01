@@ -38,7 +38,7 @@ class FlatDocumentController extends Controller
         abort_if(! \Auth::user()->can('flat_document_create'), 403);
         try {
             $blocks = Block::all();
-            $settings = Setting::pluck('value', 'key')->toArray();
+            $settings = Setting::getAll();
             $documentRequirements = $this->documentRequirements();
 
             return view('flat_documents.create', compact('blocks', 'settings', 'documentRequirements'));
@@ -351,7 +351,7 @@ class FlatDocumentController extends Controller
 
     private function enabledDocumentsFor(string $residentType): array
     {
-        $settings = Setting::pluck('value', 'key')->toArray();
+        $settings = Setting::getAll();
         $documents = $this->documentRequirements()[$residentType] ?? [];
         $enabledDocuments = [];
 
