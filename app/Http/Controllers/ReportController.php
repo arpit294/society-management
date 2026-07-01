@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Maintenance;
 use App\Models\MaintenanceBill;
+use App\Models\Resident;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Nette\Schema\ValidationException;
@@ -32,7 +33,7 @@ class ReportController extends Controller
             $selectedYear = $request->input('year', $latestMaintenance ? $latestMaintenance->year : Carbon::now()->format('Y'));
 
             // Fetch all active residents once
-            $activeResidents = \App\Models\Resident::with(['user', 'flat.block', 'flat.flatType'])
+            $activeResidents = Resident::with(['user', 'flat.block', 'flat.flatType'])
                 ->where(function($query) {
                     $query->whereNull('move_out_date')
                           ->orWhere('move_out_date', '>=', now()->startOfDay());
@@ -104,7 +105,7 @@ class ReportController extends Controller
             $selectedYear = $request->input('year', $latestMaintenance ? $latestMaintenance->year : Carbon::now()->format('Y'));
 
             // Fetch all active residents once
-            $activeResidents = \App\Models\Resident::with(['user', 'flat.block', 'flat.flatType'])
+            $activeResidents = Resident::with(['user', 'flat.block', 'flat.flatType'])
                 ->where(function($query) {
                     $query->whereNull('move_out_date')
                           ->orWhere('move_out_date', '>=', now()->startOfDay());
