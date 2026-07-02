@@ -28,6 +28,26 @@ class UsersDataTable extends DataTable
                 $query->where('status', $val);
             })
             ->addColumn('action', 'users.action')
+            ->editColumn('role', function (User $user) {
+                $role = trim((string) $user->role);
+                if (empty($role)) {
+                    $role = $user->roles->pluck('name')->first() ?? 'N/A';
+                }
+                $roleLower = strtolower($role);
+
+                if ($roleLower === 'admin') {
+                    return '<span class="badge bg-danger text-white px-3 py-2 fw-bold shadow-sm" style="font-size: 0.85rem;"><i class="fa-solid fa-user-shield me-1"></i> Admin</span>';
+                }
+                if (in_array($roleLower, ['committee_member', 'commitee_member'])) {
+                    return '<span class="badge bg-primary text-white px-3 py-2 fw-bold shadow-sm" style="font-size: 0.85rem;"><i class="fa-solid fa-users-gear me-1"></i> Committee Member</span>';
+                }
+                if (in_array($roleLower, ['secretary', 'secretory'])) {
+                    return '<span class="badge bg-info text-dark px-3 py-2 fw-bold shadow-sm" style="font-size: 0.85rem;"><i class="fa-solid fa-user-tie me-1"></i> Secretary</span>';
+                }
+
+                $label = config('roles.labels.'.$role, ucwords(str_replace('_', ' ', $role)));
+                return '<span class="badge bg-secondary bg-opacity-25 text-body px-3 py-1 fw-semibold">'.$label.'</span>';
+            })
             ->editColumn('status', function (User $user) {
                 $class = $user->status === 'active' ? 'bg-success' : 'bg-danger';
 
@@ -36,8 +56,9 @@ class UsersDataTable extends DataTable
             ->editColumn('created_at', function (User $user) {
                 return $user->created_at?->format('d-m-Y h:i A');
             })
-            ->rawColumns(['status', 'action'])
+            ->rawColumns(['role', 'status', 'action'])
             ->setRowId('id');
+
     }
 
     /**
@@ -47,8 +68,9 @@ class UsersDataTable extends DataTable
      */
     public function query(User $model): QueryBuilder
     {
-        return $model->newQuery();
+        return $model->newQuery()->with('roles');
     }
+
 
     /**
      * Optional method if you want to use the html builder.

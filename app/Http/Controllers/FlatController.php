@@ -144,10 +144,12 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_view'), 403);
         try {
+            $flat->load('block');
             $history = Resident::with('user')
                 ->where('flat_id', $flat->id)
                 ->orderBy('move_in_date', 'desc')
                 ->get();
+
 
             return view('flats.history', compact('flat', 'history'));
         } catch (\Exception $e) {
@@ -265,7 +267,9 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_edit'), 403);
         try {
+            $flat->load('block');
             $currentOwner = Resident::with('user')
+
                 ->where('flat_id', $flat->id)
                 ->where('type', 'owner')
                 ->where(function ($q) {

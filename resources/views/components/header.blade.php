@@ -124,20 +124,5 @@
             </li>
         </ul>
     </div>
-
-    {{-- hero section --}}
-    <div class="container-fluid px-4">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb my-0">
-                <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('users.index') }}">User Management</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('residents.index') }}">Residents</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('flats.index') }}">Flats</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('blocks.index') }}">Blocks</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('complains.index') }}">Complaints</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('expenses.index') }}">Expenses</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('maintenance-bills.index') }}">Maintenance Bills</a></li>
-            </ol>
-        </nav>
-    </div>
 </header>
+

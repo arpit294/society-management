@@ -915,7 +915,18 @@
         </div>
     </div>
 
-    <div id="settings-data" class="d-none" data-created-role-id="{{ session('created_role_id') }}"></div>
+    <div id="settings-data" class="d-none"
+        data-created-role-id="{{ session('created_role_id') }}"
+        data-society-lat="{{ $settings['society_latitude'] ?? '19.0760' }}"
+        data-society-lng="{{ $settings['society_longitude'] ?? '72.8777' }}"
+        data-currency-symbol="{{ $currencySymbol }}"
+        data-available-currencies="{{ json_encode($availableCurrencies) }}"
+        data-routes="{{ json_encode([
+            'previewMaster' => route('settings.global.preview_master'),
+            'processGlobal' => route('settings.global.process'),
+            'processMaster' => route('settings.global.process_master'),
+            'settingsStore' => route('settings.store')
+        ]) }}"></div>
 
     @push('scripts')
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"

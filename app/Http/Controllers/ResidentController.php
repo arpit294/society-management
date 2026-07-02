@@ -147,7 +147,9 @@ class ResidentController extends Controller
     {
         abort_if(Gate::denies('resident_edit'), 403);
         try {
+            $resident->load(['user', 'flat', 'block']);
             $blocks = Block::all();
+
             $flats = Flat::where('block_id', $resident->block_id)->get();
             $users = User::with(['resident.flat.block'])->get();
 

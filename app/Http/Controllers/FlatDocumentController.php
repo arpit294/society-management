@@ -152,7 +152,9 @@ class FlatDocumentController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_document_view'), 403);
         try {
+            $flatDocument->load(['flat.block', 'user']);
             return view('flat_documents.show', compact('flatDocument'));
+
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;

@@ -69,14 +69,25 @@ function toggleResidentOwnerSection(select) {
 document.addEventListener("DOMContentLoaded", function () {
     const settingsData = document.getElementById("settings-data");
     if (settingsData) {
-        window.SMP_SETTINGS_CONFIG = {
-            availableCurrencies: parseJsonData(settingsData.dataset.availableCurrencies),
-            currencySymbol: settingsData.dataset.currencySymbol || "\u20B9",
-            societyLat: parseFloat(settingsData.dataset.societyLat) || 19.076,
-            societyLng: parseFloat(settingsData.dataset.societyLng) || 72.8777,
-            csrfToken: getCsrfToken(),
-            routes: parseJsonData(settingsData.dataset.routes),
-        };
+        window.SMP_SETTINGS_CONFIG = window.SMP_SETTINGS_CONFIG || {};
+        if (settingsData.dataset.availableCurrencies) {
+            window.SMP_SETTINGS_CONFIG.availableCurrencies = parseJsonData(settingsData.dataset.availableCurrencies);
+        }
+        if (settingsData.dataset.currencySymbol) {
+            window.SMP_SETTINGS_CONFIG.currencySymbol = settingsData.dataset.currencySymbol;
+        }
+        if (settingsData.dataset.societyLat) {
+            window.SMP_SETTINGS_CONFIG.societyLat = parseFloat(settingsData.dataset.societyLat);
+        }
+        if (settingsData.dataset.societyLng) {
+            window.SMP_SETTINGS_CONFIG.societyLng = parseFloat(settingsData.dataset.societyLng);
+        }
+        if (!window.SMP_SETTINGS_CONFIG.csrfToken) {
+            window.SMP_SETTINGS_CONFIG.csrfToken = getCsrfToken();
+        }
+        if (settingsData.dataset.routes) {
+            window.SMP_SETTINGS_CONFIG.routes = parseJsonData(settingsData.dataset.routes);
+        }
     }
 
     document.querySelectorAll(".js-resident-type-toggle").forEach((select) => {
@@ -3230,8 +3241,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var mapElem = document.getElementById("society_location_map");
     if (mapElem && typeof L !== "undefined") {
-        var initialLat = config.societyLat;
-        var initialLng = config.societyLng;
+        var latInput = document.getElementById("society_latitude");
+        var lngInput = document.getElementById("society_longitude");
+        var initialLat = (latInput && !isNaN(parseFloat(latInput.value))) ? parseFloat(latInput.value) : (config && !isNaN(parseFloat(config.societyLat)) ? parseFloat(config.societyLat) : 19.0760);
+        var initialLng = (lngInput && !isNaN(parseFloat(lngInput.value))) ? parseFloat(lngInput.value) : (config && !isNaN(parseFloat(config.societyLng)) ? parseFloat(config.societyLng) : 72.8777);
 
         var map = L.map("society_location_map").setView(
             [initialLat, initialLng],

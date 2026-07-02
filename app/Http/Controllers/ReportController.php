@@ -5,8 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Maintenance;
 use App\Models\MaintenanceBill;
+use App\Models\Resident;
+use App\Models\Expense;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+
 use Nette\Schema\ValidationException;
 use OpenSpout\Writer\XLSX\Writer;
 use OpenSpout\Common\Entity\Row;
@@ -32,7 +36,7 @@ class ReportController extends Controller
             $selectedYear = $request->input('year', $latestMaintenance ? $latestMaintenance->year : Carbon::now()->format('Y'));
 
             // Fetch all active residents once
-            $activeResidents = \App\Models\Resident::with(['user', 'flat.block', 'flat.flatType'])
+            $activeResidents = Resident::with(['user', 'flat.block', 'flat.flatType'])
                 ->where(function($query) {
                     $query->whereNull('move_out_date')
                           ->orWhere('move_out_date', '>=', now()->startOfDay());
@@ -44,6 +48,23 @@ class ReportController extends Controller
                 $yearlyPending = 0;
                 $monthlyBreakdown = [];
 
+                $yearlyExpensesQuery = Expense::with(['category', 'user'])
+                    ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
+                    ->latest(DB::raw('COALESCE(expense_date, created_at)'))
+                    ->get();
+
+                $totalExpense = $yearlyExpensesQuery->sum('total_amount');
+                $monthlyExpenseMap = $yearlyExpensesQuery->groupBy(function ($exp) {
+                    $date = $exp->expense_date ? Carbon::parse($exp->expense_date) : $exp->created_at;
+                    return $date->format('F');
+                })->map->sum('total_amount');
+
+                $expenseCategories = $yearlyExpensesQuery->groupBy(function ($exp) {
+                    return $exp->category ? $exp->category->title : 'Uncategorized';
+                })->map->sum('total_amount');
+
+                $expensesList = $yearlyExpensesQuery;
+
                 $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
                 foreach ($months as $month) {
@@ -53,6 +74,7 @@ class ReportController extends Controller
                         'expected' => $stats['totalExpected'],
                         'paid' => $stats['totalPaid'],
                         'pending' => $stats['totalPending'],
+                        'expense' => $monthlyExpenseMap[$month] ?? 0,
                     ];
                     $yearlyExpected += $stats['totalExpected'];
                     $yearlyPaid += $stats['totalPaid'];
@@ -66,20 +88,39 @@ class ReportController extends Controller
                     'yearlyExpected',
                     'yearlyPaid',
                     'yearlyPending',
-                    'monthlyBreakdown'
+                    'monthlyBreakdown',
+                    'totalExpense',
+                    'expenseCategories',
+                    'expensesList'
                 ));
             }
 
             // Monthly Logic
             $stats = $this->calculateMonthlyStats($selectedMonth, $selectedYear, $activeResidents);
 
+            $monthlyExpensesQuery = Expense::with(['category', 'user'])
+                ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
+                ->whereRaw('MONTHNAME(COALESCE(expense_date, created_at)) = ?', [$selectedMonth])
+                ->latest(DB::raw('COALESCE(expense_date, created_at)'))
+                ->get();
+
+            $totalExpense = $monthlyExpensesQuery->sum('total_amount');
+            $expenseCategories = $monthlyExpensesQuery->groupBy(function ($exp) {
+                return $exp->category ? $exp->category->title : 'Uncategorized';
+            })->map->sum('total_amount');
+            $expensesList = $monthlyExpensesQuery;
+
             return view('reports.maintenance', array_merge([
                 'reportType' => $reportType,
                 'selectedMonth' => $selectedMonth,
                 'selectedYear' => $selectedYear,
                 'availableDates' => $availableDates,
+                'totalExpense' => $totalExpense,
+                'expenseCategories' => $expenseCategories,
+                'expensesList' => $expensesList,
             ], $stats));
         } catch (\Exception $e) {
+
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
             }
@@ -104,7 +145,7 @@ class ReportController extends Controller
             $selectedYear = $request->input('year', $latestMaintenance ? $latestMaintenance->year : Carbon::now()->format('Y'));
 
             // Fetch all active residents once
-            $activeResidents = \App\Models\Resident::with(['user', 'flat.block', 'flat.flatType'])
+            $activeResidents = Resident::with(['user', 'flat.block', 'flat.flatType'])
                 ->where(function($query) {
                     $query->whereNull('move_out_date')
                           ->orWhere('move_out_date', '>=', now()->startOfDay());
@@ -153,6 +194,26 @@ class ReportController extends Controller
                         round($yearlyPaid, 2),
                         round($yearlyPending, 2)
                     ]));
+
+                    $writer->addRow(Row::fromValues([]));
+                    $writer->addRow(Row::fromValues([]));
+                    $writer->addRow(Row::fromValues(["Yearly Society Expenses - $selectedYear"]));
+                    $writer->addRow(Row::fromValues(['Expense Title', 'Category', 'Logged By', 'Date', 'Amount']));
+
+                    $yearlyExpenses = Expense::with(['category', 'user'])
+                        ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
+                        ->latest(DB::raw('COALESCE(expense_date, created_at)'))
+                        ->get();
+
+                    foreach ($yearlyExpenses as $exp) {
+                        $writer->addRow(Row::fromValues([
+                            $exp->title,
+                            $exp->category ? $exp->category->title : 'Uncategorized',
+                            $exp->user ? $exp->user->name : 'N/A',
+                            $exp->expense_date ? Carbon::parse($exp->expense_date)->format('d M Y') : $exp->created_at->format('d M Y'),
+                            round($exp->total_amount, 2)
+                        ]));
+                    }
                 } else {
                     $stats = $this->calculateMonthlyStats($selectedMonth, $selectedYear, $activeResidents);
 
@@ -184,10 +245,32 @@ class ReportController extends Controller
                             ucfirst($bill->status)
                         ]));
                     }
+
+                    $writer->addRow(Row::fromValues([]));
+                    $writer->addRow(Row::fromValues([]));
+                    $writer->addRow(Row::fromValues(["Society Expenses - $selectedMonth $selectedYear"]));
+                    $writer->addRow(Row::fromValues(['Expense Title', 'Category', 'Logged By', 'Date', 'Amount']));
+
+                    $monthlyExpenses = Expense::with(['category', 'user'])
+                        ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
+                        ->whereRaw('MONTHNAME(COALESCE(expense_date, created_at)) = ?', [$selectedMonth])
+                        ->latest(DB::raw('COALESCE(expense_date, created_at)'))
+                        ->get();
+
+                    foreach ($monthlyExpenses as $exp) {
+                        $writer->addRow(Row::fromValues([
+                            $exp->title,
+                            $exp->category ? $exp->category->title : 'Uncategorized',
+                            $exp->user ? $exp->user->name : 'N/A',
+                            $exp->expense_date ? Carbon::parse($exp->expense_date)->format('d M Y') : $exp->created_at->format('d M Y'),
+                            round($exp->total_amount, 2)
+                        ]));
+                    }
                 }
 
                 $writer->close();
             };
+
 
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
