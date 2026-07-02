@@ -78,6 +78,77 @@
                 </div>
 
                 @if($reportType == 'monthly')
+                    @php
+                        $paymentMethods = $paidBills->groupBy(fn($b) => !empty($b->payment_method) ? $b->payment_method : 'other')->map->sum('total_amount');
+                        if ($paymentMethods->isEmpty()) {
+                            $methodLabels = ['No Payments Yet'];
+                            $methodValues = [0];
+                        } else {
+                            $methodLabels = $paymentMethods->keys()->map(fn($m) => ucwords(str_replace('_', ' ', $m)))->values();
+                            $methodValues = $paymentMethods->values()->map(fn($v) => round($v, 2))->values();
+                        }
+
+                        $blocksExpected = [];
+                        $blocksPaid = [];
+                        $blocksPending = [];
+                        foreach ($paidBills as $bill) {
+                            $bName = $bill->block->block_name ?? 'No Block';
+                            $blocksPaid[$bName] = ($blocksPaid[$bName] ?? 0) + $bill->total_amount;
+                            $blocksExpected[$bName] = ($blocksExpected[$bName] ?? 0) + $bill->total_amount;
+                        }
+                        foreach ($pendingBills as $bill) {
+                            $bName = $bill->block->block_name ?? 'No Block';
+                            $blocksPending[$bName] = ($blocksPending[$bName] ?? 0) + $bill->total_amount;
+                            $blocksExpected[$bName] = ($blocksExpected[$bName] ?? 0) + $bill->total_amount;
+                        }
+                        if (empty($blocksExpected)) {
+                            $blockNames = ['No Blocks'];
+                            $blockPaidData = [0];
+                            $blockPendingData = [0];
+                        } else {
+                            ksort($blocksExpected);
+                            $blockNames = array_keys($blocksExpected);
+                            $blockPaidData = array_map(fn($b) => round($blocksPaid[$b] ?? 0, 2), $blockNames);
+                            $blockPendingData = array_map(fn($b) => round($blocksPending[$b] ?? 0, 2), $blockNames);
+                        }
+                    @endphp
+
+                    <div class="row mb-4 g-4">
+                        <div class="col-md-6">
+                            <div class="card h-100 shadow-sm border-0 bg-light bg-opacity-50">
+                                <div class="card-header bg-white fw-bold d-flex align-items-center">
+                                    <i class="fa-solid fa-chart-pie text-primary me-2"></i> Collection Status Overview
+                                </div>
+                                <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 280px;">
+                                    <canvas id="monthlyCollectionChart" style="max-height: 250px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 shadow-sm border-0 bg-light bg-opacity-50">
+                                <div class="card-header bg-white fw-bold d-flex align-items-center">
+                                    <i class="fa-solid fa-wallet text-info me-2"></i> Payment Methods Breakdown
+                                </div>
+                                <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 280px;">
+                                    <canvas id="paymentMethodChart" style="max-height: 250px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card shadow-sm border-0 bg-light bg-opacity-50">
+                                <div class="card-header bg-white fw-bold d-flex align-items-center">
+                                    <i class="fa-solid fa-building text-success me-2"></i> Block-Wise Collection vs Pending Dues
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="blockWiseChart" style="max-height: 300px; width: 100%;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <ul class="nav nav-tabs mb-4" id="reportTabs" role="tablist">
                         <li class="nav-item" role="presentation">
                             <button class="nav-link active" id="paid-tab" data-coreui-toggle="tab" data-coreui-target="#paid" type="button" role="tab" aria-controls="paid" aria-selected="true">Paid Residents ({{ $paidBills->count() }})</button>
@@ -111,6 +182,13 @@
                                             </tr>
                                         @endforeach
                                     </tbody>
+                                    <tfoot style="background: rgba(16, 185, 129, 0.15) !important;" class="fw-bold fs-6">
+                                        <tr style="border-top: 2px solid #10b981 !important; border-bottom: 2px solid #10b981 !important;">
+                                            <td colspan="2" class="py-3"><span class="badge bg-success px-3 py-2 fs-6 shadow-sm"><i class="fa-solid fa-check-circle me-1"></i> TOTAL PAID AMOUNT</span></td>
+                                            <td class="py-3 fs-6 fw-bolder" style="color: #34d399 !important;">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalPaid) }}</td>
+                                            <td colspan="2" class="py-3"></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                         </div>
@@ -140,11 +218,50 @@
                                             </tr>
                                         @endforeach
                                     </tbody>
+                                    <tfoot style="background: rgba(239, 68, 68, 0.15) !important;" class="fw-bold fs-6">
+                                        <tr style="border-top: 2px solid #ef4444 !important; border-bottom: 2px solid #ef4444 !important;">
+                                            <td colspan="2" class="py-3"><span class="badge bg-danger px-3 py-2 fs-6 shadow-sm"><i class="fa-solid fa-triangle-exclamation me-1"></i> TOTAL PENDING DUE</span></td>
+                                            <td class="py-3 fs-6 fw-bolder" style="color: #38bdf8 !important;">{{ \App\Helpers\CurrencyHelper::formatCurrency($pendingBills->sum('amount')) }}</td>
+                                            <td class="py-3 fs-6 fw-bolder" style="color: #fbbf24 !important;">{{ \App\Helpers\CurrencyHelper::formatCurrency($pendingBills->sum('penalty_amount')) }}</td>
+                                            <td class="py-3 fs-6 fw-bolder" style="color: #f87171 !important;">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalPending) }}</td>
+                                            <td class="py-3"></td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                         </div>
                     </div>
                 @else
+                    @php
+                        $yearlyMonths = collect($monthlyBreakdown)->pluck('month')->values();
+                        $yearlyExpectedData = collect($monthlyBreakdown)->map(fn($m) => round($m->expected, 2))->values();
+                        $yearlyPaidData = collect($monthlyBreakdown)->map(fn($m) => round($m->paid, 2))->values();
+                        $yearlyPendingData = collect($monthlyBreakdown)->map(fn($m) => round($m->pending, 2))->values();
+                    @endphp
+
+                    <div class="row mb-4 g-4">
+                        <div class="col-lg-8">
+                            <div class="card h-100 shadow-sm border-0 bg-light bg-opacity-50">
+                                <div class="card-header bg-white fw-bold d-flex align-items-center">
+                                    <i class="fa-solid fa-chart-column text-primary me-2"></i> Month-by-Month Collection Trend ({{ $selectedYear }})
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="yearlyTrendChart" style="max-height: 300px; width: 100%;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card h-100 shadow-sm border-0 bg-light bg-opacity-50">
+                                <div class="card-header bg-white fw-bold d-flex align-items-center">
+                                    <i class="fa-solid fa-chart-pie text-success me-2"></i> Overall Collection Efficiency
+                                </div>
+                                <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 280px;">
+                                    <canvas id="yearlyEfficiencyChart" style="max-height: 250px;"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card">
                         <div class="card-header">
                             <h5 class="mb-0">Yearly Breakdown ({{ $selectedYear }})</h5>
@@ -170,12 +287,12 @@
                                             </tr>
                                         @endforeach
                                     </tbody>
-                                    <tfoot class="table-light font-weight-bold">
-                                        <tr>
-                                            <td><strong>Total</strong></td>
-                                            <td class="text-end"><strong>{{ \App\Helpers\CurrencyHelper::formatCurrency($yearlyExpected) }}</strong></td>
-                                            <td class="text-end text-success"><strong>{{ \App\Helpers\CurrencyHelper::formatCurrency($yearlyPaid) }}</strong></td>
-                                            <td class="text-end text-danger"><strong>{{ \App\Helpers\CurrencyHelper::formatCurrency($yearlyPending) }}</strong></td>
+                                    <tfoot style="background: rgba(99, 102, 241, 0.18) !important;" class="fw-bold fs-6">
+                                        <tr style="border-top: 2px solid #6366f1 !important; border-bottom: 2px solid #6366f1 !important;">
+                                            <td class="py-3"><span class="badge bg-primary px-3 py-2 fs-6 shadow-sm"><i class="fa-solid fa-calculator me-1"></i> GRAND TOTAL</span></td>
+                                            <td class="text-end py-3 fs-6 fw-bolder" style="color: #38bdf8 !important;">{{ \App\Helpers\CurrencyHelper::formatCurrency($yearlyExpected) }}</td>
+                                            <td class="text-end py-3 fs-6 fw-bolder" style="color: #34d399 !important;">{{ \App\Helpers\CurrencyHelper::formatCurrency($yearlyPaid) }}</td>
+                                            <td class="text-end py-3 fs-6 fw-bolder" style="color: #f87171 !important;">{{ \App\Helpers\CurrencyHelper::formatCurrency($yearlyPending) }}</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -188,5 +305,158 @@
     </div>
 </div>
 
+@push('scripts')
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if (typeof Chart === "undefined") return;
 
+        @if($reportType == 'monthly')
+            var ctxOverview = document.getElementById("monthlyCollectionChart");
+            if (ctxOverview) {
+                new Chart(ctxOverview.getContext("2d"), {
+                    type: "doughnut",
+                    data: {
+                        labels: ["Collected Amount", "Pending Amount"],
+                        datasets: [{
+                            data: [{{ round($totalPaid, 2) }}, {{ round($totalPending, 2) }}],
+                            backgroundColor: ["#198754", "#dc3545"],
+                            borderWidth: 2,
+                            borderColor: "#ffffff"
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: "bottom" }
+                        }
+                    }
+                });
+            }
+
+            var ctxMethods = document.getElementById("paymentMethodChart");
+            if (ctxMethods) {
+                new Chart(ctxMethods.getContext("2d"), {
+                    type: "pie",
+                    data: {
+                        labels: {!! json_encode($methodLabels) !!},
+                        datasets: [{
+                            data: {!! json_encode($methodValues) !!},
+                            backgroundColor: ["#0d6efd", "#0dcaf0", "#ffc107", "#6c757d", "#6610f2", "#fd7e14"],
+                            borderWidth: 2,
+                            borderColor: "#ffffff"
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: "bottom" }
+                        }
+                    }
+                });
+            }
+
+            var ctxBlock = document.getElementById("blockWiseChart");
+            if (ctxBlock) {
+                new Chart(ctxBlock.getContext("2d"), {
+                    type: "bar",
+                    data: {
+                        labels: {!! json_encode($blockNames) !!},
+                        datasets: [
+                            {
+                                label: "Collected Amount",
+                                data: {!! json_encode($blockPaidData) !!},
+                                backgroundColor: "#198754",
+                                borderRadius: 4
+                            },
+                            {
+                                label: "Pending Dues",
+                                data: {!! json_encode($blockPendingData) !!},
+                                backgroundColor: "#dc3545",
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true }
+                        },
+                        plugins: {
+                            legend: { position: "top" }
+                        }
+                    }
+                });
+            }
+        @else
+            var ctxYearlyTrend = document.getElementById("yearlyTrendChart");
+            if (ctxYearlyTrend) {
+                new Chart(ctxYearlyTrend.getContext("2d"), {
+                    type: "bar",
+                    data: {
+                        labels: {!! json_encode($yearlyMonths) !!},
+                        datasets: [
+                            {
+                                label: "Expected Amount",
+                                data: {!! json_encode($yearlyExpectedData) !!},
+                                backgroundColor: "rgba(13, 202, 240, 0.6)",
+                                borderColor: "#0dcaf0",
+                                borderWidth: 1,
+                                borderRadius: 4
+                            },
+                            {
+                                label: "Collected Amount",
+                                data: {!! json_encode($yearlyPaidData) !!},
+                                backgroundColor: "#198754",
+                                borderRadius: 4
+                            },
+                            {
+                                label: "Pending Amount",
+                                data: {!! json_encode($yearlyPendingData) !!},
+                                backgroundColor: "#dc3545",
+                                borderRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: { beginAtZero: true }
+                        },
+                        plugins: {
+                            legend: { position: "top" }
+                        }
+                    }
+                });
+            }
+
+            var ctxYearlyEff = document.getElementById("yearlyEfficiencyChart");
+            if (ctxYearlyEff) {
+                new Chart(ctxYearlyEff.getContext("2d"), {
+                    type: "doughnut",
+                    data: {
+                        labels: ["Collected Amount", "Pending Dues"],
+                        datasets: [{
+                            data: [{{ round($yearlyPaid, 2) }}, {{ round($yearlyPending, 2) }}],
+                            backgroundColor: ["#198754", "#dc3545"],
+                            borderWidth: 2,
+                            borderColor: "#ffffff"
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: "bottom" }
+                        }
+                    }
+                });
+            }
+        @endif
+    });
+</script>
+@endpush
 </x-user-page>

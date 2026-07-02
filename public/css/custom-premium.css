@@ -45,3 +45,59 @@
 /* ============================================
    End of Custom Application Styles
    ============================================ */
+
+/* ---- Modern Dashboard & KPI Stat Cards Polish ---- */
+.card.border-start {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.card.border-start:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.25), 0 8px 12px -6px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ---- Modern Soft Rounded Pill Badges ---- */
+.badge {
+    padding: 0.48em 0.9em;
+    border-radius: 50rem !important;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
+}
+
+/* ---- Modern Interactive Tables ---- */
+.table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+.table tbody tr {
+    transition: background-color 0.18s ease;
+}
+.table tbody tr:hover {
+    background-color: rgba(99, 102, 241, 0.09) !important;
+}
+.table thead th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.76rem;
+    letter-spacing: 0.06em;
+    border-bottom-width: 2px;
+}
+
+/* ---- Sleek Form Control Focus Glows ---- */
+.form-control:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.28) !important;
+    border-color: #6366f1 !important;
+}
+
+/* ---- Nav Tabs Aesthetic Polish ---- */
+.nav-tabs .nav-link {
+    font-weight: 500;
+    border-radius: 0.5rem 0.5rem 0 0;
+    transition: all 0.2s ease;
+}
+.nav-tabs .nav-link.active {
+    font-weight: 600;
+    color: #6366f1 !important;
+    border-bottom: 3px solid #6366f1 !important;
+}

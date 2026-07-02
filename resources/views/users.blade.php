@@ -46,7 +46,20 @@
                                         <td>{{ $user->name }}</td>
                                         <td>{{ $user->email }}</td>
                                         <td>{{ $user->phone }}</td>
-                                        <td>{{ $user->role }}</td>
+                                        <td>
+                                            @php
+                                                $rLower = strtolower($user->role ?? '');
+                                            @endphp
+                                            @if($rLower === 'admin')
+                                                <span class="badge bg-danger text-white px-3 py-2 fw-bold shadow-sm"><i class="fa-solid fa-user-shield me-1"></i> Admin</span>
+                                            @elseif(in_array($rLower, ['committee_member', 'commitee_member']))
+                                                <span class="badge bg-primary text-white px-3 py-2 fw-bold shadow-sm"><i class="fa-solid fa-users-gear me-1"></i> Committee Member</span>
+                                            @elseif(in_array($rLower, ['secretary', 'secretory']))
+                                                <span class="badge bg-info text-dark px-3 py-2 fw-bold shadow-sm"><i class="fa-solid fa-user-tie me-1"></i> Secretary</span>
+                                            @else
+                                                <span class="badge bg-secondary bg-opacity-25 text-body px-3 py-1 fw-semibold">{{ ucwords(str_replace('_', ' ', $user->role ?? 'N/A')) }}</span>
+                                            @endif
+                                        </td>
 
                                         <td class="d-flex gap-2">
 

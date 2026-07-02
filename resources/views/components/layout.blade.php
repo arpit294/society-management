@@ -25,7 +25,7 @@
 
     <!-- Main styles for this application-->
     <link href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}" rel="stylesheet">
-    <link href="{{ asset('css/custom-premium.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/custom-premium.css') }}?v={{ filemtime(public_path('css/custom-premium.css')) }}" rel="stylesheet">
 
     <!-- We use those styles to show code examples, you should remove them in your application.-->
     <link href="{{ asset('css/examples.css') }}" rel="stylesheet">
