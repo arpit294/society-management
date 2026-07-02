@@ -68,8 +68,9 @@ class UsersDataTable extends DataTable
      */
     public function query(User $model): QueryBuilder
     {
-        return $model->newQuery();
+        return $model->newQuery()->with('roles');
     }
+
 
     /**
      * Optional method if you want to use the html builder.

@@ -1160,7 +1160,9 @@ class GlobalImportExportController extends Controller
             }
             $reader->close();
 
-            while (!empty($allRows) && count($allRows) > 2) {
+            while (
+
+            !empty($allRows) && count($allRows) > 2) {
                 $lastRow = end($allRows);
                 $isEmpty = true;
                 foreach ($lastRow as $c) {

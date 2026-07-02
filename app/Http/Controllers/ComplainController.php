@@ -94,7 +94,9 @@ class ComplainController extends Controller
     {
         abort_if(! \Auth::user()->can('complain_edit'), 403);
         try {
+            $complain->load('user');
             $users = User::query()->get();
+
 
             return response()->view('complains.edit', compact('complain', 'users'));
         } catch (\Exception $e) {

@@ -121,7 +121,9 @@ class ExpenseController extends Controller
     {
         abort_if(! \Auth::user()->can('expense_edit'), 403);
         try {
+            $expense->load(['category', 'user']);
             $users = User::whereIn('role', ['secretary', 'committee_member'])->get();
+
             $categories = ExpenseCategory::where('status', 'active')->get();
             return view('expenses.edit', compact('expense', 'users', 'categories'));
         } catch (\Exception $e) {
