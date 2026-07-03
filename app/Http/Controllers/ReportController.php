@@ -151,9 +151,18 @@ class ReportController extends Controller
                           ->orWhere('move_out_date', '>=', now()->startOfDay());
                 })->get();
 
+            // Determine the active tab to decide which report to generate
+            $activeTab = $request->input('active_tab', '#main-maintenance');
+            $prefix = 'maintenance_collection_report';
+            if ($activeTab === '#main-expense') {
+                $prefix = 'society_expense_report';
+            } elseif ($activeTab === '#main-summary') {
+                $prefix = 'financial_summary_report';
+            }
+
             $filename = $reportType === 'monthly'
-                ? "maintenance_report_{$selectedMonth}_{$selectedYear}.xlsx"
-                : "maintenance_report_yearly_{$selectedYear}.xlsx";
+                ? "{$prefix}_{$selectedMonth}_{$selectedYear}.xlsx"
+                : "{$prefix}_yearly_{$selectedYear}.xlsx";
 
             $headers = [
                 "Content-type"        => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -164,9 +173,102 @@ class ReportController extends Controller
             ];
 
             // Create a callback to stream the Excel file
-            $callback = function() use ($reportType, $selectedMonth, $selectedYear, $activeResidents) {
+            $callback = function() use ($reportType, $selectedMonth, $selectedYear, $activeResidents, $activeTab) {
                 $writer = new Writer();
                 $writer->openToFile('php://output');
+
+                if ($activeTab === '#main-expense') {
+                    if ($reportType === 'yearly') {
+                        $writer->addRow(Row::fromValues(["Yearly Society Expense Report - $selectedYear"]));
+                        $writer->addRow(Row::fromValues(['#', 'Expense Title', 'Category', 'Logged By', 'Expense Date', 'Amount']));
+
+                        $yearlyExpenses = Expense::with(['category', 'user'])
+                            ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
+                            ->latest(DB::raw('COALESCE(expense_date, created_at)'))
+                            ->get();
+
+                        $totalYearlyExpense = 0;
+                        foreach ($yearlyExpenses as $index => $exp) {
+                            $writer->addRow(Row::fromValues([
+                                $index + 1,
+                                $exp->title,
+                                $exp->category ? $exp->category->title : 'Uncategorized',
+                                $exp->user ? $exp->user->name : 'N/A',
+                                $exp->expense_date ? Carbon::parse($exp->expense_date)->format('d M Y') : $exp->created_at->format('d M Y'),
+                                round($exp->total_amount, 2)
+                            ]));
+                            $totalYearlyExpense += $exp->total_amount;
+                        }
+                        $writer->addRow(Row::fromValues(['TOTAL EXPENSES', '', '', '', '', round($totalYearlyExpense, 2)]));
+                    } else {
+                        $writer->addRow(Row::fromValues(["Monthly Society Expense Report - $selectedMonth $selectedYear"]));
+                        $writer->addRow(Row::fromValues(['#', 'Expense Title', 'Category', 'Logged By', 'Expense Date', 'Amount']));
+
+                        $monthlyExpenses = Expense::with(['category', 'user'])
+                            ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
+                            ->whereRaw('MONTHNAME(COALESCE(expense_date, created_at)) = ?', [$selectedMonth])
+                            ->latest(DB::raw('COALESCE(expense_date, created_at)'))
+                            ->get();
+
+                        $totalMonthlyExpense = 0;
+                        foreach ($monthlyExpenses as $index => $exp) {
+                            $writer->addRow(Row::fromValues([
+                                $index + 1,
+                                $exp->title,
+                                $exp->category ? $exp->category->title : 'Uncategorized',
+                                $exp->user ? $exp->user->name : 'N/A',
+                                $exp->expense_date ? Carbon::parse($exp->expense_date)->format('d M Y') : $exp->created_at->format('d M Y'),
+                                round($exp->total_amount, 2)
+                            ]));
+                            $totalMonthlyExpense += $exp->total_amount;
+                        }
+                        $writer->addRow(Row::fromValues(['TOTAL EXPENSES', '', '', '', '', round($totalMonthlyExpense, 2)]));
+                    }
+                    $writer->close();
+                    return;
+                }
+
+                if ($activeTab === '#main-summary') {
+                    if ($reportType === 'yearly') {
+                        $writer->addRow(Row::fromValues(["Financial Revenue vs Expense Summary - Yearly ($selectedYear)"]));
+                        $writer->addRow(Row::fromValues(['Month', 'Collected Revenue', 'Total Expenses', 'Current Society Fund']));
+
+                        $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                        $yearlyExpensesQuery = Expense::whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)->get();
+                        $monthlyExpenseMap = $yearlyExpensesQuery->groupBy(function($exp) {
+                            return Carbon::parse($exp->expense_date ?: $exp->created_at)->format('F');
+                        })->map->sum('total_amount');
+
+                        $totRev = $totExp = 0;
+                        foreach ($months as $month) {
+                            $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents);
+                            $rev = round($stats['totalPaid'], 2);
+                            $exp = round($monthlyExpenseMap[$month] ?? 0, 2);
+                            $net = round($rev - $exp, 2);
+                            $writer->addRow(Row::fromValues([$month, $rev, $exp, $net]));
+                            $totRev += $rev;
+                            $totExp += $exp;
+                        }
+                        $writer->addRow(Row::fromValues(['TOTAL', round($totRev, 2), round($totExp, 2), round($totRev - $totExp, 2)]));
+                    } else {
+                        $stats = $this->calculateMonthlyStats($selectedMonth, $selectedYear, $activeResidents);
+                        $monthlyExpenses = Expense::whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
+                            ->whereRaw('MONTHNAME(COALESCE(expense_date, created_at)) = ?', [$selectedMonth])
+                            ->sum('total_amount');
+
+                        $rev = round($stats['totalPaid'], 2);
+                        $exp = round($monthlyExpenses, 2);
+                        $net = round($rev - $exp, 2);
+
+                        $writer->addRow(Row::fromValues(["Financial Revenue vs Expense Summary - $selectedMonth $selectedYear"]));
+                        $writer->addRow(Row::fromValues(['Category', 'Amount']));
+                        $writer->addRow(Row::fromValues(['Collected Maintenance Revenue', $rev]));
+                        $writer->addRow(Row::fromValues(['Total Society Expenses', $exp]));
+                        $writer->addRow(Row::fromValues(['Current Society Fund Balance', $net]));
+                    }
+                    $writer->close();
+                    return;
+                }
 
                 if ($reportType === 'yearly') {
                     $writer->addRow(Row::fromValues(['Month', 'Expected Amount', 'Paid Amount', 'Pending Amount']));
@@ -251,6 +353,7 @@ class ReportController extends Controller
                     $writer->addRow(Row::fromValues(["Society Expenses - $selectedMonth $selectedYear"]));
                     $writer->addRow(Row::fromValues(['Expense Title', 'Category', 'Logged By', 'Date', 'Amount']));
 
+                    // Fetch monthly expenses for the selected month and year
                     $monthlyExpenses = Expense::with(['category', 'user'])
                         ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
                         ->whereRaw('MONTHNAME(COALESCE(expense_date, created_at)) = ?', [$selectedMonth])
@@ -287,6 +390,7 @@ class ReportController extends Controller
         }
     }
 
+
     private function calculateMonthlyStats($month, $year, $activeResidents)
     {
         $maintenance = Maintenance::where('month', $month)
@@ -320,6 +424,7 @@ class ReportController extends Controller
                     ]);
                     $totalPaid += $bill->total_amount;
                     $totalExpected += $bill->amount ?? $bill->total_amount;
+
                 } else {
                     $pendingBills->push((object)[
                         'user' => $bill->user,

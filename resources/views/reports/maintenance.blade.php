@@ -1,4 +1,39 @@
 <x-user-page>
+<style>
+    .highlight-thead {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%) !important;
+    }
+    .highlight-thead tr, .highlight-thead th {
+        background: transparent !important;
+        color: #ffffff !important;
+        font-size: 0.85rem !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.8px !important;
+        text-transform: uppercase !important;
+        padding: 16px 14px !important;
+        border: none !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important;
+    }
+    .dataTables_wrapper .dataTables_filter input {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        padding: 0.375rem 0.75rem;
+        margin-left: 0.5rem;
+    }
+    .dataTables_wrapper .dataTables_length select {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        padding: 0.375rem 2rem 0.375rem 0.75rem;
+        margin: 0 0.5rem;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button {
+        border-radius: 0.375rem !important;
+        padding: 0.25rem 0.6rem !important;
+    }
+    .dataTables_wrapper {
+        padding: 1.25rem !important;
+    }
+</style>
 <div class="row">
     <div class="col-12">
         <div class="card mb-4">
@@ -7,7 +42,7 @@
             </div>
             <div class="card-body">
                 <form method="GET" action="{{ route('reports.maintenance') }}" class="row g-3 mb-4 align-items-end" id="filterForm">
-                    <input type="hidden" name="active_tab" id="activeTabInput" value="{{ request('active_tab', '#main-maintenance') }}">
+                    <input type="hidden" name="active_tab" id="activeTabInput" value="{{ request('active_tab', '') }}">
                     <div class="col-md-3">
                         <label class="form-label">Report Type</label>
                         <select name="report_type" class="form-select js-auto-submit" id="reportTypeSelect">
@@ -40,9 +75,9 @@
 
                     <div class="col-md-3 d-flex gap-2">
                         @if(request()->has('month') || request()->has('year') || request()->has('report_type'))
-                            <a href="{{ route('reports.maintenance') }}" class="btn btn-outline-secondary w-100">Reset</a>
+                            <a href="{{ route('reports.maintenance', ['active_tab' => request('active_tab', '#main-maintenance')]) }}" id="resetFilterBtn" class="btn btn-outline-secondary w-100">Reset</a>
                         @endif
-                        <button type="submit" formaction="{{ route('reports.maintenance.export') }}" class="btn btn-success text-white w-100">
+                        <button type="submit" formaction="{{ route('reports.maintenance.export') }}" id="exportReportBtn" class="btn btn-success text-white w-100" style="{{ request('active_tab') === '#main-summary' ? 'display: none !important;' : '' }}">
                             <svg class="icon me-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="width: 1rem; height: 1rem; fill: currentColor;">
                                 <path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32V274.7l-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7V32zM64 352c-35.3 0-64 28.7-64 64v32c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V416c0-35.3-28.7-64-64-64H346.5l-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352H64zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/>
                             </svg>
@@ -184,7 +219,7 @@
                         <div class="tab-pane fade show active" id="paid" role="tabpanel" aria-labelledby="paid-tab">
                             <div class="table-responsive">
                                 <table id="paidTable" class="table table-bordered table-striped table-hover">
-                                    <thead>
+                                    <thead class="highlight-thead">
                                         <tr>
                                             <th>Resident</th>
                                             <th>Block - Flat</th>
@@ -218,7 +253,7 @@
                         <div class="tab-pane fade" id="pending" role="tabpanel" aria-labelledby="pending-tab">
                             <div class="table-responsive">
                                 <table id="pendingTable" class="table table-bordered table-striped table-hover">
-                                    <thead>
+                                    <thead class="highlight-thead">
                                         <tr>
                                             <th>Resident</th>
                                             <th>Block - Flat</th>
@@ -291,7 +326,7 @@
                         <div class="card-body p-0">
                             <div class="table-responsive">
                                 <table id="yearlyTable" class="table table-bordered table-striped table-hover mb-0">
-                                    <thead class="table-light">
+                                    <thead class="highlight-thead">
                                         <tr>
                                             <th>Month</th>
                                             <th class="text-end">Expected Amount</th>
@@ -362,9 +397,24 @@
                                     $expCatLabels = $expenseCategories->keys()->values();
                                     $expCatValues = $expenseCategories->values()->map(fn($v) => round($v, 2))->values();
                                 }
+
+                                $daysInMonth = \Carbon\Carbon::parse("1 $selectedMonth $selectedYear")->daysInMonth;
+                                $dailyExpLabels = [];
+                                $dailyExpValues = [];
+                                $monthAbbr = substr($selectedMonth, 0, 3);
+                                
+                                $groupedDays = $expensesList->groupBy(function($exp) {
+                                    return \Carbon\Carbon::parse($exp->expense_date ?: $exp->created_at)->format('d M');
+                                })->map->sum('total_amount');
+
+                                for ($d = 1; $d <= $daysInMonth; $d++) {
+                                    $dateLabel = sprintf('%02d %s', $d, $monthAbbr);
+                                    $dailyExpLabels[] = $dateLabel;
+                                    $dailyExpValues[] = round($groupedDays[$dateLabel] ?? 0, 2);
+                                }
                             @endphp
                             <div class="row mb-4 g-4">
-                                <div class="col-md-6">
+                                <div class="col-md-5">
                                     <div class="card h-100 shadow-sm border-0 bg-light bg-opacity-50">
                                         <div class="card-header bg-white fw-bold d-flex align-items-center">
                                             <i class="fa-solid fa-chart-pie text-warning me-2"></i> Monthly Expense by Category
@@ -374,13 +424,13 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-7">
                                     <div class="card h-100 shadow-sm border-0 bg-light bg-opacity-50">
                                         <div class="card-header bg-white fw-bold d-flex align-items-center">
-                                            <i class="fa-solid fa-chart-bar text-danger me-2"></i> Category Spending Comparison
+                                            <i class="fa-solid fa-calendar-days text-primary me-2"></i> Date-wise Expenses for Full Month ({{ $selectedMonth }})
                                         </div>
                                         <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 280px;">
-                                            <canvas id="monthlyExpenseBarChart" style="max-height: 250px; width: 100%;"></canvas>
+                                            <canvas id="dailyExpenseTrendChart" style="max-height: 250px; width: 100%;"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -428,8 +478,8 @@
                             </div>
                             <div class="card-body p-0">
                                 <div class="table-responsive">
-                                    <table class="table table-bordered table-striped table-hover mb-0">
-                                        <thead class="table-light">
+                                    <table id="expensesTransactionsTable" class="table table-bordered table-striped table-hover w-100">
+                                        <thead class="highlight-thead">
                                             <tr>
                                                 <th>#</th>
                                                 <th>Expense Title</th>
@@ -440,7 +490,7 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            @forelse($expensesList as $index => $exp)
+                                            @foreach($expensesList as $index => $exp)
                                                 <tr>
                                                     <td>{{ $index + 1 }}</td>
                                                     <td class="fw-semibold">{{ $exp->title }}</td>
@@ -449,11 +499,7 @@
                                                     <td>{{ $exp->expense_date ? \Carbon\Carbon::parse($exp->expense_date)->format('d M Y') : $exp->created_at->format('d M Y') }}</td>
                                                     <td class="text-end fw-bold text-danger">{{ \App\Helpers\CurrencyHelper::formatCurrency($exp->total_amount) }}</td>
                                                 </tr>
-                                            @empty
-                                                <tr>
-                                                    <td colspan="6" class="text-center py-4 text-muted">No expenses recorded for this period.</td>
-                                                </tr>
-                                            @endforelse
+                                            @endforeach
                                         </tbody>
                                         @if($expensesList->isNotEmpty())
                                             <tfoot style="background: rgba(239, 68, 68, 0.15) !important;" class="fw-bold fs-6">
@@ -477,26 +523,29 @@
                         @endphp
                         <div class="row mb-4">
                             <div class="col-md-4">
-                                <div class="card border-0 border-start border-4 border-success shadow-sm">
+                                <div class="card border-0 border-start border-4 border-success shadow-sm h-100">
                                     <div class="card-body">
-                                        <h5 class="card-title fw-normal mb-2">Total Collected Revenue</h5>
+                                        <h5 class="card-title fw-normal mb-2">Maintenance Revenue Collected</h5>
                                         <h3 class="text-success fw-bold mb-0">{{ \App\Helpers\CurrencyHelper::formatCurrency($revenueTotal) }}</h3>
+                                        <small class="text-muted d-block mt-1 fs-7"><i class="fa-solid fa-arrow-down-long text-success me-1"></i> Total paid maintenance inflows</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="card border-0 border-start border-4 border-danger shadow-sm">
+                                <div class="card border-0 border-start border-4 border-danger shadow-sm h-100">
                                     <div class="card-body">
-                                        <h5 class="card-title fw-normal mb-2">Total Society Expenses</h5>
+                                        <h5 class="card-title fw-normal mb-2">Society Expenses Incurred</h5>
                                         <h3 class="text-danger fw-bold mb-0">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalExpense) }}</h3>
+                                        <small class="text-muted d-block mt-1 fs-7"><i class="fa-solid fa-arrow-up-long text-danger me-1"></i> Total spending outflows</small>
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="card border-0 border-start border-4 {{ $netAmount >= 0 ? 'border-primary' : 'border-warning' }} shadow-sm">
+                                <div class="card border-0 border-start border-4 {{ $netAmount >= 0 ? 'border-primary' : 'border-warning' }} shadow-sm h-100">
                                     <div class="card-body">
-                                        <h5 class="card-title fw-normal mb-2">Net Financial {{ $netAmount >= 0 ? 'Surplus (Profit)' : 'Deficit (Loss)' }}</h5>
+                                        <h5 class="card-title fw-normal mb-2">Remaining Fund Balance {{ $netAmount >= 0 ? '(Surplus)' : '(Deficit)' }}</h5>
                                         <h3 class="{{ $netAmount >= 0 ? 'text-primary' : 'text-warning' }} fw-bold mb-0">{{ \App\Helpers\CurrencyHelper::formatCurrency($netAmount) }}</h3>
+                                        <small class="text-muted d-block mt-1 fs-7"><i class="fa-solid fa-calculator me-1"></i> Calculated: Revenue minus Expenses</small>
                                     </div>
                                 </div>
                             </div>
@@ -629,24 +678,27 @@
                 });
             }
 
-            var ctxExpBar = document.getElementById("monthlyExpenseBarChart");
+            var ctxExpBar = document.getElementById("dailyExpenseTrendChart");
             if (ctxExpBar) {
                 new Chart(ctxExpBar.getContext("2d"), {
                     type: "bar",
                     data: {
-                        labels: {!! json_encode($expCatLabels) !!},
+                        labels: {!! json_encode($dailyExpLabels) !!},
                         datasets: [{
-                            label: "Spent Amount",
-                            data: {!! json_encode($expCatValues) !!},
-                            backgroundColor: "#dc3545",
+                            label: "Daily Spent Amount",
+                            data: {!! json_encode($dailyExpValues) !!},
+                            backgroundColor: "#0d6efd",
                             borderRadius: 4
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        scales: { y: { beginAtZero: true } },
-                        plugins: { legend: { display: false } }
+                        scales: { 
+                            y: { beginAtZero: true },
+                            x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } } }
+                        },
+                        plugins: { legend: { position: "top" } }
                     }
                 });
             }
@@ -832,35 +884,111 @@
             }
         }
 
-        // On tab click, save tab state and resize all charts
+        const exportReportBtn = document.getElementById('exportReportBtn');
+        if (savedTab === '#main-summary' && exportReportBtn) {
+            exportReportBtn.style.setProperty('display', 'none', 'important');
+        }
+
+        function syncActiveTabState(target) {
+            if (!target) return;
+            if (activeTabInput) activeTabInput.value = target;
+            if (exportReportBtn) {
+                if (target === '#main-summary') {
+                    exportReportBtn.style.setProperty('display', 'none', 'important');
+                } else {
+                    exportReportBtn.style.removeProperty('display');
+                }
+            }
+            if (target.startsWith('#main-')) {
+                localStorage.setItem('smp_active_report_tab', target);
+                try {
+                    const url = new URL(window.location);
+                    url.searchParams.set('active_tab', target);
+                    window.history.replaceState({}, '', url);
+                } catch (e) {}
+            }
+        }
+
+        // Before any form submit or button click, ensure activeTabInput matches current screen
+        const resetBtn = document.getElementById('resetFilterBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const activeBtn = document.querySelector('#mainReportTabs button.active');
+                const targetTab = activeBtn ? activeBtn.getAttribute('data-coreui-target') : (activeTabInput && activeTabInput.value ? activeTabInput.value : '#main-maintenance');
+                window.location.href = "{{ route('reports.maintenance') }}?active_tab=" + encodeURIComponent(targetTab);
+            });
+        }
+
+        const filterForm = document.getElementById('filterForm');
+        if (filterForm) {
+            filterForm.addEventListener('submit', function () {
+                const activeBtn = document.querySelector('#mainReportTabs button.active');
+                if (activeBtn) {
+                    syncActiveTabState(activeBtn.getAttribute('data-coreui-target'));
+                }
+            });
+        }
+        document.querySelectorAll('#filterForm button, #filterForm select').forEach(el => {
+            el.addEventListener('click', function () {
+                const activeBtn = document.querySelector('#mainReportTabs button.active');
+                if (activeBtn) syncActiveTabState(activeBtn.getAttribute('data-coreui-target'));
+            });
+            el.addEventListener('change', function () {
+                const activeBtn = document.querySelector('#mainReportTabs button.active');
+                if (activeBtn) syncActiveTabState(activeBtn.getAttribute('data-coreui-target'));
+            });
+        });
+
+        // On tab click/show, save tab state and resize all charts
         document.querySelectorAll('button[data-coreui-toggle="tab"]').forEach(tab => {
             tab.addEventListener('click', function () {
-                const target = this.getAttribute('data-coreui-target');
-                if (activeTabInput && target) {
-                    activeTabInput.value = target;
-                }
-                if (target && target.startsWith('#main-')) {
-                    localStorage.setItem('smp_active_report_tab', target);
-                }
+                syncActiveTabState(this.getAttribute('data-coreui-target'));
                 setTimeout(() => {
                     window.dispatchEvent(new Event('resize'));
                     for (let id in Chart.instances) {
-                        if (Chart.instances[id]) {
-                            Chart.instances[id].resize();
-                        }
+                        if (Chart.instances[id]) Chart.instances[id].resize();
+                    }
+                    if (typeof $ !== "undefined" && $.fn.dataTable) {
+                        $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
                     }
                 }, 150);
             });
 
-            tab.addEventListener('shown.coreui.tab', function () {
+            tab.addEventListener('shown.coreui.tab', function (e) {
+                syncActiveTabState(e.target.getAttribute('data-coreui-target'));
                 window.dispatchEvent(new Event('resize'));
                 for (let id in Chart.instances) {
-                    if (Chart.instances[id]) {
-                        Chart.instances[id].resize();
-                    }
+                    if (Chart.instances[id]) Chart.instances[id].resize();
+                }
+                if (typeof $ !== "undefined" && $.fn.dataTable) {
+                    $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust();
                 }
             });
         });
+
+        if (typeof $ !== "undefined" && $.fn.DataTable) {
+            const getDtOptions = (emptyMsg) => ({
+                responsive: true,
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search records...",
+                    emptyTable: emptyMsg || "No records found for this period."
+                }
+            });
+
+            if ($("#expensesTransactionsTable").length && !$.fn.DataTable.isDataTable("#expensesTransactionsTable")) {
+                $("#expensesTransactionsTable").DataTable(getDtOptions("No expenses recorded for this period."));
+            }
+            if ($("#paidTable").length && !$.fn.DataTable.isDataTable("#paidTable")) {
+                $("#paidTable").DataTable(getDtOptions("No paid residents found for this period."));
+            }
+            if ($("#pendingTable").length && !$.fn.DataTable.isDataTable("#pendingTable")) {
+                $("#pendingTable").DataTable(getDtOptions("No pending maintenance records found for this period."));
+            }
+        }
     });
 </script>
 
