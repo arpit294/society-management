@@ -49,6 +49,22 @@
 </head>
 
 <body>
+    <!-- Global Page Preloader / Loader Overlay -->
+    <div id="page-preloader" class="page-preloader-overlay">
+        <div class="smp-preloader-content">
+            <div class="smp-orbit-container">
+                <div class="smp-orbit-ring smp-ring-outer"></div>
+                <div class="smp-orbit-ring smp-ring-inner"></div>
+                <div class="smp-loader-logo">
+                    <i class="fa-solid fa-building-shield"></i>
+                </div>
+            </div>
+            <div class="smp-loader-status mt-4">
+                <span class="status-dot"></span>
+                <span class="status-text">Please wait...</span>
+            </div>
+        </div>
+    </div>
 
     {{ $slot }}
 

@@ -146,11 +146,11 @@ document.addEventListener("click", function (event) {
     }
 });
 
-document.addEventListener("change", function (event) {
-    if (event.target.matches(".js-auto-submit")) {
-        event.target.form?.submit();
-    }
+$(document).on("change", ".js-auto-submit", function () {
+    this.form?.submit();
+});
 
+document.addEventListener("change", function (event) {
     if (event.target.matches(".js-resident-type-toggle")) {
         toggleResidentOwnerSection(event.target);
     }
@@ -1100,16 +1100,32 @@ $(document).ready(function () {
             const url = $(this).data("url");
             const title = $(this).data("title");
 
+            // Show modal immediately with our unique SMP orbital loader
+            $(modalContentId).html(`
+                <div class="modal-header border-bottom-0">
+                    <h5 class="modal-title fw-bold">${title || 'Loading...'}</h5>
+                    <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body modal-ajax-loader">
+                    <div class="smp-modal-spinner">
+                        <div class="smp-ring-inner-small"></div>
+                        <i class="fa-solid fa-building-user smp-modal-icon"></i>
+                    </div>
+                    <div class="smp-modal-loading-text">Fetching data, please wait...</div>
+                </div>
+            `);
+            modalInstance?.show();
+
             $.ajax({
                 type: "GET",
                 url: url,
                 success: function (response) {
                     $(modalContentId).html(response);
                     $(`${modalContentId} .modal-title`).text(title);
-                    modalInstance?.show();
                 },
                 error: function () {
                     toastr.error("Could not load form.");
+                    modalInstance?.hide();
                 },
             });
         });
@@ -4080,4 +4096,33 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
         }
     });
+});
+
+// --- Global Page Preloader Overlay & Navigation Loader ---
+window.addEventListener("load", function () {
+    const preloader = document.getElementById("page-preloader");
+    if (preloader) {
+        preloader.classList.add("hidden");
+    }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Fallback to hide preloader after 500ms so user is never stuck
+    setTimeout(function () {
+        const preloader = document.getElementById("page-preloader");
+        if (preloader) {
+            preloader.classList.add("hidden");
+        }
+    }, 500);
+});
+
+// Show preloader on page navigation (clicking internal links)
+document.addEventListener("click", function (e) {
+    const link = e.target.closest("a");
+    if (link && link.href && !link.href.startsWith("javascript:") && !link.href.includes("#") && link.target !== "_blank" && !link.hasAttribute("download") && !link.classList.contains("no-loader") && link.origin === window.location.origin) {
+        const preloader = document.getElementById("page-preloader");
+        if (preloader && !preloader.classList.contains("no-trigger")) {
+            preloader.classList.remove("hidden");
+        }
+    }
 });

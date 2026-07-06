@@ -148,7 +148,105 @@
     </div>
 </div>
 
+<!-- Update Status Modal -->
+<div class="modal fade" id="status-maintenance-modal" tabindex="-1" aria-hidden="true" data-coreui-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="status-maintenance-form" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-header border-bottom-0">
+                    <h5 class="modal-title fw-bold">Update Bill Status</h5>
+                    <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-semibold text-uppercase">Status</label>
+                        <select name="status" id="maintenance-bill-status-select" class="form-select">
+                            <option value="pending">Pending</option>
+                            <option value="due">Due</option>
+                            <option value="paid">Paid</option>
+                            <option value="overdue">Overdue</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="maintenance-payment-method-container" style="display: none;">
+                        <label class="form-label text-muted small fw-semibold text-uppercase">Payment Method</label>
+                        <select name="payment_method" id="maintenance-status-payment-method" class="form-select">
+                            <option value="cash">Cash</option>
+                            <option value="upi">UPI</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="maintenance-upi-container" style="display: none;">
+                        <label class="form-label text-muted small fw-semibold text-uppercase">UTR Number</label>
+                        <input type="text" name="transaction_id" class="form-control" placeholder="12 digit UTR number" maxlength="12">
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 bg-light">
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-maintenance-status">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
     {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
+    <script>
+        let currentMaintenanceStatusUrl = "";
+        $(document).on("click", ".btn-status-maintenance", function () {
+            currentMaintenanceStatusUrl = $(this).data("url");
+            let currentStatus = $(this).data("status") || "due";
+            $("#maintenance-bill-status-select").val(currentStatus.toLowerCase()).trigger("change");
+            $("#status-maintenance-modal").modal("show");
+        });
+
+        $(document).on("change", "#maintenance-bill-status-select", function () {
+            if ($(this).val() === "paid") {
+                $("#maintenance-payment-method-container").show();
+                $("#maintenance-status-payment-method").trigger("change");
+            } else {
+                $("#maintenance-payment-method-container").hide();
+                $("#maintenance-upi-container").hide();
+            }
+        });
+
+        $(document).on("change", "#maintenance-status-payment-method", function () {
+            if ($("#maintenance-bill-status-select").val() === "paid" && $(this).val() === "upi") {
+                $("#maintenance-upi-container").show();
+            } else {
+                $("#maintenance-upi-container").hide();
+            }
+        });
+
+        $(document).on("submit", "#status-maintenance-form", function (e) {
+            e.preventDefault();
+            let btn = $("#btn-save-maintenance-status");
+            let originalText = btn.html();
+            btn.html('<span class="spinner-border spinner-border-sm"></span> Saving...').prop("disabled", true);
+
+            let formData = new FormData(this);
+            $.ajax({
+                url: currentMaintenanceStatusUrl,
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (response) {
+                    $("#status-maintenance-modal").modal("hide");
+                    if (typeof window.LaravelDataTables !== "undefined" && window.LaravelDataTables["maintenance-bills-table"]) {
+                        window.LaravelDataTables["maintenance-bills-table"].ajax.reload(null, false);
+                    }
+                    toastr.success(response.message || "Status updated successfully.");
+                },
+                error: function (xhr) {
+                    let msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : "Error updating status";
+                    toastr.error(msg);
+                },
+                complete: function () {
+                    btn.html(originalText).prop("disabled", false);
+                }
+            });
+        });
+    </script>
 @endpush
 </x-user-page>

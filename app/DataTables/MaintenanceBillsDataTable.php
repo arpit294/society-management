@@ -64,6 +64,14 @@ class MaintenanceBillsDataTable extends DataTable
 
                 return strtoupper($row->payment_method);
             })
+            ->addColumn('received_by', function ($row) {
+                return $row->receivedBy ? '<span class="fw-semibold">' . e($row->receivedBy->name) . '</span>' : '<span class="text-muted">-</span>';
+            })
+            ->filterColumn('received_by', function ($query, $keyword) {
+                $query->whereHas('receivedBy', function ($q) use ($keyword) {
+                    $q->where('name', 'like', "%{$keyword}%");
+                });
+            })
             ->filterColumn('resident', function ($query, $keyword) {
                 $query->whereHas('user', function ($q) use ($keyword) {
                     $q->where('name', 'like', "%{$keyword}%");
@@ -81,7 +89,7 @@ class MaintenanceBillsDataTable extends DataTable
                 // Not perfectly filterable when grouped by subquery, but we can try
                 $query->whereRaw('(SELECT CONCAT(month, " ", year) FROM maintenances WHERE id = maintenance_bills.maintenance_id) LIKE ?', ["%{$keyword}%"]);
             })
-            ->rawColumns(['action', 'payment_method', 'month_year'])
+            ->rawColumns(['action', 'payment_method', 'month_year', 'received_by'])
             ->setRowId(function ($row) {
                 return $row->batch_id ?: $row->id;
             });
@@ -99,6 +107,7 @@ class MaintenanceBillsDataTable extends DataTable
                 'maintenance_bills.payment_method',
                 'maintenance_bills.status',
                 'maintenance_bills.payment_slip',
+                'maintenance_bills.received_by',
                 DB::raw('SUM(maintenance_bills.amount) as amount'),
                 DB::raw('SUM(maintenance_bills.penalty_amount) as penalty_amount'),
                 DB::raw('SUM(maintenance_bills.discount_amount) as discount_amount'),
@@ -107,7 +116,7 @@ class MaintenanceBillsDataTable extends DataTable
                 DB::raw('(SELECT CONCAT(m.month, " ", m.year) FROM maintenances m JOIN maintenance_bills mb ON mb.maintenance_id = m.id WHERE mb.batch_id = maintenance_bills.batch_id ORDER BY m.due_date ASC LIMIT 1) as start_month'),
                 DB::raw('(SELECT CONCAT(m.month, " ", m.year) FROM maintenances m JOIN maintenance_bills mb ON mb.maintenance_id = m.id WHERE mb.batch_id = maintenance_bills.batch_id ORDER BY m.due_date DESC LIMIT 1) as end_month'),
             ])
-            ->with(['user', 'flat', 'block'])
+            ->with(['user', 'flat', 'block', 'receivedBy'])
             ->groupBy(
                 'batch_id',
                 'maintenance_bills.user_id',
@@ -115,7 +124,8 @@ class MaintenanceBillsDataTable extends DataTable
                 'maintenance_bills.block_id',
                 'maintenance_bills.payment_method',
                 'maintenance_bills.status',
-                'maintenance_bills.payment_slip'
+                'maintenance_bills.payment_slip',
+                'maintenance_bills.received_by'
             );
     }
 
@@ -144,6 +154,7 @@ class MaintenanceBillsDataTable extends DataTable
             Column::make('discount_amount')->title('Discount'),
             Column::make('total_amount')->title('Total'),
             Column::make('payment_method')->title('Method'),
+            Column::make('received_by')->title('Received By')->name('received_by')->orderable(false),
             Column::computed('action')->title('Action')->orderable(false)->searchable(false)->width(80)->addClass('text-center'),
         ];
     }

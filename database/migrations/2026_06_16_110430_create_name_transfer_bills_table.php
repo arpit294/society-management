@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('transaction_id')->nullable();
             $table->string('payment_slip')->nullable();
             $table->boolean('is_approved')->default(false);
+            $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

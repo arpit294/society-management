@@ -38,6 +38,7 @@ class MaintenanceBill extends Model
         'dynamic_penalty_amount',
         'manual_penalty_amount',
         'discount_amount',
+        'received_by',
     ];
 
     protected $casts = [
@@ -149,5 +150,10 @@ class MaintenanceBill extends Model
     public function resident()
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function receivedBy()
+    {
+        return $this->belongsTo(User::class, 'received_by');
     }
 }

@@ -14,11 +14,56 @@
                 <strong>Move-in Date:</strong>
                 {{ $currentOwner->move_in_date ? \Carbon\Carbon::parse($currentOwner->move_in_date)->format('d M Y') : 'N/A' }}
             </p>
-            <p class="mb-0 mt-2 small text-muted">
+            <p class="mb-0 mt-2 small text-dark">
                 Transferring ownership will set the move-out date for the current owner and generate a Name Transfer
                 Bill for the new owner.
             </p>
         </div>
+
+        @php
+            $pendingCount = isset($pendingBills) ? $pendingBills->count() : 0;
+            $pendingAmount = isset($pendingBills) ? $pendingBills->sum('total_amount') : 0;
+        @endphp
+
+        @if($pendingCount > 0)
+        <div class="alert alert-danger mb-4 shadow-sm border-danger" id="pending-dues-alert">
+            <div class="d-flex align-items-center mb-2">
+                <i class="fa-solid fa-triangle-exclamation fs-5 me-2 text-danger"></i>
+                <h6 class="alert-heading fw-bold mb-0 text-danger">Pending Maintenance Dues Detected!</h6>
+            </div>
+            <p class="mb-2 small">
+                The current owner has <strong>{{ $pendingCount }} unpaid maintenance bill(s)</strong> totaling <strong class="text-danger fs-6">{{ \App\Helpers\CurrencyHelper::formatCurrency($pendingAmount) }}</strong>.
+            </p>
+            <div class="bg-white p-2 rounded border mb-2" style="max-height: 110px; overflow-y: auto;">
+                <ul class="mb-0 small ps-3">
+                    @foreach($pendingBills as $pb)
+                        <li>
+                            <strong>{{ $pb->maintenance->month ?? '' }} {{ $pb->maintenance->year ?? '' }}</strong>: 
+                            {{ \App\Helpers\CurrencyHelper::formatCurrency($pb->total_amount) }} 
+                            <span class="badge bg-danger ms-1" style="font-size: 0.7em;">{{ strtoupper($pb->status) }}</span>
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
+            <p class="mb-2 small fw-semibold text-dark">
+                <i class="fa-solid fa-lock me-1"></i> Ownership transfer is restricted until all pending maintenance dues are paid by the current owner.
+            </p>
+            <div class="mt-3 pt-2 border-top border-danger-subtle d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span class="small text-danger fw-bold"><i class="fa-solid fa-circle-exclamation me-1"></i> Please clear dues before transferring</span>
+                <button type="button" class="btn btn-sm btn-danger fw-bold shadow-sm d-inline-flex align-items-center gap-2" id="btn-open-pay-dues-modal">
+                    <i class="fa-solid fa-credit-card"></i> Pay Now ({{ \App\Helpers\CurrencyHelper::formatCurrency($pendingAmount) }})
+                </button>
+            </div>
+        </div>
+        @else
+        <div class="alert alert-success mb-4 shadow-sm border-success d-flex align-items-center">
+            <i class="fa-solid fa-circle-check fs-4 me-3 text-success"></i>
+            <div>
+                <h6 class="alert-heading fw-bold mb-1 text-success">No Pending Maintenance Dues</h6>
+                <p class="mb-0 small text-dark">All maintenance bills for this flat have been paid. You have permission to proceed with ownership transfer.</p>
+            </div>
+        </div>
+        @endif
 
         <h6 class="fw-bold mb-3 border-bottom pb-2">New Owner Details</h6>
 
@@ -53,7 +98,14 @@
             <div class="col-md-12 mb-3 border-top pt-3 mt-2">
                 <h6 class="fw-bold mb-3">Fee & Payment Details</h6>
                 <div class="row">
-                    <div class="col-md-12 mb-3">
+                    <div class="col-md-6 mb-3">
+                        <label for="transfer_fee"
+                            class="form-label text-muted small fw-semibold text-uppercase">Transfer Fee (₹) <span
+                                class="text-danger">*</span></label>
+                        <input type="number" step="0.01" min="0" class="form-control" id="transfer_fee" name="transfer_fee"
+                            value="{{ isset($defaultFee) ? $defaultFee : 0 }}" required placeholder="Enter transfer fee amount">
+                    </div>
+                    <div class="col-md-6 mb-3">
                         <label for="payment_method"
                             class="form-label text-muted small fw-semibold text-uppercase">Payment Method <span
                                 class="text-danger">*</span></label>
@@ -90,3 +142,168 @@
         <button type="submit" class="btn btn-warning" id="btn-save-transfer">Transfer Ownership</button>
     </div>
 </form>
+
+<!-- Instant Pay Pending Dues Modal -->
+<div class="modal fade" id="payPendingDuesModal" tabindex="-1" aria-labelledby="payPendingDuesModalLabel" aria-hidden="true" data-coreui-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title fw-bold" id="payPendingDuesModalLabel"><i class="fa-solid fa-credit-card me-2"></i>Pay Pending Maintenance Dues</h5>
+                <button type="button" class="btn-close btn-close-white" id="btn-close-pay-modal" aria-label="Close"></button>
+            </div>
+            <form id="pay-pending-dues-form">
+                @csrf
+                <div class="modal-body p-4 text-start">
+                    <div class="bg-light p-3 rounded mb-3 border">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Flat:</span>
+                            <strong class="text-dark">{{ $flat->block->block_name ?? '' }} - {{ $flat->flat_no }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Current Owner:</span>
+                            <strong class="text-dark">{{ $currentOwner->user->name ?? 'Unknown' }}</strong>
+                        </div>
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-muted small">Bills Count:</span>
+                            <strong class="text-dark">{{ $pendingCount }} Unpaid Bill(s)</strong>
+                        </div>
+                        <hr class="my-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-dark">Total Amount Due:</span>
+                            <span class="fs-5 fw-bold text-danger">{{ \App\Helpers\CurrencyHelper::formatCurrency($pendingAmount) }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="modal_payment_method" class="form-label fw-bold text-dark small text-uppercase">Select Payment Mode <span class="text-danger">*</span></label>
+                        <select name="payment_method" id="modal_payment_method" class="form-select" required>
+                            <option value="cash">Cash</option>
+                            <option value="upi">UPI / Online</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="modal_upi_details" style="display: none;">
+                        <label for="modal_transaction_id" class="form-label fw-bold text-dark small text-uppercase">Transaction ID / UTR <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="modal_transaction_id" name="transaction_id" placeholder="Enter transaction or UTR number">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-pay-modal">Cancel</button>
+                    <button type="submit" class="btn btn-success fw-bold px-4" id="btn-confirm-pay-dues">
+                        <i class="fa-solid fa-check-circle me-1"></i> Confirm & Pay Now
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const pendingCount = {{ isset($pendingBills) ? $pendingBills->count() : 0 }};
+        const saveBtn = document.getElementById('btn-save-transfer');
+        
+        if (pendingCount > 0 && saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.title = "Cannot transfer ownership while maintenance dues are pending";
+        }
+
+        const payBtn = document.getElementById('btn-open-pay-dues-modal');
+        const payModalEl = document.getElementById('payPendingDuesModal');
+        const closeBtn = document.getElementById('btn-close-pay-modal');
+        const cancelBtn = document.getElementById('btn-cancel-pay-modal');
+        let payModal = null;
+
+        if (payModalEl) {
+            const getPayModal = () => {
+                if (!payModal) payModal = coreui.Modal.getOrCreateInstance(payModalEl);
+                return payModal;
+            };
+
+            if (payBtn) {
+                payBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    getPayModal().show();
+                });
+            }
+
+            const closeHandler = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                getPayModal().hide();
+            };
+
+            if (closeBtn) closeBtn.addEventListener('click', closeHandler);
+            if (cancelBtn) cancelBtn.addEventListener('click', closeHandler);
+
+            payModalEl.addEventListener('hide.coreui.modal', function (e) {
+                e.stopPropagation();
+            });
+
+            payModalEl.addEventListener('hidden.coreui.modal', function (e) {
+                e.stopPropagation();
+                if (document.getElementById('flat-modal')?.classList.contains('show')) {
+                    document.body.classList.add('modal-open');
+                }
+            });
+        }
+
+        const payMethodSelect = document.getElementById('modal_payment_method');
+        const upiDetailsDiv = document.getElementById('modal_upi_details');
+        const trInput = document.getElementById('modal_transaction_id');
+        if (payMethodSelect) {
+            payMethodSelect.addEventListener('change', function() {
+                if (this.value === 'upi' || this.value === 'online') {
+                    upiDetailsDiv.style.display = 'block';
+                    trInput.required = true;
+                } else {
+                    upiDetailsDiv.style.display = 'none';
+                    trInput.required = false;
+                }
+            });
+        }
+
+        const payForm = document.getElementById('pay-pending-dues-form');
+        if (payForm) {
+            payForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const submitBtn = document.getElementById('btn-confirm-pay-dues');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+                const formData = new FormData(this);
+                fetch("{{ route('flats.pay-pending-dues', $flat->id) }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        if (typeof toastr !== 'undefined') toastr.success(data.message);
+                        if (payModal) payModal.hide();
+                        else coreui.Modal.getInstance(payModalEl)?.hide();
+                        
+                        // Refresh the transfer form in #flat-modal-content
+                        $.get("{{ route('flats.transfer.create', $flat->id) }}", function (html) {
+                            $("#flat-modal-content").html(html);
+                        });
+                    } else {
+                        if (typeof toastr !== 'undefined') toastr.error(data.message || 'Error recording payment.');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }
+                })
+                .catch(err => {
+                    if (typeof toastr !== 'undefined') toastr.error('A network error occurred.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+            });
+        }
+    })();
+</script>

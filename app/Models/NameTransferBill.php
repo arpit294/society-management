@@ -21,6 +21,7 @@ class NameTransferBill extends Model
         'transaction_id',
         'payment_slip',
         'is_approved',
+        'approved_by',
     ];
 
     protected $casts = [
@@ -41,5 +42,10 @@ class NameTransferBill extends Model
     public function newOwner()
     {
         return $this->belongsTo(User::class, 'new_owner_id');
+    }
+
+    public function approvedBy()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
     }
 }
