@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Block;
 use Illuminate\Http\Request;
 use App\Models\Maintenance;
 use App\Models\MaintenanceBill;
 use App\Models\Resident;
 use App\Models\Expense;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +17,7 @@ use Nette\Schema\ValidationException;
 use OpenSpout\Writer\XLSX\Writer;
 use OpenSpout\Common\Entity\Row;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Yajra\DataTables\Facades\DataTables;
 
 class ReportController extends Controller
 {
@@ -22,7 +25,7 @@ class ReportController extends Controller
     {
         abort_if(! auth()->user()->can('setting_view'), 403);
         try {
-            $reportType = $request->input('report_type', 'monthly');
+            $reportType = $request->input('report_type', 'yearly');
 
             // Get available months and years from Maintenance table
             $availableDates = Maintenance::select('month', 'year')
@@ -35,18 +38,114 @@ class ReportController extends Controller
             $selectedMonth = $request->input('month', $latestMaintenance ? $latestMaintenance->month : Carbon::now()->format('F'));
             $selectedYear = $request->input('year', $latestMaintenance ? $latestMaintenance->year : Carbon::now()->format('Y'));
 
-            // Fetch all active residents once
-            $activeResidents = Resident::with(['user', 'flat.block', 'flat.flatType'])
-                ->where(function($query) {
+            // Optional per-user filter (user_id) and block filter (block_id)
+            $filterUserId = $request->input('user_id', null);
+            $filterBlockId = $request->input('block_id', null);
+
+            // Base query for active residents
+            $residentBaseQuery = Resident::with(['user', 'flat.block', 'flat.flatType'])
+                ->where(function ($query) {
                     $query->whereNull('move_out_date')
-                          ->orWhere('move_out_date', '>=', now()->startOfDay());
-                })->get();
+                        ->orWhere('move_out_date', '>=', now()->startOfDay());
+                });
+
+            if ($filterBlockId && $filterUserId) {
+                $userInBlock = (clone $residentBaseQuery)
+                    ->where('user_id', $filterUserId)
+                    ->whereHas('flat', function ($q) use ($filterBlockId) {
+                        $q->where('block_id', $filterBlockId);
+                    })->exists();
+                if (!$userInBlock) {
+                    $filterUserId = null;
+                }
+            }
+
+            // If a user or block filter is set, limit the activeResidents
+            $activeResidentsQuery = clone $residentBaseQuery;
+            if ($filterUserId) {
+                $activeResidentsQuery->where('user_id', $filterUserId);
+            }
+            if ($filterBlockId) {
+                $activeResidentsQuery->whereHas('flat', function ($q) use ($filterBlockId) {
+                    $q->where('block_id', $filterBlockId);
+                });
+            }
+            $activeResidents = $activeResidentsQuery->get();
+
+            // Precompute per-user yearly totals when needed (used for export too)
+            $usersYearly = collect();
+            if ($reportType === 'yearly') {
+                $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                $residentsByUser = $activeResidents->groupBy('user_id')->map(function ($grp) {
+                    return $grp->first();
+                });
+                foreach ($residentsByUser as $userId => $resident) {
+                    if (! $resident || ! $resident->user) continue;
+                    $userTotals = ['totalExpected' => 0, 'totalPaid' => 0, 'totalPending' => 0];
+                    foreach ($months as $month) {
+                        $stats = $this->calculateMonthlyStats($month, $selectedYear, collect([$resident]), $userId, $filterBlockId);
+                        $userTotals['totalExpected'] += $stats['totalExpected'];
+                        $userTotals['totalPaid'] += $stats['totalPaid'];
+                        $userTotals['totalPending'] += $stats['totalPending'];
+                    }
+                    $userTransferFees = \App\Models\NameTransferBill::where('status', 'paid')
+                        ->where(function($q) use ($selectedYear) {
+                            $q->whereYear('transfer_date', $selectedYear)
+                              ->orWhereYear('paid_at', $selectedYear)
+                              ->orWhereYear('created_at', $selectedYear);
+                        })
+                        ->where(function($q) use ($userId, $resident) {
+                            $q->where('new_owner_id', $userId)
+                              ->orWhere('old_owner_id', $userId)
+                              ->orWhere('flat_id', $resident->flat_id);
+                        })
+                        ->sum('amount');
+
+                    $usersYearly->push((object)[
+                        'user' => $resident->user,
+                        'resident' => $resident,
+                        'totalExpected' => $userTotals['totalExpected'],
+                        'totalPaid' => $userTotals['totalPaid'],
+                        'transferFees' => $userTransferFees,
+                        'totalPending' => $userTotals['totalPending'],
+                    ]);
+                }
+            }
+
+            // Residents list for the filter dropdown (show active residents, filtered by block if selected)
+            $residentsQuery = clone $residentBaseQuery;
+            if ($filterBlockId) {
+                $residentsQuery->whereHas('flat', function ($q) use ($filterBlockId) {
+                    $q->where('block_id', $filterBlockId);
+                });
+            }
+            $residents = $residentsQuery->get();
+            $blocks = \App\Models\Block::orderBy('block_name')->get();
 
             if ($reportType === 'yearly') {
                 $yearlyExpected = 0;
                 $yearlyPaid = 0;
                 $yearlyPending = 0;
                 $monthlyBreakdown = [];
+
+                $yearlyTransferFeesQuery = \App\Models\NameTransferBill::where('status', 'paid')
+                    ->where(function($q) use ($selectedYear) {
+                        $q->whereYear('transfer_date', $selectedYear)
+                          ->orWhereYear('paid_at', $selectedYear)
+                          ->orWhereYear('created_at', $selectedYear);
+                    });
+                if ($filterBlockId) {
+                    $yearlyTransferFeesQuery->whereHas('flat', function($q) use ($filterBlockId) {
+                        $q->where('block_id', $filterBlockId);
+                    });
+                }
+                if ($filterUserId) {
+                    $yearlyTransferFeesQuery->where(function($q) use ($filterUserId) {
+                        $q->where('new_owner_id', $filterUserId)
+                          ->orWhere('old_owner_id', $filterUserId);
+                    });
+                }
+                $yearlyTransferFees = $yearlyTransferFeesQuery->sum('amount');
 
                 $yearlyExpensesQuery = Expense::with(['category', 'user'])
                     ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
@@ -68,7 +167,7 @@ class ReportController extends Controller
                 $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
                 foreach ($months as $month) {
-                    $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents);
+                    $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $filterUserId, $filterBlockId);
                     $monthlyBreakdown[] = (object)[
                         'month' => $month,
                         'expected' => $stats['totalExpected'],
@@ -87,16 +186,49 @@ class ReportController extends Controller
                     'availableDates',
                     'yearlyExpected',
                     'yearlyPaid',
+                    'yearlyTransferFees',
                     'yearlyPending',
                     'monthlyBreakdown',
                     'totalExpense',
                     'expenseCategories',
                     'expensesList'
-                ));
+                ))->with([
+                    'residents' => $residents,
+                    'blocks' => $blocks,
+                    'filterUserId' => $filterUserId,
+                    'filterBlockId' => $filterBlockId,
+                    'usersYearly' => $usersYearly,
+                ]);
             }
 
             // Monthly Logic
-            $stats = $this->calculateMonthlyStats($selectedMonth, $selectedYear, $activeResidents);
+            $stats = $this->calculateMonthlyStats($selectedMonth, $selectedYear, $activeResidents, $filterUserId, $filterBlockId);
+
+            $monthlyTransferFeesQuery = \App\Models\NameTransferBill::where('status', 'paid')
+                ->where(function($q) use ($selectedYear, $selectedMonth) {
+                    $q->where(function($sub) use ($selectedYear, $selectedMonth) {
+                        $sub->whereYear('transfer_date', $selectedYear)
+                            ->whereRaw('MONTHNAME(transfer_date) = ?', [$selectedMonth]);
+                    })->orWhere(function($sub) use ($selectedYear, $selectedMonth) {
+                        $sub->whereYear('paid_at', $selectedYear)
+                            ->whereRaw('MONTHNAME(paid_at) = ?', [$selectedMonth]);
+                    })->orWhere(function($sub) use ($selectedYear, $selectedMonth) {
+                        $sub->whereYear('created_at', $selectedYear)
+                            ->whereRaw('MONTHNAME(created_at) = ?', [$selectedMonth]);
+                    });
+                });
+            if ($filterBlockId) {
+                $monthlyTransferFeesQuery->whereHas('flat', function($q) use ($filterBlockId) {
+                    $q->where('block_id', $filterBlockId);
+                });
+            }
+            if ($filterUserId) {
+                $monthlyTransferFeesQuery->where(function($q) use ($filterUserId) {
+                    $q->where('new_owner_id', $filterUserId)
+                      ->orWhere('old_owner_id', $filterUserId);
+                });
+            }
+            $totalTransferFees = $monthlyTransferFeesQuery->sum('amount');
 
             $monthlyExpensesQuery = Expense::with(['category', 'user'])
                 ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
@@ -115,10 +247,16 @@ class ReportController extends Controller
                 'selectedMonth' => $selectedMonth,
                 'selectedYear' => $selectedYear,
                 'availableDates' => $availableDates,
+                'totalTransferFees' => $totalTransferFees,
                 'totalExpense' => $totalExpense,
                 'expenseCategories' => $expenseCategories,
                 'expensesList' => $expensesList,
-            ], $stats));
+            ], $stats))->with([
+                'residents' => $residents,
+                'blocks' => $blocks,
+                'filterUserId' => $filterUserId,
+                'filterBlockId' => $filterBlockId,
+            ]);
         } catch (\Exception $e) {
 
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
@@ -144,12 +282,79 @@ class ReportController extends Controller
             $selectedMonth = $request->input('month', $latestMaintenance ? $latestMaintenance->month : Carbon::now()->format('F'));
             $selectedYear = $request->input('year', $latestMaintenance ? $latestMaintenance->year : Carbon::now()->format('Y'));
 
-            // Fetch all active residents once
-            $activeResidents = Resident::with(['user', 'flat.block', 'flat.flatType'])
-                ->where(function($query) {
+            // Optional per-user filter (user_id) and block filter (block_id)
+            $filterUserId = $request->input('user_id', null);
+            $filterBlockId = $request->input('block_id', null);
+
+            // Base query for active residents
+            $residentBaseQuery = Resident::with(['user', 'flat.block', 'flat.flatType'])
+                ->where(function ($query) {
                     $query->whereNull('move_out_date')
-                          ->orWhere('move_out_date', '>=', now()->startOfDay());
-                })->get();
+                        ->orWhere('move_out_date', '>=', now()->startOfDay());
+                });
+
+            if ($filterBlockId && $filterUserId) {
+                $userInBlock = (clone $residentBaseQuery)
+                    ->where('user_id', $filterUserId)
+                    ->whereHas('flat', function ($q) use ($filterBlockId) {
+                        $q->where('block_id', $filterBlockId);
+                    })->exists();
+                if (!$userInBlock) {
+                    $filterUserId = null;
+                }
+            }
+
+            // If a user or block filter is set, limit the activeResidents
+            $activeResidentsQuery = clone $residentBaseQuery;
+            if ($filterUserId) {
+                $activeResidentsQuery->where('user_id', $filterUserId);
+            }
+            if ($filterBlockId) {
+                $activeResidentsQuery->whereHas('flat', function ($q) use ($filterBlockId) {
+                    $q->where('block_id', $filterBlockId);
+                });
+            }
+            $activeResidents = $activeResidentsQuery->get();
+
+            // Precompute per-user yearly totals for export
+            $usersYearly = collect();
+            if ($reportType === 'yearly') {
+                $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                $residentsByUser = $activeResidents->groupBy('user_id')->map(function ($grp) {
+                    return $grp->first();
+                });
+                foreach ($residentsByUser as $userId => $resident) {
+                    if (! $resident || ! $resident->user) continue;
+                    $userTotals = ['totalExpected' => 0, 'totalPaid' => 0, 'totalPending' => 0];
+                    foreach ($months as $month) {
+                        $stats = $this->calculateMonthlyStats($month, $selectedYear, collect([$resident]), $userId, $filterBlockId);
+                        $userTotals['totalExpected'] += $stats['totalExpected'];
+                        $userTotals['totalPaid'] += $stats['totalPaid'];
+                        $userTotals['totalPending'] += $stats['totalPending'];
+                    }
+                    $userTransferFees = \App\Models\NameTransferBill::where('status', 'paid')
+                        ->where(function($q) use ($selectedYear) {
+                            $q->whereYear('transfer_date', $selectedYear)
+                              ->orWhereYear('paid_at', $selectedYear)
+                              ->orWhereYear('created_at', $selectedYear);
+                        })
+                        ->where(function($q) use ($userId, $resident) {
+                            $q->where('new_owner_id', $userId)
+                              ->orWhere('old_owner_id', $userId)
+                              ->orWhere('flat_id', $resident->flat_id);
+                        })
+                        ->sum('amount');
+
+                    $usersYearly->push((object)[
+                        'user' => $resident->user,
+                        'resident' => $resident,
+                        'totalExpected' => $userTotals['totalExpected'],
+                        'totalPaid' => $userTotals['totalPaid'],
+                        'transferFees' => $userTransferFees,
+                        'totalPending' => $userTotals['totalPending'],
+                    ]);
+                }
+            }
 
             // Determine the active tab to decide which report to generate
             $activeTab = $request->input('active_tab', '#main-maintenance');
@@ -160,9 +365,25 @@ class ReportController extends Controller
                 $prefix = 'financial_summary_report';
             }
 
+            // Include selected block and user in filename when filtering
+            $blockSuffix = '';
+            if ($filterBlockId) {
+                $blockModel = Block::find($filterBlockId);
+                if ($blockModel) {
+                    $blockSuffix = '_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', str_replace(' ', '_', strtolower($blockModel->block_name)));
+                }
+            }
+            $userSuffix = '';
+            if ($filterUserId) {
+                $userModel = User::find($filterUserId);
+                if ($userModel) {
+                    $userSuffix = '_' . preg_replace('/[^A-Za-z0-9_\-]/', '_', str_replace(' ', '_', strtolower($userModel->name)));
+                }
+            }
+
             $filename = $reportType === 'monthly'
-                ? "{$prefix}_{$selectedMonth}_{$selectedYear}.xlsx"
-                : "{$prefix}_yearly_{$selectedYear}.xlsx";
+                ? "{$prefix}_{$selectedMonth}_{$selectedYear}{$blockSuffix}{$userSuffix}.xlsx"
+                : "{$prefix}_yearly_{$selectedYear}{$blockSuffix}{$userSuffix}.xlsx";
 
             $headers = [
                 "Content-type"        => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -173,7 +394,7 @@ class ReportController extends Controller
             ];
 
             // Create a callback to stream the Excel file
-            $callback = function() use ($reportType, $selectedMonth, $selectedYear, $activeResidents, $activeTab) {
+            $callback = function () use ($reportType, $selectedMonth, $selectedYear, $activeResidents, $activeTab, $filterUserId, $filterBlockId, $usersYearly) {
                 $writer = new Writer();
                 $writer->openToFile('php://output');
 
@@ -231,40 +452,80 @@ class ReportController extends Controller
                 if ($activeTab === '#main-summary') {
                     if ($reportType === 'yearly') {
                         $writer->addRow(Row::fromValues(["Financial Revenue vs Expense Summary - Yearly ($selectedYear)"]));
-                        $writer->addRow(Row::fromValues(['Month', 'Collected Revenue', 'Total Expenses', 'Current Society Fund']));
+                        $writer->addRow(Row::fromValues(['Month', 'Maintenance Revenue', 'Transfer Fees Revenue', 'Total Income', 'Total Expenses', 'Remaining Fund Balance']));
 
                         $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
                         $yearlyExpensesQuery = Expense::whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)->get();
-                        $monthlyExpenseMap = $yearlyExpensesQuery->groupBy(function($exp) {
+                        $monthlyExpenseMap = $yearlyExpensesQuery->groupBy(function ($exp) {
                             return Carbon::parse($exp->expense_date ?: $exp->created_at)->format('F');
                         })->map->sum('total_amount');
 
-                        $totRev = $totExp = 0;
+                        $totMaint = $totTrans = $totInc = $totExp = 0;
                         foreach ($months as $month) {
-                            $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents);
+                            $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $filterUserId, $filterBlockId);
+                            $transFee = \App\Models\NameTransferBill::where('status', 'paid')
+                                ->where(function($q) use ($selectedYear, $month) {
+                                    $q->where(function($sub) use ($selectedYear, $month) {
+                                        $sub->whereYear('transfer_date', $selectedYear)->whereRaw('MONTHNAME(transfer_date) = ?', [$month]);
+                                    })->orWhere(function($sub) use ($selectedYear, $month) {
+                                        $sub->whereYear('paid_at', $selectedYear)->whereRaw('MONTHNAME(paid_at) = ?', [$month]);
+                                    })->orWhere(function($sub) use ($selectedYear, $month) {
+                                        $sub->whereYear('created_at', $selectedYear)->whereRaw('MONTHNAME(created_at) = ?', [$month]);
+                                    });
+                                });
+                            if ($filterBlockId) {
+                                $transFee->whereHas('flat', function($q) use ($filterBlockId) { $q->where('block_id', $filterBlockId); });
+                            }
+                            if ($filterUserId) {
+                                $transFee->where(function($q) use ($filterUserId) { $q->where('new_owner_id', $filterUserId)->orWhere('old_owner_id', $filterUserId); });
+                            }
+                            $trans = round($transFee->sum('amount'), 2);
                             $rev = round($stats['totalPaid'], 2);
+                            $inc = round($rev + $trans, 2);
                             $exp = round($monthlyExpenseMap[$month] ?? 0, 2);
-                            $net = round($rev - $exp, 2);
-                            $writer->addRow(Row::fromValues([$month, $rev, $exp, $net]));
-                            $totRev += $rev;
+                            $net = round($inc - $exp, 2);
+                            $writer->addRow(Row::fromValues([$month, $rev, $trans, $inc, $exp, $net]));
+                            $totMaint += $rev;
+                            $totTrans += $trans;
+                            $totInc += $inc;
                             $totExp += $exp;
                         }
-                        $writer->addRow(Row::fromValues(['TOTAL', round($totRev, 2), round($totExp, 2), round($totRev - $totExp, 2)]));
+                        $writer->addRow(Row::fromValues(['TOTAL', round($totMaint, 2), round($totTrans, 2), round($totInc, 2), round($totExp, 2), round($totInc - $totExp, 2)]));
                     } else {
-                        $stats = $this->calculateMonthlyStats($selectedMonth, $selectedYear, $activeResidents);
+                        $stats = $this->calculateMonthlyStats($selectedMonth, $selectedYear, $activeResidents, $filterUserId, $filterBlockId);
                         $monthlyExpenses = Expense::whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
                             ->whereRaw('MONTHNAME(COALESCE(expense_date, created_at)) = ?', [$selectedMonth])
                             ->sum('total_amount');
 
+                        $transFee = \App\Models\NameTransferBill::where('status', 'paid')
+                            ->where(function($q) use ($selectedYear, $selectedMonth) {
+                                $q->where(function($sub) use ($selectedYear, $selectedMonth) {
+                                    $sub->whereYear('transfer_date', $selectedYear)->whereRaw('MONTHNAME(transfer_date) = ?', [$selectedMonth]);
+                                })->orWhere(function($sub) use ($selectedYear, $selectedMonth) {
+                                    $sub->whereYear('paid_at', $selectedYear)->whereRaw('MONTHNAME(paid_at) = ?', [$selectedMonth]);
+                                })->orWhere(function($sub) use ($selectedYear, $selectedMonth) {
+                                    $sub->whereYear('created_at', $selectedYear)->whereRaw('MONTHNAME(created_at) = ?', [$selectedMonth]);
+                                });
+                            });
+                        if ($filterBlockId) {
+                            $transFee->whereHas('flat', function($q) use ($filterBlockId) { $q->where('block_id', $filterBlockId); });
+                        }
+                        if ($filterUserId) {
+                            $transFee->where(function($q) use ($filterUserId) { $q->where('new_owner_id', $filterUserId)->orWhere('old_owner_id', $filterUserId); });
+                        }
+                        $trans = round($transFee->sum('amount'), 2);
                         $rev = round($stats['totalPaid'], 2);
+                        $inc = round($rev + $trans, 2);
                         $exp = round($monthlyExpenses, 2);
-                        $net = round($rev - $exp, 2);
+                        $net = round($inc - $exp, 2);
 
                         $writer->addRow(Row::fromValues(["Financial Revenue vs Expense Summary - $selectedMonth $selectedYear"]));
                         $writer->addRow(Row::fromValues(['Category', 'Amount']));
                         $writer->addRow(Row::fromValues(['Collected Maintenance Revenue', $rev]));
+                        $writer->addRow(Row::fromValues(['Collected Transfer Fees Revenue', $trans]));
+                        $writer->addRow(Row::fromValues(['Total Society Income', $inc]));
                         $writer->addRow(Row::fromValues(['Total Society Expenses', $exp]));
-                        $writer->addRow(Row::fromValues(['Current Society Fund Balance', $net]));
+                        $writer->addRow(Row::fromValues(['Remaining Fund Balance', $net]));
                     }
                     $writer->close();
                     return;
@@ -277,7 +538,7 @@ class ReportController extends Controller
                     $yearlyExpected = $yearlyPaid = $yearlyPending = 0;
 
                     foreach ($months as $month) {
-                        $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents);
+                        $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $filterUserId, $filterBlockId);
                         $writer->addRow(Row::fromValues([
                             $month,
                             round($stats['totalExpected'], 2),
@@ -296,6 +557,24 @@ class ReportController extends Controller
                         round($yearlyPaid, 2),
                         round($yearlyPending, 2)
                     ]));
+
+                    // Add Per-User Yearly Summary (if available)
+                    if (!empty($usersYearly) && $usersYearly->isNotEmpty()) {
+                        $writer->addRow(Row::fromValues([]));
+                        $writer->addRow(Row::fromValues(["Per-User Yearly Summary - $selectedYear"]));
+                        $writer->addRow(Row::fromValues(['User', 'Block', 'Flat', 'Expected', 'Paid', 'Transfer Fees', 'Pending']));
+                        foreach ($usersYearly as $u) {
+                            $writer->addRow(Row::fromValues([
+                                $u->user ? $u->user->name : 'N/A',
+                                $u->resident?->flat?->block?->block_name ?? 'N/A',
+                                $u->resident?->flat?->flat_no ?? 'N/A',
+                                round($u->totalExpected, 2),
+                                round($u->totalPaid, 2),
+                                round($u->transferFees ?? 0, 2),
+                                round($u->totalPending, 2),
+                            ]));
+                        }
+                    }
 
                     $writer->addRow(Row::fromValues([]));
                     $writer->addRow(Row::fromValues([]));
@@ -317,7 +596,7 @@ class ReportController extends Controller
                         ]));
                     }
                 } else {
-                    $stats = $this->calculateMonthlyStats($selectedMonth, $selectedYear, $activeResidents);
+                    $stats = $this->calculateMonthlyStats($selectedMonth, $selectedYear, $activeResidents, $filterUserId, $filterBlockId);
 
                     $writer->addRow(Row::fromValues(["Paid Residents - $selectedMonth $selectedYear"]));
                     $writer->addRow(Row::fromValues(['Resident', 'Block - Flat', 'Paid Amount', 'Payment Method', 'Paid Date']));
@@ -390,12 +669,101 @@ class ReportController extends Controller
         }
     }
 
+    /**
+     * Return per-user yearly summary as DataTables JSON.
+     */
+    public function usersYearlyData(Request $request)
+    {
+        abort_if(! auth()->user()->can('setting_view'), 403);
 
-    private function calculateMonthlyStats($month, $year, $activeResidents)
+        $selectedYear = $request->input('year', date('Y'));
+        $filterUserId = $request->input('user_id', null);
+        $filterBlockId = $request->input('block_id', null);
+
+        $residentBaseQuery = Resident::with(['user', 'flat.block', 'flat.flatType'])
+            ->where(function ($query) {
+                $query->whereNull('move_out_date')
+                    ->orWhere('move_out_date', '>=', now()->startOfDay());
+            });
+
+        if ($filterBlockId && $filterUserId) {
+            $userInBlock = (clone $residentBaseQuery)
+                ->where('user_id', $filterUserId)
+                ->whereHas('flat', function ($q) use ($filterBlockId) {
+                    $q->where('block_id', $filterBlockId);
+                })->exists();
+            if (!$userInBlock) {
+                $filterUserId = null;
+            }
+        }
+
+        $activeResidentsQuery = clone $residentBaseQuery;
+        if ($filterUserId) {
+            $activeResidentsQuery->where('user_id', $filterUserId);
+        }
+        if ($filterBlockId) {
+            $activeResidentsQuery->whereHas('flat', function ($q) use ($filterBlockId) {
+                $q->where('block_id', $filterBlockId);
+            });
+        }
+        $activeResidents = $activeResidentsQuery->get();
+
+        $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        $residentsByUser = $activeResidents->groupBy('user_id')->map(fn($grp) => $grp->first());
+
+        $usersYearly = collect();
+        foreach ($residentsByUser as $userId => $resident) {
+            if (! $resident || ! $resident->user) continue;
+            $userTotals = ['totalExpected' => 0, 'totalPaid' => 0, 'totalPending' => 0];
+            foreach ($months as $month) {
+                $stats = $this->calculateMonthlyStats($month, $selectedYear, collect([$resident]), $userId, $filterBlockId);
+                $userTotals['totalExpected'] += $stats['totalExpected'];
+                $userTotals['totalPaid'] += $stats['totalPaid'];
+                $userTotals['totalPending'] += $stats['totalPending'];
+            }
+            $userTransferFees = \App\Models\NameTransferBill::where('status', 'paid')
+                ->where(function($q) use ($selectedYear) {
+                    $q->whereYear('transfer_date', $selectedYear)
+                      ->orWhereYear('paid_at', $selectedYear)
+                      ->orWhereYear('created_at', $selectedYear);
+                })
+                ->where(function($q) use ($userId, $resident) {
+                    $q->where('new_owner_id', $userId)
+                      ->orWhere('old_owner_id', $userId)
+                      ->orWhere('flat_id', $resident->flat_id);
+                })
+                ->sum('amount');
+
+            $usersYearly->push((object)[
+                'user_id' => $resident->user_id,
+                'user_name' => $resident->user->name,
+                'block' => $resident->flat?->block?->block_name ?? '',
+                'flat' => $resident->flat ? ($resident->flat->flat_no ?? '') : '',
+                'totalExpected' => $userTotals['totalExpected'],
+                'totalPaid' => $userTotals['totalPaid'],
+                'transferFees' => $userTransferFees,
+                'totalPending' => $userTotals['totalPending'],
+            ]);
+        }
+
+        return DataTables::of($usersYearly)
+            ->addIndexColumn()
+            ->editColumn('totalExpected', fn($row) => number_format($row->totalExpected, 2))
+            ->editColumn('totalPaid', fn($row) => number_format($row->totalPaid, 2))
+            ->editColumn('transferFees', fn($row) => number_format($row->transferFees, 2))
+            ->editColumn('totalPending', fn($row) => number_format($row->totalPending, 2))
+            ->make(true);
+    }
+
+
+
+
+    private function calculateMonthlyStats($month, $year, $activeResidents, $filterUserId = null, $filterBlockId = null)
     {
         $maintenance = Maintenance::where('month', $month)
-                                  ->where('year', $year)
-                                  ->first();
+            ->where('year', $year)
+            ->first();
 
         $paidBills = collect();
         $pendingBills = collect();
@@ -407,8 +775,19 @@ class ReportController extends Controller
 
         if ($maintenance) {
             $allBills = MaintenanceBill::with(['user', 'block', 'flat'])
-                                       ->where('maintenance_id', $maintenance->id)
-                                       ->get();
+                ->where('maintenance_id', $maintenance->id)
+                ->when($filterUserId, function ($q) use ($filterUserId) {
+                    $q->where('user_id', $filterUserId);
+                })
+                ->when($filterBlockId, function ($q) use ($filterBlockId) {
+                    $q->where(function ($sub) use ($filterBlockId) {
+                        $sub->where('block_id', $filterBlockId)
+                            ->orWhereHas('flat', function ($fq) use ($filterBlockId) {
+                                $fq->where('block_id', $filterBlockId);
+                            });
+                    });
+                })
+                ->get();
 
             foreach ($allBills as $bill) {
                 $processedFlatIds[] = $bill->flat_id;
@@ -424,7 +803,6 @@ class ReportController extends Controller
                     ]);
                     $totalPaid += $bill->total_amount;
                     $totalExpected += $bill->amount ?? $bill->total_amount;
-
                 } else {
                     $pendingBills->push((object)[
                         'user' => $bill->user,

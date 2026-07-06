@@ -16,6 +16,7 @@ class TestingDataSeeder extends Seeder
             FlatTypeSeeder::class,
             FlatSeeder::class,
             UserResidentSeeder::class,
+            MaintenanceBillSeeder::class,
         ]);
     }
 }

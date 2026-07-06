@@ -49,6 +49,11 @@ class FlatDocumentsDataTable extends DataTable
                     $q->where('flat_no', 'like', "%{$keyword}%");
                 });
             })
+            ->filterColumn('resident_name', function ($query, $keyword) {
+                $query->whereHas('user', function ($q) use ($keyword) {
+                    $q->where('name', 'like', "%{$keyword}%");
+                });
+            })
             ->editColumn('created_at', function ($model) {
                 return $model->created_at ? $model->created_at->format('Y-m-d H:i') : '-';
             })
@@ -82,9 +87,9 @@ class FlatDocumentsDataTable extends DataTable
     {
         return [
             Column::make('id')->width(50),
-            Column::make('block')->title('Block')->searchable(false)->orderable(false),
-            Column::make('flat_no')->title('Flat')->searchable(false)->orderable(false),
-            Column::make('resident_name')->title('Resident Name')->searchable(false)->orderable(false),
+            Column::make('block')->title('Block')->orderable(false),
+            Column::make('flat_no')->title('Flat')->orderable(false),
+            Column::make('resident_name')->title('Resident Name')->orderable(false),
             Column::make('resident_type')->title('Type')->render('data === "owner" ? "Owner" : "Tenant"'),
             Column::make('documents_count')->title('Uploaded Docs')->searchable(false)->orderable(false),
             Column::make('created_at'),

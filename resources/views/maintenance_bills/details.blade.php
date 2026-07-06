@@ -46,6 +46,7 @@
                         @if($bill->status === 'paid')
                         <strong>Paid At:</strong> {{ $bill->paid_at ? $bill->paid_at->format('d M, Y h:i A') : 'N/A' }}<br>
                         <strong>Payment Mode:</strong> {{ ucfirst($bill->payment_method) ?? 'N/A' }}<br>
+                        <strong>Received By:</strong> {{ $bill->receivedBy->name ?? 'N/A' }}<br>
                         @if($bill->payment_method === 'upi')
                             <strong>UTR Number:</strong> {{ $bill->transaction_id ?? 'N/A' }}<br>
                             @if($bill->payment_slip)

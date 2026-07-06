@@ -78,6 +78,9 @@
                             <span style="font-size: 13px; color: #666; font-weight: normal;">
                                 <strong>Type:</strong> {{ $bill->flat->flatType->name ?? 'N/A' }}<br>
                                 <strong>Method:</strong> {{ strtoupper($bill->payment_method) }}
+                                @if($bill->receivedBy)
+                                    <br><strong>Received By:</strong> {{ $bill->receivedBy->name }}
+                                @endif
                                 @if($bill->transaction_id)
                                     <br><strong>UTR Number:</strong> {{ $bill->transaction_id }}
                                 @endif

@@ -70,6 +70,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('flats/{flat}', [FlatController::class, 'destroy'])->name('flats.destroy');
         Route::get('flats/{flat}/transfer', [FlatController::class, 'transferCreate'])->name('flats.transfer.create');
         Route::post('flats/{flat}/transfer', [FlatController::class, 'transferStore'])->name('flats.transfer.store');
+        Route::post('flats/{flat}/pay-pending-dues', [FlatController::class, 'payPendingDues'])->name('flats.pay-pending-dues');
     });
 
     Route::middleware('permission:resident_view')->group(function () {
@@ -189,6 +190,7 @@ Route::middleware('auth')->group(function () {
         // Reports
         Route::get('reports/maintenance/export', [ReportController::class, 'exportReport'])->name('reports.maintenance.export');
         Route::get('reports/maintenance', [ReportController::class, 'maintenanceReport'])->name('reports.maintenance');
+        Route::get('reports/maintenance/users-yearly-data', [ReportController::class, 'usersYearlyData'])->name('reports.usersYearly.data');
     });
 
     Route::middleware('permission:setting_edit')->group(function () {

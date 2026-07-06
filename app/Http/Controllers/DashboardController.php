@@ -34,6 +34,7 @@ class DashboardController extends Controller
             $totalRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->sum('total_amount')
                 + NameTransferBill::where('status', config('status.name_transfer_bills.paid'))->sum('amount');
             $totalExpenses = Expense::sum('total_amount');
+            $totalAvailableFund = $totalRevenue - $totalExpenses;
 
             // Revenue Chart Data (Current Year)
             $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -95,7 +96,9 @@ class DashboardController extends Controller
                 ->take(30)
                 ->get()
                 ->groupBy(function ($bill) {
-                    return !empty($bill->batch_id) ? $bill->batch_id : 'id_' . $bill->id;
+                    // Group bills paid by the same resident for the same flat within the same minute into a single activity entry
+                    $timeKey = $bill->paid_at ? $bill->paid_at->format('Y-m-d_H:i') : $bill->updated_at->format('Y-m-d_H:i');
+                    return 'user_' . $bill->user_id . '_flat_' . $bill->flat_id . '_' . $timeKey;
                 })
                 ->take(4)
                 ->map(function ($billsGroup) {
@@ -148,9 +151,28 @@ class DashboardController extends Controller
                     ];
                 });
 
-            $activities = $recentPayments->concat($recentComplaints)->concat($recentUsers)
+            $recentTransfers = \App\Models\NameTransferBill::with('flat.block', 'oldOwner', 'newOwner')
+                ->latest('created_at')
+                ->take(4)
+                ->get()
+                ->map(function ($transfer) {
+                    $oldName = $transfer->oldOwner?->name ?? 'Previous Owner';
+                    $newName = $transfer->newOwner?->name ?? 'New Owner';
+                    $flatNo = ($transfer->flat?->block ? $transfer->flat->block->block_name . '-' : '') . ($transfer->flat?->flat_no ?? 'N/A');
+
+                    return (object) [
+                        'type' => 'transfer',
+                        'icon' => 'fa-solid fa-right-left text-warning',
+                        'title' => 'Ownership Transferred',
+                        'description' => "Flat #{$flatNo} transferred from {$oldName} to {$newName}",
+                        'time' => $transfer->created_at->diffForHumans(),
+                        'timestamp' => $transfer->created_at
+                    ];
+                });
+
+            $activities = $recentPayments->concat($recentComplaints)->concat($recentUsers)->concat($recentTransfers)
                 ->sortByDesc('timestamp')
-                ->take(6)
+                ->take(8)
                 ->values();
 
             return view('dashboard', compact(
@@ -159,6 +181,7 @@ class DashboardController extends Controller
                 'totalComplaints',
                 'totalRevenue',
                 'totalExpenses',
+                'totalAvailableFund',
                 'months',
                 'chartDataRevenue',
                 'chartDataExpenses',

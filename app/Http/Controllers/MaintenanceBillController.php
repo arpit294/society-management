@@ -224,6 +224,7 @@ class MaintenanceBillController extends Controller
                         'payment_method' => $request->payment_method,
                         'transaction_id' => $request->transaction_id,
                         'payment_slip' => $paymentSlipPath,
+                        'received_by' => \Auth::id(),
                         'status' => 'paid',
                     ]
                 );
@@ -354,6 +355,8 @@ class MaintenanceBillController extends Controller
                     $maintenanceBill->payment_slip = $request->file('payment_slip')->store('payment_slips', 'public');
                 }
 
+                $maintenanceBill->received_by = \Auth::id();
+
                 // Lock in the dynamically calculated amounts so they never change again
                 $maintenanceBill->penalty_amount = $totalPenaltyAmount;
                 $maintenanceBill->discount_amount = $totalDiscountAmount;
@@ -366,6 +369,7 @@ class MaintenanceBillController extends Controller
                 $maintenanceBill->payment_method = null;
                 $maintenanceBill->transaction_id = null;
                 $maintenanceBill->payment_slip = null;
+                $maintenanceBill->received_by = null;
 
                 // Reset modifiers
                 $maintenanceBill->penalty_amount = 0;
@@ -415,7 +419,7 @@ class MaintenanceBillController extends Controller
     {
         abort_if(! \Auth::user()->can('maintenance_bill_view'), 403);
         try {
-            $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])->findOrFail($id);
+            $bill = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance', 'receivedBy'])->findOrFail($id);
 
             return view('maintenance_bills.details', compact('bill'));
         } catch (\Exception $e) {
@@ -438,7 +442,7 @@ class MaintenanceBillController extends Controller
     {
         abort_if(! \Auth::user()->can('maintenance_bill_view'), 403);
         try {
-            $bills = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance'])
+            $bills = MaintenanceBill::with(['user', 'flat.block', 'flat.flatType', 'maintenance', 'receivedBy'])
                 ->where(function ($query) use ($id) {
                     $query->where('batch_id', $id)
                         ->orWhere('id', $id);

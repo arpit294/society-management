@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('payment_method')->nullable();
             $table->string('transaction_id')->nullable();
             $table->string('payment_slip')->nullable();
+            $table->foreignId('received_by')->nullable()->constrained('users')->nullOnDelete();
             $table->enum('status', ['paid', 'due', 'pending'])->default('due');
             $table->timestamps();
         });

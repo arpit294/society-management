@@ -101,6 +101,13 @@ class User extends Authenticatable
         return $this->role === self::ROLE_COMMITTEE_MEMBER;
     }
 
+    public function canApproveNameTransfer(): bool
+    {
+        $role = strtolower((string) $this->role);
+        return in_array($role, ['admin', 'secretary', 'committee_member', 'committee member']) ||
+               $this->hasAnyRole(['Admin', 'admin', 'secretary', 'committee_member', 'committee member', 'Secretary', 'Committee Member']);
+    }
+
     public function isSecurity(): bool
     {
         return $this->role === self::ROLE_SECURITY;
@@ -114,6 +121,11 @@ class User extends Authenticatable
     public function isRental(): bool
     {
         return $this->role === self::ROLE_RENTAL;
+    }
+
+    public function isResident(): bool
+    {
+        return $this->isOwner() || $this->isRental() || in_array(strtolower((string)$this->role), ['resident', 'owner', 'rental']);
     }
 
     public function isStaff(): bool

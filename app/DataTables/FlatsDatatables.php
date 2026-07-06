@@ -30,6 +30,16 @@ class FlatsDatatables extends DataTable
                     $q->where('block_name', 'like', "%{$keyword}%");
                 });
             })
+            ->filterColumn('owner_name', function ($query, $keyword) {
+                $query->whereHas('owner.user', function ($q) use ($keyword) {
+                    $q->where('name', 'like', "%{$keyword}%");
+                });
+            })
+            ->filterColumn('tenant_name', function ($query, $keyword) {
+                $query->whereHas('tenant.user', function ($q) use ($keyword) {
+                    $q->where('name', 'like', "%{$keyword}%");
+                });
+            })
             ->addColumn('action', 'flats.action')
             ->editColumn('block_id', function ($model) {
                 return $model->block ? $model->block->block_name : '-';
@@ -103,8 +113,8 @@ class FlatsDatatables extends DataTable
             Column::make('floor_no'),
             Column::make('flat_type_id')->title('Flat Type'),
             Column::make('status'),
-            Column::make('owner_name')->title('Owner')->searchable(false)->orderable(false),
-            Column::make('tenant_name')->title('Tenant')->searchable(false)->orderable(false),
+            Column::make('owner_name')->title('Owner')->orderable(false),
+            Column::make('tenant_name')->title('Tenant')->orderable(false),
             Column::make('created_at'),
             Column::make('updated_at'),
             Column::computed('action')

@@ -6,6 +6,7 @@ use App\DataTables\FlatsDatatables;
 use App\Models\Block;
 use App\Models\Flat;
 use App\Models\FlatType;
+use App\Models\MaintenanceBill;
 use App\Models\NameTransferBill;
 use App\Models\Resident;
 use App\Models\Setting;
@@ -285,7 +286,15 @@ class FlatController extends Controller
                 return response('<div class="p-4 text-center text-danger">This flat does not currently have an active owner to transfer from.</div>');
             }
 
-            return view('flats.transfer', compact('flat', 'currentOwner'));
+            $pendingBills = \App\Models\MaintenanceBill::with('maintenance')
+                ->where('flat_id', $flat->id)
+                ->where('status', '!=', config('status.maintenance_bills.paid'))
+                ->get();
+
+            $settings = \App\Models\Setting::getAll();
+            $defaultFee = isset($settings['name_transfer_fee']) ? (float) $settings['name_transfer_fee'] : 0;
+
+            return view('flats.transfer', compact('flat', 'currentOwner', 'pendingBills', 'defaultFee'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -300,6 +309,58 @@ class FlatController extends Controller
         }
     }
 
+    // Pay all pending maintenance dues for a flat
+    public function payPendingDues(Request $request, Flat $flat)
+    {
+        abort_if(! \Auth::user()->can('maintenance_bill_create'), 403);
+        try {
+            $request->validate([
+                'payment_method' => 'required|string',
+                'transaction_id' => 'nullable|string',
+            ]);
+
+            $pendingBills = MaintenanceBill::with('resident', 'flat.flatType', 'maintenance')
+                ->where('flat_id', $flat->id)
+                ->where('status', '!=', config('status.maintenance_bills.paid'))
+                ->get();
+
+            if ($pendingBills->isEmpty()) {
+                return response()->json(['success' => false, 'message' => 'No pending maintenance bills found for this flat.'], 400);
+            }
+
+            $batchId = uniqid('pay_');
+            foreach ($pendingBills as $maintenanceBill) {
+                // Capture dynamically calculated amounts before changing status to paid
+                $currentPenalty = $maintenanceBill->penalty_amount;
+                $currentDiscount = $maintenanceBill->discount_amount;
+                $currentTotal = $maintenanceBill->total_amount;
+
+                $maintenanceBill->batch_id = $batchId;
+                $maintenanceBill->penalty_amount = $currentPenalty;
+                $maintenanceBill->discount_amount = $currentDiscount;
+                $maintenanceBill->total_amount = $currentTotal;
+                $maintenanceBill->status = config('status.maintenance_bills.paid');
+                $maintenanceBill->paid_at = now();
+                $maintenanceBill->payment_method = $request->payment_method;
+                $maintenanceBill->transaction_id = $request->transaction_id;
+                $maintenanceBill->received_by = \Auth::id();
+                $maintenanceBill->save();
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'All pending maintenance dues paid successfully!',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in FlatController@payPendingDues: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while recording payment: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Handle the transfer of ownership for a flat
     public function transferStore(Request $request, Flat $flat)
     {
         abort_if(! \Auth::user()->can('flat_edit'), 403);
@@ -318,6 +379,7 @@ class FlatController extends Controller
                 'new_owner_phone' => 'nullable|string|max:20',
                 'new_owner_aadhar' => 'required|digits:12',
                 'transfer_date' => 'required|date',
+                'transfer_fee' => 'required|numeric|min:0',
                 'payment_method' => 'required|in:pending,cash,upi',
                 'transaction_id' => [
                     'nullable',
@@ -338,6 +400,13 @@ class FlatController extends Controller
 
             DB::beginTransaction();
             try {
+                // Check if there are any pending maintenance bills for this flat
+                $pendingBills = MaintenanceBill::where('flat_id', $flat->id)
+                    ->where('status', '!=', config('status.maintenance_bills.paid'))
+                    ->get();
+
+
+
                 // 1. End current owner's residency
                 $currentOwner = Resident::where('flat_id', $flat->id)
                     ->where('type', 'owner')
@@ -366,7 +435,9 @@ class FlatController extends Controller
 
                 // 2. Generate Name Transfer Request (Bill)
                 $settings = Setting::getAll();
-                $fee = isset($settings['name_transfer_fee']) ? (float) $settings['name_transfer_fee'] : 0;
+                $fee = $request->has('transfer_fee') && $request->input('transfer_fee') !== ''
+                    ? (float) $request->input('transfer_fee')
+                    : (isset($settings['name_transfer_fee']) ? (float) $settings['name_transfer_fee'] : 0);
 
                 $status = $validatedData['payment_method'] === 'pending' ? config('status.name_transfer_bills.pending') : config('status.name_transfer_bills.paid');
                 if ($fee == 0) {

@@ -1,6 +1,6 @@
 <div class="d-flex gap-2 justify-content-center">
     @can('name_transfer_bill_view')
-        @if(!$is_approved)
+        @if(auth()->user() && auth()->user()->canApproveNameTransfer() && !$is_approved)
             @if($status === 'paid')
             <button type="button" class="btn btn-sm btn-outline-success btn-approve" 
                 data-url="{{ route('name-transfer-bills.approve', $id, false) }}"

@@ -99,6 +99,12 @@ class NameTransferBillController extends Controller
     public function approve(NameTransferBill $bill)
     {
         abort_if(! \Auth::user()->can('name_transfer_bill_view'), 403);
+        if (! \Auth::user()->canApproveNameTransfer()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthorized: Only Admin, Secretary, and Committee Members can approve name transfers.',
+            ], 403);
+        }
         try {
             if ($bill->is_approved) {
                 return response()->json([
@@ -139,7 +145,10 @@ class NameTransferBillController extends Controller
                 ]);
 
                 // 3. Mark as approved
-                $bill->update(['is_approved' => true]);
+                $bill->update([
+                    'is_approved' => true,
+                    'approved_by' => \Auth::id(),
+                ]);
 
                 DB::commit();
 

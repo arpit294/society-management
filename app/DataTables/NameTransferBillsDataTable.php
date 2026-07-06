@@ -49,10 +49,13 @@ class NameTransferBillsDataTable extends DataTable
                 }
                 return '<span class="badge bg-info text-dark"><i class="fa-regular fa-clock me-1"></i>Pending Approval</span>';
             })
+            ->addColumn('approved_by', function ($model) {
+                return $model->approvedBy ? '<span class="fw-semibold">' . e($model->approvedBy->name) . '</span>' : '<span class="text-muted">-</span>';
+            })
             ->editColumn('paid_at', function ($model) {
                 return $model->paid_at ? $model->paid_at->format('d M Y h:i A') : '-';
             })
-            ->rawColumns(['amount', 'status', 'approval', 'action'])
+            ->rawColumns(['amount', 'status', 'approval', 'approved_by', 'action'])
             ->setRowId('id');
     }
 
@@ -63,7 +66,7 @@ class NameTransferBillsDataTable extends DataTable
      */
     public function query(NameTransferBill $model): QueryBuilder
     {
-        return $model->newQuery()->with(['flat.block', 'oldOwner', 'newOwner'])->orderBy('created_at', 'desc');
+        return $model->newQuery()->with(['flat.block', 'oldOwner', 'newOwner', 'approvedBy'])->orderBy('created_at', 'desc');
     }
 
     /**
@@ -98,6 +101,7 @@ class NameTransferBillsDataTable extends DataTable
             Column::make('amount')->title('Amount'),
             Column::make('status')->title('Payment'),
             Column::make('approval')->title('Approval'),
+            Column::make('approved_by')->title('Approved By'),
             Column::make('paid_at')->title('Paid At'),
             Column::computed('action')
                   ->exportable(false)
