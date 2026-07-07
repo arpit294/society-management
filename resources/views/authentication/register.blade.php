@@ -148,14 +148,15 @@
                                             Password
                                         </label>
 
-                                        <div class="position-relative">
+                                        <div class="input-group password-input-group">
                                             <input type="password" name="password" id="reg-password"
                                                 class="form-control @error('password') is-invalid @enderror"
-                                                placeholder="Enter secure password" style="padding-right: 2.75rem;">
-                                            <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent toggle-password"
-                                                tabindex="-1" aria-label="Show password" title="Show password" style="padding: 0 0.85rem; z-index: 10; color: #94a3b8;">
-                                                <i class="fa-regular fa-eye fs-5"></i>
-                                            </button>
+                                                placeholder="Enter secure password" autocomplete="new-password">
+                                            <span class="input-group-text d-flex align-items-center justify-content-center">
+                                                <button type="button" class="toggle-password" tabindex="-1" aria-label="Show password" title="Show password">
+                                                    <i class="fa-regular fa-eye fs-5"></i>
+                                                </button>
+                                            </span>
                                         </div>
 
                                         @error('password')
@@ -170,13 +171,14 @@
                                             Confirm Password
                                         </label>
 
-                                        <div class="position-relative">
+                                        <div class="input-group password-input-group">
                                             <input type="password" name="password_confirmation" id="reg-password-confirm" class="form-control"
-                                                placeholder="Confirm password" style="padding-right: 2.75rem;">
-                                            <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y border-0 bg-transparent toggle-password"
-                                                tabindex="-1" aria-label="Show password" title="Show password" style="padding: 0 0.85rem; z-index: 10; color: #94a3b8;">
-                                                <i class="fa-regular fa-eye fs-5"></i>
-                                            </button>
+                                                placeholder="Confirm password" autocomplete="new-password">
+                                            <span class="input-group-text d-flex align-items-center justify-content-center">
+                                                <button type="button" class="toggle-password" tabindex="-1" aria-label="Show password" title="Show password">
+                                                    <i class="fa-regular fa-eye fs-5"></i>
+                                                </button>
+                                            </span>
                                         </div>
                                     </div>
 

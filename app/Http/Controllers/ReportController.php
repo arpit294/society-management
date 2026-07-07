@@ -574,6 +574,13 @@ class ReportController extends Controller
                                 round($u->totalPending, 2),
                             ]));
                         }
+                        $writer->addRow(Row::fromValues([
+                            'TOTAL', '', '',
+                            round($usersYearly->sum('totalExpected'), 2),
+                            round($usersYearly->sum('totalPaid'), 2),
+                            round($usersYearly->sum('transferFees'), 2),
+                            round($usersYearly->sum('totalPending'), 2),
+                        ]));
                     }
 
                     $writer->addRow(Row::fromValues([]));
@@ -595,6 +602,9 @@ class ReportController extends Controller
                             round($exp->total_amount, 2)
                         ]));
                     }
+                    $writer->addRow(Row::fromValues([
+                        'TOTAL EXPENSES', '', '', '', round($yearlyExpenses->sum('total_amount'), 2)
+                    ]));
                 } else {
                     $stats = $this->calculateMonthlyStats($selectedMonth, $selectedYear, $activeResidents, $filterUserId, $filterBlockId);
 
@@ -610,6 +620,9 @@ class ReportController extends Controller
                             $bill->paid_at ? $bill->paid_at->format('d M Y') : 'N/A'
                         ]));
                     }
+                    $writer->addRow(Row::fromValues([
+                        'TOTAL PAID', '', round($stats['paidBills']->sum('total_amount'), 2), '', ''
+                    ]));
 
                     $writer->addRow(Row::fromValues([]));
 
@@ -626,6 +639,13 @@ class ReportController extends Controller
                             ucfirst($bill->status)
                         ]));
                     }
+                    $writer->addRow(Row::fromValues([
+                        'TOTAL PENDING', '',
+                        round($stats['pendingBills']->sum('amount'), 2),
+                        round($stats['pendingBills']->sum('penalty_amount'), 2),
+                        round($stats['pendingBills']->sum('total_amount'), 2),
+                        ''
+                    ]));
 
                     $writer->addRow(Row::fromValues([]));
                     $writer->addRow(Row::fromValues([]));
@@ -648,6 +668,9 @@ class ReportController extends Controller
                             round($exp->total_amount, 2)
                         ]));
                     }
+                    $writer->addRow(Row::fromValues([
+                        'TOTAL EXPENSES', '', '', '', round($monthlyExpenses->sum('total_amount'), 2)
+                    ]));
                 }
 
                 $writer->close();

@@ -175,6 +175,78 @@ class DashboardController extends Controller
                 ->take(8)
                 ->values();
 
+            // Live Cashflow & Net-Worth Ledger Metrics
+            $thisMonthRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))
+                ->whereMonth('updated_at', now()->month)
+                ->whereYear('updated_at', now()->year)
+                ->sum('total_amount') 
+                + NameTransferBill::where('status', config('status.name_transfer_bills.paid'))
+                ->whereMonth('updated_at', now()->month)
+                ->whereYear('updated_at', now()->year)
+                ->sum('amount');
+
+            $thisMonthExpense = Expense::whereMonth(DB::raw('COALESCE(expense_date, created_at)'), now()->month)
+                ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), now()->year)
+                ->sum('total_amount');
+
+            $thisMonthNet = $thisMonthRevenue - $thisMonthExpense;
+            $cashflowStatus = $thisMonthNet >= 0 ? 'Surplus (+)' : 'Deficit (-)';
+            $cashflowColor = $thisMonthNet >= 0 ? 'success' : 'danger';
+
+            $recentIncomeBills = MaintenanceBill::with('user', 'flat', 'block')
+                ->where('status', config('status.maintenance_bills.paid'))
+                ->latest('updated_at')
+                ->take(6)
+                ->get()
+                ->map(function ($bill) {
+                    $flatNo = ($bill->block ? $bill->block->block_name . '-' : '') . ($bill->flat?->flat_no ?? 'N/A');
+                    return (object) [
+                        'type' => 'income',
+                        'category' => 'Maintenance Fee',
+                        'title' => ($bill->user?->name ?? 'Resident') . " (Flat #{$flatNo})",
+                        'amount' => $bill->total_amount,
+                        'timestamp' => $bill->updated_at,
+                        'time' => $bill->updated_at->diffForHumans()
+                    ];
+                });
+
+            $recentTransferIncome = NameTransferBill::with('flat.block', 'newOwner')
+                ->where('status', config('status.name_transfer_bills.paid'))
+                ->latest('updated_at')
+                ->take(4)
+                ->get()
+                ->map(function ($bill) {
+                    $flatNo = ($bill->flat?->block ? $bill->flat->block->block_name . '-' : '') . ($bill->flat?->flat_no ?? 'N/A');
+                    return (object) [
+                        'type' => 'income',
+                        'category' => 'Transfer Fee',
+                        'title' => "Ownership Transfer (Flat #{$flatNo})",
+                        'amount' => $bill->amount,
+                        'timestamp' => $bill->updated_at,
+                        'time' => $bill->updated_at->diffForHumans()
+                    ];
+                });
+
+            $recentExpenseItems = Expense::with('category')
+                ->latest('created_at')
+                ->take(8)
+                ->get()
+                ->map(function ($exp) {
+                    return (object) [
+                        'type' => 'expense',
+                        'category' => $exp->category?->title ?? 'General Expense',
+                        'title' => $exp->title ?? 'Society Expenditure',
+                        'amount' => $exp->total_amount,
+                        'timestamp' => $exp->created_at,
+                        'time' => $exp->created_at->diffForHumans()
+                    ];
+                });
+
+            $ledgerTransactions = $recentIncomeBills->concat($recentTransferIncome)->concat($recentExpenseItems)
+                ->sortByDesc('timestamp')
+                ->take(7)
+                ->values();
+
             return view('dashboard', compact(
                 'totalResidents',
                 'totalFlats',
@@ -189,7 +261,13 @@ class DashboardController extends Controller
                 'occupancyData',
                 'expenseBreakdownLabels',
                 'expenseBreakdownData',
-                'activities'
+                'activities',
+                'thisMonthRevenue',
+                'thisMonthExpense',
+                'thisMonthNet',
+                'cashflowStatus',
+                'cashflowColor',
+                'ledgerTransactions'
             ));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {

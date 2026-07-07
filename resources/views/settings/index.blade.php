@@ -10,45 +10,38 @@
 
     <div class="row" id="general-settings">
         <div class="col-12">
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h4 class="mb-0">Global Settings</h4>
-                </div>
-                <div class="card-body">
+            <form action="{{ route('settings.store') }}" method="POST">
+                @csrf
 
-
-                    <form action="{{ route('settings.store') }}" method="POST">
-                        @csrf
-
-                        <h5 class="mb-3 fw-bold">General Settings</h5>
-                        <div class="row mb-5">
+                <!-- Card 1: General Settings -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h4 class="mb-0"><i class="fa-solid fa-gear text-primary me-2"></i>General Settings</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Society
-                                    Name</label>
+                                <label class="form-label text-body small fw-semibold text-uppercase">Society Name</label>
                                 <input type="text" name="society_name" class="form-control"
                                     value="{{ $settings['society_name'] ?? 'My Society' }}">
                             </div>
                             <div class="col-md-8 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Society
-                                    Address</label>
+                                <label class="form-label text-body small fw-semibold text-uppercase">Society Address</label>
                                 <input type="text" name="society_address" class="form-control"
                                     value="{{ $settings['society_address'] ?? '' }}">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Contact
-                                    Email</label>
+                                <label class="form-label text-body small fw-semibold text-uppercase">Contact Email</label>
                                 <input type="email" name="contact_email" class="form-control"
                                     value="{{ $settings['contact_email'] ?? '' }}">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Contact
-                                    Phone</label>
+                                <label class="form-label text-body small fw-semibold text-uppercase">Contact Phone</label>
                                 <input type="text" name="contact_phone" class="form-control"
                                     value="{{ $settings['contact_phone'] ?? '' }}">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Financial Year
-                                    Start</label>
+                                <label class="form-label text-body small fw-semibold text-uppercase">Financial Year Start</label>
                                 <select name="financial_year_start" class="form-select">
                                     <option value="january_1"
                                         {{ ($settings['financial_year_start'] ?? 'january_1') == 'january_1' ? 'selected' : '' }}>
@@ -75,39 +68,41 @@
                                 <input type="number" step="0.01" name="name_transfer_fee" class="form-control"
                                     value="{{ $settings['name_transfer_fee'] ?? '0' }}">
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Laravel
-                                    Debugger</label>
-                                <div class="form-check form-switch mt-1">
+                            <div class="col-md-4 mb-3 d-flex flex-column justify-content-between">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Laravel Debugger</label>
+                                <div class="form-check form-switch m-0 p-2 px-3 bg-body-tertiary rounded border d-flex align-items-center justify-content-between shadow-sm" style="height: 38px;">
+                                    <label class="form-check-label small fw-semibold mb-0" for="enable_debugger" style="cursor: pointer;">Enable Debug Toolbar</label>
                                     <input type="hidden" name="enable_debugger" value="0">
-                                    <input class="form-check-input" type="checkbox" id="enable_debugger"
-                                        name="enable_debugger" value="1"
+                                    <input class="form-check-input m-0" type="checkbox" id="enable_debugger"
+                                        name="enable_debugger" value="1" style="cursor: pointer;"
                                         {{ ($settings['enable_debugger'] ?? '0') == '1' ? 'checked' : '' }}>
-                                    <label class="form-check-label fs-6 ms-2" for="enable_debugger">Enable Debug
-                                        Toolbar</label>
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <hr class="mb-4">
-
-                        <h5 class="mb-3 fw-bold">Late Penalty Settings</h5>
-                        <div class="row mb-5">
+                <!-- Card 2: Late Penalty Settings -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h4 class="mb-0"><i class="fa-solid fa-clock-rotate-left text-danger me-2"></i>Late Penalty Settings</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
                             <div class="col-md-12 mb-4">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Allow Late Fees
-                                    Penalty</label>
-                                <div class="form-check form-switch mt-1">
+                                <div class="form-check form-switch m-0 p-3 bg-body-tertiary rounded border d-flex align-items-center justify-content-between shadow-sm">
+                                    <div>
+                                        <label class="form-check-label fw-bold mb-1 text-body d-block" for="apply_penalty" style="cursor: pointer; font-size: 1rem;">Allow Late Fees Penalty</label>
+                                        <div class="small text-muted">Automatically apply late penalty charges to unpaid invoices after grace period</div>
+                                    </div>
                                     <input type="hidden" name="apply_penalty" value="0">
-                                    <input class="form-check-input" type="checkbox" id="apply_penalty"
-                                        name="apply_penalty" value="1"
+                                    <input class="form-check-input m-0" type="checkbox" id="apply_penalty"
+                                        name="apply_penalty" value="1" style="cursor: pointer; transform: scale(1.3);"
                                         {{ ($settings['apply_penalty'] ?? '1') == '1' ? 'checked' : '' }}>
-                                    <label class="form-check-label fs-6 ms-2" for="apply_penalty">Yes,
-                                        automatically apply penalty to unpaid invoices</label>
                                 </div>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Penalty Charge
-                                    Type</label>
+                                <label class="form-label text-body small fw-semibold text-uppercase">Penalty Charge Type</label>
                                 <select name="penalty_type" id="penalty_type" class="form-select">
                                     <option value="percentage"
                                         {{ ($settings['penalty_type'] ?? 'percentage') == 'percentage' ? 'selected' : '' }}>
@@ -118,8 +113,7 @@
                                 </select>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Penalty Grace
-                                    Days</label>
+                                <label class="form-label text-body small fw-semibold text-uppercase">Penalty Grace Days</label>
                                 <div class="input-group">
                                     <input type="number" name="penalty_due_days" class="form-control"
                                         value="{{ $settings['penalty_due_days'] ?? '15' }}">
@@ -192,26 +186,30 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <hr class="mb-4">
-
-                        <h5 class="mb-3 fw-bold">Prepayment Discount Settings</h5>
-                        <div class="row mb-5">
+                <!-- Card 3: Prepayment Discount Settings -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h4 class="mb-0"><i class="fa-solid fa-tag text-success me-2"></i>Prepayment Discount Settings</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
                             <div class="col-md-12 mb-4">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Allow Prepayment
-                                    Discount</label>
-                                <div class="form-check form-switch mt-1">
+                                <div class="form-check form-switch m-0 p-3 bg-body-tertiary rounded border d-flex align-items-center justify-content-between shadow-sm">
+                                    <div>
+                                        <label class="form-check-label fw-bold mb-1 text-body d-block" for="apply_discount" style="cursor: pointer; font-size: 1rem;">Allow Prepayment Discount</label>
+                                        <div class="small text-muted">Automatically apply discounts when residents pay their maintenance bills in advance</div>
+                                    </div>
                                     <input type="hidden" name="apply_discount" value="0">
-                                    <input class="form-check-input" type="checkbox" id="apply_discount"
-                                        name="apply_discount" value="1"
+                                    <input class="form-check-input m-0" type="checkbox" id="apply_discount"
+                                        name="apply_discount" value="1" style="cursor: pointer; transform: scale(1.3);"
                                         {{ ($settings['apply_discount'] ?? '1') == '1' ? 'checked' : '' }}>
-                                    <label class="form-check-label fs-6 ms-2" for="apply_discount">Yes,
-                                        automatically apply discounts to prepayments</label>
                                 </div>
                             </div>
                             <div class="col-md-12 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Discount Charge
-                                    Type</label>
+                                <label class="form-label text-body small fw-semibold text-uppercase">Discount Charge Type</label>
                                 <select name="discount_type" id="discount_type" class="form-select">
                                     <option value="percentage"
                                         {{ ($settings['discount_type'] ?? 'percentage') == 'percentage' ? 'selected' : '' }}>
@@ -287,13 +285,22 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <hr class="mb-4">
-
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                <!-- Card 4: Required Documents Settings -->
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h4 class="mb-0"><i class="fa-solid fa-folder-open text-warning me-2"></i>Required Documents Settings</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                             <h5 class="mb-0 fw-bold">Required Documents for Owner</h5>
-                            <button type="button" class="btn btn-sm btn-outline-primary checkall-btn"
-                                data-target="req_doc_owner_">Check All</button>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-danger text-white fw-semibold px-3 py-1 rounded-pill set-all-select-btn shadow-sm" data-target="req_doc_owner_" data-val="1"><i class="fa-solid fa-circle-exclamation me-1"></i> Set All Required</button>
+                                <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold px-3 py-1 rounded-pill set-all-select-btn ms-1 shadow-sm" data-target="req_doc_owner_" data-val="2"><i class="fa-solid fa-circle-question me-1"></i> Set All Optional</button>
+                                <button type="button" class="btn btn-sm btn-secondary text-white fw-semibold px-3 py-1 rounded-pill set-all-select-btn ms-1 shadow-sm" data-target="req_doc_owner_" data-val="0"><i class="fa-solid fa-eye-slash me-1"></i> Disable All</button>
+                            </div>
                         </div>
                         <div class="row mb-5">
                             @php
@@ -304,34 +311,32 @@
                                     'index_copy' => 'Index Copy',
                                     'possession_letter' => 'Possession Letter',
                                     'tax_bill' => 'Copy of Tax Bill',
-                                    // 'contact_no' => 'Contact No',
-                                    // 'email' => 'Email Address',
                                 ];
                             @endphp
                             @foreach ($ownerDocs as $key => $label)
-                                <div class="col-md-3 mb-3">
-                                    <div class="form-check form-switch mt-1">
-                                        <input type="hidden" name="req_doc_owner_{{ $key }}"
-                                            value="0">
-                                        <input class="form-check-input" type="checkbox"
-                                            id="req_doc_owner_{{ $key }}"
-                                            name="req_doc_owner_{{ $key }}" value="1"
-                                            {{ ($settings['req_doc_owner_' . $key] ?? '0') == '1' ? 'checked' : '' }}>
-                                        <label class="form-check-label text-body small fw-semibold ms-1"
-                                            for="req_doc_owner_{{ $key }}">{{ $label }}</label>
-                                    </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label text-body small fw-semibold ms-1 mb-1"
+                                        for="req_doc_owner_{{ $key }}">{{ $label }}</label>
+                                    <select class="form-select form-select-sm border shadow-sm" id="req_doc_owner_{{ $key }}" name="req_doc_owner_{{ $key }}">
+                                        <option value="1" {{ ($settings['req_doc_owner_' . $key] ?? '1') == '1' ? 'selected' : '' }}>🔴 Required (Mandatory)</option>
+                                        <option value="2" {{ ($settings['req_doc_owner_' . $key] ?? '1') == '2' ? 'selected' : '' }}>🟡 Optional (If Available)</option>
+                                        <option value="0" {{ ($settings['req_doc_owner_' . $key] ?? '1') == '0' ? 'selected' : '' }}>⚪ Disabled / Hidden</option>
+                                    </select>
                                 </div>
                             @endforeach
                         </div>
 
                         <hr class="mb-4">
 
-                        <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                             <h5 class="mb-0 fw-bold">Required Documents for Rental</h5>
-                            <button type="button" class="btn btn-sm btn-outline-primary checkall-btn"
-                                data-target="req_doc_rental_">Check All</button>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-danger text-white fw-semibold px-3 py-1 rounded-pill set-all-select-btn shadow-sm" data-target="req_doc_rental_" data-val="1"><i class="fa-solid fa-circle-exclamation me-1"></i> Set All Required</button>
+                                <button type="button" class="btn btn-sm btn-warning text-dark fw-semibold px-3 py-1 rounded-pill set-all-select-btn ms-1 shadow-sm" data-target="req_doc_rental_" data-val="2"><i class="fa-solid fa-circle-question me-1"></i> Set All Optional</button>
+                                <button type="button" class="btn btn-sm btn-secondary text-white fw-semibold px-3 py-1 rounded-pill set-all-select-btn ms-1 shadow-sm" data-target="req_doc_rental_" data-val="0"><i class="fa-solid fa-eye-slash me-1"></i> Disable All</button>
+                            </div>
                         </div>
-                        <div class="row mb-5">
+                        <div class="row mb-4">
                             @php
                                 $rentalDocs = [
                                     'passport_photo' => 'Passport Size Photo',
@@ -340,33 +345,28 @@
                                     'rent_agreement' => 'Rent Agreement',
                                     'police_verification' => 'Police Verification',
                                     'permanent_address_proof' => 'Permanent Address Proof',
-                                    // 'contact_no' => 'Contact Number',
-                                    // 'email' => 'Email Address',
                                 ];
                             @endphp
                             @foreach ($rentalDocs as $key => $label)
-                                <div class="col-md-3 mb-3">
-                                    <div class="form-check form-switch mt-1">
-                                        <input type="hidden" name="req_doc_rental_{{ $key }}"
-                                            value="0">
-                                        <input class="form-check-input" type="checkbox"
-                                            id="req_doc_rental_{{ $key }}"
-                                            name="req_doc_rental_{{ $key }}" value="1"
-                                            {{ ($settings['req_doc_rental_' . $key] ?? '0') == '1' ? 'checked' : '' }}>
-                                        <label class="form-check-label text-body small fw-semibold ms-1"
-                                            for="req_doc_rental_{{ $key }}">{{ $label }}</label>
-                                    </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label text-body small fw-semibold ms-1 mb-1"
+                                        for="req_doc_rental_{{ $key }}">{{ $label }}</label>
+                                    <select class="form-select form-select-sm border shadow-sm" id="req_doc_rental_{{ $key }}" name="req_doc_rental_{{ $key }}">
+                                        <option value="1" {{ ($settings['req_doc_rental_' . $key] ?? '1') == '1' ? 'selected' : '' }}>🔴 Required (Mandatory)</option>
+                                        <option value="2" {{ ($settings['req_doc_rental_' . $key] ?? '1') == '2' ? 'selected' : '' }}>🟡 Optional (If Available)</option>
+                                        <option value="0" {{ ($settings['req_doc_rental_' . $key] ?? '1') == '0' ? 'selected' : '' }}>⚪ Disabled / Hidden</option>
+                                    </select>
                                 </div>
                             @endforeach
                         </div>
-
-                        <div class="text-end border-top pt-4">
-                            <button type="submit" class="btn btn-primary fw-bold px-5 py-2 rounded-3"><i
-                                    class="fa-solid fa-save me-2"></i> Save Settings</button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+
+                <div class="text-end mb-4">
+                    <button type="submit" class="btn btn-primary fw-bold px-5 py-3 rounded-3 shadow"><i
+                            class="fa-solid fa-save me-2"></i> Save Global Settings</button>
+                </div>
+            </form>
         </div>
     </div>
 

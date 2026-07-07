@@ -1,61 +1,85 @@
 <x-user-page>
 <div class="row g-4 mb-4">
     <!-- Total Expenses Card -->
-    <div class="col-sm-6 col-lg-3">
-        <div class="card dash-card card-complaints h-100 shadow-sm border-0">
-            <div class="card-body d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="fs-4 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalExpenses) }}</div>
-                    <div class="text-uppercase fw-semibold small opacity-75">Total Expenses</div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-hero-card kpi-theme-rose h-100 border-0">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="kpi-icon-pedestal">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <span class="kpi-status-pill">
+                        <span class="kpi-status-dot"></span> Expenses
+                    </span>
                 </div>
-                <div class="fs-1">
-                    <i class="fas fa-money-bill-wave"></i>
+                <div class="mt-2">
+                    <div class="kpi-label mb-1">Total Expenses</div>
+                    <div class="kpi-number" style="font-size: 1.85rem;">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalExpenses) }}</div>
                 </div>
+                <div class="kpi-glow-orb"></div>
             </div>
         </div>
     </div>
     
     <!-- This Month Expenses Card -->
-    <div class="col-sm-6 col-lg-3">
-        <div class="card dash-card card-residents h-100 shadow-sm border-0">
-            <div class="card-body d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="fs-4 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($thisMonthExpenses) }}</div>
-                    <div class="text-uppercase fw-semibold small opacity-75">This Month</div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-hero-card kpi-theme-cyan h-100 border-0">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="kpi-icon-pedestal">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <span class="kpi-status-pill">
+                        <span class="kpi-status-dot"></span> Monthly
+                    </span>
                 </div>
-                <div class="fs-1">
-                    <i class="fas fa-calendar-alt"></i>
+                <div class="mt-2">
+                    <div class="kpi-label mb-1">This Month</div>
+                    <div class="kpi-number" style="font-size: 1.85rem;">{{ \App\Helpers\CurrencyHelper::formatCurrency($thisMonthExpenses) }}</div>
                 </div>
+                <div class="kpi-glow-orb"></div>
             </div>
         </div>
     </div>
     
     <!-- Total Invoices Card -->
-    <div class="col-sm-6 col-lg-3">
-        <div class="card dash-card card-flats h-100 shadow-sm border-0">
-            <div class="card-body d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="fs-4 fw-bold">{{ $totalInvoices }}</div>
-                    <div class="text-uppercase fw-semibold small opacity-75">Total Invoices</div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-hero-card kpi-theme-indigo h-100 border-0">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="kpi-icon-pedestal">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <span class="kpi-status-pill">
+                        <span class="kpi-status-dot"></span> Recorded
+                    </span>
                 </div>
-                <div class="fs-1">
-                    <i class="fas fa-file-invoice-dollar"></i>
+                <div class="mt-2">
+                    <div class="kpi-label mb-1">Total Invoices</div>
+                    <div class="kpi-number counter-animate" data-target="{{ $totalInvoices }}">0</div>
                 </div>
+                <div class="kpi-glow-orb"></div>
             </div>
         </div>
     </div>
     
     <!-- Maintenance Income Card -->
-    <div class="col-sm-6 col-lg-3">
-        <div class="card dash-card card-revenue h-100 shadow-sm border-0">
-            <div class="card-body d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="fs-4 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalMaintenanceIncome) }}</div>
-                    <div class="text-uppercase fw-semibold small opacity-75">Maintenance Income</div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-hero-card kpi-theme-emerald h-100 border-0">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="kpi-icon-pedestal">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <span class="kpi-status-pill">
+                        <span class="kpi-status-dot"></span> Income
+                    </span>
                 </div>
-                <div class="fs-1">
-                    <i class="fas fa-chart-line"></i>
+                <div class="mt-2">
+                    <div class="kpi-label mb-1">Maintenance Income</div>
+                    <div class="kpi-number" style="font-size: 1.85rem;">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalMaintenanceIncome) }}</div>
                 </div>
+                <div class="kpi-glow-orb"></div>
             </div>
         </div>
     </div>

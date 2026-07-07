@@ -73,8 +73,15 @@ class FlatDocumentController extends Controller
             $requiredDocuments = $this->enabledDocumentsFor($residentType);
 
             $fileRules = [];
-            foreach ($requiredDocuments as $key => $label) {
-                $fileRules[$key] = 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120';
+            $hasAnyRequired = false;
+            foreach ($requiredDocuments as $key => $docInfo) {
+                $isRequired = is_array($docInfo) ? $docInfo['required'] : true;
+                if ($isRequired) {
+                    $fileRules[$key] = 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120';
+                    $hasAnyRequired = true;
+                } else {
+                    $fileRules[$key] = 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120';
+                }
             }
 
             if ($fileRules) {
@@ -89,7 +96,8 @@ class FlatDocumentController extends Controller
             $documents = $flatDocument ? ($flatDocument->documents ?? []) : [];
             $filesUploaded = 0;
 
-            foreach ($requiredDocuments as $key => $label) {
+            foreach ($requiredDocuments as $key => $docInfo) {
+                $label = is_array($docInfo) ? $docInfo['label'] : $docInfo;
                 $file = $request->file($key);
 
                 if (! $file || is_array($file)) {
@@ -109,10 +117,10 @@ class FlatDocumentController extends Controller
                 $filesUploaded++;
             }
 
-            if ($filesUploaded === 0) {
+            if ($filesUploaded === 0 && $hasAnyRequired) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please select at least one document to upload.',
+                    'message' => 'Please select required documents to upload.',
                 ], 422);
             }
 
@@ -361,9 +369,13 @@ class FlatDocumentController extends Controller
 
         foreach ($documents as $key => $label) {
             $settingKey = 'req_doc_'.$residentType.'_'.$key;
+            $val = $settings[$settingKey] ?? '1';
 
-            if (($settings[$settingKey] ?? '0') == '1') {
-                $enabledDocuments[$settingKey] = $label;
+            if ($val == '1' || $val == '2') {
+                $enabledDocuments[$settingKey] = [
+                    'label' => $label,
+                    'required' => ($val == '1')
+                ];
             }
         }
 

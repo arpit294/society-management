@@ -243,20 +243,23 @@ document.addEventListener("DOMContentLoaded", function () {
     window.setTimeout(restoreSidebarScroll, 100);
 });
 
-$(document).on("click", ".toggle-password-btn, .toggle-password", function () {
-    const container = $(this).closest(".input-group, .position-relative, div");
+$(document).on("click", ".toggle-password-btn, .toggle-password", function (e) {
+    e.preventDefault();
+    const container = $(this).closest(".input-group, .position-relative, .password-input-group, div");
     const input = container.find("input")[0];
     if (!input) return;
     if (input.type === "password") {
         input.type = "text";
         $(this)
             .attr("aria-label", "Hide password")
+            .attr("title", "Hide password")
             .attr("data-coreui-original-title", "Hide password");
         $(this).find(".fa-eye").removeClass("fa-eye").addClass("fa-eye-slash");
     } else {
         input.type = "password";
         $(this)
             .attr("aria-label", "Show password")
+            .attr("title", "Show password")
             .attr("data-coreui-original-title", "Show password");
         $(this).find(".fa-eye-slash").removeClass("fa-eye-slash").addClass("fa-eye");
     }
@@ -1100,18 +1103,14 @@ $(document).ready(function () {
             const url = $(this).data("url");
             const title = $(this).data("title");
 
-            // Show modal immediately with our unique SMP orbital loader
+            // Show modal immediately with clean simple circle loader
             $(modalContentId).html(`
                 <div class="modal-header border-bottom-0">
                     <h5 class="modal-title fw-bold">${title || 'Loading...'}</h5>
                     <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body modal-ajax-loader">
-                    <div class="smp-modal-spinner">
-                        <div class="smp-ring-inner-small"></div>
-                        <i class="fa-solid fa-building-user smp-modal-icon"></i>
-                    </div>
-                    <div class="smp-modal-loading-text">Fetching data, please wait...</div>
+                    <div class="simple-circle-loader"></div>
                 </div>
             `);
             modalInstance?.show();
@@ -1861,25 +1860,7 @@ $(document).ready(function () {
         }
     });
 
-    // Password Visibility Toggle
-    $(document).on("click", ".toggle-password, .toggle-password-btn", function () {
-        const container = $(this).closest(".input-group, .position-relative, div");
-        const input = container.find("input")[0];
-        if (!input) return;
-        if (input.type === "password") {
-            input.type = "text";
-            $(this)
-                .attr("aria-label", "Hide password")
-                .attr("data-coreui-original-title", "Hide password");
-            $(this).find(".fa-eye").removeClass("fa-eye").addClass("fa-eye-slash");
-        } else {
-            input.type = "password";
-            $(this)
-                .attr("aria-label", "Show password")
-                .attr("data-coreui-original-title", "Show password");
-            $(this).find(".fa-eye-slash").removeClass("fa-eye-slash").addClass("fa-eye");
-        }
-    });
+    // Password Visibility Toggle handled globally at top of script.js
 
     // Reset Password Form Validation
     $(document).on("submit", "#resetPasswordForm", function (e) {
@@ -2324,26 +2305,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // --- Dashboard Scripts ---
 document.addEventListener("DOMContentLoaded", function () {
-    // Counter Animation
-    const counters = document.querySelectorAll(".counter-animate");
-    const speed = 200;
-
-    if (counters.length > 0) {
-        counters.forEach((counter) => {
-            const updateCount = () => {
-                const target = +counter.getAttribute("data-target");
-                const count = +counter.innerText.replace(/,/g, "");
-                const inc = target / speed;
-
-                if (count < target) {
-                    counter.innerText = Math.ceil(count + inc).toLocaleString();
-                    setTimeout(updateCount, 10);
-                } else {
-                    counter.innerText = target.toLocaleString();
-                }
-            };
-            updateCount();
-        });
+    // Counter animations are now handled dynamically and repeatedly by 3d-4d-animations.js
+    if (typeof window.refreshSMPAnimations === 'function') {
+        window.refreshSMPAnimations();
     }
 });
 
@@ -2461,28 +2425,34 @@ function generateDocumentInputs(residentType) {
     var appSettings = JSON.parse(form.dataset.settings || "{}");
     var documentRequirements = JSON.parse(form.dataset.requirements || "{}");
     var docs = documentRequirements[residentType] || {};
-    var hasRequiredDocs = false;
+    var hasDocs = false;
 
     $.each(docs, function (key, label) {
         var settingKey = "req_doc_" + residentType + "_" + key;
+        var val = appSettings ? appSettings[settingKey] : "1";
 
-        if (appSettings && appSettings[settingKey] == "1") {
-            hasRequiredDocs = true;
+        if (val == "1" || val == "2") {
+            hasDocs = true;
+            var isRequired = (val == "1");
+            var badge = isRequired ? '<span class="text-danger">* (Required)</span>' : '<span class="badge bg-warning-subtle text-dark border border-warning small ms-1">Optional</span>';
+            var reqAttr = isRequired ? 'required' : '';
             var html = `
             <div class="mb-3">
-                <label class="form-label fw-semibold text-body">${label} <span class="text-danger">*</span></label>
-                <input type="file" class="form-control bg-white text-dark" name="${settingKey}" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                <label class="form-label fw-semibold text-body d-flex align-items-center justify-content-between">${label} ${badge}</label>
+                <input type="file" class="form-control bg-white text-dark" name="${settingKey}" ${reqAttr} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
             </div>
             `;
             container.append(html);
         }
     });
 
-    if (!hasRequiredDocs) {
+    if (!hasDocs) {
         container.html(
-            '<p class="text-muted small">No documents are required for this resident type based on global settings.</p>',
+            '<p class="text-muted small">No documents are required or optional for this resident type based on global settings.</p>',
         );
         $("#addDocumentModal #submitBtn").prop("disabled", true);
+    } else {
+        $("#addDocumentModal #submitBtn").prop("disabled", false);
     }
 }
 
@@ -2817,6 +2787,17 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
     }
+
+    // Set All Select Buttons for 3-State Document Settings
+    document.querySelectorAll(".set-all-select-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+            const targetPrefix = this.getAttribute("data-target");
+            const val = this.getAttribute("data-val");
+            document.querySelectorAll(`select[name^="${targetPrefix}"]`).forEach((sel) => {
+                sel.value = val;
+            });
+        });
+    });
 
     // Check All / Uncheck All Buttons
     document.querySelectorAll(".checkall-btn").forEach((btn) => {

@@ -1,4 +1,4 @@
-<header class="header header-sticky p-0 mb-4">
+<header class="header header-sticky glass-header p-0 mb-4">
     <div class="container-fluid border-bottom px-4">
         <button class="header-toggler header-toggler-offset js-sidebar-toggle" type="button">
             <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
@@ -7,43 +7,160 @@
             </svg>
         </button>
 
-        <ul class="header-nav">
+        <ul class="header-nav ms-auto d-flex align-items-center gap-1">
+            <!-- 1. Home Button -->
             <li class="nav-item">
-                <a class="nav-link py-2" href="{{ route('dashboard') }}" title="Home">
-                    <i class="fa-solid fa-house fs-5" style="color: var(--ci-primary-color, currentcolor);"></i>
+                <a class="nav-link p-2 d-flex align-items-center justify-content-center rounded-circle transition-hover" href="{{ route('dashboard') }}" title="Dashboard Home" style="width: 40px; height: 40px;">
+                    <i class="fa-solid fa-house fs-5 text-body"></i>
                 </a>
             </li>
+
+            <!-- 2. Settings Button -->
             @can('setting_view')
             <li class="nav-item">
-                <a class="nav-link py-2" href="{{ route('settings.index') }}" title="Settings">
-                    <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                        <path fill="var(--ci-primary-color, currentcolor)" d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/>
-                    </svg>
+                <a class="nav-link p-2 d-flex align-items-center justify-content-center rounded-circle transition-hover" href="{{ route('settings.index') }}" title="Society Settings" style="width: 40px; height: 40px;">
+                    <i class="fa-solid fa-gear fs-5 text-body"></i>
                 </a>
             </li>
             @endcan
 
-            <li class="nav-item py-1">
-                <div class="vr h-100 mx-2 text-body text-opacity-75"></div>
+            <!-- Separator 1 -->
+            <li class="nav-item py-1 d-flex align-items-center">
+                <div class="vr mx-2 text-body text-opacity-25" style="height: 20px;"></div>
             </li>
-            <li class="nav-item dropdown">
-                <button class="btn btn-link nav-link py-2 px-2 d-flex align-items-center" type="button"
-                    aria-expanded="false" data-coreui-toggle="dropdown">
-                    <svg class="icon icon-lg theme-icon-active" xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 512 512">
-                        <path fill="var(--ci-primary-color, currentcolor)"
-                            d="M256 16C123.452 16 16 123.452 16 256s107.452 240 240 240 240-107.452 240-240S388.548 16 256 16m-22 446.849a208.35 208.35 0 0 1-169.667-125.9c-.364-.859-.706-1.724-1.057-2.587L234 429.939Zm0-69.582L50.889 290.76A210 210 0 0 1 48 256q0-9.912.922-19.67L234 339.939Zm0-90L54.819 202.96a206 206 0 0 1 9.514-27.913Q67.1 168.5 70.3 162.191L234 253.934Zm0-86.015L86.914 134.819a209.4 209.4 0 0 1 22.008-25.9q3.72-3.72 7.6-7.228L234 166.027Zm0-87.708-89.648-49.093A206.95 206.95 0 0 1 234 49.151ZM464 256a207.775 207.775 0 0 1-198 207.761V48.239A207.79 207.79 0 0 1 464 256"
-                            class="ci-primary" />
+
+            <!-- 3. Real-time Notifications Bell -->
+            @php
+                $headerNotifications = \App\Helpers\ActivityHelper::getRecentActivities(6);
+                $unreadCount = $headerNotifications->count();
+            @endphp
+
+            <li class="nav-item dropdown d-flex align-items-center">
+                <a class="nav-link p-2 position-relative d-flex align-items-center justify-content-center rounded-circle transition-hover" data-coreui-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false" title="Live Society Alerts" style="width: 40px; height: 40px;">
+                    <i class="fa-regular fa-bell fs-5 text-body"></i>
+                    <span id="bell-badge-counter" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light {{ $unreadCount > 0 ? 'notification-badge-pulse' : '' }}" style="font-size: 0.65rem; padding: 0.25em 0.5em; margin-left: -10px; margin-top: 6px;">
+                        {{ $unreadCount }}
+                        <span class="visually-hidden">unread alerts</span>
+                    </span>
+                </a>
+                <div class="dropdown-menu dropdown-menu-end pt-0 pb-0 shadow-lg border-0 rounded-4 overflow-hidden" style="width: 360px; max-width: 90vw;">
+                    <div class="dropdown-header bg-body-tertiary text-body-secondary fw-bold p-3 d-flex align-items-center justify-content-between border-bottom">
+                        <span class="d-flex align-items-center gap-2 text-primary fs-6">
+                            <i class="fa-solid fa-bell"></i> Notifications
+                        </span>
+                        <a href="javascript:void(0);" onclick="markAllNotificationsAsRead(event);" id="mark-all-read-btn" class="text-decoration-underline text-primary fw-semibold small" style="font-size: 0.8rem; cursor: pointer; {{ $unreadCount == 0 ? 'display: none !important;' : '' }}">Mark all as read</a>
+                    </div>
+
+                    <div id="notification-list-container" class="list-group list-group-flush" style="max-height: 380px; overflow-y: auto; {{ $unreadCount == 0 ? 'display: none !important;' : '' }}">
+                        @forelse($headerNotifications as $notification)
+                            <a href="{{ $notification->url ?? '#' }}" data-timestamp="{{ $notification->timestamp ? $notification->timestamp->getTimestamp() * 1000 : 0 }}" class="list-group-item list-group-item-action p-3 d-flex gap-3 align-items-start notification-item-row text-decoration-none">
+                                <div class="avatar avatar-md {{ $notification->bg_class ?? 'bg-primary bg-opacity-10 text-primary' }} rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 40px; height: 40px;">
+                                    <i class="{{ $notification->icon }}"></i>
+                                </div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="fw-semibold text-truncate d-block text-body" style="font-size: 0.9rem;">{{ $notification->title }}</span>
+                                        <span class="text-muted" style="font-size: 0.75rem;">{{ $notification->time }}</span>
+                                    </div>
+                                    <p class="text-muted mb-0 text-truncate" style="font-size: 0.8rem;">{{ $notification->description }}</p>
+                                    @if(isset($notification->badge_text))
+                                        <span class="badge {{ $notification->badge_class ?? 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25' }} mt-1" style="font-size: 0.65rem;">{{ $notification->badge_text }}</span>
+                                    @endif
+                                </div>
+                            </a>
+                        @empty
+                        @endforelse
+                    </div>
+
+                    <!-- Empty State Container -->
+                    <div id="notification-empty-state" class="p-5 text-center text-muted" style="{{ $unreadCount == 0 ? '' : 'display: none !important;' }}">
+                        <div class="mb-3 d-inline-flex align-items-center justify-content-center bg-body-secondary bg-opacity-50 rounded-circle" style="width: 64px; height: 64px;">
+                            <i class="fa-regular fa-bell-slash fs-3 opacity-50"></i>
+                        </div>
+                        <p class="mb-0 fw-semibold text-body" style="font-size: 0.9rem;">There are no new Notifications !</p>
+                    </div>
+                </div>
+            </li>
+
+            <script>
+                function markAllNotificationsAsRead(e) {
+                    if (e) e.stopPropagation();
+                    localStorage.setItem('smp_notifications_cleared_time', Date.now());
+                    
+                    const badge = document.getElementById('bell-badge-counter');
+                    if (badge) {
+                        badge.innerText = '0';
+                        badge.classList.remove('notification-badge-pulse');
+                    }
+                    
+                    const btn = document.getElementById('mark-all-read-btn');
+                    if (btn) btn.style.setProperty('display', 'none', 'important');
+                    
+                    const listContainer = document.getElementById('notification-list-container');
+                    if (listContainer) listContainer.style.setProperty('display', 'none', 'important');
+                    
+                    const emptyState = document.getElementById('notification-empty-state');
+                    if (emptyState) emptyState.style.setProperty('display', 'block', 'important');
+                }
+
+                document.addEventListener('DOMContentLoaded', function() {
+                    const clearedTime = localStorage.getItem('smp_notifications_cleared_time');
+                    if (!clearedTime) return;
+                    
+                    const items = document.querySelectorAll('.notification-item-row');
+                    let visibleCount = 0;
+                    
+                    items.forEach(item => {
+                        const itemTime = parseInt(item.getAttribute('data-timestamp') || '0', 10);
+                        if (itemTime <= clearedTime) {
+                            item.style.setProperty('display', 'none', 'important');
+                        } else {
+                            visibleCount++;
+                        }
+                    });
+                    
+                    const badge = document.getElementById('bell-badge-counter');
+                    const btn = document.getElementById('mark-all-read-btn');
+                    const listContainer = document.getElementById('notification-list-container');
+                    const emptyState = document.getElementById('notification-empty-state');
+                    
+                    if (badge) badge.innerText = visibleCount;
+                    
+                    if (visibleCount === 0) {
+                        if (badge) badge.classList.remove('notification-badge-pulse');
+                        if (btn) btn.style.setProperty('display', 'none', 'important');
+                        if (listContainer) listContainer.style.setProperty('display', 'none', 'important');
+                        if (emptyState) emptyState.style.setProperty('display', 'block', 'important');
+                    } else {
+                        if (btn) btn.style.setProperty('display', 'inline', 'important');
+                        if (listContainer) listContainer.style.setProperty('display', 'block', 'important');
+                        if (emptyState) emptyState.style.setProperty('display', 'none', 'important');
+                    }
+                });
+            </script>
+
+            <!-- Separator 2 -->
+            <li class="nav-item py-1 d-flex align-items-center">
+                <div class="vr mx-2 text-body text-opacity-25" style="height: 20px;"></div>
+            </li>
+
+            <!-- 4. Theme Mode Toggle -->
+            <li class="nav-item dropdown d-flex align-items-center">
+                <button class="btn btn-link nav-link p-2 d-flex align-items-center justify-content-center rounded-circle transition-hover border-0" type="button"
+                    aria-expanded="false" data-coreui-toggle="dropdown" title="Theme Mode" style="width: 40px; height: 40px;">
+                    <svg class="icon theme-icon-active text-body" xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 512 512" style="width: 1.25rem; height: 1.25rem;">
+                        <path fill="currentcolor"
+                            d="M256 16C123.452 16 16 123.452 16 256s107.452 240 240 240 240-107.452 240-240S388.548 16 256 16m-22 446.849a208.35 208.35 0 0 1-169.667-125.9c-.364-.859-.706-1.724-1.057-2.587L234 429.939Zm0-69.582L50.889 290.76A210 210 0 0 1 48 256q0-9.912.922-19.67L234 339.939Zm0-90L54.819 202.96a206 206 0 0 1 9.514-27.913Q67.1 168.5 70.3 162.191L234 253.934Zm0-86.015L86.914 134.819a209.4 209.4 0 0 1 22.008-25.9q3.72-3.72 7.6-7.228L234 166.027Zm0-87.708-89.648-49.093A206.95 206.95 0 0 1 234 49.151ZM464 256a207.775 207.775 0 0 1-198 207.761V48.239A207.79 207.79 0 0 1 464 256" />
                     </svg>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end" style="--cui-dropdown-min-width: 8rem">
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" style="--cui-dropdown-min-width: 8rem">
                     <li>
                         <button class="dropdown-item d-flex align-items-center" type="button"
                             data-coreui-theme-value="light">
                             <svg class="icon icon-lg me-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                <path fill="var(--ci-primary-color, currentcolor)"
-                                    d="M256 104c-83.813 0-152 68.187-152 152s68.187 152 152 152 152-68.187 152-152-68.187-152-152-152m0 272a120 120 0 1 1 120-120 120.136 120.136 0 0 1-120 120M240 16h32v48h-32zm0 432h32v48h-32zm208-208h48v32h-48zm-432 0h48v32H16zm372.687 171.314 22.627-22.627 32 32-22.627 22.627zm-320-320 22.628-22.628 32 32-22.628 22.628zm-.002 329.375 32-32 22.628 22.626-32 32zm320.002-320.003 32-32 22.628 22.628-32 32z"
-                                    class="ci-primary" />
+                                <path fill="currentcolor"
+                                    d="M256 104c-83.813 0-152 68.187-152 152s68.187 152 152 152 152-68.187 152-152-68.187-152-152-152m0 272a120 120 0 1 1 120-120 120.136 120.136 0 0 1-120 120M240 16h32v48h-32zm0 432h32v48h-32zm208-208h48v32h-48zm-432 0h48v32H16zm372.687 171.314 22.627-22.627 32 32-22.627 22.627zm-320-320 22.628-22.628 32 32-22.628 22.628zm-.002 329.375 32-32 22.628 22.626-32 32zm320.002-320.003 32-32 22.628 22.628-32 32z" />
                             </svg>
                             Light
                         </button>
@@ -52,9 +169,8 @@
                         <button class="dropdown-item d-flex align-items-center" type="button"
                             data-coreui-theme-value="dark">
                             <svg class="icon icon-lg me-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                <path fill="var(--ci-primary-color, currentcolor)"
-                                    d="M268.279 496c-67.574 0-130.978-26.191-178.534-73.745S16 311.293 16 243.718A252.25 252.25 0 0 1 154.183 18.676a24.44 24.44 0 0 1 34.46 28.958 220.12 220.12 0 0 0 54.8 220.923A218.75 218.75 0 0 0 399.085 333.2a220.2 220.2 0 0 0 65.277-9.846 24.439 24.439 0 0 1 28.959 34.461A252.26 252.26 0 0 1 268.279 496M153.31 55.781A219.3 219.3 0 0 0 48 243.718C48 365.181 146.816 464 268.279 464a219.3 219.3 0 0 0 187.938-105.31 253 253 0 0 1-57.13 6.513 250.54 250.54 0 0 1-178.268-74.016 252.15 252.15 0 0 1-67.509-235.4Z"
-                                    class="ci-primary" />
+                                <path fill="currentcolor"
+                                    d="M268.279 496c-67.574 0-130.978-26.191-178.534-73.745S16 311.293 16 243.718A252.25 252.25 0 0 1 154.183 18.676a24.44 24.44 0 0 1 34.46 28.958 220.12 220.12 0 0 0 54.8 220.923A218.75 218.75 0 0 0 399.085 333.2a220.2 220.2 0 0 0 65.277-9.846 24.439 24.439 0 0 1 28.959 34.461A252.26 252.26 0 0 1 268.279 496M153.31 55.781A219.3 219.3 0 0 0 48 243.718C48 365.181 146.816 464 268.279 464a219.3 219.3 0 0 0 187.938-105.31 253 253 0 0 1-57.13 6.513 250.54 250.54 0 0 1-178.268-74.016 252.15 252.15 0 0 1-67.509-235.4Z" />
                             </svg>
                             Dark
                         </button>
@@ -63,22 +179,25 @@
                         <button class="dropdown-item d-flex align-items-center active" type="button"
                             data-coreui-theme-value="auto">
                             <svg class="icon icon-lg me-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                                <path fill="var(--ci-primary-color, currentcolor)"
-                                    d="M256 16C123.452 16 16 123.452 16 256s107.452 240 240 240 240-107.452 240-240S388.548 16 256 16m-22 446.849a208.35 208.35 0 0 1-169.667-125.9c-.364-.859-.706-1.724-1.057-2.587L234 429.939Zm0-69.582L50.889 290.76A210 210 0 0 1 48 256q0-9.912.922-19.67L234 339.939Zm0-90L54.819 202.96a206 206 0 0 1 9.514-27.913Q67.1 168.5 70.3 162.191L234 253.934Zm0-86.015L86.914 134.819a209.4 209.4 0 0 1 22.008-25.9q3.72-3.72 7.6-7.228L234 166.027Zm0-87.708-89.648-49.093A206.95 206.95 0 0 1 234 49.151ZM464 256a207.775 207.775 0 0 1-198 207.761V48.239A207.79 207.79 0 0 1 464 256"
-                                    class="ci-primary" />
+                                <path fill="currentcolor"
+                                    d="M256 16C123.452 16 16 123.452 16 256s107.452 240 240 240 240-107.452 240-240S388.548 16 256 16m-22 446.849a208.35 208.35 0 0 1-169.667-125.9c-.364-.859-.706-1.724-1.057-2.587L234 429.939Zm0-69.582L50.889 290.76A210 210 0 0 1 48 256q0-9.912.922-19.67L234 339.939Zm0-90L54.819 202.96a206 206 0 0 1 9.514-27.913Q67.1 168.5 70.3 162.191L234 253.934Zm0-86.015L86.914 134.819a209.4 209.4 0 0 1 22.008-25.9q3.72-3.72 7.6-7.228L234 166.027Zm0-87.708-89.648-49.093A206.95 206.95 0 0 1 234 49.151ZM464 256a207.775 207.775 0 0 1-198 207.761V48.239A207.79 207.79 0 0 1 464 256" />
                             </svg>
                             Auto
                         </button>
                     </li>
                 </ul>
             </li>
-            <li class="nav-item py-1">
-                <div class="vr h-100 mx-2 text-body text-opacity-75"></div>
+
+            <!-- Separator 3 -->
+            <li class="nav-item py-1 d-flex align-items-center">
+                <div class="vr mx-2 text-body text-opacity-25" style="height: 20px;"></div>
             </li>
-            <li class="nav-item dropdown">
-                <a class="nav-link py-0 pe-0" data-coreui-toggle="dropdown" href="#" role="button"
-                    aria-haspopup="true" aria-expanded="false">
-                    <div class="avatar avatar-md"><img class="avatar-img" src="{{ asset('assets/img/avatars/8.jpg') }}"
+
+            <!-- 5. User Account Avatar Dropdown -->
+            <li class="nav-item dropdown d-flex align-items-center ms-1">
+                <a class="nav-link py-0 pe-0 d-flex align-items-center" data-coreui-toggle="dropdown" href="#" role="button"
+                    aria-haspopup="true" aria-expanded="false" title="Account">
+                    <div class="avatar avatar-md border border-primary border-opacity-25 shadow-sm"><img class="avatar-img" src="{{ asset('assets/img/avatars/8.jpg') }}"
                             alt="user@email.com"></div>
                 </a>
                 <div class="dropdown-menu dropdown-menu-end pt-0">

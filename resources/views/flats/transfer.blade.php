@@ -65,81 +65,85 @@
         </div>
         @endif
 
-        <h6 class="fw-bold mb-3 border-bottom pb-2">New Owner Details</h6>
+        <fieldset {{ $pendingCount > 0 ? 'disabled' : '' }} class="{{ $pendingCount > 0 ? 'opacity-50 pointer-events-none' : '' }}">
+            <h6 class="fw-bold mb-3 border-bottom pb-2">New Owner Details</h6>
 
-        <div class="row">
-            <div class="col-md-6 mb-3">
-                <label for="new_owner_name" class="form-label text-muted small fw-semibold text-uppercase">Full Name
-                    <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="new_owner_name" name="new_owner_name" required>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label for="new_owner_email" class="form-label text-muted small fw-semibold text-uppercase">Email <span
-                        class="text-danger">*</span></label>
-                <input type="email" class="form-control" id="new_owner_email" name="new_owner_email" required>
-            </div>
-            <div class="col-md-6 mb-3">
-                <label for="new_owner_phone"
-                    class="form-label text-muted small fw-semibold text-uppercase">Phone</label>
-                <input type="text" class="form-control" id="new_owner_phone" name="new_owner_phone">
-            </div>
-            <div class="col-md-6 mb-3">
-                <label for="new_owner_aadhar" class="form-label text-muted small fw-semibold text-uppercase">Aadhar ID
-                    <span class="text-danger">*</span></label>
-                <input type="text" class="form-control" id="new_owner_aadhar" name="new_owner_aadhar"
-                    inputmode="numeric" pattern="[0-9]{12}" maxlength="12" required>
-            </div>
-            <div class="col-md-12 mb-3">
-                <label for="transfer_date" class="form-label text-muted small fw-semibold text-uppercase">Transfer Date
-                    <span class="text-danger">*</span></label>
-                <input type="date" class="form-control" id="transfer_date" name="transfer_date"
-                    value="{{ date('Y-m-d') }}" required>
-            </div>
-            <div class="col-md-12 mb-3 border-top pt-3 mt-2">
-                <h6 class="fw-bold mb-3">Fee & Payment Details</h6>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="transfer_fee"
-                            class="form-label text-muted small fw-semibold text-uppercase">Transfer Fee (₹) <span
-                                class="text-danger">*</span></label>
-                        <input type="number" step="0.01" min="0" class="form-control" id="transfer_fee" name="transfer_fee"
-                            value="{{ isset($defaultFee) ? $defaultFee : 0 }}" required placeholder="Enter transfer fee amount">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="new_owner_name" class="form-label text-muted small fw-semibold text-uppercase">Full Name
+                        <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="new_owner_name" name="new_owner_name" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="new_owner_email" class="form-label text-muted small fw-semibold text-uppercase">Email <span
+                            class="text-danger">*</span></label>
+                    <input type="email" class="form-control" id="new_owner_email" name="new_owner_email" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="new_owner_phone"
+                        class="form-label text-muted small fw-semibold text-uppercase">Phone</label>
+                    <input type="text" class="form-control" id="new_owner_phone" name="new_owner_phone">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="new_owner_aadhar" class="form-label text-muted small fw-semibold text-uppercase">Aadhar ID
+                        <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" id="new_owner_aadhar" name="new_owner_aadhar"
+                        inputmode="numeric" pattern="[0-9]{12}" maxlength="12" required>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label for="transfer_date" class="form-label text-muted small fw-semibold text-uppercase">Transfer Date
+                        <span class="text-danger">*</span></label>
+                    <input type="date" class="form-control" id="transfer_date" name="transfer_date"
+                        value="{{ date('Y-m-d') }}" required>
+                </div>
+                <div class="col-md-12 mb-3 border-top pt-3 mt-2">
+                    <h6 class="fw-bold mb-3">Fee & Payment Details</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="transfer_fee"
+                                class="form-label text-muted small fw-semibold text-uppercase">Transfer Fee (₹) <span
+                                    class="text-danger">*</span></label>
+                            <input type="number" step="0.01" min="0" class="form-control" id="transfer_fee" name="transfer_fee"
+                                value="{{ isset($defaultFee) ? $defaultFee : 0 }}" required placeholder="Enter transfer fee amount">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="payment_method"
+                                class="form-label text-muted small fw-semibold text-uppercase">Payment Method <span
+                                    class="text-danger">*</span></label>
+                            <select name="payment_method" id="transfer_payment_method" class="form-select" required>
+                                <option value="pending">Pending (Unpaid)</option>
+                                <option value="cash">Cash</option>
+                                <option value="upi">UPI</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="payment_method"
-                            class="form-label text-muted small fw-semibold text-uppercase">Payment Method <span
-                                class="text-danger">*</span></label>
-                        <select name="payment_method" id="transfer_payment_method" class="form-select" required>
-                            <option value="pending">Pending (Unpaid)</option>
-                            <option value="cash">Cash</option>
-                            <option value="upi">UPI</option>
-                        </select>
+                    <div class="row" id="upi_details_container" style="display: none;">
+                        <div class="col-md-6 mb-3">
+                            <label for="transaction_id"
+                                class="form-label text-muted small fw-semibold text-uppercase">UTR Number <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="transaction_id" name="transaction_id"
+                                inputmode="numeric" pattern="[0-9]{12}" maxlength="12"
+                                placeholder="Enter 12 digit UTR number">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="payment_slip"
+                                class="form-label text-muted small fw-semibold text-uppercase">Screenshot (Required) <span
+                                    class="text-danger">*</span></label>
+                            <input type="file" class="dropify" id="payment_slip" name="payment_slip" accept="image/*"
+                                data-height="120">
+                        </div>
                     </div>
                 </div>
-                <div class="row" id="upi_details_container" style="display: none;">
-                    <div class="col-md-6 mb-3">
-                        <label for="transaction_id"
-                            class="form-label text-muted small fw-semibold text-uppercase">UTR Number <span
-                                class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="transaction_id" name="transaction_id"
-                            inputmode="numeric" pattern="[0-9]{12}" maxlength="12"
-                            placeholder="Enter 12 digit UTR number">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="payment_slip"
-                            class="form-label text-muted small fw-semibold text-uppercase">Screenshot (Required) <span
-                                class="text-danger">*</span></label>
-                        <input type="file" class="dropify" id="payment_slip" name="payment_slip" accept="image/*"
-                            data-height="120">
-                    </div>
-                </div>
             </div>
-        </div>
+        </fieldset>
 
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-warning" id="btn-save-transfer">Transfer Ownership</button>
+        <button type="submit" class="btn btn-warning fw-bold" id="btn-save-transfer" {{ $pendingCount > 0 ? 'disabled' : '' }}>
+            <i class="fa-solid fa-right-left me-1"></i> Transfer Ownership
+        </button>
     </div>
 </form>
 

@@ -1,46 +1,65 @@
 <x-user-page>
 
 <!-- Summary Cards Row -->
+<!-- Summary Cards Row -->
 <div class="row g-4 mb-4">
     <!-- Total Collected -->
-    <div class="col-md-4">
-        <div class="card dash-card card-revenue h-100 shadow-sm border-0">
-            <div class="card-body d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="fs-3 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalCollected) }}</div>
-                    <div class="text-uppercase fw-semibold small opacity-75">Total Collected</div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="card kpi-hero-card kpi-theme-emerald h-100 border-0">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="kpi-icon-pedestal">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <span class="kpi-status-pill">
+                        <span class="kpi-status-dot"></span> Collected
+                    </span>
                 </div>
-                <div class="fs-1">
-                    <i class="fas fa-wallet"></i>
+                <div class="mt-2">
+                    <div class="kpi-label mb-1">Total Collected</div>
+                    <div class="kpi-number" style="font-size: 1.85rem;">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalCollected) }}</div>
                 </div>
+                <div class="kpi-glow-orb"></div>
             </div>
         </div>
     </div>
     <!-- Cash Collected -->
-    <div class="col-md-4">
-        <div class="card dash-card card-flats h-100 shadow-sm border-0">
-            <div class="card-body d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="fs-3 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($cashCollected) }}</div>
-                    <div class="text-uppercase fw-semibold small opacity-75">Cash Collections</div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="card kpi-hero-card kpi-theme-indigo h-100 border-0">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="kpi-icon-pedestal">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <span class="kpi-status-pill">
+                        <span class="kpi-status-dot"></span> Cash
+                    </span>
                 </div>
-                <div class="fs-1">
-                    <i class="fas fa-money-bill-wave"></i>
+                <div class="mt-2">
+                    <div class="kpi-label mb-1">Cash Collections</div>
+                    <div class="kpi-number" style="font-size: 1.85rem;">{{ \App\Helpers\CurrencyHelper::formatCurrency($cashCollected) }}</div>
                 </div>
+                <div class="kpi-glow-orb"></div>
             </div>
         </div>
     </div>
     <!-- UPI Collected -->
-    <div class="col-md-4">
-        <div class="card dash-card card-residents h-100 shadow-sm border-0">
-            <div class="card-body d-flex justify-content-between align-items-start">
-                <div>
-                    <div class="fs-3 fw-bold">{{ \App\Helpers\CurrencyHelper::formatCurrency($upiCollected) }}</div>
-                    <div class="text-uppercase fw-semibold small opacity-75">UPI Collections</div>
+    <div class="col-sm-6 col-xl-4">
+        <div class="card kpi-hero-card kpi-theme-cyan h-100 border-0">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="kpi-icon-pedestal">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <span class="kpi-status-pill">
+                        <span class="kpi-status-dot"></span> Digital
+                    </span>
                 </div>
-                <div class="fs-1">
-                    <i class="fas fa-qrcode"></i>
+                <div class="mt-2">
+                    <div class="kpi-label mb-1">UPI Collections</div>
+                    <div class="kpi-number" style="font-size: 1.85rem;">{{ \App\Helpers\CurrencyHelper::formatCurrency($upiCollected) }}</div>
                 </div>
+                <div class="kpi-glow-orb"></div>
             </div>
         </div>
     </div>
