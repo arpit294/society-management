@@ -26,22 +26,31 @@
                                 on how to reset your password.</div>
                         </div>
                         @if (session('status'))
-                            <div id="users-toast-source" data-message="{{ session('status') }}" data-type="success" style="display: none;"></div>
+                            <div class="alert alert-success d-flex align-items-center gap-2 mb-2 p-3 rounded-3 shadow-sm border-0" style="background: rgba(46, 184, 92, 0.15); color: #2eb85c;" role="alert">
+                                <i class="fa-solid fa-circle-check fs-5"></i>
+                                <div class="fw-semibold">{{ session('status') }}</div>
+                            </div>
+                        @endif
+                        @if (session('error') || $errors->any())
+                            <div class="alert alert-danger d-flex align-items-center gap-2 mb-2 p-3 rounded-3 shadow-sm border-0" style="background: rgba(229, 83, 83, 0.15); color: #e55353;" role="alert">
+                                <i class="fa-solid fa-circle-exclamation fs-5"></i>
+                                <div class="fw-semibold">{{ session('error') ?? $errors->first() }}</div>
+                            </div>
                         @endif
                         <form id="resetPasswordForm" class="row gap-3 text-start" action="{{ route('password.email') }}" method="post"
-                            autocomplete="off" novalidate>
+                            autocomplete="off" novalidate onsubmit="const btn = this.querySelector('button[type=submit]'); if(btn && this.email.value.trim()){ btn.disabled = true; btn.innerHTML = '<i class=\'fa-solid fa-spinner fa-spin me-2\'></i> Sending email...'; }">
                             @csrf
                             <div>
                                 <label class="form-label" for="email">Email address</label>
                                 <input class="form-control @error('email') is-invalid @enderror" id="email" name="email" type="email"
-                                    placeholder="your@email.com" autocomplete="off" value="{{ old('email') }}">
+                                    placeholder="your@email.com" autocomplete="off" value="{{ old('email') }}" required>
                                 @error('email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 <div id="js-email-error" class="invalid-feedback text-danger" style="display: none;"></div>
                             </div>
                             <div>
-                                <button class="btn btn-primary w-100" type="submit">
+                                <button class="btn btn-primary w-100 py-2 fw-semibold shadow-sm" type="submit">
                                     <svg class="icon me-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                                         <path fill="var(--ci-primary-color, currentcolor)"
                                             d="M16 112v384h480V112Zm220.8 229.6a32.17 32.17 0 0 0 38.4 0l23.467-17.6L464 448v16H48v-16l165.333-124ZM256 316 48 160v-16h416v16ZM48 200l138.667 104L48 408Zm416 208L325.333 304 464 200Z"

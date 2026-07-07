@@ -2272,6 +2272,15 @@ $(document).ready(function () {
         if (flashMessages.dataset.validation)
             toastr.error(flashMessages.dataset.validation);
     }
+
+    const toastSource = document.getElementById("users-toast-source");
+    if (toastSource && typeof toastr !== "undefined") {
+        const msg = toastSource.dataset.message;
+        const type = toastSource.dataset.type || "success";
+        if (type === "success") toastr.success(msg);
+        else if (type === "danger" || type === "error") toastr.error(msg);
+        else toastr.info(msg);
+    }
 });
 
 // --- Maintenance Report Scripts ---
