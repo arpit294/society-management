@@ -194,10 +194,38 @@
                                             </div>
                                             <div>
                                                 <h6 class="mb-0 fw-bold text-body" style="font-size: 0.9rem;">Total Inflow (Revenue)</h6>
-                                                <span class="text-muted small" style="font-size: 0.75rem;">Maintenance & Transfer Fees</span>
+                                                <span class="text-muted small" style="font-size: 0.75rem;">Maintenance, Transfer & Penalty Fees</span>
                                             </div>
                                         </div>
                                         <span class="fw-bold text-success fs-6">+ {{ \App\Helpers\CurrencyHelper::formatCurrency($thisMonthRevenue) }}</span>
+                                    </div>
+
+                                    <!-- This Month Penalty Income -->
+                                    <div class="p-3 rounded-3 border d-flex align-items-center justify-content-between" style="background: rgba(245, 158, 11, 0.05); border-color: rgba(245, 158, 11, 0.2) !important;">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="avatar avatar-md rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
+                                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold text-body" style="font-size: 0.9rem;">Penalty Income (Late Fees)</h6>
+                                                <span class="text-muted small" style="font-size: 0.75rem;">Collected from overdue maintenance bills</span>
+                                            </div>
+                                        </div>
+                                        <span class="fw-bold text-warning fs-6">+ {{ \App\Helpers\CurrencyHelper::formatCurrency($thisMonthPenalty ?? 0) }}</span>
+                                    </div>
+
+                                    <!-- This Month Transfer Income -->
+                                    <div class="p-3 rounded-3 border d-flex align-items-center justify-content-between" style="background: rgba(59, 130, 246, 0.05); border-color: rgba(59, 130, 246, 0.2) !important;">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="avatar avatar-md rounded-circle bg-info bg-opacity-10 text-info d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
+                                                <i class="fa-solid fa-right-left"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0 fw-bold text-body" style="font-size: 0.9rem;">Transfer Fee Income</h6>
+                                                <span class="text-muted small" style="font-size: 0.75rem;">Collected from flat ownership transfers</span>
+                                            </div>
+                                        </div>
+                                        <span class="fw-bold text-info fs-6">+ {{ \App\Helpers\CurrencyHelper::formatCurrency($thisMonthTransfer ?? 0) }}</span>
                                     </div>
 
                                     <!-- This Month Outflow -->
@@ -259,25 +287,25 @@
                                                 <tr class="border-bottom" style="border-color: rgba(255, 255, 255, 0.05) !important;">
                                                     <td class="py-3">
                                                         <div class="d-flex align-items-center gap-3">
-                                                            <div class="avatar avatar-sm rounded-circle {{ $tx->type === 'income' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger' }} d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;">
-                                                                <i class="fa-solid {{ $tx->type === 'income' ? 'fa-arrow-down-long' : 'fa-arrow-up-long' }}"></i>
+                                                            <div class="avatar avatar-sm rounded-circle {{ $tx->type === 'income' ? ($tx->category === 'Penalty Fee' ? 'bg-warning bg-opacity-10 text-warning' : 'bg-success bg-opacity-10 text-success') : 'bg-danger bg-opacity-10 text-danger' }} d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;">
+                                                                <i class="fa-solid {{ $tx->type === 'income' ? ($tx->category === 'Penalty Fee' ? 'fa-circle-exclamation' : 'fa-arrow-down-long') : 'fa-arrow-up-long' }}"></i>
                                                             </div>
                                                             <div>
                                                                 <h6 class="mb-0 fw-semibold text-body" style="font-size: 0.9rem;">{{ $tx->title }}</h6>
                                                                 <span class="text-muted small" style="font-size: 0.75rem;">
-                                                                    <i class="fa-solid {{ $tx->type === 'income' ? 'fa-circle-plus text-success' : 'fa-circle-minus text-danger' }} me-1"></i>
+                                                                    <i class="fa-solid {{ $tx->type === 'income' ? ($tx->category === 'Penalty Fee' ? 'fa-circle-plus text-warning' : 'fa-circle-plus text-success') : 'fa-circle-minus text-danger' }} me-1"></i>
                                                                     {{ ucfirst($tx->type) }} Record
                                                                 </span>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td class="py-3">
-                                                        <span class="badge {{ $tx->type === 'income' ? 'bg-success bg-opacity-10 text-success border border-success' : 'bg-secondary bg-opacity-10 text-secondary border border-secondary' }} border-opacity-25 px-2 py-1 small fw-medium">
+                                                        <span class="badge {{ $tx->type === 'income' ? ($tx->category === 'Penalty Fee' ? 'bg-warning bg-opacity-10 text-warning border border-warning' : 'bg-success bg-opacity-10 text-success border border-success') : 'bg-secondary bg-opacity-10 text-secondary border border-secondary' }} border-opacity-25 px-2 py-1 small fw-medium">
                                                             {{ $tx->category }}
                                                         </span>
                                                     </td>
                                                     <td class="py-3 text-end">
-                                                        <span class="fw-bold {{ $tx->type === 'income' ? 'text-success' : 'text-danger' }}">
+                                                        <span class="fw-bold {{ $tx->type === 'income' ? ($tx->category === 'Penalty Fee' ? 'text-warning' : 'text-success') : 'text-danger' }}">
                                                             {{ $tx->type === 'income' ? '+' : '-' }} {{ \App\Helpers\CurrencyHelper::formatCurrency($tx->amount) }}
                                                         </span>
                                                     </td>

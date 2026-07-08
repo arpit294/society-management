@@ -2,7 +2,9 @@
     <h5 class="modal-title text-body" id="addDocumentModalLabel">Upload Flat Documents</h5>
     <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
 </div>
-<form id="addDocumentForm" class="add-document-form" action="{{ route('flat-documents.store') }}" method="POST" enctype="multipart/form-data" data-settings="{{ json_encode($settings) }}" data-requirements="{{ json_encode($documentRequirements) }}">
+<form id="addDocumentForm" class="add-document-form" action="{{ route('flat-documents.store') }}" method="POST"
+    enctype="multipart/form-data" data-settings="{{ json_encode($settings) }}"
+    data-requirements="{{ json_encode($documentRequirements) }}">
     @csrf
     <div class="modal-body">
         <div class="row mb-3">
@@ -30,16 +32,7 @@
             </div>
         </div>
 
-        <div class="row mb-3 d-none" id="resident_info_container">
-            <div class="col-md-6">
-                <label class="form-label text-body small">Contact Number</label>
-                <input type="text" class="form-control bg-white text-dark" id="resident_phone" readonly>
-            </div>
-            <div class="col-md-6">
-                <label class="form-label text-body small">Email Address</label>
-                <input type="text" class="form-control bg-white text-dark" id="resident_email" readonly>
-            </div>
-        </div>
+
 
         <hr>
         <h6 class="fw-bold mb-3 text-body">Required Documents</h6>
@@ -53,4 +46,3 @@
         <button type="submit" class="btn btn-primary" id="submitBtn" disabled>Upload Documents</button>
     </div>
 </form>
-

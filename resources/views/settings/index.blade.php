@@ -314,14 +314,31 @@
                                 ];
                             @endphp
                             @foreach ($ownerDocs as $key => $label)
+                                @php
+                                    $currentVal = $settings['req_doc_owner_' . $key] ?? '1';
+                                    $isEnabled = $currentVal != '0';
+                                    $optVal = $currentVal == '2' ? '2' : '1';
+                                @endphp
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label text-body small fw-semibold ms-1 mb-1"
-                                        for="req_doc_owner_{{ $key }}">{{ $label }}</label>
-                                    <select class="form-select form-select-sm border shadow-sm" id="req_doc_owner_{{ $key }}" name="req_doc_owner_{{ $key }}">
-                                        <option value="1" {{ ($settings['req_doc_owner_' . $key] ?? '1') == '1' ? 'selected' : '' }}>🔴 Required (Mandatory)</option>
-                                        <option value="2" {{ ($settings['req_doc_owner_' . $key] ?? '1') == '2' ? 'selected' : '' }}>🟡 Optional (If Available)</option>
-                                        <option value="0" {{ ($settings['req_doc_owner_' . $key] ?? '1') == '0' ? 'selected' : '' }}>⚪ Disabled / Hidden</option>
-                                    </select>
+                                    <div class="doc-setting-card h-100 d-flex flex-column justify-content-between transition-all" data-setting-key="req_doc_owner_{{ $key }}">
+                                        <input type="hidden" name="req_doc_owner_{{ $key }}" class="real-setting-input" value="{{ $currentVal }}">
+                                        
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                            <label class="form-label doc-title-label fw-bold mb-0 cursor-pointer" for="toggle_owner_{{ $key }}">{{ $label }}</label>
+                                            <div class="form-check form-switch m-0 fs-5">
+                                                <input class="form-check-input doc-enable-toggle cursor-pointer m-0" type="checkbox" role="switch" 
+                                                    id="toggle_owner_{{ $key }}" {{ $isEnabled ? 'checked' : '' }} title="Enable or Disable {{ $label }}">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="doc-options-container mt-1 transition-all" style="{{ $isEnabled ? '' : 'opacity: 0.35; pointer-events: none;' }}">
+                                            <label class="text-muted doc-req-label small fw-semibold d-block mb-1">Requirement Type:</label>
+                                            <select class="form-select form-select-sm border shadow-sm doc-type-select fw-medium" {{ $isEnabled ? '' : 'disabled' }}>
+                                                <option value="1" {{ $optVal == '1' ? 'selected' : '' }}>🔴 Required (Mandatory)</option>
+                                                <option value="2" {{ $optVal == '2' ? 'selected' : '' }}>🟡 Optional (If Available)</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -348,14 +365,31 @@
                                 ];
                             @endphp
                             @foreach ($rentalDocs as $key => $label)
+                                @php
+                                    $currentVal = $settings['req_doc_rental_' . $key] ?? '1';
+                                    $isEnabled = $currentVal != '0';
+                                    $optVal = $currentVal == '2' ? '2' : '1';
+                                @endphp
                                 <div class="col-md-4 mb-3">
-                                    <label class="form-label text-body small fw-semibold ms-1 mb-1"
-                                        for="req_doc_rental_{{ $key }}">{{ $label }}</label>
-                                    <select class="form-select form-select-sm border shadow-sm" id="req_doc_rental_{{ $key }}" name="req_doc_rental_{{ $key }}">
-                                        <option value="1" {{ ($settings['req_doc_rental_' . $key] ?? '1') == '1' ? 'selected' : '' }}>🔴 Required (Mandatory)</option>
-                                        <option value="2" {{ ($settings['req_doc_rental_' . $key] ?? '1') == '2' ? 'selected' : '' }}>🟡 Optional (If Available)</option>
-                                        <option value="0" {{ ($settings['req_doc_rental_' . $key] ?? '1') == '0' ? 'selected' : '' }}>⚪ Disabled / Hidden</option>
-                                    </select>
+                                    <div class="doc-setting-card h-100 d-flex flex-column justify-content-between transition-all" data-setting-key="req_doc_rental_{{ $key }}">
+                                        <input type="hidden" name="req_doc_rental_{{ $key }}" class="real-setting-input" value="{{ $currentVal }}">
+                                        
+                                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                            <label class="form-label doc-title-label fw-bold mb-0 cursor-pointer" for="toggle_rental_{{ $key }}">{{ $label }}</label>
+                                            <div class="form-check form-switch m-0 fs-5">
+                                                <input class="form-check-input doc-enable-toggle cursor-pointer m-0" type="checkbox" role="switch" 
+                                                    id="toggle_rental_{{ $key }}" {{ $isEnabled ? 'checked' : '' }} title="Enable or Disable {{ $label }}">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="doc-options-container mt-1 transition-all" style="{{ $isEnabled ? '' : 'opacity: 0.35; pointer-events: none;' }}">
+                                            <label class="text-muted doc-req-label small fw-semibold d-block mb-1">Requirement Type:</label>
+                                            <select class="form-select form-select-sm border shadow-sm doc-type-select fw-medium" {{ $isEnabled ? '' : 'disabled' }}>
+                                                <option value="1" {{ $optVal == '1' ? 'selected' : '' }}>🔴 Required (Mandatory)</option>
+                                                <option value="2" {{ $optVal == '2' ? 'selected' : '' }}>🟡 Optional (If Available)</option>
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
                             @endforeach
                         </div>
@@ -971,6 +1005,42 @@
                         });
                     });
                 }
+
+                // Document Settings 2-Step Interactive Flow
+                document.addEventListener('change', function(e) {
+                    if (e.target.classList.contains('doc-enable-toggle')) {
+                        const card = e.target.closest('.doc-setting-card');
+                        if (!card) return;
+                        const hiddenInput = card.querySelector('.real-setting-input');
+                        const select = card.querySelector('.doc-type-select');
+                        const container = card.querySelector('.doc-options-container');
+
+                        if (e.target.checked) {
+                            if (select) select.disabled = false;
+                            if (container) {
+                                container.style.opacity = '1';
+                                container.style.pointerEvents = 'auto';
+                            }
+                            if (hiddenInput && select) hiddenInput.value = select.value;
+                        } else {
+                            if (select) select.disabled = true;
+                            if (container) {
+                                container.style.opacity = '0.35';
+                                container.style.pointerEvents = 'none';
+                            }
+                            if (hiddenInput) hiddenInput.value = '0';
+                        }
+                    } else if (e.target.classList.contains('doc-type-select')) {
+                        const card = e.target.closest('.doc-setting-card');
+                        if (!card) return;
+                        const hiddenInput = card.querySelector('.real-setting-input');
+                        const toggle = card.querySelector('.doc-enable-toggle');
+
+                        if (toggle && toggle.checked && hiddenInput) {
+                            hiddenInput.value = e.target.value;
+                        }
+                    }
+                });
             });
         </script>
     @endpush

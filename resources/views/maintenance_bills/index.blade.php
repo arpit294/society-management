@@ -1,10 +1,9 @@
 <x-user-page>
 
 <!-- Summary Cards Row -->
-<!-- Summary Cards Row -->
 <div class="row g-4 mb-4">
     <!-- Total Collected -->
-    <div class="col-sm-6 col-xl-4">
+    <div class="col-sm-6 col-xl-3">
         <div class="card kpi-hero-card kpi-theme-emerald h-100 border-0">
             <div class="card-body p-4 d-flex flex-column justify-content-between">
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -24,7 +23,7 @@
         </div>
     </div>
     <!-- Cash Collected -->
-    <div class="col-sm-6 col-xl-4">
+    <div class="col-sm-6 col-xl-3">
         <div class="card kpi-hero-card kpi-theme-indigo h-100 border-0">
             <div class="card-body p-4 d-flex flex-column justify-content-between">
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -44,7 +43,7 @@
         </div>
     </div>
     <!-- UPI Collected -->
-    <div class="col-sm-6 col-xl-4">
+    <div class="col-sm-6 col-xl-3">
         <div class="card kpi-hero-card kpi-theme-cyan h-100 border-0">
             <div class="card-body p-4 d-flex flex-column justify-content-between">
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -58,6 +57,26 @@
                 <div class="mt-2">
                     <div class="kpi-label mb-1">UPI Collections</div>
                     <div class="kpi-number" style="font-size: 1.85rem;">{{ \App\Helpers\CurrencyHelper::formatCurrency($upiCollected) }}</div>
+                </div>
+                <div class="kpi-glow-orb"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Penalty Collected -->
+    <div class="col-sm-6 col-xl-3">
+        <div class="card kpi-hero-card kpi-theme-rose h-100 border-0">
+            <div class="card-body p-4 d-flex flex-column justify-content-between">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="kpi-icon-pedestal">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                    </div>
+                    <span class="kpi-status-pill">
+                        <span class="kpi-status-dot"></span> Late Fees
+                    </span>
+                </div>
+                <div class="mt-2">
+                    <div class="kpi-label mb-1">Penalty Collected</div>
+                    <div class="kpi-number" style="font-size: 1.85rem;">{{ \App\Helpers\CurrencyHelper::formatCurrency($penaltyCollected ?? 0) }}</div>
                 </div>
                 <div class="kpi-glow-orb"></div>
             </div>
@@ -210,62 +229,5 @@
 
 @push('scripts')
     {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
-    <script>
-        let currentMaintenanceStatusUrl = "";
-        $(document).on("click", ".btn-status-maintenance", function () {
-            currentMaintenanceStatusUrl = $(this).data("url");
-            let currentStatus = $(this).data("status") || "due";
-            $("#maintenance-bill-status-select").val(currentStatus.toLowerCase()).trigger("change");
-            $("#status-maintenance-modal").modal("show");
-        });
-
-        $(document).on("change", "#maintenance-bill-status-select", function () {
-            if ($(this).val() === "paid") {
-                $("#maintenance-payment-method-container").show();
-                $("#maintenance-status-payment-method").trigger("change");
-            } else {
-                $("#maintenance-payment-method-container").hide();
-                $("#maintenance-upi-container").hide();
-            }
-        });
-
-        $(document).on("change", "#maintenance-status-payment-method", function () {
-            if ($("#maintenance-bill-status-select").val() === "paid" && $(this).val() === "upi") {
-                $("#maintenance-upi-container").show();
-            } else {
-                $("#maintenance-upi-container").hide();
-            }
-        });
-
-        $(document).on("submit", "#status-maintenance-form", function (e) {
-            e.preventDefault();
-            let btn = $("#btn-save-maintenance-status");
-            let originalText = btn.html();
-            btn.html('<span class="spinner-border spinner-border-sm"></span> Saving...').prop("disabled", true);
-
-            let formData = new FormData(this);
-            $.ajax({
-                url: currentMaintenanceStatusUrl,
-                type: "POST",
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (response) {
-                    $("#status-maintenance-modal").modal("hide");
-                    if (typeof window.LaravelDataTables !== "undefined" && window.LaravelDataTables["maintenance-bills-table"]) {
-                        window.LaravelDataTables["maintenance-bills-table"].ajax.reload(null, false);
-                    }
-                    toastr.success(response.message || "Status updated successfully.");
-                },
-                error: function (xhr) {
-                    let msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : "Error updating status";
-                    toastr.error(msg);
-                },
-                complete: function () {
-                    btn.html(originalText).prop("disabled", false);
-                }
-            });
-        });
-    </script>
 @endpush
 </x-user-page>

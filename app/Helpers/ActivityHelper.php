@@ -41,8 +41,8 @@ class ActivityHelper
                         'bg_class' => 'bg-success bg-opacity-10 text-success',
                         'title' => 'Payment Received',
                         'description' => "{$residentName} (Flat #{$flatNo}) paid " . CurrencyHelper::formatCurrency($totalAmount) . $durationText,
-                        'time' => $bill->updated_at->diffForHumans(),
-                        'timestamp' => $bill->updated_at,
+                        'time' => \Carbon\Carbon::parse($bill->updated_at ?? $bill->created_at ?? now())->diffForHumans(),
+                        'timestamp' => \Carbon\Carbon::parse($bill->updated_at ?? $bill->created_at ?? now()),
                         'url' => route('maintenance-bills.index'),
                         'badge_text' => 'Paid Online',
                         'badge_class' => 'bg-success bg-opacity-10 text-success border border-success border-opacity-25'
@@ -62,15 +62,20 @@ class ActivityHelper
                         'bg_class' => 'bg-warning bg-opacity-10 text-warning',
                         'title' => 'New Complaint Logged',
                         'description' => "{$userName}: \"{$complain->subject}\"",
-                        'time' => $complain->created_at->diffForHumans(),
-                        'timestamp' => $complain->created_at,
+                        'time' => \Carbon\Carbon::parse($complain->created_at ?? $complain->updated_at ?? now())->diffForHumans(),
+                        'timestamp' => \Carbon\Carbon::parse($complain->created_at ?? $complain->updated_at ?? now()),
                         'url' => route('complains.index'),
                         'badge_text' => 'Pending Review',
                         'badge_class' => 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25'
                     ];
                 });
 
-            $recentUsers = User::latest('created_at')
+            $unapprovedTransferUserIds = NameTransferBill::where(function($q) {
+                $q->where('is_approved', false)->orWhereNull('is_approved');
+            })->pluck('new_owner_id')->filter()->toArray();
+
+            $recentUsers = User::whereNotIn('id', $unapprovedTransferUserIds)
+                ->latest('updated_at')
                 ->take(3)
                 ->get()
                 ->map(function ($user) {
@@ -81,8 +86,8 @@ class ActivityHelper
                         'bg_class' => 'bg-primary bg-opacity-10 text-primary',
                         'title' => 'New Resident Registered',
                         'description' => "{$user->name} joined as {$roleLabel}",
-                        'time' => $user->created_at->diffForHumans(),
-                        'timestamp' => $user->created_at,
+                        'time' => \Carbon\Carbon::parse($user->updated_at ?? $user->created_at ?? now())->diffForHumans(),
+                        'timestamp' => \Carbon\Carbon::parse($user->updated_at ?? $user->created_at ?? now()),
                         'url' => route('residents.index'),
                         'badge_text' => 'New Member',
                         'badge_class' => 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25'
@@ -90,7 +95,8 @@ class ActivityHelper
                 });
 
             $recentTransfers = NameTransferBill::with('flat.block', 'oldOwner', 'newOwner')
-                ->latest('created_at')
+                ->where('is_approved', true)
+                ->latest('updated_at')
                 ->take(4)
                 ->get()
                 ->map(function ($transfer) {
@@ -104,8 +110,8 @@ class ActivityHelper
                         'bg_class' => 'bg-info bg-opacity-10 text-info',
                         'title' => 'Ownership Transferred',
                         'description' => "Flat #{$flatNo} transferred from {$oldName} to {$newName}",
-                        'time' => $transfer->created_at->diffForHumans(),
-                        'timestamp' => $transfer->created_at,
+                        'time' => \Carbon\Carbon::parse($transfer->updated_at ?? $transfer->created_at ?? now())->diffForHumans(),
+                        'timestamp' => \Carbon\Carbon::parse($transfer->updated_at ?? $transfer->created_at ?? now()),
                         'url' => route('name-transfer-bills.index'),
                         'badge_text' => 'Transfer',
                         'badge_class' => 'bg-info bg-opacity-10 text-info border border-info border-opacity-25'

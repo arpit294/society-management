@@ -82,63 +82,6 @@
                 </div>
             </li>
 
-            <script>
-                function markAllNotificationsAsRead(e) {
-                    if (e) e.stopPropagation();
-                    localStorage.setItem('smp_notifications_cleared_time', Date.now());
-                    
-                    const badge = document.getElementById('bell-badge-counter');
-                    if (badge) {
-                        badge.innerText = '0';
-                        badge.classList.remove('notification-badge-pulse');
-                    }
-                    
-                    const btn = document.getElementById('mark-all-read-btn');
-                    if (btn) btn.style.setProperty('display', 'none', 'important');
-                    
-                    const listContainer = document.getElementById('notification-list-container');
-                    if (listContainer) listContainer.style.setProperty('display', 'none', 'important');
-                    
-                    const emptyState = document.getElementById('notification-empty-state');
-                    if (emptyState) emptyState.style.setProperty('display', 'block', 'important');
-                }
-
-                document.addEventListener('DOMContentLoaded', function() {
-                    const clearedTime = localStorage.getItem('smp_notifications_cleared_time');
-                    if (!clearedTime) return;
-                    
-                    const items = document.querySelectorAll('.notification-item-row');
-                    let visibleCount = 0;
-                    
-                    items.forEach(item => {
-                        const itemTime = parseInt(item.getAttribute('data-timestamp') || '0', 10);
-                        if (itemTime <= clearedTime) {
-                            item.style.setProperty('display', 'none', 'important');
-                        } else {
-                            visibleCount++;
-                        }
-                    });
-                    
-                    const badge = document.getElementById('bell-badge-counter');
-                    const btn = document.getElementById('mark-all-read-btn');
-                    const listContainer = document.getElementById('notification-list-container');
-                    const emptyState = document.getElementById('notification-empty-state');
-                    
-                    if (badge) badge.innerText = visibleCount;
-                    
-                    if (visibleCount === 0) {
-                        if (badge) badge.classList.remove('notification-badge-pulse');
-                        if (btn) btn.style.setProperty('display', 'none', 'important');
-                        if (listContainer) listContainer.style.setProperty('display', 'none', 'important');
-                        if (emptyState) emptyState.style.setProperty('display', 'block', 'important');
-                    } else {
-                        if (btn) btn.style.setProperty('display', 'inline', 'important');
-                        if (listContainer) listContainer.style.setProperty('display', 'block', 'important');
-                        if (emptyState) emptyState.style.setProperty('display', 'none', 'important');
-                    }
-                });
-            </script>
-
             <!-- Separator 2 -->
             <li class="nav-item py-1 d-flex align-items-center">
                 <div class="vr mx-2 text-body text-opacity-25" style="height: 20px;"></div>

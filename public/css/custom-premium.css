@@ -830,28 +830,85 @@ h1, h2, h3, h4, h5, h6, .card-title, .sidebar-brand, .header-brand {
     color: #0f172a !important;
 }
 
-/* 4. Dashboard KPI Hero Cards & Stat Cards */
+/* 4. Dashboard KPI Hero Cards, Stat Cards & All Cards Light Theme Fixes */
 [data-coreui-theme="light"] .kpi-hero-card,
-[data-coreui-theme="light"] .dash-card {
+[data-coreui-theme="light"] .dash-card,
+[data-coreui-theme="light"] .glass-card,
+[data-coreui-theme="light"] .stat-card,
+[data-coreui-theme="light"] .kpi-card {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%) !important;
     border: 1px solid rgba(0, 0, 0, 0.08) !important;
     box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.08) !important;
+    color: #1e293b !important;
 }
 
 [data-coreui-theme="light"] .kpi-hero-card .kpi-label,
 [data-coreui-theme="light"] .dash-card .text-secondary,
-[data-coreui-theme="light"] .dash-card .text-muted {
+[data-coreui-theme="light"] .dash-card .text-muted,
+[data-coreui-theme="light"] .glass-card .text-secondary,
+[data-coreui-theme="light"] .glass-card .text-muted,
+[data-coreui-theme="light"] .card .text-secondary,
+[data-coreui-theme="light"] .card .text-muted {
     color: #64748b !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: #64748b !important;
 }
 
+[data-coreui-theme="light"] .kpi-hero-card:hover .kpi-label,
+[data-coreui-theme="light"] .card:hover .kpi-label {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+}
+
+/* Fix White & Light Text inside cards in Light Theme */
+[data-coreui-theme="light"] .card .text-light,
+[data-coreui-theme="light"] .card .text-white,
+[data-coreui-theme="light"] .card .text-white-50,
+[data-coreui-theme="light"] .kpi-hero-card .text-light,
+[data-coreui-theme="light"] .kpi-hero-card .text-white,
+[data-coreui-theme="light"] .kpi-hero-card .text-white-50,
+[data-coreui-theme="light"] .dash-card .text-light,
+[data-coreui-theme="light"] .dash-card .text-white,
+[data-coreui-theme="light"] .dash-card .text-white-50,
+[data-coreui-theme="light"] .glass-card .text-light,
+[data-coreui-theme="light"] .glass-card .text-white,
+[data-coreui-theme="light"] .glass-card .text-white-50,
+[data-coreui-theme="light"] .stat-card .text-light,
+[data-coreui-theme="light"] .stat-card .text-white,
+[data-coreui-theme="light"] .stat-card .text-white-50 {
+    color: #334155 !important;
+    opacity: 0.95 !important;
+    -webkit-text-fill-color: #334155 !important;
+}
+
+/* Fix KPI Numbers, Values, and Headings inside cards in Light Theme */
+[data-coreui-theme="light"] .kpi-hero-card .kpi-number,
 [data-coreui-theme="light"] .kpi-hero-card .kpi-value,
 [data-coreui-theme="light"] .dash-card h3,
-[data-coreui-theme="light"] .dash-card h4 {
-    background: linear-gradient(135deg, #0f172a 0%, #334155 50%, #475569 100%) !important;
+[data-coreui-theme="light"] .dash-card h4,
+[data-coreui-theme="light"] .glass-card h3,
+[data-coreui-theme="light"] .glass-card h4,
+[data-coreui-theme="light"] .card .kpi-number,
+[data-coreui-theme="light"] .card .kpi-value,
+[data-coreui-theme="light"] .card h3,
+[data-coreui-theme="light"] .card h4,
+[data-coreui-theme="light"] .kpi-number,
+[data-coreui-theme="light"] .kpi-value {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
     text-shadow: none !important;
+    color: #0f172a !important;
 }
+
+/* Fix KPI Status Pills in Light Theme for better contrast */
+[data-coreui-theme="light"] .kpi-status-pill {
+    font-weight: 700 !important;
+}
+[data-coreui-theme="light"] .kpi-theme-indigo .kpi-status-pill { background: rgba(79, 70, 229, 0.12) !important; color: #4338ca !important; border: 1px solid rgba(79, 70, 229, 0.3) !important; }
+[data-coreui-theme="light"] .kpi-theme-cyan .kpi-status-pill { background: rgba(8, 145, 178, 0.12) !important; color: #0e7490 !important; border: 1px solid rgba(8, 145, 178, 0.3) !important; }
+[data-coreui-theme="light"] .kpi-theme-rose .kpi-status-pill { background: rgba(225, 29, 72, 0.12) !important; color: #be123c !important; border: 1px solid rgba(225, 29, 72, 0.3) !important; }
+[data-coreui-theme="light"] .kpi-theme-emerald .kpi-status-pill { background: rgba(5, 150, 105, 0.12) !important; color: #047857 !important; border: 1px solid rgba(5, 150, 105, 0.3) !important; }
 
 /* 5. Tables & DataTables Polish */
 [data-coreui-theme="light"] .table,
@@ -1043,4 +1100,98 @@ h1, h2, h3, h4, h5, h6, .card-title, .sidebar-brand, .header-brand {
     border-color: rgba(99, 102, 241, 0.4) !important;
     box-shadow: 0 12px 25px -5px rgba(99, 102, 241, 0.18) !important;
 }
+
+/* ==========================================================================
+   10. Required Documents Settings 2-Step Card UI
+   ========================================================================== */
+.doc-setting-card {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04) !important;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    padding: 1.15rem !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.doc-setting-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08) !important;
+    border-color: #6366f1 !important;
+}
+
+.doc-setting-card .doc-title-label {
+    color: #1e293b !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.3px;
+    margin-bottom: 0 !important;
+}
+
+.doc-setting-card .doc-type-select {
+    background-color: #f8fafc !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 8px !important;
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.85rem !important;
+}
+
+.doc-setting-card .doc-type-select:focus {
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+}
+
+/* Dark Mode Adaptation for Document Cards */
+[data-coreui-theme="dark"] .doc-setting-card,
+[data-theme="dark"] .doc-setting-card,
+body.dark-mode .doc-setting-card {
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%) !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3) !important;
+}
+
+[data-coreui-theme="dark"] .doc-setting-card:hover,
+[data-theme="dark"] .doc-setting-card:hover,
+body.dark-mode .doc-setting-card:hover {
+    border-color: #818cf8 !important;
+    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.2) !important;
+}
+
+[data-coreui-theme="dark"] .doc-setting-card .doc-title-label,
+[data-theme="dark"] .doc-setting-card .doc-title-label,
+body.dark-mode .doc-setting-card .doc-title-label {
+    color: #f8fafc !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+[data-coreui-theme="dark"] .doc-setting-card .doc-type-select,
+[data-theme="dark"] .doc-setting-card .doc-type-select,
+body.dark-mode .doc-setting-card .doc-type-select {
+    background-color: #0f172a !important;
+    border: 1.5px solid #475569 !important;
+    color: #e2e8f0 !important;
+}
+
+[data-coreui-theme="dark"] .doc-setting-card .doc-type-select:focus,
+[data-theme="dark"] .doc-setting-card .doc-type-select:focus,
+body.dark-mode .doc-setting-card .doc-type-select:focus {
+    border-color: #818cf8 !important;
+    box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.2) !important;
+}
+
+[data-coreui-theme="dark"] .doc-setting-card .doc-req-label,
+[data-theme="dark"] .doc-setting-card .doc-req-label,
+body.dark-mode .doc-setting-card .doc-req-label {
+    color: #94a3b8 !important;
+}
+
+.doc-setting-card .doc-enable-toggle {
+    width: 2.75rem !important;
+    height: 1.5rem !important;
+    cursor: pointer !important;
+}
+
 

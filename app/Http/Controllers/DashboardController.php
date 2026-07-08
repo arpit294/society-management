@@ -114,12 +114,13 @@ class DashboardController extends Controller
                         'icon' => 'fa-solid fa-money-bill-wave text-success',
                         'title' => 'Payment Received',
                         'description' => "{$residentName} (Flat #{$flatNo}) paid " . CurrencyHelper::formatCurrency($totalAmount) . $durationText,
-                        'time' => $bill->updated_at->diffForHumans(),
-                        'timestamp' => $bill->updated_at
+                        'time' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now())->diffForHumans(),
+                        'timestamp' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now())
                     ];
                 })
                 ->values();
 
+            // Fetch recent complaints and map them to activity feed format
             $recentComplaints = Complain::with('user')
                 ->latest('created_at')
                 ->take(4)
@@ -131,12 +132,17 @@ class DashboardController extends Controller
                         'icon' => 'fa-solid fa-exclamation-circle text-danger',
                         'title' => 'New Complaint Logged',
                         'description' => "{$userName}: \"{$complain->subject}\"",
-                        'time' => $complain->created_at->diffForHumans(),
-                        'timestamp' => $complain->created_at
+                        'time' => Carbon::parse($complain->created_at ?? $complain->updated_at ?? now())->diffForHumans(),
+                        'timestamp' => Carbon::parse($complain->created_at ?? $complain->updated_at ?? now())
                     ];
                 });
 
-            $recentUsers = User::latest('created_at')
+            $unapprovedTransferUserIds = NameTransferBill::where(function ($q) {
+                $q->where('is_approved', false)->orWhereNull('is_approved');
+            })->pluck('new_owner_id')->filter()->toArray();
+
+            $recentUsers = User::whereNotIn('id', $unapprovedTransferUserIds)
+                ->latest('updated_at')
                 ->take(3)
                 ->get()
                 ->map(function ($user) {
@@ -146,13 +152,14 @@ class DashboardController extends Controller
                         'icon' => 'fa-solid fa-user-check text-primary',
                         'title' => 'New Resident Registered',
                         'description' => "{$user->name} joined as {$roleLabel}",
-                        'time' => $user->created_at->diffForHumans(),
-                        'timestamp' => $user->created_at
+                        'time' => Carbon::parse($user->updated_at ?? $user->created_at ?? now())->diffForHumans(),
+                        'timestamp' => Carbon::parse($user->updated_at ?? $user->created_at ?? now())
                     ];
                 });
 
-            $recentTransfers = \App\Models\NameTransferBill::with('flat.block', 'oldOwner', 'newOwner')
-                ->latest('created_at')
+            $recentTransfers = NameTransferBill::with('flat.block', 'oldOwner', 'newOwner')
+                ->where('is_approved', true)
+                ->latest('updated_at')
                 ->take(4)
                 ->get()
                 ->map(function ($transfer) {
@@ -165,8 +172,8 @@ class DashboardController extends Controller
                         'icon' => 'fa-solid fa-right-left text-warning',
                         'title' => 'Ownership Transferred',
                         'description' => "Flat #{$flatNo} transferred from {$oldName} to {$newName}",
-                        'time' => $transfer->created_at->diffForHumans(),
-                        'timestamp' => $transfer->created_at
+                        'time' => Carbon::parse($transfer->updated_at ?? $transfer->created_at ?? now())->diffForHumans(),
+                        'timestamp' => Carbon::parse($transfer->updated_at ?? $transfer->created_at ?? now())
                     ];
                 });
 
@@ -179,10 +186,28 @@ class DashboardController extends Controller
             $thisMonthRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))
                 ->whereMonth('updated_at', now()->month)
                 ->whereYear('updated_at', now()->year)
-                ->sum('total_amount') 
+                ->sum('total_amount')
                 + NameTransferBill::where('status', config('status.name_transfer_bills.paid'))
+                ->where('is_approved', true)
                 ->whereMonth('updated_at', now()->month)
                 ->whereYear('updated_at', now()->year)
+                ->sum('amount');
+
+            $thisMonthPenalty = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))
+                ->whereMonth('updated_at', now()->month)
+                ->whereYear('updated_at', now()->year)
+                ->sum('penalty_amount');
+
+            $totalPenaltyRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->sum('penalty_amount');
+
+            $thisMonthTransfer = NameTransferBill::where('status', config('status.name_transfer_bills.paid'))
+                ->where('is_approved', true)
+                ->whereMonth('updated_at', now()->month)
+                ->whereYear('updated_at', now()->year)
+                ->sum('amount');
+
+            $totalTransferRevenue = NameTransferBill::where('status', config('status.name_transfer_bills.paid'))
+                ->where('is_approved', true)
                 ->sum('amount');
 
             $thisMonthExpense = Expense::whereMonth(DB::raw('COALESCE(expense_date, created_at)'), now()->month)
@@ -196,22 +221,65 @@ class DashboardController extends Controller
             $recentIncomeBills = MaintenanceBill::with('user', 'flat', 'block')
                 ->where('status', config('status.maintenance_bills.paid'))
                 ->latest('updated_at')
-                ->take(6)
+                ->take(30)
                 ->get()
-                ->map(function ($bill) {
-                    $flatNo = ($bill->block ? $bill->block->block_name . '-' : '') . ($bill->flat?->flat_no ?? 'N/A');
-                    return (object) [
-                        'type' => 'income',
-                        'category' => 'Maintenance Fee',
-                        'title' => ($bill->user?->name ?? 'Resident') . " (Flat #{$flatNo})",
-                        'amount' => $bill->total_amount,
-                        'timestamp' => $bill->updated_at,
-                        'time' => $bill->updated_at->diffForHumans()
-                    ];
+                ->groupBy(function ($bill) {
+                    return ($bill->user_id ?? '0') . '_' . ($bill->flat_id ?? '0') . '_' . $bill->updated_at->format('Y-m-d');
+                })
+                ->flatMap(function ($group) {
+                    $firstBill = $group->first();
+                    $flatNo = ($firstBill->block ? $firstBill->block->block_name . '-' : '') . ($firstBill->flat?->flat_no ?? 'N/A');
+                    $userName = $firstBill->user?->name ?? 'Resident';
+
+                    $totalBaseAmount = $group->sum(function ($b) {
+                        return (float) $b->total_amount - (float) $b->penalty_amount;
+                    });
+                    $totalPenaltyAmount = $group->sum('penalty_amount');
+                    $totalAmount = $group->sum('total_amount');
+
+                    $latestTimestamp = $group->max('updated_at');
+
+                    $records = [];
+
+                    if ($totalBaseAmount > 0) {
+                        $records[] = (object) [
+                            'type' => 'income',
+                            'category' => 'Maintenance Fee',
+                            'title' => $userName . " (Flat #{$flatNo})",
+                            'amount' => $totalBaseAmount,
+                            'timestamp' => Carbon::parse($latestTimestamp ?? now()),
+                            'time' => Carbon::parse($latestTimestamp ?? now())->diffForHumans()
+                        ];
+                    }
+
+                    if ($totalPenaltyAmount > 0) {
+                        $records[] = (object) [
+                            'type' => 'income',
+                            'category' => 'Penalty Fee',
+                            'title' => "Late Penalty - " . $userName . " (Flat #{$flatNo})",
+                            'amount' => $totalPenaltyAmount,
+                            'timestamp' => Carbon::parse($latestTimestamp ?? now()),
+                            'time' => Carbon::parse($latestTimestamp ?? now())->diffForHumans()
+                        ];
+                    }
+
+                    if (empty($records)) {
+                        $records[] = (object) [
+                            'type' => 'income',
+                            'category' => 'Maintenance Fee',
+                            'title' => $userName . " (Flat #{$flatNo})",
+                            'amount' => $totalAmount,
+                            'timestamp' => Carbon::parse($latestTimestamp ?? now()),
+                            'time' => Carbon::parse($latestTimestamp ?? now())->diffForHumans()
+                        ];
+                    }
+
+                    return $records;
                 });
 
             $recentTransferIncome = NameTransferBill::with('flat.block', 'newOwner')
                 ->where('status', config('status.name_transfer_bills.paid'))
+                ->where('is_approved', true)
                 ->latest('updated_at')
                 ->take(4)
                 ->get()
@@ -222,8 +290,8 @@ class DashboardController extends Controller
                         'category' => 'Transfer Fee',
                         'title' => "Ownership Transfer (Flat #{$flatNo})",
                         'amount' => $bill->amount,
-                        'timestamp' => $bill->updated_at,
-                        'time' => $bill->updated_at->diffForHumans()
+                        'timestamp' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now()),
+                        'time' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now())->diffForHumans()
                     ];
                 });
 
@@ -237,14 +305,14 @@ class DashboardController extends Controller
                         'category' => $exp->category?->title ?? 'General Expense',
                         'title' => $exp->title ?? 'Society Expenditure',
                         'amount' => $exp->total_amount,
-                        'timestamp' => $exp->created_at,
-                        'time' => $exp->created_at->diffForHumans()
+                        'timestamp' => Carbon::parse($exp->created_at ?? $exp->updated_at ?? now()),
+                        'time' => Carbon::parse($exp->created_at ?? $exp->updated_at ?? now())->diffForHumans()
                     ];
                 });
 
             $ledgerTransactions = $recentIncomeBills->concat($recentTransferIncome)->concat($recentExpenseItems)
                 ->sortByDesc('timestamp')
-                ->take(7)
+                ->take(10)
                 ->values();
 
             return view('dashboard', compact(
@@ -267,7 +335,11 @@ class DashboardController extends Controller
                 'thisMonthNet',
                 'cashflowStatus',
                 'cashflowColor',
-                'ledgerTransactions'
+                'ledgerTransactions',
+                'thisMonthPenalty',
+                'totalPenaltyRevenue',
+                'thisMonthTransfer',
+                'totalTransferRevenue'
             ));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {

@@ -212,6 +212,67 @@ select:disabled,
     color: #0f172a !important;
 }
 
+/* --- Universal Light Theme Text Contrast Fixes for All Cards --- */
+[data-coreui-theme="light"] .kpi-hero-card .kpi-number,
+[data-coreui-theme="light"] .kpi-hero-card .kpi-value,
+[data-coreui-theme="light"] .dash-card h3,
+[data-coreui-theme="light"] .dash-card h4,
+[data-coreui-theme="light"] .glass-card h3,
+[data-coreui-theme="light"] .glass-card h4,
+[data-coreui-theme="light"] .card .kpi-number,
+[data-coreui-theme="light"] .card .kpi-value,
+[data-coreui-theme="light"] .card h3,
+[data-coreui-theme="light"] .card h4,
+[data-coreui-theme="light"] .kpi-number,
+[data-coreui-theme="light"] .kpi-value {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    text-shadow: none !important;
+    color: #0f172a !important;
+}
+
+[data-coreui-theme="light"] .card .text-light,
+[data-coreui-theme="light"] .card .text-white,
+[data-coreui-theme="light"] .card .text-white-50,
+[data-coreui-theme="light"] .kpi-hero-card .text-light,
+[data-coreui-theme="light"] .kpi-hero-card .text-white,
+[data-coreui-theme="light"] .kpi-hero-card .text-white-50,
+[data-coreui-theme="light"] .dash-card .text-light,
+[data-coreui-theme="light"] .dash-card .text-white,
+[data-coreui-theme="light"] .dash-card .text-white-50,
+[data-coreui-theme="light"] .glass-card .text-light,
+[data-coreui-theme="light"] .glass-card .text-white,
+[data-coreui-theme="light"] .glass-card .text-white-50,
+[data-coreui-theme="light"] .stat-card .text-light,
+[data-coreui-theme="light"] .stat-card .text-white,
+[data-coreui-theme="light"] .stat-card .text-white-50 {
+    color: #334155 !important;
+    opacity: 0.95 !important;
+    -webkit-text-fill-color: #334155 !important;
+}
+
+[data-coreui-theme="light"] .card .text-muted,
+[data-coreui-theme="light"] .card .text-secondary,
+[data-coreui-theme="light"] .kpi-hero-card .text-muted,
+[data-coreui-theme="light"] .kpi-hero-card .text-secondary,
+[data-coreui-theme="light"] .kpi-hero-card .kpi-label,
+[data-coreui-theme="light"] .dash-card .text-muted,
+[data-coreui-theme="light"] .dash-card .text-secondary,
+[data-coreui-theme="light"] .glass-card .text-muted,
+[data-coreui-theme="light"] .glass-card .text-secondary {
+    color: #64748b !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: #64748b !important;
+}
+
+[data-coreui-theme="light"] .kpi-hero-card:hover .kpi-label,
+[data-coreui-theme="light"] .card:hover .kpi-label {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+}
+
+
 /* --- 3. PREMIUM BUTTON MICRO-ANIMATIONS (100% Click-Safe) --- */
 .btn {
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;

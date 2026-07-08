@@ -189,6 +189,8 @@ Route::middleware('auth')->group(function () {
 
         // Reports
         Route::get('reports/maintenance/export', [ReportController::class, 'exportReport'])->name('reports.maintenance.export');
+        Route::get('reports/expense/export', [ReportController::class, 'exportExpenseReport'])->name('reports.expense.export');
+        Route::get('reports/summary/export', [ReportController::class, 'exportSummaryReport'])->name('reports.summary.export');
         Route::get('reports/maintenance', [ReportController::class, 'maintenanceReport'])->name('reports.maintenance');
         Route::get('reports/maintenance/users-yearly-data', [ReportController::class, 'usersYearlyData'])->name('reports.usersYearly.data');
     });
