@@ -1,45 +1,4 @@
 <x-user-page>
-    <style>
-        .highlight-thead {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%) !important;
-        }
-
-        .highlight-thead tr,
-        .highlight-thead th {
-            background: transparent !important;
-            color: #ffffff !important;
-            font-size: 0.85rem !important;
-            font-weight: 800 !important;
-            letter-spacing: 0.8px !important;
-            text-transform: uppercase !important;
-            padding: 16px 14px !important;
-            border: none !important;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-        }
-
-        .dataTables_wrapper .dataTables_filter input {
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-            padding: 0.375rem 0.75rem;
-            margin-left: 0.5rem;
-        }
-
-        .dataTables_wrapper .dataTables_length select {
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-            padding: 0.375rem 2rem 0.375rem 0.75rem;
-            margin: 0 0.5rem;
-        }
-
-        .dataTables_wrapper .dataTables_paginate .paginate_button {
-            border-radius: 0.375rem !important;
-            padding: 0.25rem 0.6rem !important;
-        }
-
-        .dataTables_wrapper {
-            padding: 1.25rem !important;
-        }
-    </style>
     <div class="row">
         <div class="col-12">
             <div class="card mb-4">
@@ -54,7 +13,8 @@
                             value="{{ request('active_tab', '') }}">
                         <div class="col-xl-2 col-md-4 col-sm-6">
                             <label class="form-label">Report Type</label>
-                            <select name="report_type" class="form-select select2-filter js-auto-submit" id="reportTypeSelect" style="width: 100%;">
+                            <select name="report_type" class="form-select select2-filter js-auto-submit"
+                                id="reportTypeSelect" style="width: 100%;">
                                 <option value="monthly" {{ $reportType == 'monthly' ? 'selected' : '' }}>Monthly
                                 </option>
                                 <option value="yearly" {{ $reportType == 'yearly' ? 'selected' : '' }}>Yearly</option>
@@ -64,7 +24,8 @@
                         <div class="col-xl-2 col-md-4 col-sm-6" id="monthContainer"
                             style="display: {{ $reportType == 'yearly' ? 'none' : 'block' }};">
                             <label class="form-label">Month</label>
-                            <select name="month" class="form-select select2-filter js-auto-submit" style="width: 100%;">
+                            <select name="month" class="form-select select2-filter js-auto-submit"
+                                style="width: 100%;">
                                 @foreach (['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as $month)
                                     <option value="{{ $month }}"
                                         {{ isset($selectedMonth) && $selectedMonth == $month ? 'selected' : '' }}>
@@ -75,10 +36,15 @@
 
                         <div class="col-xl-2 col-md-4 col-sm-6">
                             <label class="form-label">Year</label>
-                            <select name="year" class="form-select select2-filter js-auto-submit" style="width: 100%;">
+                            <select name="year" class="form-select select2-filter js-auto-submit"
+                                style="width: 100%;">
                                 @php
                                     $currentYear = date('Y');
-                                    $years = $availableDates->pluck('year')->merge(range(2024, $currentYear + 1))->unique()->sortDesc();
+                                    $years = $availableDates
+                                        ->pluck('year')
+                                        ->merge(range(2024, $currentYear + 1))
+                                        ->unique()
+                                        ->sortDesc();
                                 @endphp
                                 @foreach ($years as $y)
                                     <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>
@@ -89,7 +55,8 @@
 
                         <div class="col-xl-2 col-md-4 col-sm-6">
                             <label class="form-label">Block</label>
-                            <select name="block_id" class="form-select select2-filter js-auto-submit" style="width: 100%;">
+                            <select name="block_id" class="form-select select2-filter js-auto-submit"
+                                style="width: 100%;">
                                 <option value="">All Blocks</option>
                                 @if (isset($blocks))
                                     @foreach ($blocks as $blk)
@@ -104,7 +71,8 @@
 
                         <div class="col-xl-2 col-md-4 col-sm-6">
                             <label class="form-label">Resident</label>
-                            <select name="user_id" class="form-select select2-filter js-auto-submit" style="width: 100%;">
+                            <select name="user_id" class="form-select select2-filter js-auto-submit"
+                                style="width: 100%;">
                                 <option value="">All Residents</option>
                                 @if (isset($residents))
                                     @foreach ($residents as $res)
@@ -122,13 +90,17 @@
                         </div>
 
                         <div class="col-xl-2 col-md-4 col-sm-6 d-flex gap-2">
-                            @if (request()->has('month') || request()->has('year') || request()->has('report_type') || request()->has('user_id') || request()->has('block_id'))
+                            @if (request()->has('month') ||
+                                    request()->has('year') ||
+                                    request()->has('report_type') ||
+                                    request()->has('user_id') ||
+                                    request()->has('block_id'))
                                 <a href="{{ route('reports.maintenance', ['active_tab' => request('active_tab', '#main-maintenance')]) }}"
                                     id="resetFilterBtn" class="btn btn-outline-secondary w-100">Reset</a>
                             @endif
-                            <button type="submit" formaction="{{ route('reports.maintenance.export') }}"
-                                id="exportReportBtn" class="btn btn-success text-white w-100"
-                                style="{{ request('active_tab') === '#main-summary' ? 'display: none !important;' : '' }}">
+                            <button type="submit"
+                                formaction="{{ request('active_tab') === '#main-expense' ? route('reports.expense.export') : (request('active_tab') === '#main-summary' ? route('reports.summary.export') : route('reports.maintenance.export')) }}"
+                                id="exportReportBtn" class="btn btn-success text-white w-100">
                                 <svg class="icon me-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
                                     style="width: 1rem; height: 1rem; fill: currentColor;">
                                     <path
@@ -200,7 +172,7 @@
                                         <div class="card-body">
                                             <h5 class="card-title fw-normal mb-2">Transfer Fees Collected</h5>
                                             <h3 class="text-primary fw-bold mb-0">
-                                                {{ \App\Helpers\CurrencyHelper::formatCurrency($reportType == 'yearly' ? ($yearlyTransferFees ?? 0) : ($totalTransferFees ?? 0)) }}
+                                                {{ \App\Helpers\CurrencyHelper::formatCurrency($reportType == 'yearly' ? $yearlyTransferFees ?? 0 : $totalTransferFees ?? 0) }}
                                             </h3>
                                         </div>
                                     </div>
@@ -676,7 +648,8 @@
                             aria-labelledby="main-summary-tab">
                             @php
                                 $maintRevenue = $reportType == 'yearly' ? $yearlyPaid : $totalPaid;
-                                $transRevenue = $reportType == 'yearly' ? ($yearlyTransferFees ?? 0) : ($totalTransferFees ?? 0);
+                                $transRevenue =
+                                    $reportType == 'yearly' ? $yearlyTransferFees ?? 0 : $totalTransferFees ?? 0;
                                 $totalIncome = $maintRevenue + $transRevenue;
                                 $netAmount = $totalIncome - $totalExpense;
                             @endphp
@@ -688,7 +661,8 @@
                                             <h3 class="text-success fw-bold mb-0">
                                                 {{ \App\Helpers\CurrencyHelper::formatCurrency($maintRevenue) }}</h3>
                                             <small class="text-muted d-block mt-1 fs-7"><i
-                                                    class="fa-solid fa-building me-1"></i> Paid maintenance bills</small>
+                                                    class="fa-solid fa-building me-1"></i> Paid maintenance
+                                                bills</small>
                                         </div>
                                     </div>
                                 </div>
@@ -699,18 +673,21 @@
                                             <h3 class="text-info fw-bold mb-0">
                                                 {{ \App\Helpers\CurrencyHelper::formatCurrency($transRevenue) }}</h3>
                                             <small class="text-muted d-block mt-1 fs-7"><i
-                                                    class="fa-solid fa-right-left me-1"></i> Name transfer fees paid</small>
+                                                    class="fa-solid fa-right-left me-1"></i> Name transfer fees
+                                                paid</small>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-xl-3 col-md-6">
-                                    <div class="card border-0 border-start border-4 border-primary shadow-sm h-100 bg-primary bg-opacity-10">
+                                    <div
+                                        class="card border-0 border-start border-4 border-primary shadow-sm h-100 bg-primary bg-opacity-10">
                                         <div class="card-body">
                                             <h5 class="card-title fw-bold mb-2 text-primary">Total Society Income</h5>
                                             <h3 class="text-primary fw-bolder mb-0">
                                                 {{ \App\Helpers\CurrencyHelper::formatCurrency($totalIncome) }}</h3>
                                             <small class="text-muted fw-semibold d-block mt-1 fs-7"><i
-                                                    class="fa-solid fa-plus me-1"></i> Maintenance + Transfer Fees</small>
+                                                    class="fa-solid fa-plus me-1"></i> Maintenance + Transfer
+                                                Fees</small>
                                         </div>
                                     </div>
                                 </div>
@@ -721,7 +698,8 @@
                                             <h3 class="text-danger fw-bold mb-0">
                                                 {{ \App\Helpers\CurrencyHelper::formatCurrency($totalExpense) }}</h3>
                                             <small class="text-muted d-block mt-1 fs-7"><i
-                                                    class="fa-solid fa-arrow-up-long text-danger me-1"></i> Total spending outflows</small>
+                                                    class="fa-solid fa-arrow-up-long text-danger me-1"></i> Total
+                                                spending outflows</small>
                                         </div>
                                     </div>
                                 </div>
@@ -729,21 +707,30 @@
 
                             <div class="row mb-4">
                                 <div class="col-12">
-                                    <div class="card border-0 border-start border-4 {{ $netAmount >= 0 ? 'border-success bg-success' : 'border-warning bg-warning' }} bg-opacity-10 shadow-sm p-3">
-                                        <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                    <div
+                                        class="card border-0 border-start border-4 {{ $netAmount >= 0 ? 'border-success bg-success' : 'border-warning bg-warning' }} bg-opacity-10 shadow-sm p-3">
+                                        <div
+                                            class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
                                             <div>
-                                                <h4 class="fw-bold mb-1 {{ $netAmount >= 0 ? 'text-success' : 'text-warning' }}">
-                                                    <i class="fa-solid fa-vault me-2"></i>Remaining Fund of the Society (Net Balance)
+                                                <h4
+                                                    class="fw-bold mb-1 {{ $netAmount >= 0 ? 'text-success' : 'text-warning' }}">
+                                                    <i class="fa-solid fa-vault me-2"></i>Remaining Fund of the Society
+                                                    (Net Balance)
                                                 </h4>
                                                 <p class="mb-0 text-muted fw-semibold fs-6">
-                                                    Calculated by: Total Society Income ({{ \App\Helpers\CurrencyHelper::formatCurrency($totalIncome) }}) - Total Society Expenses ({{ \App\Helpers\CurrencyHelper::formatCurrency($totalExpense) }})
+                                                    Calculated by: Total Society Income
+                                                    ({{ \App\Helpers\CurrencyHelper::formatCurrency($totalIncome) }}) -
+                                                    Total Society Expenses
+                                                    ({{ \App\Helpers\CurrencyHelper::formatCurrency($totalExpense) }})
                                                 </p>
                                             </div>
                                             <div class="text-end">
-                                                <h2 class="fw-bolder mb-0 {{ $netAmount >= 0 ? 'text-success' : 'text-warning' }}">
+                                                <h2
+                                                    class="fw-bolder mb-0 {{ $netAmount >= 0 ? 'text-success' : 'text-warning' }}">
                                                     {{ \App\Helpers\CurrencyHelper::formatCurrency($netAmount) }}
                                                 </h2>
-                                                <span class="badge {{ $netAmount >= 0 ? 'bg-success' : 'bg-warning text-dark' }} fs-6 px-3 py-2 shadow-sm mt-1">
+                                                <span
+                                                    class="badge {{ $netAmount >= 0 ? 'bg-success' : 'bg-warning text-dark' }} fs-6 px-3 py-2 shadow-sm mt-1">
                                                     {{ $netAmount >= 0 ? 'SURPLUS FUND' : 'DEFICIT' }}
                                                 </span>
                                             </div>
@@ -1302,9 +1289,10 @@
 
                         // init now and on filter change
                         initUsersYearly();
-                        $(document).on('change', 'select[name="year"], select[name="user_id"], select[name="block_id"]', function() {
-                            initUsersYearly();
-                        });
+                        $(document).on('change', 'select[name="year"], select[name="user_id"], select[name="block_id"]',
+                            function() {
+                                initUsersYearly();
+                            });
                     }
 
 

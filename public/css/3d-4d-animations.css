@@ -1,0 +1,435 @@
+/* ==========================================================================
+   3D & 4D INTERACTIVE ANIMATIONS & DESIGN SYSTEM (CLICK-SAFE & UNIVERSAL)
+   Society Management System - Advanced Agentic Coding
+   ========================================================================== */
+
+/* ==========================================================================
+   0. GLOBAL CLICK-SAFETY & INTERACTIVITY GUARANTEE
+   ========================================================================== */
+/* Guarantee that all buttons, links, inputs, dropdowns, and form controls are ALWAYS clickable, visually distinct, and above any animation overlays! */
+button, 
+a, 
+input, 
+select, 
+textarea, 
+.btn, 
+.dropdown-toggle, 
+.dropdown-item, 
+.paginate_button, 
+.form-check-input, 
+.select2-selection, 
+.dropify-wrapper, 
+[role="button"], 
+[data-bs-toggle],
+.dataTables_wrapper .paginate_button {
+    position: relative !important;
+    z-index: 20 !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+}
+
+/* CRITICAL FIX: Floating popup menus (dropdowns, select2) MUST NOT use position: relative! Let Popper.js and Select2 handle absolute positioning! */
+.dropdown-menu, 
+.select2-dropdown {
+    z-index: 99999 !important;
+    pointer-events: auto !important;
+}
+
+/* Ensure disabled buttons properly show disabled state without blocking sibling elements */
+button:disabled,
+input:disabled,
+select:disabled,
+.btn.disabled,
+.btn:disabled {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    opacity: 0.65;
+}
+
+/* Ensure card containers maintain proper overflow and z-index hierarchy above background spotlights */
+.card,
+.dash-card,
+.stat-card,
+.kpi-card,
+.widget-card,
+.auth-card .card {
+    position: relative !important;
+    overflow: hidden;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease !important;
+}
+
+/* Keep card bodies, headers, and tables physically above background lighting overlays in 2D space */
+.card-body,
+.card-header,
+.card-footer,
+.table-responsive,
+.dataTables_wrapper {
+    position: relative !important;
+    z-index: 5 !important;
+    pointer-events: auto !important;
+}
+
+/* --- 1. 2D/3D Elevation & Depth Polish (Safe for all cards) --- */
+.dash-card,
+.kpi-card,
+.stat-card,
+.interactive-3d {
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.dash-card:hover,
+.kpi-card:hover,
+.stat-card:hover,
+.interactive-3d:hover {
+    transform: translateY(-5px) scale(1.01) !important;
+    box-shadow: 0 20px 30px -10px rgba(99, 102, 241, 0.25), 0 0 25px rgba(59, 130, 246, 0.15) !important;
+    border-color: rgba(99, 102, 241, 0.4) !important;
+}
+
+/* Visual KPI icons pop out smoothly on hover without breaking DOM flow */
+.dash-card .dash-icon-bg,
+.kpi-card .dash-icon-bg {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+    pointer-events: none !important;
+}
+
+.dash-card:hover .dash-icon-bg,
+.kpi-card:hover .dash-icon-bg {
+    transform: translateY(-4px) scale(1.12);
+    filter: drop-shadow(0 10px 15px rgba(99, 102, 241, 0.5));
+}
+
+/* --- 2. UNIVERSAL 4D CURSOR SPOTLIGHT & GLOWING BORDER TRACKING --- */
+/* Target ONLY KPI, metric, and auth cards so general content/table cards look distinct and professional! */
+.kpi-hero-card::before,
+.dash-card::before,
+.auth-card .card::before,
+.spotlight-4d::before,
+.kpi-card::before,
+.stat-card::before,
+.widget-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(
+        500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(99, 102, 241, 0.16),
+        rgba(59, 130, 246, 0.06) 40%,
+        transparent 80%
+    );
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none !important;
+    z-index: 0 !important;
+}
+
+.kpi-hero-card:hover::before,
+.dash-card:hover::before,
+.auth-card .card:hover::before,
+.spotlight-4d:hover::before,
+.kpi-card:hover::before,
+.stat-card:hover::before,
+.widget-card:hover::before {
+    opacity: 1;
+}
+
+/* Glowing 4D Border Tracking Effect (Only on KPI/Metric/Auth Cards) */
+.kpi-hero-card::after,
+.dash-card::after,
+.auth-card .card::after,
+.spotlight-4d::after,
+.kpi-card::after,
+.stat-card::after,
+.widget-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 2px;
+    background: radial-gradient(
+        350px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(255, 255, 255, 0.6),
+        rgba(99, 102, 241, 0.45),
+        transparent 70%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none !important;
+    z-index: 0 !important;
+}
+
+.kpi-hero-card:hover::after,
+.dash-card:hover::after,
+.auth-card .card:hover::after,
+.spotlight-4d:hover::after,
+.kpi-card:hover::after,
+.stat-card:hover::after,
+.widget-card:hover::after {
+    opacity: 1;
+}
+
+/* --- Distinct Styling for General Content & Table Cards (Non-Dashboard KPI Cards) --- */
+/* Ensures table wrappers, form boxes, and settings panels look clean, elegant, and professional without imitating dashboard KPI cards! */
+.card:not(.kpi-hero-card):not(.dash-card):not(.kpi-card):not(.stat-card):not(.glass-card):not(.widget-card):not(.auth-card .card) {
+    background: rgba(15, 23, 42, 0.65) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 1rem !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18) !important;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease !important;
+}
+
+.card:not(.kpi-hero-card):not(.dash-card):not(.kpi-card):not(.stat-card):not(.glass-card):not(.widget-card):not(.auth-card .card):hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.28) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    transform: none !important; /* Never tilt or float data table or form containers! */
+}
+
+/* --- Light Theme Overrides for General Cards & Glass Cards --- */
+[data-coreui-theme="light"] .card:not(.kpi-hero-card):not(.dash-card):not(.kpi-card):not(.stat-card):not(.glass-card):not(.widget-card):not(.auth-card .card),
+[data-coreui-theme="light"] .glass-card {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08) !important;
+    color: #1e293b !important;
+}
+
+[data-coreui-theme="light"] .card:not(.kpi-hero-card):not(.dash-card):not(.kpi-card):not(.stat-card):not(.glass-card):not(.widget-card):not(.auth-card .card):hover,
+[data-coreui-theme="light"] .glass-card:hover {
+    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.12) !important;
+    border-color: rgba(99, 102, 241, 0.25) !important;
+}
+
+[data-coreui-theme="light"] .glass-header {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: #0f172a !important;
+}
+
+/* --- Universal Light Theme Text Contrast Fixes for All Cards --- */
+[data-coreui-theme="light"] .kpi-hero-card .kpi-number,
+[data-coreui-theme="light"] .kpi-hero-card .kpi-value,
+[data-coreui-theme="light"] .dash-card h3,
+[data-coreui-theme="light"] .dash-card h4,
+[data-coreui-theme="light"] .glass-card h3,
+[data-coreui-theme="light"] .glass-card h4,
+[data-coreui-theme="light"] .card .kpi-number,
+[data-coreui-theme="light"] .card .kpi-value,
+[data-coreui-theme="light"] .card h3,
+[data-coreui-theme="light"] .card h4,
+[data-coreui-theme="light"] .kpi-number,
+[data-coreui-theme="light"] .kpi-value {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    text-shadow: none !important;
+    color: #0f172a !important;
+}
+
+[data-coreui-theme="light"] .card .text-light,
+[data-coreui-theme="light"] .card .text-white,
+[data-coreui-theme="light"] .card .text-white-50,
+[data-coreui-theme="light"] .kpi-hero-card .text-light,
+[data-coreui-theme="light"] .kpi-hero-card .text-white,
+[data-coreui-theme="light"] .kpi-hero-card .text-white-50,
+[data-coreui-theme="light"] .dash-card .text-light,
+[data-coreui-theme="light"] .dash-card .text-white,
+[data-coreui-theme="light"] .dash-card .text-white-50,
+[data-coreui-theme="light"] .glass-card .text-light,
+[data-coreui-theme="light"] .glass-card .text-white,
+[data-coreui-theme="light"] .glass-card .text-white-50,
+[data-coreui-theme="light"] .stat-card .text-light,
+[data-coreui-theme="light"] .stat-card .text-white,
+[data-coreui-theme="light"] .stat-card .text-white-50 {
+    color: #334155 !important;
+    opacity: 0.95 !important;
+    -webkit-text-fill-color: #334155 !important;
+}
+
+[data-coreui-theme="light"] .card .text-muted,
+[data-coreui-theme="light"] .card .text-secondary,
+[data-coreui-theme="light"] .kpi-hero-card .text-muted,
+[data-coreui-theme="light"] .kpi-hero-card .text-secondary,
+[data-coreui-theme="light"] .kpi-hero-card .kpi-label,
+[data-coreui-theme="light"] .dash-card .text-muted,
+[data-coreui-theme="light"] .dash-card .text-secondary,
+[data-coreui-theme="light"] .glass-card .text-muted,
+[data-coreui-theme="light"] .glass-card .text-secondary {
+    color: #64748b !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: #64748b !important;
+}
+
+[data-coreui-theme="light"] .kpi-hero-card:hover .kpi-label,
+[data-coreui-theme="light"] .card:hover .kpi-label {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
+}
+
+
+/* --- 3. PREMIUM BUTTON MICRO-ANIMATIONS (100% Click-Safe) --- */
+.btn {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease !important;
+    will-change: transform, box-shadow;
+}
+
+.btn:hover:not(:disabled):not(.disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18) !important;
+}
+
+.btn-primary:hover:not(:disabled):not(.disabled) {
+    box-shadow: 0 8px 22px rgba(99, 102, 241, 0.45) !important;
+}
+
+.btn-success:hover:not(:disabled):not(.disabled) {
+    box-shadow: 0 8px 22px rgba(16, 185, 129, 0.45) !important;
+}
+
+.btn-danger:hover:not(:disabled):not(.disabled) {
+    box-shadow: 0 8px 22px rgba(244, 63, 94, 0.45) !important;
+}
+
+.btn:active:not(:disabled):not(.disabled) {
+    transform: translateY(1px) scale(0.98) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* --- 4. 4D Time & Motion Keyframe Animations --- */
+@keyframes float-3d {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-6px); }
+    100% { transform: translateY(0px); }
+}
+
+@keyframes pulse-glow-4d {
+    0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.3), 0 0 30px rgba(59, 130, 246, 0.15); }
+    50% { box-shadow: 0 0 25px rgba(99, 102, 241, 0.6), 0 0 50px rgba(244, 63, 94, 0.3); }
+}
+
+@keyframes ripple-4d {
+    0% { width: 0px; height: 0px; opacity: 0.6; }
+    100% { width: 450px; height: 450px; opacity: 0; }
+}
+
+@keyframes light-sweep-4d {
+    0% { transform: translateX(-100%) skewX(-25deg); opacity: 0; }
+    50% { opacity: 0.5; }
+    100% { transform: translateX(200%) skewX(-25deg); opacity: 0; }
+}
+
+.badge-3d {
+    animation: float-3d 5s ease-in-out infinite;
+}
+
+/* --- 5. Interactive Click Ripple (4D Wave Effect) --- */
+.ripple-wave-4d {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.45) 0%, rgba(255, 255, 255, 0) 70%);
+    transform: translate(-50%, -50%);
+    pointer-events: none !important;
+    animation: ripple-4d 0.75s ease-out forwards;
+    z-index: 99999 !important;
+}
+
+/* --- 6. 3D Vanta Background Canvas Overlay for Auth Pages --- */
+#vanta-bg-canvas {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    z-index: -1 !important;
+    pointer-events: none !important; /* Never block button clicks on any page! */
+}
+
+.auth-page {
+    position: relative;
+    z-index: 10;
+}
+
+/* --- 7. 3D Isometric Tower / Widget Styling --- */
+.smp-3d-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(244, 63, 94, 0.25));
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 50rem;
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.8rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
+    animation: pulse-glow-4d 4s infinite;
+}
+
+/* ==========================================================================
+   8. UNIVERSAL ORIGAMI FOLD & SCROLL REVEAL ENGINE (100% CLICK-SAFE)
+   ========================================================================== */
+
+/* Initial hidden state before scrolling into viewport - Uses clean 2D translateY/scale to avoid 3D matrix clipping! */
+.scroll-3d-hidden {
+    opacity: 0 !important;
+    transform: translateY(38px) scale(0.94) !important;
+    will-change: transform, opacity;
+    transition: transform 0.65s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.55s ease !important;
+    pointer-events: none !important;
+}
+
+/* Visible unfolded state when triggered by scroll observer */
+.scroll-3d-visible {
+    opacity: 1 !important;
+    transform: translateY(0) scale(1) !important;
+    pointer-events: auto !important;
+}
+
+/* Trigger a subtle light sweep when card becomes visible */
+.scroll-3d-visible::before {
+    animation: light-sweep-4d 1.2s ease-out forwards;
+}
+
+/* --- 9. 4D NEON CYBERPUNK SCROLL PROGRESS BAR --- */
+#smp-scroll-progress-container {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    z-index: 99999 !important;
+    pointer-events: none !important;
+}
+
+#smp-scroll-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3b82f6, #6366f1, #ec4899, #f43f5e, #3b82f6);
+    background-size: 300% 100%;
+    box-shadow: 0 0 12px #6366f1, 0 0 20px #ec4899;
+    animation: pulse-glow-4d 3s infinite;
+    transition: width 0.1s ease-out;
+}
+
+/* ==========================================================================
+   10. GLASSMORPHISM UTILITY CLASSES & MICRO-ANIMATIONS
+   ========================================================================== */
+.glass-card {
+    background: rgba(15, 23, 42, 0.75) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 1.25rem !important;
+    box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.3);
+}
+
+.glass-header {
+    background: rgba(15, 23, 42, 0.85) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+

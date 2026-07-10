@@ -7,51 +7,84 @@
         <div id="users-toast-source" data-message="{{ e(session('success')) }}" data-type="success" hidden></div>
     @endif
 
+    <!-- TOP CAPACITY CARDS -->
     <div class="row g-4 mb-4">
-        <div class="col-sm-6 col-md-4 col-xl">
-            <div class="card dash-card card-flats h-100 shadow-sm border-0">
-                <div class="card-body d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="fs-4 fw-bold">{{ $totalFlats }} Flats</div>
-                        <div class="text-uppercase fw-semibold small opacity-75">Total Capacity</div>
+        <div class="col-sm-6 col-md-6 col-xl-6">
+            <div class="card kpi-hero-card kpi-theme-indigo h-100 border-0">
+                <div class="card-body p-4 d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="kpi-icon-pedestal">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <span class="kpi-status-pill">
+                            <span class="kpi-status-dot"></span> Capacity
+                        </span>
                     </div>
-                    <div class="fs-1">
-                        <i class="fas fa-building"></i>
+                    <div class="mt-2">
+                        <div class="kpi-label mb-1">Total Capacity</div>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="kpi-number counter-animate" data-target="{{ $totalFlats }}">0</span>
+                            <span class="fs-4 fw-bold text-light opacity-75">Flats</span>
+                        </div>
                     </div>
+                    <div class="kpi-glow-orb"></div>
                 </div>
             </div>
         </div>
         
-        <div class="col-sm-6 col-md-4 col-xl">
-            <div class="card dash-card card-residents h-100 shadow-sm border-0">
-                <div class="card-body d-flex justify-content-between align-items-start">
-                    <div>
-                        <div class="fs-4 fw-bold">{{ $totalOccupiedFlats }} Flats</div>
-                        <div class="text-uppercase fw-semibold small opacity-75">Total Occupied</div>
+        <div class="col-sm-6 col-md-6 col-xl-6">
+            <div class="card kpi-hero-card kpi-theme-cyan h-100 border-0">
+                <div class="card-body p-4 d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="kpi-icon-pedestal">
+                            <i class="fas fa-key"></i>
+                        </div>
+                        <span class="kpi-status-pill">
+                            <span class="kpi-status-dot"></span> Occupied
+                        </span>
                     </div>
-                    <div class="fs-1">
-                        <i class="fas fa-key"></i>
+                    <div class="mt-2">
+                        <div class="kpi-label mb-1">Total Occupied</div>
+                        <div class="d-flex align-items-baseline gap-2">
+                            <span class="kpi-number counter-animate" data-target="{{ $totalOccupiedFlats }}">0</span>
+                            <span class="fs-4 fw-bold text-light opacity-75">Flats</span>
+                        </div>
                     </div>
+                    <div class="kpi-glow-orb"></div>
                 </div>
             </div>
         </div>
     </div>
     
+    <!-- INDIVIDUAL BLOCK CARDS -->
     <div class="row g-4 mb-4">
         @php
-            $cardTypes = ['card-flats', 'card-residents', 'card-complaints', 'card-revenue'];
+            $themes = ['kpi-theme-indigo', 'kpi-theme-cyan', 'kpi-theme-rose', 'kpi-theme-emerald'];
         @endphp
         @foreach($blocks as $block)
-            <div class="col-sm-6 col-md-4 col-xl">
-                <div class="card dash-card {{ $cardTypes[$loop->index % count($cardTypes)] }} h-100 shadow-sm border-0">
-                    <div class="card-body d-flex justify-content-between align-items-start">
-                        <div>
-                            <div class="fs-4 fw-bold">{{ $block->occupied_flats_count }}/{{ $block->total_flats }} Flats</div>
-                            <div class="text-uppercase fw-semibold small opacity-75">Block {{ $block->block_name }}</div>
+            @php
+                $theme = $themes[$loop->index % count($themes)];
+            @endphp
+            <div class="col-sm-6 col-md-4 col-xl-4">
+                <div class="card kpi-hero-card {{ $theme }} h-100 border-0">
+                    <div class="card-body p-4 d-flex flex-column justify-content-between">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="kpi-icon-pedestal">
+                                <i class="fas fa-city"></i>
+                            </div>
+                            <span class="kpi-status-pill">
+                                <span class="kpi-status-dot"></span> Active
+                            </span>
                         </div>
-                        <div class="fs-1">
-                            <i class="fas fa-city"></i>
+                        <div class="mt-2">
+                            <div class="kpi-label mb-1">Block {{ $block->block_name }}</div>
+                            <div class="d-flex align-items-baseline gap-1">
+                                <span class="kpi-number">{{ $block->occupied_flats_count }}</span>
+                                <span class="fs-4 fw-bold text-muted">/{{ $block->total_flats }}</span>
+                                <span class="fs-6 fw-semibold text-light opacity-75 ms-1">Flats</span>
+                            </div>
                         </div>
+                        <div class="kpi-glow-orb"></div>
                     </div>
                 </div>
             </div>

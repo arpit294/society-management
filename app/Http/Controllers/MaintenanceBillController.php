@@ -42,6 +42,7 @@ class MaintenanceBillController extends Controller
             $totalCollected = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->sum('total_amount');
             $cashCollected = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->where('payment_method', 'CASH')->sum('total_amount');
             $upiCollected = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->where('payment_method', 'UPI')->sum('total_amount');
+            $penaltyCollected = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->sum('penalty_amount');
 
             // 2. Prepare data for the monthly revenue chart (current year)
             $months = [
@@ -77,6 +78,7 @@ class MaintenanceBillController extends Controller
                 'totalCollected',
                 'cashCollected',
                 'upiCollected',
+                'penaltyCollected',
                 'months',
                 'chartDataRevenue',
                 'blocks',

@@ -243,20 +243,23 @@ document.addEventListener("DOMContentLoaded", function () {
     window.setTimeout(restoreSidebarScroll, 100);
 });
 
-$(document).on("click", ".toggle-password-btn, .toggle-password", function () {
-    const container = $(this).closest(".input-group, .position-relative, div");
+$(document).on("click", ".toggle-password-btn, .toggle-password", function (e) {
+    e.preventDefault();
+    const container = $(this).closest(".input-group, .position-relative, .password-input-group, div");
     const input = container.find("input")[0];
     if (!input) return;
     if (input.type === "password") {
         input.type = "text";
         $(this)
             .attr("aria-label", "Hide password")
+            .attr("title", "Hide password")
             .attr("data-coreui-original-title", "Hide password");
         $(this).find(".fa-eye").removeClass("fa-eye").addClass("fa-eye-slash");
     } else {
         input.type = "password";
         $(this)
             .attr("aria-label", "Show password")
+            .attr("title", "Show password")
             .attr("data-coreui-original-title", "Show password");
         $(this).find(".fa-eye-slash").removeClass("fa-eye-slash").addClass("fa-eye");
     }
@@ -1100,18 +1103,14 @@ $(document).ready(function () {
             const url = $(this).data("url");
             const title = $(this).data("title");
 
-            // Show modal immediately with our unique SMP orbital loader
+            // Show modal immediately with clean simple circle loader
             $(modalContentId).html(`
                 <div class="modal-header border-bottom-0">
                     <h5 class="modal-title fw-bold">${title || 'Loading...'}</h5>
                     <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body modal-ajax-loader">
-                    <div class="smp-modal-spinner">
-                        <div class="smp-ring-inner-small"></div>
-                        <i class="fa-solid fa-building-user smp-modal-icon"></i>
-                    </div>
-                    <div class="smp-modal-loading-text">Fetching data, please wait...</div>
+                    <div class="simple-circle-loader"></div>
                 </div>
             `);
             modalInstance?.show();
@@ -1861,25 +1860,7 @@ $(document).ready(function () {
         }
     });
 
-    // Password Visibility Toggle
-    $(document).on("click", ".toggle-password, .toggle-password-btn", function () {
-        const container = $(this).closest(".input-group, .position-relative, div");
-        const input = container.find("input")[0];
-        if (!input) return;
-        if (input.type === "password") {
-            input.type = "text";
-            $(this)
-                .attr("aria-label", "Hide password")
-                .attr("data-coreui-original-title", "Hide password");
-            $(this).find(".fa-eye").removeClass("fa-eye").addClass("fa-eye-slash");
-        } else {
-            input.type = "password";
-            $(this)
-                .attr("aria-label", "Show password")
-                .attr("data-coreui-original-title", "Show password");
-            $(this).find(".fa-eye-slash").removeClass("fa-eye-slash").addClass("fa-eye");
-        }
-    });
+    // Password Visibility Toggle handled globally at top of script.js
 
     // Reset Password Form Validation
     $(document).on("submit", "#resetPasswordForm", function (e) {
@@ -2272,6 +2253,15 @@ $(document).ready(function () {
         if (flashMessages.dataset.validation)
             toastr.error(flashMessages.dataset.validation);
     }
+
+    const toastSource = document.getElementById("users-toast-source");
+    if (toastSource && typeof toastr !== "undefined") {
+        const msg = toastSource.dataset.message;
+        const type = toastSource.dataset.type || "success";
+        if (type === "success") toastr.success(msg);
+        else if (type === "danger" || type === "error") toastr.error(msg);
+        else toastr.info(msg);
+    }
 });
 
 // --- Maintenance Report Scripts ---
@@ -2315,26 +2305,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // --- Dashboard Scripts ---
 document.addEventListener("DOMContentLoaded", function () {
-    // Counter Animation
-    const counters = document.querySelectorAll(".counter-animate");
-    const speed = 200;
-
-    if (counters.length > 0) {
-        counters.forEach((counter) => {
-            const updateCount = () => {
-                const target = +counter.getAttribute("data-target");
-                const count = +counter.innerText.replace(/,/g, "");
-                const inc = target / speed;
-
-                if (count < target) {
-                    counter.innerText = Math.ceil(count + inc).toLocaleString();
-                    setTimeout(updateCount, 10);
-                } else {
-                    counter.innerText = target.toLocaleString();
-                }
-            };
-            updateCount();
-        });
+    // Counter animations are now handled dynamically and repeatedly by 3d-4d-animations.js
+    if (typeof window.refreshSMPAnimations === 'function') {
+        window.refreshSMPAnimations();
     }
 });
 
@@ -2452,28 +2425,34 @@ function generateDocumentInputs(residentType) {
     var appSettings = JSON.parse(form.dataset.settings || "{}");
     var documentRequirements = JSON.parse(form.dataset.requirements || "{}");
     var docs = documentRequirements[residentType] || {};
-    var hasRequiredDocs = false;
+    var hasDocs = false;
 
     $.each(docs, function (key, label) {
         var settingKey = "req_doc_" + residentType + "_" + key;
+        var val = appSettings ? appSettings[settingKey] : "1";
 
-        if (appSettings && appSettings[settingKey] == "1") {
-            hasRequiredDocs = true;
+        if (val == "1" || val == "2") {
+            hasDocs = true;
+            var isRequired = (val == "1");
+            var badge = isRequired ? '<span class="text-danger">* (Required)</span>' : '<span class="badge bg-warning-subtle text-dark border border-warning small ms-1">Optional</span>';
+            var reqAttr = isRequired ? 'required' : '';
             var html = `
             <div class="mb-3">
-                <label class="form-label fw-semibold text-body">${label} <span class="text-danger">*</span></label>
-                <input type="file" class="form-control bg-white text-dark" name="${settingKey}" required accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                <label class="form-label fw-semibold text-body d-flex align-items-center justify-content-between">${label} ${badge}</label>
+                <input type="file" class="form-control bg-white text-dark" name="${settingKey}" ${reqAttr} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
             </div>
             `;
             container.append(html);
         }
     });
 
-    if (!hasRequiredDocs) {
+    if (!hasDocs) {
         container.html(
-            '<p class="text-muted small">No documents are required for this resident type based on global settings.</p>',
+            '<p class="text-muted small">No documents are required or optional for this resident type based on global settings.</p>',
         );
         $("#addDocumentModal #submitBtn").prop("disabled", true);
+    } else {
+        $("#addDocumentModal #submitBtn").prop("disabled", false);
     }
 }
 
@@ -2524,6 +2503,130 @@ $(document).ajaxComplete(function (event, xhr, settings) {
 });
 
 // --- Flats Transfer Scripts ---
+
+// Initialize pay-pending-dues modal when transfer form is loaded into the flat modal
+$(document).on("ajaxSuccess", function (event, xhr, settings) {
+    if (settings.url && settings.url.includes("/transfer")) {
+        initFlatTransferModal();
+    }
+});
+
+// Also init on DOMContentLoaded in case the form is rendered server-side directly
+document.addEventListener("DOMContentLoaded", initFlatTransferModal);
+
+function initFlatTransferModal() {
+    const config = document.getElementById("flat-transfer-config");
+    if (!config) return;
+
+    const pendingCount = parseInt(config.dataset.pendingCount || "0", 10);
+    const payDuesUrl   = config.dataset.payDuesUrl   || "";
+    const transferUrl  = config.dataset.transferUrl  || "";
+
+    const saveBtn  = document.getElementById("btn-save-transfer");
+    if (pendingCount > 0 && saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.title = "Cannot transfer ownership while maintenance dues are pending";
+    }
+
+    const payBtn     = document.getElementById("btn-open-pay-dues-modal");
+    const payModalEl = document.getElementById("payPendingDuesModal");
+    const closeBtn   = document.getElementById("btn-close-pay-modal");
+    const cancelBtn  = document.getElementById("btn-cancel-pay-modal");
+    let payModal = null;
+
+    if (payModalEl) {
+        const getPayModal = () => {
+            if (!payModal) payModal = coreui.Modal.getOrCreateInstance(payModalEl);
+            return payModal;
+        };
+
+        if (payBtn) {
+            payBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+                getPayModal().show();
+            });
+        }
+
+        const closeHandler = function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            getPayModal().hide();
+        };
+
+        if (closeBtn) closeBtn.addEventListener("click", closeHandler);
+        if (cancelBtn) cancelBtn.addEventListener("click", closeHandler);
+
+        payModalEl.addEventListener("hide.coreui.modal", function (e) {
+            e.stopPropagation();
+        });
+
+        payModalEl.addEventListener("hidden.coreui.modal", function (e) {
+            e.stopPropagation();
+            if (document.getElementById("flat-modal")?.classList.contains("show")) {
+                document.body.classList.add("modal-open");
+            }
+        });
+    }
+
+    const payMethodSelect = document.getElementById("modal_payment_method");
+    const upiDetailsDiv   = document.getElementById("modal_upi_details");
+    const trInput         = document.getElementById("modal_transaction_id");
+    if (payMethodSelect) {
+        payMethodSelect.addEventListener("change", function () {
+            if (this.value === "upi" || this.value === "online") {
+                upiDetailsDiv.style.display = "block";
+                trInput.required = true;
+            } else {
+                upiDetailsDiv.style.display = "none";
+                trInput.required = false;
+            }
+        });
+    }
+
+    const payForm = document.getElementById("pay-pending-dues-form");
+    if (payForm && payDuesUrl) {
+        payForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            const submitBtn = document.getElementById("btn-confirm-pay-dues");
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+
+            const formData = new FormData(this);
+            fetch(payDuesUrl, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") || "",
+                },
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    if (data.success) {
+                        if (typeof toastr !== "undefined") toastr.success(data.message);
+                        if (payModal) payModal.hide();
+                        else coreui.Modal.getInstance(payModalEl)?.hide();
+                        if (transferUrl) {
+                            $.get(transferUrl, function (html) {
+                                $("#flat-modal-content").html(html);
+                            });
+                        }
+                    } else {
+                        if (typeof toastr !== "undefined") toastr.error(data.message || "Error recording payment.");
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                    }
+                })
+                .catch(() => {
+                    if (typeof toastr !== "undefined") toastr.error("A network error occurred.");
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+        });
+    }
+}
+
 $(document).on("change", "#transfer_payment_method", function () {
     if ($(this).val() === "upi") {
         $("#upi_details_container").show();
@@ -2808,6 +2911,42 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         }
     }
+
+    // Set All Select Buttons for 3-State Document Settings
+    document.querySelectorAll(".set-all-select-btn").forEach((btn) => {
+        btn.addEventListener("click", function () {
+            const targetPrefix = this.getAttribute("data-target");
+            const val = this.getAttribute("data-val");
+            
+            document.querySelectorAll(`.doc-setting-card[data-setting-key^="${targetPrefix}"]`).forEach((card) => {
+                const hiddenInput = card.querySelector(".real-setting-input");
+                const toggle = card.querySelector(".doc-enable-toggle");
+                const select = card.querySelector(".doc-type-select");
+                const container = card.querySelector(".doc-options-container");
+                
+                if (!hiddenInput || !toggle || !select || !container) return;
+                
+                if (val === "0") {
+                    toggle.checked = false;
+                    hiddenInput.value = "0";
+                    select.disabled = true;
+                    container.style.opacity = "0.35";
+                    container.style.pointerEvents = "none";
+                } else {
+                    toggle.checked = true;
+                    select.disabled = false;
+                    select.value = val;
+                    hiddenInput.value = val;
+                    container.style.opacity = "1";
+                    container.style.pointerEvents = "auto";
+                }
+            });
+
+            document.querySelectorAll(`select[name^="${targetPrefix}"]`).forEach((sel) => {
+                sel.value = val;
+            });
+        });
+    });
 
     // Check All / Uncheck All Buttons
     document.querySelectorAll(".checkall-btn").forEach((btn) => {
@@ -4124,5 +4263,62 @@ document.addEventListener("click", function (e) {
         if (preloader && !preloader.classList.contains("no-trigger")) {
             preloader.classList.remove("hidden");
         }
+    }
+});
+
+
+// --- Header Notification Scripts (extracted from components/header.blade.php) ---
+function markAllNotificationsAsRead(e) {
+    if (e) e.stopPropagation();
+    localStorage.setItem('smp_notifications_cleared_time', Date.now());
+
+    const badge = document.getElementById('bell-badge-counter');
+    if (badge) {
+        badge.innerText = '0';
+        badge.classList.remove('notification-badge-pulse');
+    }
+
+    const btn = document.getElementById('mark-all-read-btn');
+    if (btn) btn.style.setProperty('display', 'none', 'important');
+
+    const listContainer = document.getElementById('notification-list-container');
+    if (listContainer) listContainer.style.setProperty('display', 'none', 'important');
+
+    const emptyState = document.getElementById('notification-empty-state');
+    if (emptyState) emptyState.style.setProperty('display', 'block', 'important');
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const clearedTime = localStorage.getItem('smp_notifications_cleared_time');
+    if (!clearedTime) return;
+
+    const items = document.querySelectorAll('.notification-item-row');
+    let visibleCount = 0;
+
+    items.forEach(function (item) {
+        const itemTime = parseInt(item.getAttribute('data-timestamp') || '0', 10);
+        if (itemTime <= clearedTime) {
+            item.style.setProperty('display', 'none', 'important');
+        } else {
+            visibleCount++;
+        }
+    });
+
+    const badge = document.getElementById('bell-badge-counter');
+    const btn = document.getElementById('mark-all-read-btn');
+    const listContainer = document.getElementById('notification-list-container');
+    const emptyState = document.getElementById('notification-empty-state');
+
+    if (badge) badge.innerText = visibleCount;
+
+    if (visibleCount === 0) {
+        if (badge) badge.classList.remove('notification-badge-pulse');
+        if (btn) btn.style.setProperty('display', 'none', 'important');
+        if (listContainer) listContainer.style.setProperty('display', 'none', 'important');
+        if (emptyState) emptyState.style.setProperty('display', 'block', 'important');
+    } else {
+        if (btn) btn.style.setProperty('display', 'inline', 'important');
+        if (listContainer) listContainer.style.setProperty('display', 'block', 'important');
+        if (emptyState) emptyState.style.setProperty('display', 'none', 'important');
     }
 });

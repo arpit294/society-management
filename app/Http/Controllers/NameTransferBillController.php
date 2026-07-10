@@ -150,6 +150,10 @@ class NameTransferBillController extends Controller
                     'approved_by' => \Auth::id(),
                 ]);
 
+                if ($bill->new_owner_id) {
+                    \App\Models\User::where('id', $bill->new_owner_id)->update(['updated_at' => now()]);
+                }
+
                 DB::commit();
 
                 return response()->json([

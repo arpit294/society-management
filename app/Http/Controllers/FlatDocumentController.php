@@ -73,8 +73,15 @@ class FlatDocumentController extends Controller
             $requiredDocuments = $this->enabledDocumentsFor($residentType);
 
             $fileRules = [];
-            foreach ($requiredDocuments as $key => $label) {
-                $fileRules[$key] = 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120';
+            $hasAnyRequired = false;
+            foreach ($requiredDocuments as $key => $docInfo) {
+                $isRequired = is_array($docInfo) ? $docInfo['required'] : true;
+                if ($isRequired) {
+                    $fileRules[$key] = 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120';
+                    $hasAnyRequired = true;
+                } else {
+                    $fileRules[$key] = 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120';
+                }
             }
 
             if ($fileRules) {
@@ -82,22 +89,23 @@ class FlatDocumentController extends Controller
             }
 
             $flatDocument = FlatDocument::where('flat_id', $validated['flat_id'])
-                                ->where('user_id', $validated['user_id'])
-                                ->where('resident_type', $residentType)
-                                ->first();
+                ->where('user_id', $validated['user_id'])
+                ->where('resident_type', $residentType)
+                ->first();
 
             $documents = $flatDocument ? ($flatDocument->documents ?? []) : [];
             $filesUploaded = 0;
 
-            foreach ($requiredDocuments as $key => $label) {
+            foreach ($requiredDocuments as $key => $docInfo) {
+                $label = is_array($docInfo) ? $docInfo['label'] : $docInfo;
                 $file = $request->file($key);
 
                 if (! $file || is_array($file)) {
                     continue;
                 }
 
-                $fileName = time().'_'.$file->getClientOriginalName();
-                $filePath = $file->storeAs('documents/flats/'.$validated['flat_id'].'/'.$validated['user_id'], $fileName, 'public');
+                $fileName = time() . '_' . $file->getClientOriginalName();
+                $filePath = $file->storeAs('documents/flats/' . $validated['flat_id'] . '/' . $validated['user_id'], $fileName, 'public');
 
                 $documents[$key] = [
                     'title' => $label,
@@ -109,10 +117,10 @@ class FlatDocumentController extends Controller
                 $filesUploaded++;
             }
 
-            if ($filesUploaded === 0) {
+            if ($filesUploaded === 0 && $hasAnyRequired) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Please select at least one document to upload.',
+                    'message' => 'Please select required documents to upload.',
                 ], 422);
             }
 
@@ -154,7 +162,6 @@ class FlatDocumentController extends Controller
         try {
             $flatDocument->load(['flat.block', 'user']);
             return view('flat_documents.show', compact('flatDocument'));
-
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -179,7 +186,7 @@ class FlatDocumentController extends Controller
             }
 
             $doc = $documents[$doc_key];
-            $filePath = storage_path('app/public/'.$doc['file_path']);
+            $filePath = storage_path('app/public/' . $doc['file_path']);
 
             if (! file_exists($filePath)) {
                 abort(404, 'File not found on disk');
@@ -337,8 +344,7 @@ class FlatDocumentController extends Controller
                 'index_copy' => 'Index Copy',
                 'possession_letter' => 'Possession Letter',
                 'tax_bill' => 'Copy of Tax Bill',
-                'contact_no' => 'Contact No Document',
-                'email' => 'Email Address Document',
+
             ],
             'rental' => [
                 'passport_photo' => 'Passport Size Photo',
@@ -347,8 +353,10 @@ class FlatDocumentController extends Controller
                 'rent_agreement' => 'Rent Agreement',
                 'police_verification' => 'Police Verification',
                 'permanent_address_proof' => 'Permanent Address Proof',
-                'contact_no' => 'Contact Number Document',
-                'email' => 'Email Address Document',
+                // contact_no and email fields/documents removed from upload flow
+                // contact_no & email are shown only as resident info (not as upload-required documents)
+
+                // (removed contact_no & email from upload-required docs)
             ],
         ];
     }
@@ -360,10 +368,14 @@ class FlatDocumentController extends Controller
         $enabledDocuments = [];
 
         foreach ($documents as $key => $label) {
-            $settingKey = 'req_doc_'.$residentType.'_'.$key;
+            $settingKey = 'req_doc_' . $residentType . '_' . $key;
+            $val = $settings[$settingKey] ?? '1';
 
-            if (($settings[$settingKey] ?? '0') == '1') {
-                $enabledDocuments[$settingKey] = $label;
+            if ($val == '1' || $val == '2') {
+                $enabledDocuments[$settingKey] = [
+                    'label' => $label,
+                    'required' => ($val == '1')
+                ];
             }
         }
 

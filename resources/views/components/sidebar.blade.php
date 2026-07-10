@@ -53,6 +53,8 @@
         </li>
         @endcan
 
+        <li class="nav-title text-uppercase text-secondary fs-8 fw-bold px-3 mt-3 mb-1" style="letter-spacing: 0.1em; opacity: 0.65;">Management</li>
+
         @can('user_view')
         <li class="nav-item">
             <a class="nav-link" href="{{ route('users.index') }}">
@@ -136,6 +138,9 @@
             </a>
         </li>
         @endcan
+
+        <li class="nav-title text-uppercase text-secondary fs-8 fw-bold px-3 mt-3 mb-1" style="letter-spacing: 0.1em; opacity: 0.65;">Financials</li>
+
         @if(auth()->user()?->can('maintenance_bill_view') || auth()->user()?->can('expense_category_view') || auth()->user()?->can('expense_view') || auth()->user()?->can('name_transfer_bill_view'))
         <li class="nav-group {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('expense-categories*') || request()->is('expenses*') || request()->is('prepayments*') || request()->is('name-transfer-bills*') ? 'show' : '' }}">
             <a class="nav-link nav-group-toggle" href="#">
@@ -181,6 +186,8 @@
             </ul>
         </li>
         @endif
+
+        <li class="nav-title text-uppercase text-secondary fs-8 fw-bold px-3 mt-3 mb-1" style="letter-spacing: 0.1em; opacity: 0.65;">Administration</li>
 
         @can('setting_view')
         <li class="nav-group {{ request()->is('roles*') || request()->is('settings*') ? 'show' : '' }}">
