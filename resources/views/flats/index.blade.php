@@ -8,20 +8,20 @@
     @endif
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">Flat Management</h4>
+        <h4 class="mb-0">{{ \App\Models\Setting::label('unit', 'Flat') }} Management</h4>
 
         @can('flat_create')
         <button type="button" class="btn btn-primary" id="btn-add-flat" data-url="{{ route('flats.create') }}"
-            data-title="Add Flat">Add Flat</button>
+            data-title="Add {{ \App\Models\Setting::label('unit', 'Flat') }}">Add {{ \App\Models\Setting::label('unit', 'Flat') }}</button>
         @endcan
     </div>
 
     <div class="mb-3">
         <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
             <div class="filter-col" style="min-width: 220px;">
-                <label class="form-label mb-1" for="flats-filter-block">Filter by Block</label>
+                <label class="form-label mb-1" for="flats-filter-block">Filter by {{ \App\Models\Setting::label('block', 'Block') }}</label>
                 <select id="flats-filter-block" class="form-select" style="max-width: 320px;">
-                    <option value="">All Blocks</option>
+                    <option value="">All {{ \App\Models\Setting::label('block', 'Block') }}s</option>
                     @foreach($blocks as $block)
                         <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
                     @endforeach

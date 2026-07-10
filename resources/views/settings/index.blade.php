@@ -82,6 +82,58 @@
                     </div>
                 </div>
 
+                <!-- Card 1.5: Property & Structure Configuration (SMP 2.0) -->
+                <div class="card mb-4 border-0 shadow-sm" id="structure-settings">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h4 class="mb-0"><i class="fa-solid fa-city text-primary me-2"></i>Property & Structure Configuration</h4>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Society Structure Type</label>
+                                <select name="society_property_type" class="form-select">
+                                    <option value="flat_residential" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'flat_residential' ? 'selected' : '' }}>Flat Residential Society (Vertical Towers)</option>
+                                    <option value="commercial_complex" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'commercial_complex' ? 'selected' : '' }}>Commercial Shopping Complex / Arcade / IT Park</option>
+                                    <option value="rowhouse_villa" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'rowhouse_villa' ? 'selected' : '' }}>Bungalows / Villas / Tenements / Row Houses</option>
+                                    <option value="mixed_use" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'mixed_use' ? 'selected' : '' }}>Mixed-Use (Flats + Commercial Shops + Villas)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Block/Group Vocabulary</label>
+                                <input type="text" name="ui_label_block" class="form-control" value="{{ $settings['ui_label_block'] ?? 'Block/Wing' }}" placeholder="e.g., Wing, Tower, Sector, Lane">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Unit Vocabulary (Singular)</label>
+                                <input type="text" name="ui_label_unit" class="form-control" value="{{ $settings['ui_label_unit'] ?? 'Flat' }}" placeholder="e.g., Flat, Shop, Villa, Unit">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Occupant Vocabulary</label>
+                                <input type="text" name="ui_label_resident" class="form-control" value="{{ $settings['ui_label_resident'] ?? 'Resident' }}" placeholder="e.g., Resident, Occupant, Tenant">
+                            </div>
+                            <div class="col-md-4 mb-3 d-flex flex-column justify-content-between">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Area-Based Billing (Per Sq. Ft.)</label>
+                                <div class="form-check form-switch m-0 p-2 px-3 bg-body-tertiary rounded border d-flex align-items-center justify-content-between shadow-sm" style="height: 38px;">
+                                    <label class="form-check-label small fw-semibold mb-0" for="enable_area_based_billing" style="cursor: pointer;">Enable Sq. Ft. Billing</label>
+                                    <input type="hidden" name="enable_area_based_billing" value="0">
+                                    <input class="form-check-input m-0" type="checkbox" id="enable_area_based_billing"
+                                        name="enable_area_based_billing" value="1" style="cursor: pointer;"
+                                        {{ ($settings['enable_area_based_billing'] ?? '0') == '1' ? 'checked' : '' }}>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3 d-flex flex-column justify-content-between">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Commercial GST Invoicing</label>
+                                <div class="form-check form-switch m-0 p-2 px-3 bg-body-tertiary rounded border d-flex align-items-center justify-content-between shadow-sm" style="height: 38px;">
+                                    <label class="form-check-label small fw-semibold mb-0" for="enable_commercial_gst" style="cursor: pointer;">Apply GST ({{ $settings['commercial_gst_percentage'] ?? '18' }}%) on Shops</label>
+                                    <input type="hidden" name="enable_commercial_gst" value="0">
+                                    <input class="form-check-input m-0" type="checkbox" id="enable_commercial_gst"
+                                        name="enable_commercial_gst" value="1" style="cursor: pointer;"
+                                        {{ ($settings['enable_commercial_gst'] ?? '0') == '1' ? 'checked' : '' }}>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Card 2: Late Penalty Settings -->
                 <div class="card mb-4 border-0 shadow-sm">
                     <div class="card-header bg-white border-bottom py-3">

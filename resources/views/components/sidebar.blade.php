@@ -76,7 +76,7 @@
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M96 48C78.3 48 64 62.3 64 80v352c0 17.7 14.3 32 32 32h96V336h128v128h96c17.7 0 32-14.3 32-32V80c0-17.7-14.3-32-32-32H96zm64 64h48v48h-48v-48zm0 96h48v48h-48v-48zm0 96h48v48h-48v-48zm144-192h48v48h-48v-48zm0 96h48v48h-48v-48zm0 96h48v48h-48v-48z" />
                 </svg>
-                Flat Management
+                {{ \App\Models\Setting::label('unit', 'Flat') }} Management
             </a>
         </li>
         @endcan
@@ -98,7 +98,7 @@
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M416 64H96C78.3 64 64 78.3 64 96v320c0 17.7 14.3 32 32 32h320c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32zM256 384H128v-32h128v32zm128-80H128v-32h256v32zm0-80H128v-32h256v32z" />
                 </svg>
-                Flat Documents
+                {{ \App\Models\Setting::label('unit', 'Flat') }} Documents
             </a>
         </li>
         @endcan
@@ -110,7 +110,7 @@
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M32 32C14.3 32 0 46.3 0 64V448c0 17.7 14.3 32 32 32H480c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32H32zm64 64H224V224H96V96zm192 0H416V224H288V96zM96 288H224V416H96V288zm192 0H416V416H288V288z" />
                 </svg>
-                Block Management
+                {{ \App\Models\Setting::label('block', 'Block/Wing') }} Management
             </a>
         </li>
         @endcan
@@ -134,7 +134,7 @@
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M256 160c-44.2 0-80 35.8-80 80s35.8 80 80 80 80-35.8 80-80-35.8-80-80-80zm0 128c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm171.1-125.1L355.2 234.8c-2.4 12.5-8 23.9-15.8 33.6l64.1 64.1c12.5 12.5 32.8 12.5 45.3 0 12.5-12.5 12.5-32.8 0-45.3l-21.7-24.3zM140.7 268.4c-7.8-9.7-13.4-21.1-15.8-33.6L52.9 162.9c-12.5-12.5-12.5-32.8 0-45.3 12.5-12.5 32.8-12.5 45.3 0l71.9 71.9L140.7 268.4z" />
                 </svg>
-                Residents
+                {{ \App\Models\Setting::label('resident', 'Resident') }}s
             </a>
         </li>
         @endcan
@@ -202,6 +202,12 @@
                     <a class="nav-link {{ request()->is('settings*') ? 'active' : '' }}" href="{{ route('settings.index') }}#general-settings">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         General Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#structure-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Property & Structure
                     </a>
                 </li>
                 <li class="nav-item">

@@ -112,13 +112,11 @@ class MaintenanceBillController extends Controller
             // Get all active residents (filtering out old owners if a tenant lives there)
             $residents = $this->getUniqueActiveResidents();
 
-            // Pre-calculate the base monthly fee for each resident based on flat type (Owner vs Tenant rate)
+            // Pre-calculate the base monthly fee for each resident based on flat type & area
             $residentFees = $residents->mapWithKeys(function ($resident) {
                 $fee = 0;
-                if ($resident->flat && $resident->flat->flatType) {
-                    $fee = ($resident->type === 'owner')
-                        ? $resident->flat->flatType->owner_maintenance_fee
-                        : $resident->flat->flatType->rental_maintenance_fee;
+                if ($resident->flat) {
+                    $fee = $resident->flat->calculateMaintenanceFee($resident->type);
                 }
 
                 return [$resident->id => $fee];
@@ -162,12 +160,19 @@ class MaintenanceBillController extends Controller
                 throw new \Exception('Resident does not have a flat assigned with a valid flat type.');
             }
 
-            // Determine the base fee (Owner vs Rental rate)
-            $monthlyFee = ($resident->type === 'owner')
-                ? $resident->flat->flatType->owner_maintenance_fee
-                : $resident->flat->flatType->rental_maintenance_fee;
+            // Determine the base fee using dynamic rate engine
+            $monthlyFee = $resident->flat->calculateMaintenanceFee($resident->type);
 
             $numberOfMonths = (int) $request->months;
+
+            // Calculate GST if enabled and unit or flat_type is commercial
+            $gstPercentage = 0;
+            $gstAmount = 0;
+            if (\App\Models\Setting::get('enable_commercial_gst') == '1' &&
+                ($resident->flat->unit_type === 'shop' || $resident->flat->unit_type === 'office' || $resident->flat->has_commercial_license || ($resident->flat->flatType && $resident->flat->flatType->category_type === 'commercial'))) {
+                $gstPercentage = (float) \App\Models\Setting::get('commercial_gst_percentage', 18);
+                $gstAmount = round(($monthlyFee * $gstPercentage) / 100, 2);
+            }
 
             // Handle file upload for payment slips
             $paymentSlipPath = null;
@@ -183,8 +188,8 @@ class MaintenanceBillController extends Controller
                 $request, $monthlyFee, $numberOfMonths, $currentDate
             );
 
-            // Split the total amount evenly across the selected number of months
-            $amountPerMonth = $monthlyFee + ($totalPenaltyAmount / $numberOfMonths) - ($totalDiscountAmount / $numberOfMonths);
+            // Split the total amount evenly across the selected number of months including GST
+            $amountPerMonth = $monthlyFee + $gstAmount + ($totalPenaltyAmount / $numberOfMonths) - ($totalDiscountAmount / $numberOfMonths);
             $amountPerMonth = max(0, $amountPerMonth); // Prevent negative bills
 
             // Generate a unique batch ID to group these multi-month payments together
@@ -218,6 +223,8 @@ class MaintenanceBillController extends Controller
                         'user_id' => $resident->user_id,
                         'block_id' => $resident->block_id,
                         'amount' => $monthlyFee,
+                        'gst_percentage' => $gstPercentage,
+                        'gst_amount' => $gstAmount,
                         'discount_amount' => $totalDiscountAmount / $numberOfMonths,
                         'penalty_amount' => $totalPenaltyAmount / $numberOfMonths,
                         'total_amount' => $amountPerMonth,
@@ -332,10 +339,8 @@ class MaintenanceBillController extends Controller
 
             if ($request->status === config('status.maintenance_bills.paid') && $maintenanceBill->status !== config('status.maintenance_bills.paid')) {
 
-                // Re-fetch the correct monthly fee based on user type
-                $monthlyFee = ($maintenanceBill->resident->type === 'owner')
-                    ? $maintenanceBill->flat->flatType->owner_maintenance_fee
-                    : $maintenanceBill->flat->flatType->rental_maintenance_fee;
+                // Re-fetch the correct monthly fee using dynamic rate engine
+                $monthlyFee = $maintenanceBill->flat->calculateMaintenanceFee($maintenanceBill->resident->type);
 
                 $currentDate = Carbon::createFromDate(
                     $maintenanceBill->maintenance->year,
@@ -489,10 +494,8 @@ class MaintenanceBillController extends Controller
                         ->orWhere('move_out_date', '>=', Carbon::now()->startOfDay());
                 })->first();
 
-            if ($resident && $resident->flat && $resident->flat->flatType) {
-                $amount = ($resident->type === 'owner')
-                    ? $resident->flat->flatType->owner_maintenance_fee
-                    : $resident->flat->flatType->rental_maintenance_fee;
+            if ($resident && $resident->flat) {
+                $amount = $resident->flat->calculateMaintenanceFee($resident->type);
 
                 return response()->json([
                     'success' => true,

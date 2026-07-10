@@ -8,11 +8,42 @@ class Flat extends Model
 {
     protected $fillable = [
         'block_id',
+        'unit_type',
         'flat_no',
         'floor_no',
         'flat_type_id',
+        'area_sqft',
+        'plot_area_sqyards',
+        'electricity_meter_no',
+        'water_meter_no',
+        'has_commercial_license',
         'status',
     ];
+
+    public function calculateMaintenanceFee($residentType = 'owner')
+    {
+        $type = $this->flatType;
+        if (!$type) {
+            return 0;
+        }
+
+        $baseRate = ($residentType === 'rental') ? $type->rental_maintenance_fee : $type->owner_maintenance_fee;
+
+        if ($type->calculation_method === 'per_sqft' && $this->area_sqft > 0) {
+            $amount = $this->area_sqft * $type->rate_per_sqft;
+        } elseif ($type->calculation_method === 'hybrid' && $this->area_sqft > 0) {
+            $amount = $baseRate + ($this->area_sqft * $type->rate_per_sqft);
+        } else {
+            $amount = $baseRate;
+        }
+
+        if ($this->unit_type === 'shop' || $this->unit_type === 'office' || $type->category_type === 'commercial') {
+            $surcharge = ($amount * $type->commercial_surcharge_percentage) / 100;
+            $amount += $surcharge;
+        }
+
+        return round($amount, 2);
+    }
 
     public function block()
     {

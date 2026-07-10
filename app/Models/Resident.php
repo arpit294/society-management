@@ -14,6 +14,10 @@ class Resident extends Model
         'flat_id',
         'user_id',
         'type',
+        'occupant_category',
+        'company_name',
+        'gstin',
+        'trade_license_no',
         'move_in_date',
         'move_out_date',
     ];

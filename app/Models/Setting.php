@@ -61,7 +61,21 @@ class Setting extends Model
             'req_doc_rental_contact_no' => '1',
             'req_doc_rental_email' => '1',
             'enable_debugger' => '0',
+            // SMP 2.0 Multi-Structure & Property Settings
+            'society_property_type' => 'flat_residential', // flat_residential, commercial_complex, rowhouse_villa, mixed_use
+            'ui_label_block' => 'Block/Wing',
+            'ui_label_unit' => 'Flat',
+            'ui_label_unit_plural' => 'Flats',
+            'ui_label_resident' => 'Resident',
+            'enable_area_based_billing' => '0',
+            'enable_commercial_gst' => '0',
+            'commercial_gst_percentage' => '18',
         ];
+    }
+
+    public static function label(string $key, string $default = ''): string
+    {
+        return self::get("ui_label_{$key}", $default);
     }
 
     protected static $cachedSettings = null;

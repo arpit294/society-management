@@ -101,16 +101,26 @@ class FlatController extends Controller
         try {
             $validatedData = $request->validate([
                 'block_id' => 'required|integer|exists:blocks,id',
+                'unit_type' => 'nullable|string|max:255',
                 'flat_no' => 'required|string|max:255',
-                'floor_no' => 'required|integer|min:0',
+                'floor_no' => 'nullable|integer|min:0',
                 'flat_type_id' => 'required|integer|exists:flat_types,id',
+                'area_sqft' => 'nullable|numeric|min:0',
+                'plot_area_sqyards' => 'nullable|numeric|min:0',
+                'electricity_meter_no' => 'nullable|string|max:255',
+                'water_meter_no' => 'nullable|string|max:255',
+                'has_commercial_license' => 'nullable|boolean',
                 'status' => 'required|string|max:255',
             ]);
 
-            // Check if a block is selected and ensure the provided floor_no does not exceed the block's total_floor
+            $validatedData['unit_type'] = $validatedData['unit_type'] ?? 'flat';
+            $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
+            $validatedData['has_commercial_license'] = !empty($request->has_commercial_license);
+
+            // Check if a block is selected and ensure the provided floor_no does not exceed the block's total_floor (if block has floors)
             if (! empty($validatedData['block_id'])) {
                 $block = Block::find($validatedData['block_id']);
-                if ($block && $validatedData['floor_no'] > $block->total_floor) {
+                if ($block && $block->total_floor > 0 && $validatedData['floor_no'] > $block->total_floor) {
                     throw ValidationException::withMessages([
                         'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.'],
                     ]);
@@ -201,16 +211,26 @@ class FlatController extends Controller
         try {
             $validatedData = $request->validate([
                 'block_id' => 'required|integer|exists:blocks,id',
+                'unit_type' => 'nullable|string|max:255',
                 'flat_no' => 'required|string|max:255',
-                'floor_no' => 'required|integer|min:0',
+                'floor_no' => 'nullable|integer|min:0',
                 'flat_type_id' => 'required|integer|exists:flat_types,id',
+                'area_sqft' => 'nullable|numeric|min:0',
+                'plot_area_sqyards' => 'nullable|numeric|min:0',
+                'electricity_meter_no' => 'nullable|string|max:255',
+                'water_meter_no' => 'nullable|string|max:255',
+                'has_commercial_license' => 'nullable|boolean',
                 'status' => 'required|string|max:255',
             ]);
 
-            // Check the selected floor number is valid or not based on block table
+            $validatedData['unit_type'] = $validatedData['unit_type'] ?? 'flat';
+            $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
+            $validatedData['has_commercial_license'] = !empty($request->has_commercial_license);
+
+            // Check the selected floor number is valid or not based on block table (if block has floors)
             if (! empty($validatedData['block_id'])) {
                 $block = Block::find($validatedData['block_id']);
-                if ($block && $validatedData['floor_no'] > $block->total_floor) {
+                if ($block && $block->total_floor > 0 && $validatedData['floor_no'] > $block->total_floor) {
                     throw ValidationException::withMessages([
                         'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.'],
                     ]);

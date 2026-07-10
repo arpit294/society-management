@@ -8,6 +8,7 @@ use App\Models\Maintenance;
 use App\Models\MaintenanceBill;
 use App\Models\Resident;
 use App\Models\Expense;
+use App\Models\NameTransferBill;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -465,6 +466,7 @@ class ReportController extends Controller
                     return;
                 }
 
+                // For the summary report, we will generate a Revenue vs Expense Summary
                 if ($activeTab === '#main-summary') {
                     if ($reportType === 'yearly') {
                         $writer->addRow(Row::fromValues(["Financial Revenue vs Expense Summary - Yearly ($selectedYear)"]));
@@ -479,7 +481,7 @@ class ReportController extends Controller
                         $totMaint = $totTrans = $totInc = $totExp = 0;
                         foreach ($months as $month) {
                             $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $filterUserId, $filterBlockId);
-                            $transFee = \App\Models\NameTransferBill::where('status', 'paid')
+                            $transFee = NameTransferBill::where('status', 'paid')
                                 ->where(function ($q) use ($selectedYear, $month) {
                                     $q->where(function ($sub) use ($selectedYear, $month) {
                                         $sub->whereYear('transfer_date', $selectedYear)->whereRaw('MONTHNAME(transfer_date) = ?', [$month]);
@@ -517,7 +519,7 @@ class ReportController extends Controller
                             ->whereRaw('MONTHNAME(COALESCE(expense_date, created_at)) = ?', [$selectedMonth])
                             ->sum('total_amount');
 
-                        $transFee = \App\Models\NameTransferBill::where('status', 'paid')
+                        $transFee = NameTransferBill::where('status', 'paid')
                             ->where(function ($q) use ($selectedYear, $selectedMonth) {
                                 $q->where(function ($sub) use ($selectedYear, $selectedMonth) {
                                     $sub->whereYear('transfer_date', $selectedYear)->whereRaw('MONTHNAME(transfer_date) = ?', [$selectedMonth]);
@@ -582,7 +584,7 @@ class ReportController extends Controller
                         round($yearlyPending, 2)
                     ]));
 
-                    // Add Per-User Yearly Summary (if available)
+                    // Add Per-User Yearly Summary 
                     if (!empty($usersYearly) && $usersYearly->isNotEmpty()) {
                         $writer->addRow(Row::fromValues([]));
                         $writer->addRow(Row::fromValues(["Per-User Yearly Summary - $selectedYear"]));
@@ -784,7 +786,7 @@ class ReportController extends Controller
                 $userTotals['totalPaid'] += $stats['totalPaid'];
                 $userTotals['totalPending'] += $stats['totalPending'];
             }
-            $userTransferFees = \App\Models\NameTransferBill::where('status', 'paid')
+            $userTransferFees = NameTransferBill::where('status', 'paid')
                 ->where(function ($q) use ($selectedYear) {
                     $q->whereYear('transfer_date', $selectedYear)
                         ->orWhereYear('paid_at', $selectedYear)

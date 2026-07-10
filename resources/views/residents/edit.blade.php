@@ -15,9 +15,9 @@
 
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label">Block</label>
+                <label class="form-label">{{ \App\Models\Setting::label('block', 'Block') }}</label>
                 <select name="block_id" class="form-control">
-                    <option value="">Select Block</option>
+                    <option value="">Select {{ \App\Models\Setting::label('block', 'Block') }}</option>
                     @foreach ($blocks as $block)
                         <option value="{{ $block->id }}" {{ $resident->block_id == $block->id ? 'selected' : '' }}>{{ $block->block_name }}</option>
                     @endforeach
@@ -25,9 +25,9 @@
             </div>
 
             <div class="col-md-6">
-                <label class="form-label">Flat No</label>
+                <label class="form-label">{{ \App\Models\Setting::label('unit', 'Flat') }} No</label>
                 <select name="flat_id" class="form-control">
-                    <option value="">Select Flat</option>
+                    <option value="">Select {{ \App\Models\Setting::label('unit', 'Flat') }}</option>
                     @foreach ($flats as $flat)
                         <option value="{{ $flat->id }}" {{ $resident->flat_id == $flat->id ? 'selected' : '' }}>{{ $flat->flat_no }}</option>
                     @endforeach
@@ -46,14 +46,43 @@
             <div id="owner-details-section-edit" class="col-md-12 {{ $resident->type == 'rental' ? '' : 'd-none' }}">
                 <div class="card bg-light border-1">
                     <div class="card-body p-3">
-                        <label for="owner_user_id" class="form-label mb-1">Owner of this Flat <span class="text-danger">*</span></label>
+                        <label for="owner_user_id" class="form-label mb-1">Owner of this {{ \App\Models\Setting::label('unit', 'Flat') }} <span class="text-danger">*</span></label>
                         <select class="form-select" id="owner_user_id" name="owner_user_id">
                             <option value="">Select Owner</option>
                             @foreach($users as $user)
                                 <option value="{{ $user->id }}">{{ $user->resident_details }}</option>
                             @endforeach
                         </select>
-                        <div class="form-text mb-0 mt-1"><i class="fas fa-info-circle"></i> If this apartment is rented out, you must assign an Owner. (If the flat already has an owner, you can skip this).</div>
+                        <div class="form-text mb-0 mt-1"><i class="fas fa-info-circle"></i> If this unit is rented out, you must assign an Owner. (If the unit already has an owner, you can skip this).</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Commercial / Business Occupant Profile -->
+            <div class="col-md-12 mt-3">
+                <div class="card border-0 bg-body-tertiary rounded-3 p-3 shadow-sm">
+                    <h6 class="mb-3 fw-bold text-primary"><i class="fas fa-briefcase me-2"></i>Occupant & Commercial Profile</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Occupant Category</label>
+                            <select class="form-select form-select-sm" name="occupant_category" id="occupant_category_edit">
+                                <option value="individual" {{ old('occupant_category', $resident->occupant_category) == 'individual' ? 'selected' : '' }}>Individual / Residential Family</option>
+                                <option value="business" {{ old('occupant_category', $resident->occupant_category) == 'business' ? 'selected' : '' }}>Commercial Business / Corporate</option>
+                                <option value="shopkeeper" {{ old('occupant_category', $resident->occupant_category) == 'shopkeeper' ? 'selected' : '' }}>Retail Shopkeeper / Merchant</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Company / Business Name</label>
+                            <input type="text" class="form-control form-control-sm" name="company_name" value="{{ old('company_name', $resident->company_name) }}" placeholder="e.g. Apex Traders Pvt Ltd">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">GSTIN (for Tax Invoices)</label>
+                            <input type="text" class="form-control form-control-sm text-uppercase" name="gstin" value="{{ old('gstin', $resident->gstin) }}" placeholder="e.g. 24AAACC1206D1ZM">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Trade / Shop License No.</label>
+                            <input type="text" class="form-control form-control-sm" name="trade_license_no" value="{{ old('trade_license_no', $resident->trade_license_no) }}" placeholder="Optional">
+                        </div>
                     </div>
                 </div>
             </div>

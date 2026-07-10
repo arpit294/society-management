@@ -27,6 +27,8 @@ class MaintenanceBill extends Model
         'flat_id',
         'amount',
         'penalty_amount',
+        'gst_percentage',
+        'gst_amount',
         'total_amount',
         'generated_date',
         'paid_at',

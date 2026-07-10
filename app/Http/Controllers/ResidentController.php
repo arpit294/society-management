@@ -93,6 +93,10 @@ class ResidentController extends Controller
                 'block_id' => 'required|exists:blocks,id',
                 'flat_id' => 'required|exists:flats,id',
                 'type' => 'required|string|in:owner,rental',
+                'occupant_category' => 'nullable|string|max:255',
+                'company_name' => 'nullable|string|max:255',
+                'gstin' => 'nullable|string|max:255',
+                'trade_license_no' => 'nullable|string|max:255',
                 'user_id' => 'required|exists:users,id',
                 'move_in_date' => 'required|date',
                 'move_out_date' => 'nullable|date',
@@ -106,6 +110,8 @@ class ResidentController extends Controller
             $validatedData = $request->validate($rules, [
                 'owner_user_id.required' => 'A flat must have an owner before it can be rented. Please assign an owner.',
             ]);
+
+            $validatedData['occupant_category'] = $validatedData['occupant_category'] ?? 'individual';
 
             // Remove owner_user_id from validatedData before creating the tenant
             $ownerUserId = $validatedData['owner_user_id'] ?? null;
@@ -195,6 +201,10 @@ class ResidentController extends Controller
                 'block_id' => 'required|exists:blocks,id',
                 'flat_id' => 'required|exists:flats,id',
                 'type' => 'required|string|in:owner,rental',
+                'occupant_category' => 'nullable|string|max:255',
+                'company_name' => 'nullable|string|max:255',
+                'gstin' => 'nullable|string|max:255',
+                'trade_license_no' => 'nullable|string|max:255',
                 'user_id' => 'required|exists:users,id',
                 'move_in_date' => 'required|date',
                 'move_out_date' => 'nullable|date',
@@ -208,6 +218,8 @@ class ResidentController extends Controller
             $validatedData = $request->validate($rules, [
                 'owner_user_id.required' => 'A flat must have an owner before it can be rented. Please assign an owner.',
             ]);
+
+            $validatedData['occupant_category'] = $validatedData['occupant_category'] ?? 'individual';
 
             // Remove owner_user_id from validatedData before updating the tenant
             $ownerUserId = $validatedData['owner_user_id'] ?? null;
