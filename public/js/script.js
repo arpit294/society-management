@@ -1169,7 +1169,8 @@ $(document).ready(function () {
     $(document).on("change", "#addDocumentForm #block_id", function () {
         var blockId = $(this).val();
         var flatSelect = $("#addDocumentForm #flat_id");
-        flatSelect.empty().append('<option value="">Select Flat</option>');
+        var unitLabel = window.SMP_UI_LABELS ? window.SMP_UI_LABELS.unit : "Flat";
+        flatSelect.empty().append('<option value="">Select ' + unitLabel + '</option>');
 
         if (blockId) {
             $.get("/api/flats-by-block/" + blockId, function (data) {
@@ -1751,8 +1752,12 @@ $(document).ready(function () {
             (settings.url.includes("expenses/") && settings.type === "GET")
         ) {
             try {
-                if ($(".dropify").length > 0) {
-                    $(".dropify").dropify();
+                if ($(".dropify:not(.no-dropify)").length > 0) {
+                    $(".dropify:not(.no-dropify)").each(function () {
+                        if ($(this).is(":visible")) {
+                            $(this).dropify();
+                        }
+                    });
                 }
             } catch (e) {
                 console.log("Dropify not loaded.");
@@ -1975,6 +1980,14 @@ $(document).ready(function () {
             upiDetails.removeClass("d-none");
             paymentSlip.attr("required", "required");
             transactionId.attr("required", "required");
+
+            if (paymentSlip.length && typeof $.fn.dropify !== "undefined") {
+                const dropifyObj = paymentSlip.data("dropify");
+                if (dropifyObj && typeof dropifyObj.destroy === "function") {
+                    dropifyObj.destroy();
+                }
+                paymentSlip.dropify();
+            }
         } else {
             upiDetails.addClass("d-none");
             paymentSlip.removeAttr("required");
@@ -2208,6 +2221,11 @@ $(document).ready(function () {
             $("#display_monthly_total").text(
                 window.currentMonthlyFee.toFixed(2),
             );
+            if (window.residentDetails && window.residentDetails[resId]) {
+                $("#fee-description").text(window.residentDetails[resId]);
+            } else {
+                $("#fee-description").text("Basic Maintenance Fee");
+            }
             $("#maintenance-fees-section").slideDown();
         } else {
             window.currentMonthlyFee = 0;
@@ -2240,8 +2258,35 @@ $(document).ready(function () {
 // --- Global Layout Scripts ---
 $(document).ready(function () {
     if ($('input[type="file"]:not(.no-dropify)').length) {
-        $('input[type="file"]:not(.no-dropify)').dropify();
+        $('input[type="file"]:not(.no-dropify)').each(function () {
+            if ($(this).is(":visible")) {
+                $(this).dropify();
+            }
+        });
     }
+
+    // Global click handler to ensure file picker dialog reliably opens when clicking any dropify-wrapper box
+    $(document).on("click", ".dropify-wrapper", function (e) {
+        if ($(this).hasClass("disabled") || e.target.tagName.toLowerCase() === "button" || $(e.target).hasClass("dropify-clear")) {
+            return;
+        }
+        const fileInput = $(this).find('input[type="file"]');
+        if (fileInput.length && e.target !== fileInput[0]) {
+            fileInput[0].click();
+        }
+    });
+
+    // Ensure dropify inputs inside modals get correctly initialized/refreshed when the modal finishes opening
+    $(document).on("shown.coreui.modal", ".modal", function () {
+        $(this).find('.dropify:not(.no-dropify)').each(function () {
+            if ($(this).is(":visible")) {
+                const dropifyObj = $(this).data("dropify");
+                if (!dropifyObj && typeof $.fn.dropify !== "undefined") {
+                    $(this).dropify();
+                }
+            }
+        });
+    });
     const flashMessages = document.getElementById("global-flash-messages");
     if (flashMessages) {
         if (flashMessages.dataset.success)
@@ -2320,11 +2365,13 @@ $(document).on("shown.coreui.modal", "#addDocumentModal", function () {
 
 $(document).on("change", "#addDocumentModal #block_id", function () {
     var blockId = $(this).val();
+    var unitLabel = window.SMP_UI_LABELS ? window.SMP_UI_LABELS.unit : "Flat";
+    var residentLabel = window.SMP_UI_LABELS ? window.SMP_UI_LABELS.resident : "Resident";
     $("#addDocumentModal #flat_id").html(
-        '<option value="">Select Flat</option>',
+        '<option value="">Select ' + unitLabel + '</option>',
     );
     $("#addDocumentModal #user_id").html(
-        '<option value="">Select Resident</option>',
+        '<option value="">Select ' + residentLabel + '</option>',
     );
     resetResidentInfo();
 
@@ -2349,8 +2396,9 @@ $(document).on("change", "#addDocumentModal #block_id", function () {
 
 $(document).on("change", "#addDocumentModal #flat_id", function () {
     var flatId = $(this).val();
+    var residentLabel = window.SMP_UI_LABELS ? window.SMP_UI_LABELS.resident : "Resident";
     $("#addDocumentModal #user_id").html(
-        '<option value="">Select Resident</option>',
+        '<option value="">Select ' + residentLabel + '</option>',
     );
     resetResidentInfo();
 
@@ -2497,6 +2545,7 @@ $(document).ajaxComplete(function (event, xhr, settings) {
     const form = document.getElementById("prepayment-form");
     if (form) {
         window.residentFees = JSON.parse(form.dataset.fees || "{}");
+        window.residentDetails = JSON.parse(form.dataset.details || "{}");
         window.discountSettings = JSON.parse(form.dataset.discount || "{}");
         window.penaltySettings = JSON.parse(form.dataset.penalty || "{}");
     }
@@ -2576,6 +2625,16 @@ function initFlatTransferModal() {
             if (this.value === "upi" || this.value === "online") {
                 upiDetailsDiv.style.display = "block";
                 trInput.required = true;
+                if (typeof $ !== "undefined" && typeof $.fn.dropify !== "undefined") {
+                    const modalSlip = $(upiDetailsDiv).find('.dropify');
+                    if (modalSlip.length) {
+                        const dropifyObj = modalSlip.data("dropify");
+                        if (dropifyObj && typeof dropifyObj.destroy === "function") {
+                            dropifyObj.destroy();
+                        }
+                        modalSlip.dropify();
+                    }
+                }
             } else {
                 upiDetailsDiv.style.display = "none";
                 trInput.required = false;
@@ -2632,6 +2691,13 @@ $(document).on("change", "#transfer_payment_method", function () {
         $("#upi_details_container").show();
         $("#payment_slip").prop("required", true);
         $("#transaction_id").prop("required", true);
+        if ($("#payment_slip").length && typeof $.fn.dropify !== "undefined") {
+            const dropifyObj = $("#payment_slip").data("dropify");
+            if (dropifyObj && typeof dropifyObj.destroy === "function") {
+                dropifyObj.destroy();
+            }
+            $("#payment_slip").dropify();
+        }
     } else {
         $("#upi_details_container").hide();
         $("#payment_slip").prop("required", false);

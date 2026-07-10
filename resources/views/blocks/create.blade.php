@@ -3,8 +3,8 @@
 
     <div class="modal-header">
         <div>
-            <h5 class="modal-title mb-1">Add Block</h5>
-            <p class="text-muted mb-0 small">Fill in the details and save the block.</p>
+            <h5 class="modal-title mb-1">Add {{ \App\Models\Setting::label('block', 'Block') }}</h5>
+            <p class="text-muted mb-0 small">Fill in the details and save the {{ strtolower(\App\Models\Setting::label('block', 'block')) }}.</p>
         </div>
         <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
     </div>

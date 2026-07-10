@@ -27,10 +27,10 @@
                     @endforeach
                 </select>
             </div>
-            <div class="filter-col" style="min-width: 220px;">
-                <label class="form-label mb-1" for="flats-filter-type">Filter by Flat Type</label>
+            <div class="filter-col {{ ($globalBillingMethod ?? 'fixed') === 'per_sqft' ? 'd-none' : '' }}" style="min-width: 220px;">
+                <label class="form-label mb-1" for="flats-filter-type">Filter by Category</label>
                 <select id="flats-filter-type" class="form-select" style="max-width: 320px;">
-                    <option value="">All Flat Types</option>
+                    <option value="">All Categories</option>
                     @foreach($flatTypes as $type)
                         <option value="{{ $type->name }}">
                             {{ $type->name }} ({{ \App\Helpers\CurrencyHelper::formatCurrency($type->owner_maintenance_fee) }})

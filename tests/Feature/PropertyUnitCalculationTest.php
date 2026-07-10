@@ -170,4 +170,71 @@ class PropertyUnitCalculationTest extends TestCase
         $this->assertEquals('Sector/Phase', Setting::label('block', 'Block'));
         $this->assertEquals('Row House', Setting::label('unit', 'Flat'));
     }
+
+    public function test_universal_penalty_and_discount_for_all_property_types()
+    {
+        Setting::clearCache();
+        Setting::updateOrCreate(['key' => 'apply_penalty'], ['value' => '1']);
+        Setting::updateOrCreate(['key' => 'penalty_due_days'], ['value' => '10']);
+        Setting::updateOrCreate(['key' => 'penalty_monthly_enabled'], ['value' => '1']);
+        Setting::updateOrCreate(['key' => 'penalty_monthly_value'], ['value' => '5']); // 5% penalty
+        Setting::updateOrCreate(['key' => 'penalty_type'], ['value' => 'percentage']);
+        Setting::clearCache();
+
+        $maintenance = \App\Models\Maintenance::create([
+            'month' => 'January',
+            'year' => 2026,
+            'billing_cycle' => 'monthly',
+            'due_date' => now()->subDays(15)->format('Y-m-d'),
+            'status' => 'published',
+        ]);
+
+        $flatType = FlatType::create([
+            'name' => 'Commercial Shop Type',
+            'category_type' => 'commercial',
+            'calculation_method' => 'fixed',
+            'owner_maintenance_fee' => 2000,
+            'rental_maintenance_fee' => 2500,
+            'rate_per_sqft' => 0,
+            'commercial_surcharge_percentage' => 0,
+        ]);
+
+        $block = Block::create([
+            'block_name' => 'Trade Center',
+            'block_type' => 'commercial_wing',
+            'label_type' => 'Wing',
+            'total_floor' => 5,
+            'total_flats' => 20,
+        ]);
+
+        $shopFlat = Flat::create([
+            'block_id' => $block->id,
+            'flat_type_id' => $flatType->id,
+            'flat_no' => 'SHOP-101',
+            'floor_no' => 1,
+            'unit_type' => 'shop',
+            'area_sqft' => 500,
+            'status' => 'Occupied',
+        ]);
+
+        $user = \App\Models\User::factory()->create();
+
+        $bill = \App\Models\MaintenanceBill::create([
+            'maintenance_id' => $maintenance->id,
+            'flat_id' => $shopFlat->id,
+            'block_id' => $block->id,
+            'user_id' => $user->id,
+            'amount' => 2000,
+            'gst_amount' => 360, // 18% GST
+            'discount_amount' => 0,
+            'total_amount' => 2360,
+            'generated_date' => now()->subDays(20)->format('Y-m-d'),
+            'status' => 'pending',
+        ]);
+
+        // Penalty = 5% of 2000 base = 100
+        $this->assertEquals(100.0, $bill->penalty_amount);
+        // Total amount = Base (2000) + GST (360) + Penalty (100) - Discount (0) = 2460
+        $this->assertEquals(2460.0, $bill->total_amount);
+    }
 }

@@ -122,11 +122,29 @@ class MaintenanceBillController extends Controller
                 return [$resident->id => $fee];
             });
 
+            $residentDetails = $residents->mapWithKeys(function ($resident) {
+                $details = 'Basic Maintenance Fee';
+                if ($resident->flat) {
+                    $flatType = $resident->flat->flatType;
+                    $calcMethod = $flatType ? ($flatType->calculation_method ?? 'fixed') : 'fixed';
+                    $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+                    $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
+                    $sqftRate = ($flatType && $flatType->rate_per_sqft > 0) ? $flatType->rate_per_sqft : (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
+
+                    if ($isPerSqft && $resident->flat->area_sqft > 0 && $sqftRate > 0) {
+                        $details = 'Carpet Area calculation: ' . number_format($resident->flat->area_sqft, 2) . ' Sq.Ft. @ ₹' . number_format($sqftRate, 2) . '/Sq.Ft.';
+                    } elseif ($flatType) {
+                        $details = $flatType->name . ' (' . ucfirst($calcMethod) . ' Rate)';
+                    }
+                }
+                return [$resident->id => $details];
+            });
+
             // Load the global penalty and discount settings to pass to the frontend JavaScript
             $discountSettings = $this->getSettingValues('discount');
             $penaltySettings = $this->getSettingValues('penalty');
 
-            return view('maintenance_bills.create', compact('residents', 'residentFees', 'discountSettings', 'penaltySettings'));
+            return view('maintenance_bills.create', compact('residents', 'residentFees', 'residentDetails', 'discountSettings', 'penaltySettings'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -156,12 +174,16 @@ class MaintenanceBillController extends Controller
         try {
             $resident = Resident::with(['user', 'flat.flatType'])->findOrFail($request->resident_id);
 
-            if (! $resident->flat || ! $resident->flat->flatType) {
-                throw new \Exception('Resident does not have a flat assigned with a valid flat type.');
+            if (! $resident->flat) {
+                throw new \Exception('Resident does not have a property unit (flat/shop) assigned.');
             }
 
             // Determine the base fee using dynamic rate engine
             $monthlyFee = $resident->flat->calculateMaintenanceFee($resident->type);
+
+            if ($monthlyFee <= 0 && ! $resident->flat->flatType) {
+                throw new \Exception('This property unit does not have a maintenance rate configured or a valid property type assigned.');
+            }
 
             $numberOfMonths = (int) $request->months;
 
@@ -367,7 +389,7 @@ class MaintenanceBillController extends Controller
                 // Lock in the dynamically calculated amounts so they never change again
                 $maintenanceBill->penalty_amount = $totalPenaltyAmount;
                 $maintenanceBill->discount_amount = $totalDiscountAmount;
-                $maintenanceBill->total_amount = $monthlyFee + $totalPenaltyAmount - $totalDiscountAmount;
+                $maintenanceBill->total_amount = max(0, $monthlyFee + ($maintenanceBill->gst_amount ?? 0) + $totalPenaltyAmount - $totalDiscountAmount);
 
             } elseif ($request->status !== config('status.maintenance_bills.paid')) {
                 // Revert back to unpaid state
@@ -381,7 +403,7 @@ class MaintenanceBillController extends Controller
                 // Reset modifiers
                 $maintenanceBill->penalty_amount = 0;
                 $maintenanceBill->discount_amount = 0;
-                // The total_amount should revert back to just the base fee (adjusted as needed by business rules)
+                $maintenanceBill->total_amount = ($maintenanceBill->amount ?? 0) + ($maintenanceBill->gst_amount ?? 0);
             }
 
             $maintenanceBill->save();
@@ -496,12 +518,25 @@ class MaintenanceBillController extends Controller
 
             if ($resident && $resident->flat) {
                 $amount = $resident->flat->calculateMaintenanceFee($resident->type);
+                $details = 'Basic Maintenance Fee';
+                $flatType = $resident->flat->flatType;
+                $calcMethod = $flatType ? ($flatType->calculation_method ?? 'fixed') : 'fixed';
+                $globalMethod = Setting::get('maintenance_billing_method', 'fixed');
+                $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
+                $sqftRate = ($flatType && $flatType->rate_per_sqft > 0) ? $flatType->rate_per_sqft : (float) Setting::get('maintenance_rate_per_sqft', 0);
+
+                if ($isPerSqft && $resident->flat->area_sqft > 0 && $sqftRate > 0) {
+                    $details = 'Carpet Area calculation: ' . number_format($resident->flat->area_sqft, 2) . ' Sq.Ft. @ ₹' . number_format($sqftRate, 2) . '/Sq.Ft.';
+                } elseif ($flatType) {
+                    $details = $flatType->name . ' (' . ucfirst($calcMethod) . ' Rate)';
+                }
 
                 return response()->json([
                     'success' => true,
                     'block_id' => $resident->block_id,
                     'flat_id' => $resident->flat_id,
                     'amount' => $amount,
+                    'details' => $details,
                 ]);
             }
 

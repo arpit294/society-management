@@ -54,7 +54,9 @@ class SettingController extends Controller
             // Fetch all permissions grouped by their module name from the config
             $permissionsByModule = config('permissions.modules', []);
 
-            return view('settings.index', compact('settings', 'roles', 'permissionsByModule'));
+            $propertyTypes = \App\Models\PropertyType::orderBy('id')->get();
+
+            return view('settings.index', compact('settings', 'roles', 'permissionsByModule', 'propertyTypes'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;

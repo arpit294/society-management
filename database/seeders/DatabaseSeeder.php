@@ -33,7 +33,6 @@ class DatabaseSeeder extends Seeder
         // Run seeders
         $this->call([
             SystemDataSeeder::class,
-            TestingDataSeeder::class,
         ]);
     }
 }

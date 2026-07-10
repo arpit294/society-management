@@ -56,11 +56,20 @@ class FlatTypeController extends Controller
         abort_if(! \Auth::user()->can('flat_type_create'), 403);
         try {
             $validatedData = $request->validate([
-                'name' => 'required|string|in:'.implode(',', self::FLAT_TYPE_NAMES).'|unique:flat_types,name',
+                'name' => 'required|string|max:255|unique:flat_types,name',
                 'owner_maintenance_fee' => 'required|numeric|min:0',
                 'rental_maintenance_fee' => 'required|numeric|min:0',
+                'rate_per_sqft' => 'nullable|numeric|min:0',
+                'calculation_method' => 'nullable|string|in:fixed,per_sqft,hybrid',
+                'category_type' => 'nullable|string|in:residential,commercial,institutional,industrial',
+                'commercial_surcharge_percentage' => 'nullable|numeric|min:0',
                 'status' => 'required|in:active,inactive',
             ]);
+
+            $validatedData['rate_per_sqft'] = $validatedData['rate_per_sqft'] ?? 0;
+            $validatedData['calculation_method'] = $validatedData['calculation_method'] ?? 'fixed';
+            $validatedData['category_type'] = $validatedData['category_type'] ?? 'residential';
+            $validatedData['commercial_surcharge_percentage'] = $validatedData['commercial_surcharge_percentage'] ?? 0;
 
             FlatType::create($validatedData);
 
@@ -105,11 +114,20 @@ class FlatTypeController extends Controller
         abort_if(! \Auth::user()->can('flat_type_edit'), 403);
         try {
             $validatedData = $request->validate([
-                'name' => 'required|string|in:'.implode(',', self::FLAT_TYPE_NAMES).'|unique:flat_types,name,'.$flatType->id,
+                'name' => 'required|string|max:255|unique:flat_types,name,'.$flatType->id,
                 'owner_maintenance_fee' => 'required|numeric|min:0',
                 'rental_maintenance_fee' => 'required|numeric|min:0',
+                'rate_per_sqft' => 'nullable|numeric|min:0',
+                'calculation_method' => 'nullable|string|in:fixed,per_sqft,hybrid',
+                'category_type' => 'nullable|string|in:residential,commercial,institutional,industrial',
+                'commercial_surcharge_percentage' => 'nullable|numeric|min:0',
                 'status' => 'required|in:active,inactive',
             ]);
+
+            $validatedData['rate_per_sqft'] = $validatedData['rate_per_sqft'] ?? 0;
+            $validatedData['calculation_method'] = $validatedData['calculation_method'] ?? 'fixed';
+            $validatedData['category_type'] = $validatedData['category_type'] ?? 'residential';
+            $validatedData['commercial_surcharge_percentage'] = $validatedData['commercial_surcharge_percentage'] ?? 0;
 
             $flatType->update($validatedData);
 

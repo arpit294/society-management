@@ -74,10 +74,23 @@
                     <td class="right-col">
                         <div class="info-title">Property Details</div>
                         <div class="info-content">
-                            Block {{ $bill->flat->block->block_name ?? 'N/A' }}, Flat {{ $bill->flat->flat_no ?? 'N/A' }}<br>
+                            {{ \App\Models\Setting::label('block', 'Block/Wing') }} {{ $bill->flat->block->block_name ?? 'N/A' }}, {{ \App\Models\Setting::label('unit', 'Flat') }} {{ $bill->flat->flat_no ?? 'N/A' }}<br>
                             <span style="font-size: 13px; color: #666; font-weight: normal;">
-                                <strong>Type:</strong> {{ $bill->flat->flatType->name ?? 'N/A' }}<br>
-                                <strong>Method:</strong> {{ strtoupper($bill->payment_method) }}
+                                <strong>Category:</strong> {{ $bill->flat->flatType->name ?? 'N/A' }}<br>
+                                @php
+                                    $flatType = $bill->flat->flatType ?? null;
+                                    $calcMethod = $flatType ? ($flatType->calculation_method ?? 'fixed') : 'fixed';
+                                    $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+                                    $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
+                                    $sqftRate = $flatType && $flatType->rate_per_sqft > 0 ? $flatType->rate_per_sqft : (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
+                                @endphp
+                                @if($bill->flat && $bill->flat->area_sqft > 0)
+                                    <strong>Carpet Area:</strong> {{ number_format($bill->flat->area_sqft, 2) }} Sq. Ft.<br>
+                                @endif
+                                @if($isPerSqft && $sqftRate > 0)
+                                    <strong>Applied Rate:</strong> {{ \App\Helpers\CurrencyHelper::formatCurrency($sqftRate) }} / Sq. Ft.<br>
+                                @endif
+                                <strong>Payment Mode:</strong> {{ strtoupper($bill->payment_method) }}
                                 @if($bill->receivedBy)
                                     <br><strong>Received By:</strong> {{ $bill->receivedBy->name }}
                                 @endif
@@ -117,6 +130,11 @@
                                     For {{ $bill->maintenance->month }} {{ $bill->maintenance->year }}
                                 @endif
                             </div>
+                            @if($bill->flat && $bill->flat->area_sqft > 0 && $isPerSqft && $sqftRate > 0)
+                                <div style="font-size: 11px; color: #555; margin-top: 4px; font-style: italic;">
+                                    Carpet Area Calculation: {{ number_format($bill->flat->area_sqft, 2) }} Sq. Ft. &times; {{ \App\Helpers\CurrencyHelper::formatCurrency($sqftRate) }} / Sq. Ft.
+                                </div>
+                            @endif
                         </td>
                         <td class="text-right">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalBase) }}</td>
                     </tr>

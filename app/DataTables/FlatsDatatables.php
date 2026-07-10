@@ -44,6 +44,24 @@ class FlatsDatatables extends DataTable
             ->editColumn('block_id', function ($model) {
                 return $model->block ? $model->block->block_name : '-';
             })
+            ->editColumn('unit_type', function ($model) {
+                $badgeClass = match($model->unit_type) {
+                    'shop' => 'bg-warning text-dark',
+                    'office' => 'bg-info text-dark',
+                    'villa' => 'bg-primary',
+                    'row_house' => 'bg-primary',
+                    'plot' => 'bg-dark',
+                    default => 'bg-secondary'
+                };
+                $label = ucwords(str_replace('_', ' ', $model->unit_type ?? 'flat'));
+                return '<span class="badge '.$badgeClass.' px-2 py-1">'.$label.'</span>';
+            })
+            ->editColumn('area_sqft', function ($model) {
+                if ($model->area_sqft > 0) {
+                    return '<span class="fw-bold">'.number_format($model->area_sqft, 2).'</span> <small class="text-muted">Sq.Ft.</small>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
             ->editColumn('flat_type_id', function ($model) {
                 return $model->flatType ? $model->flatType->name : '-';
             })
@@ -66,7 +84,7 @@ class FlatsDatatables extends DataTable
 
                 return '<span class="badge '.$class.'">'.$displayStatus.'</span>';
             })
-            ->rawColumns(['status', 'action', 'owner_name', 'tenant_name'])
+            ->rawColumns(['status', 'action', 'owner_name', 'tenant_name', 'unit_type', 'area_sqft'])
             ->setRowId('id');
     }
 
@@ -106,12 +124,22 @@ class FlatsDatatables extends DataTable
      */
     public function getColumns(): array
     {
-        return [
+        $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+
+        $columns = [
             Column::make('id'),
-            Column::make('block_id')->title('Block'),
-            Column::make('flat_no'),
-            Column::make('floor_no'),
-            Column::make('flat_type_id')->title('Flat Type'),
+            Column::make('block_id')->title(\App\Models\Setting::label('block', 'Block')),
+            Column::make('unit_type')->title('Structure Type'),
+            Column::make('flat_no')->title(\App\Models\Setting::label('unit', 'Flat') . ' No'),
+            Column::make('floor_no')->title('Floor'),
+            Column::make('area_sqft')->title('Carpet Area (Sq.Ft.)'),
+        ];
+
+        if ($globalMethod !== 'per_sqft') {
+            $columns[] = Column::make('flat_type_id')->title('Category');
+        }
+
+        $columns = array_merge($columns, [
             Column::make('status'),
             Column::make('owner_name')->title('Owner')->orderable(false),
             Column::make('tenant_name')->title('Tenant')->orderable(false),
@@ -122,7 +150,9 @@ class FlatsDatatables extends DataTable
                 ->printable(false)
                 ->width(60)
                 ->addClass('text-center'),
-        ];
+        ]);
+
+        return $columns;
     }
 
     /**

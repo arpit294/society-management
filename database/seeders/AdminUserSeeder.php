@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class AdminUserSeeder extends Seeder
 {
@@ -19,13 +20,13 @@ class AdminUserSeeder extends Seeder
                 'name' => 'Administrator',
                 'password' => Hash::make('123456'),
                 'role' => 'Admin',
-                'phone' => null,
+                'phone' => 7896541230,
                 'aadhar_id' => '',
                 'status' => 'active',
             ]
         );
 
-        if (class_exists(\Spatie\Permission\Models\Role::class) && \Spatie\Permission\Models\Role::where('name', 'Admin')->exists()) {
+        if (class_exists(Role::class) && Role::where('name', 'Admin')->exists()) {
             $user->syncRoles(['Admin']);
         }
     }

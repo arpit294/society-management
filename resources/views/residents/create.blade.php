@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <h5 class="modal-title" id="residentModalLabel">Add Resident</h5>
+    <h5 class="modal-title" id="residentModalLabel">Add {{ \App\Models\Setting::label('resident', 'Resident') }}</h5>
     <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
 </div>
 <form id="resident-ajax-form" action="{{ route('residents.store') }}" method="POST">

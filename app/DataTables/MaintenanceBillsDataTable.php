@@ -147,7 +147,7 @@ class MaintenanceBillsDataTable extends DataTable
         return [
             Column::make('id')->title('ID')->width(50)->addClass('text-nowrap'),
             Column::make('resident')->title('Resident')->name('resident')->orderable(false),
-            Column::make('flat')->title('Flat')->name('flat')->orderable(false)->addClass('text-nowrap'),
+            Column::make('flat')->title(\App\Models\Setting::label('block', 'Block') . ' & ' . \App\Models\Setting::label('unit', 'Flat'))->name('flat')->orderable(false)->addClass('text-nowrap'),
             Column::make('month_year')->title('For Month')->name('month_year')->orderable(false),
             Column::make('amount')->title('Subtotal'),
             Column::make('penalty_amount')->title('Penalty'),

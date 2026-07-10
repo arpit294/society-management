@@ -1,10 +1,10 @@
 <x-user-page>
     <div class="container-fluid">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3 mb-0 text-gray-800">Flat Documents</h1>
+            <h1 class="h3 mb-0 text-gray-800">{{ \App\Models\Setting::label('unit', 'Flat') }} Documents</h1>
             @can('flat_document_create')
             <button type="button" class="btn btn-primary" data-coreui-toggle="modal" data-coreui-target="#addDocumentModal"
-                data-url="{{ route('flat-documents.create') }}" data-title="Upload Document">
+                data-url="{{ route('flat-documents.create') }}" data-title="Upload {{ \App\Models\Setting::label('unit', 'Flat') }} Document">
                 <i class="fas fa-plus"></i> Upload Document
             </button>
             @endcan
@@ -15,9 +15,9 @@
                 <h5 class="m-0 text-body">Document List</h5>
                 <div class="d-flex align-items-end gap-3 flex-wrap">
                     <div class="filter-col" style="min-width: 220px;">
-                        <label class="form-label mb-1" for="flat-documents-filter-block">Filter by Block</label>
+                        <label class="form-label mb-1" for="flat-documents-filter-block">Filter by {{ \App\Models\Setting::label('block', 'Block') }}</label>
                         <select id="flat-documents-filter-block" class="form-select select2-filter" style="width: 100%;">
-                            <option value="">All Blocks</option>
+                            <option value="">All {{ \App\Models\Setting::label('block', 'Block') }}s</option>
                             @foreach ($blocks as $block)
                                 <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
                             @endforeach

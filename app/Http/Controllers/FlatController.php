@@ -51,8 +51,9 @@ class FlatController extends Controller
         try {
             $blocks = Block::all();
             $flatTypes = FlatType::where('status', config('status.general.active'))->get();
+            $globalBillingMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
 
-            return $dataTable->render('flats.index', compact('blocks', 'flatTypes'));
+            return $dataTable->render('flats.index', compact('blocks', 'flatTypes', 'globalBillingMethod'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -78,8 +79,10 @@ class FlatController extends Controller
             $blocks = Block::all();
             // Only get active flat types for the dropdown
             $flatTypes = FlatType::where('status', config('status.general.active'))->get();
+            $globalBillingMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+            $structureType = \App\Models\Setting::get('society_property_type', 'flat_residential');
 
-            return view('flats.create', compact('blocks', 'flatTypes'));
+            return view('flats.create', compact('blocks', 'flatTypes', 'globalBillingMethod', 'structureType'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -99,23 +102,31 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_create'), 403);
         try {
+            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
             $validatedData = $request->validate([
                 'block_id' => 'required|integer|exists:blocks,id',
                 'unit_type' => 'nullable|string|max:255',
                 'flat_no' => 'required|string|max:255',
                 'floor_no' => 'nullable|integer|min:0',
-                'flat_type_id' => 'required|integer|exists:flat_types,id',
+                'flat_type_id' => ($globalMethod === 'per_sqft') ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
                 'area_sqft' => 'nullable|numeric|min:0',
                 'plot_area_sqyards' => 'nullable|numeric|min:0',
-                'electricity_meter_no' => 'nullable|string|max:255',
-                'water_meter_no' => 'nullable|string|max:255',
-                'has_commercial_license' => 'nullable|boolean',
                 'status' => 'required|string|max:255',
             ]);
 
             $validatedData['unit_type'] = $validatedData['unit_type'] ?? 'flat';
             $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
-            $validatedData['has_commercial_license'] = !empty($request->has_commercial_license);
+
+            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+            $flatTypeObj = FlatType::find($validatedData['flat_type_id'] ?? null);
+            $calcMethod = $flatTypeObj ? ($flatTypeObj->calculation_method ?? 'fixed') : 'fixed';
+            $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
+
+            if ($isPerSqft && (empty($validatedData['area_sqft']) || (float) $validatedData['area_sqft'] <= 0)) {
+                throw ValidationException::withMessages([
+                    'area_sqft' => ['Carpet Area (Sq. Ft.) is mandatory and must be greater than 0 because Carpet Area Based maintenance billing is active (' . ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' ? 'Category Level' : 'Global Level') . '). Otherwise area 0 hone par bill 0 ban jayega.'],
+                ]);
+            }
 
             // Check if a block is selected and ensure the provided floor_no does not exceed the block's total_floor (if block has floors)
             if (! empty($validatedData['block_id'])) {
@@ -186,8 +197,10 @@ class FlatController extends Controller
         try {
             $blocks = Block::all();
             $flatTypes = FlatType::all();
+            $globalBillingMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+            $structureType = \App\Models\Setting::get('society_property_type', 'flat_residential');
 
-            return view('flats.edit', compact('flat', 'blocks', 'flatTypes'));
+            return view('flats.edit', compact('flat', 'blocks', 'flatTypes', 'globalBillingMethod', 'structureType'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -209,23 +222,31 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_edit'), 403);
         try {
+            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
             $validatedData = $request->validate([
                 'block_id' => 'required|integer|exists:blocks,id',
                 'unit_type' => 'nullable|string|max:255',
                 'flat_no' => 'required|string|max:255',
                 'floor_no' => 'nullable|integer|min:0',
-                'flat_type_id' => 'required|integer|exists:flat_types,id',
+                'flat_type_id' => ($globalMethod === 'per_sqft') ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
                 'area_sqft' => 'nullable|numeric|min:0',
                 'plot_area_sqyards' => 'nullable|numeric|min:0',
-                'electricity_meter_no' => 'nullable|string|max:255',
-                'water_meter_no' => 'nullable|string|max:255',
-                'has_commercial_license' => 'nullable|boolean',
                 'status' => 'required|string|max:255',
             ]);
 
             $validatedData['unit_type'] = $validatedData['unit_type'] ?? 'flat';
             $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
-            $validatedData['has_commercial_license'] = !empty($request->has_commercial_license);
+
+            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+            $flatTypeObj = FlatType::find($validatedData['flat_type_id'] ?? null);
+            $calcMethod = $flatTypeObj ? ($flatTypeObj->calculation_method ?? 'fixed') : 'fixed';
+            $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
+
+            if ($isPerSqft && (empty($validatedData['area_sqft']) || (float) $validatedData['area_sqft'] <= 0)) {
+                throw ValidationException::withMessages([
+                    'area_sqft' => ['Carpet Area (Sq. Ft.) is mandatory and must be greater than 0 because Carpet Area Based maintenance billing is active (' . ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' ? 'Category Level' : 'Global Level') . '). Otherwise area 0 hone par bill 0 ban jayega.'],
+                ]);
+            }
 
             // Check the selected floor number is valid or not based on block table (if block has floors)
             if (! empty($validatedData['block_id'])) {

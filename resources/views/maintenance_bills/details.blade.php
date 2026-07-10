@@ -2,8 +2,8 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
-            <h4><a href="{{ route('maintenance-bills.show', $bill->maintenance_id) }}" class="text-decoration-none text-dark"><i class="fa-solid fa-arrow-left"></i></a> Bill Details</h4>
-            <a href="{{ route('maintenance-bills.show', $bill->maintenance_id) }}" class="btn btn-secondary">Back to List</a>
+            <h4><a href="{{ route('maintenance-bills.index') }}" class="text-decoration-none text-dark"><i class="fa-solid fa-arrow-left"></i></a> Bill Details</h4>
+            <a href="{{ route('maintenance-bills.index') }}" class="btn btn-secondary">Back to List</a>
         </div>
     </div>
 </div>
@@ -17,13 +17,26 @@
             <div class="card-body">
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <strong>Resident:</strong> {{ $bill->user->name ?? 'N/A' }}<br>
+                        <strong>{{ \App\Models\Setting::label('resident', 'Resident') }}:</strong> {{ $bill->user->name ?? 'N/A' }}<br>
                         <strong>Email:</strong> {{ $bill->user->email ?? 'N/A' }}<br>
                         <strong>Phone:</strong> {{ $bill->user->phone ?? 'N/A' }}
                     </div>
                     <div class="col-md-6 text-md-end">
-                        <strong>Block & Flat:</strong> {{ $bill->flat->block->block_name ?? '' }}-{{ $bill->flat->flat_no ?? '' }}<br>
-                        <strong>Flat Type:</strong> {{ $bill->flat->flatType->name ?? '' }}<br>
+                        <strong>{{ \App\Models\Setting::label('block', 'Block/Wing') }} & {{ \App\Models\Setting::label('unit', 'Flat') }}:</strong> {{ $bill->flat->block->block_name ?? '' }}-{{ $bill->flat->flat_no ?? '' }}<br>
+                        <strong>Property Category:</strong> <span class="badge bg-info text-dark fw-bold">{{ $bill->flat->flatType->name ?? 'Standard' }}</span><br>
+                        @php
+                            $flatType = $bill->flat->flatType ?? null;
+                            $calcMethod = $flatType ? ($flatType->calculation_method ?? 'fixed') : 'fixed';
+                            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+                            $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
+                            $sqftRate = $flatType && $flatType->rate_per_sqft > 0 ? $flatType->rate_per_sqft : (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
+                        @endphp
+                        @if($bill->flat && $bill->flat->area_sqft > 0)
+                            <strong>Carpet Area:</strong> <span class="badge bg-secondary">{{ number_format($bill->flat->area_sqft, 2) }} Sq. Ft.</span><br>
+                        @endif
+                        @if($isPerSqft && $sqftRate > 0)
+                            <strong>Applied Rate:</strong> {{ \App\Helpers\CurrencyHelper::formatCurrency($sqftRate) }} / Sq. Ft.<br>
+                        @endif
                         <strong>Billing Period:</strong> {{ $bill->maintenance->month }} {{ $bill->maintenance->year }}
                     </div>
                 </div>
@@ -68,7 +81,15 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Base Maintenance Fee</td>
+                            <td>
+                                Base Maintenance Fee
+                                @if($bill->flat && $bill->flat->area_sqft > 0 && $isPerSqft && $sqftRate > 0)
+                                    <div class="text-muted small mt-1">
+                                        <i class="fa-solid fa-calculator me-1"></i>
+                                        <em>Carpet Area Calculation: {{ number_format($bill->flat->area_sqft, 2) }} Sq. Ft. &times; {{ \App\Helpers\CurrencyHelper::formatCurrency($sqftRate) }} / Sq. Ft.</em>
+                                    </div>
+                                @endif
+                            </td>
                             <td class="text-end">{{ \App\Helpers\CurrencyHelper::formatCurrency($bill->amount) }}</td>
                         </tr>
                         @if($bill->penalty_amount > 0)

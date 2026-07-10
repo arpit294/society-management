@@ -15,7 +15,7 @@ class SystemDataSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             AdminUserSeeder::class,
-            SettingSeeder::class,
+            AdminSeeder::class,
         ]);
     }
 }

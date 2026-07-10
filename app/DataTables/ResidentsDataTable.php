@@ -112,8 +112,8 @@ class ResidentsDataTable extends DataTable
     {
         return [
             Column::make('id')->title('ID'),
-            Column::make('block')->title('Block Name')->orderable(false),
-            Column::make('flat')->title('Flat No')->orderable(false),
+            Column::make('block')->title(\App\Models\Setting::label('block', 'Block/Wing'))->orderable(false),
+            Column::make('flat')->title(\App\Models\Setting::label('unit', 'Flat') . ' No')->orderable(false),
             Column::make('user')->title('User Name')->orderable(false),
             Column::make('type')->title('Type'),
             Column::make('move_in_date')->title('Move In'),

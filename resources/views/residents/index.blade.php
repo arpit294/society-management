@@ -1,7 +1,7 @@
 <x-user-page>
 
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-        <h4 class="mb-0">Residents Management</h4>
+        <h4 class="mb-0">{{ \App\Models\Setting::label('resident', 'Resident') }}s Management</h4>
         <div class="d-flex flex-wrap align-items-center gap-2">
 
             @can('resident_view')
@@ -15,8 +15,8 @@
                 <i class="fa-solid fa-file-import me-2"></i>Import Records
             </button>
             <button type="button" class="btn btn-primary" id="btn-add-resident"
-                data-url="{{ route('residents.create') }}" data-title="Add New Resident">
-                <i class="fa-solid fa-plus me-2"></i>Add Resident
+                data-url="{{ route('residents.create') }}" data-title="Add New {{ \App\Models\Setting::label('resident', 'Resident') }}">
+                <i class="fa-solid fa-plus me-2"></i>Add {{ \App\Models\Setting::label('resident', 'Resident') }}
             </button>
             @endcan
         </div>
@@ -25,9 +25,9 @@
     <div class="mb-3">
         <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
             <div class="filter-col" style="min-width: 220px;">
-                <label class="form-label mb-1" for="residents-filter-block">Filter by Block</label>
+                <label class="form-label mb-1" for="residents-filter-block">Filter by {{ \App\Models\Setting::label('block', 'Block') }}</label>
                 <select id="residents-filter-block" class="form-select" style="max-width: 320px;">
-                    <option value="">All Blocks</option>
+                    <option value="">All {{ \App\Models\Setting::label('block', 'Block') }}s</option>
                     @foreach($blocks as $block)
                         <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
                     @endforeach

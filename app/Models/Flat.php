@@ -14,25 +14,38 @@ class Flat extends Model
         'flat_type_id',
         'area_sqft',
         'plot_area_sqyards',
-        'electricity_meter_no',
-        'water_meter_no',
-        'has_commercial_license',
         'status',
     ];
 
     public function calculateMaintenanceFee($residentType = 'owner')
     {
+        $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+        $globalSqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
+
         $type = $this->flatType;
         if (!$type) {
+            if ($globalMethod === 'per_sqft' && $this->area_sqft > 0 && $globalSqftRate > 0) {
+                return round($this->area_sqft * $globalSqftRate, 2);
+            }
             return 0;
         }
 
         $baseRate = ($residentType === 'rental') ? $type->rental_maintenance_fee : $type->owner_maintenance_fee;
 
-        if ($type->calculation_method === 'per_sqft' && $this->area_sqft > 0) {
-            $amount = $this->area_sqft * $type->rate_per_sqft;
-        } elseif ($type->calculation_method === 'hybrid' && $this->area_sqft > 0) {
-            $amount = $baseRate + ($this->area_sqft * $type->rate_per_sqft);
+        if ($globalMethod === 'per_sqft' || $type->calculation_method === 'per_sqft') {
+            $sqftRate = ($type->rate_per_sqft > 0) ? $type->rate_per_sqft : $globalSqftRate;
+            if ($this->area_sqft > 0 && $sqftRate > 0) {
+                $amount = $this->area_sqft * $sqftRate;
+            } else {
+                $amount = $baseRate;
+            }
+        } elseif ($type->calculation_method === 'hybrid') {
+            $sqftRate = ($type->rate_per_sqft > 0) ? $type->rate_per_sqft : $globalSqftRate;
+            if ($this->area_sqft > 0 && $sqftRate > 0) {
+                $amount = $baseRate + ($this->area_sqft * $sqftRate);
+            } else {
+                $amount = $baseRate;
+            }
         } else {
             $amount = $baseRate;
         }

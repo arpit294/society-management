@@ -92,11 +92,11 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">Block Management</h4>
+        <h4 class="mb-0">{{ \App\Models\Setting::label('block', 'Block') }} Management</h4>
 
         @can('block_create')
         <button type="button" class="btn btn-primary" id="btn-add-block" data-url="{{ route('blocks.create') }}"
-            data-title="Add Block">Add Block</button>
+            data-title="Add {{ \App\Models\Setting::label('block', 'Block') }}">Add {{ \App\Models\Setting::label('block', 'Block') }}</button>
         @endcan
     </div>
 

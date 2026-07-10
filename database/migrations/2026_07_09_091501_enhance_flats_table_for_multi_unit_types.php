@@ -33,6 +33,9 @@ return new class extends Migration
             if (Schema::hasColumn('flats', 'floor_no')) {
                 $table->string('floor_no')->nullable()->change();
             }
+            if (Schema::hasColumn('flats', 'flat_type_id')) {
+                $table->unsignedBigInteger('flat_type_id')->nullable()->change();
+            }
         });
     }
 

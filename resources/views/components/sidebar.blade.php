@@ -81,7 +81,7 @@
         </li>
         @endcan
         @can('flat_type_view')
-        <li class="nav-item">
+        <li class="nav-item {{ \App\Models\Setting::get('maintenance_billing_method', 'fixed') === 'per_sqft' ? 'd-none' : '' }}" id="sidebar-maintenance-rates-link">
             <a class="nav-link" href="{{ route('flat-types.index') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)"

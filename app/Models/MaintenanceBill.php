@@ -98,6 +98,8 @@ class MaintenanceBill extends Model
                 $penaltyValue = (float)\App\Models\Setting::get('penalty_monthly_value', $defaults['penalty_monthly_value']);
             } elseif ($billingCycle === 'quarterly' && \App\Models\Setting::get('penalty_quarterly_enabled', '1') == '1') {
                 $penaltyValue = (float)\App\Models\Setting::get('penalty_quarterly_value', $defaults['penalty_quarterly_value']);
+            } elseif ($billingCycle === 'half_yearly' && \App\Models\Setting::get('penalty_half_yearly_enabled', '1') == '1') {
+                $penaltyValue = (float)\App\Models\Setting::get('penalty_half_yearly_value', $defaults['penalty_half_yearly_value']);
             } elseif ($billingCycle === 'yearly' && \App\Models\Setting::get('penalty_yearly_enabled', '1') == '1') {
                 $penaltyValue = (float)\App\Models\Setting::get('penalty_yearly_value', $defaults['penalty_yearly_value']);
             }
@@ -125,8 +127,11 @@ class MaintenanceBill extends Model
         }
 
         $baseAmount = (float)($this->attributes['amount'] ?? 0);
+        $gstAmount = (float)($this->attributes['gst_amount'] ?? 0);
         $penalty = $this->getPenaltyAmountAttribute($this->attributes['penalty_amount'] ?? 0);
-        return $baseAmount + $penalty;
+        $discount = (float)($this->attributes['discount_amount'] ?? 0);
+
+        return max(0, $baseAmount + $gstAmount + $penalty - $discount);
     }
 
     public function maintenance()

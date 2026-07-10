@@ -4,8 +4,8 @@
 
     <div class="modal-header">
         <div>
-            <h5 class="modal-title mb-1">Edit Resident</h5>
-            <p class="text-muted mb-0 small">Update the resident record.</p>
+            <h5 class="modal-title mb-1">Edit {{ \App\Models\Setting::label('resident', 'Resident') }}</h5>
+            <p class="text-muted mb-0 small">Update the {{ strtolower(\App\Models\Setting::label('resident', 'resident')) }} record.</p>
         </div>
         <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
     </div>

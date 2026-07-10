@@ -89,46 +89,51 @@
                     </div>
                     <div class="card-body p-4">
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Society Structure Type</label>
+                            <div class="col-md-5 mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="form-label text-body small fw-semibold text-uppercase mb-0">Society Structure Type</label>
+                                    <button type="button" class="btn btn-sm btn-link py-0 text-decoration-none" data-coreui-toggle="modal" data-coreui-target="#managePropertyTypesModal">
+                                        <i class="fa-solid fa-gear me-1"></i>Manage Types
+                                    </button>
+                                </div>
                                 <select name="society_property_type" class="form-select">
-                                    <option value="flat_residential" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'flat_residential' ? 'selected' : '' }}>Flat Residential Society (Vertical Towers)</option>
-                                    <option value="commercial_complex" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'commercial_complex' ? 'selected' : '' }}>Commercial Shopping Complex / Arcade / IT Park</option>
-                                    <option value="rowhouse_villa" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'rowhouse_villa' ? 'selected' : '' }}>Bungalows / Villas / Tenements / Row Houses</option>
-                                    <option value="mixed_use" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'mixed_use' ? 'selected' : '' }}>Mixed-Use (Flats + Commercial Shops + Villas)</option>
+                                    @if(isset($propertyTypes) && $propertyTypes->count() > 0)
+                                        @foreach($propertyTypes as $pt)
+                                            <option value="{{ $pt->code }}" {{ ($settings['society_property_type'] ?? 'flat_residential') == $pt->code ? 'selected' : '' }}>{{ $pt->name }}</option>
+                                        @endforeach
+                                    @else
+                                        <option value="flat_residential" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'flat_residential' ? 'selected' : '' }}>Flat Residential Society (Vertical Towers)</option>
+                                        <option value="commercial_complex" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'commercial_complex' ? 'selected' : '' }}>Commercial Shopping Complex / Arcade / IT Park</option>
+                                        <option value="rowhouse_villa" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'rowhouse_villa' ? 'selected' : '' }}>Bungalows / Villas / Tenements / Row Houses</option>
+                                        <option value="mixed_use" {{ ($settings['society_property_type'] ?? 'flat_residential') == 'mixed_use' ? 'selected' : '' }}>Mixed-Use (Flats + Commercial Shops + Villas)</option>
+                                    @endif
                                 </select>
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Billing Calculation Method</label>
+                                <select name="maintenance_billing_method" id="maintenance_billing_method_select" class="form-select">
+                                    <option value="fixed" {{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'fixed' ? 'selected' : '' }}>Fixed Rate per Unit / Flat (Standard)</option>
+                                    <option value="per_sqft" {{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'per_sqft' ? 'selected' : '' }}>Carpet Area Based (Per Sq. Ft. x Area)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3 {{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'fixed' ? 'd-none' : '' }}" id="maintenance_rate_per_sqft_wrapper">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Per Sq. Ft. Rate (₹)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
+                                    <input type="number" step="0.01" min="0" name="maintenance_rate_per_sqft" id="maintenance_rate_per_sqft_input" class="form-control" value="{{ $settings['maintenance_rate_per_sqft'] ?? '0' }}" placeholder="e.g. 2.50">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label text-body small fw-semibold text-uppercase">Block/Group Vocabulary</label>
                                 <input type="text" name="ui_label_block" class="form-control" value="{{ $settings['ui_label_block'] ?? 'Block/Wing' }}" placeholder="e.g., Wing, Tower, Sector, Lane">
                             </div>
-                            <div class="col-md-3 mb-3">
+                            <div class="col-md-4 mb-3">
                                 <label class="form-label text-body small fw-semibold text-uppercase">Unit Vocabulary (Singular)</label>
                                 <input type="text" name="ui_label_unit" class="form-control" value="{{ $settings['ui_label_unit'] ?? 'Flat' }}" placeholder="e.g., Flat, Shop, Villa, Unit">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label text-body small fw-semibold text-uppercase">Occupant Vocabulary</label>
                                 <input type="text" name="ui_label_resident" class="form-control" value="{{ $settings['ui_label_resident'] ?? 'Resident' }}" placeholder="e.g., Resident, Occupant, Tenant">
-                            </div>
-                            <div class="col-md-4 mb-3 d-flex flex-column justify-content-between">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Area-Based Billing (Per Sq. Ft.)</label>
-                                <div class="form-check form-switch m-0 p-2 px-3 bg-body-tertiary rounded border d-flex align-items-center justify-content-between shadow-sm" style="height: 38px;">
-                                    <label class="form-check-label small fw-semibold mb-0" for="enable_area_based_billing" style="cursor: pointer;">Enable Sq. Ft. Billing</label>
-                                    <input type="hidden" name="enable_area_based_billing" value="0">
-                                    <input class="form-check-input m-0" type="checkbox" id="enable_area_based_billing"
-                                        name="enable_area_based_billing" value="1" style="cursor: pointer;"
-                                        {{ ($settings['enable_area_based_billing'] ?? '0') == '1' ? 'checked' : '' }}>
-                                </div>
-                            </div>
-                            <div class="col-md-4 mb-3 d-flex flex-column justify-content-between">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Commercial GST Invoicing</label>
-                                <div class="form-check form-switch m-0 p-2 px-3 bg-body-tertiary rounded border d-flex align-items-center justify-content-between shadow-sm" style="height: 38px;">
-                                    <label class="form-check-label small fw-semibold mb-0" for="enable_commercial_gst" style="cursor: pointer;">Apply GST ({{ $settings['commercial_gst_percentage'] ?? '18' }}%) on Shops</label>
-                                    <input type="hidden" name="enable_commercial_gst" value="0">
-                                    <input class="form-check-input m-0" type="checkbox" id="enable_commercial_gst"
-                                        name="enable_commercial_gst" value="1" style="cursor: pointer;"
-                                        {{ ($settings['enable_commercial_gst'] ?? '0') == '1' ? 'checked' : '' }}>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -1032,6 +1037,21 @@
             };
 
             document.addEventListener('DOMContentLoaded', function() {
+                const billingSelect = document.getElementById('maintenance_billing_method_select');
+                const rateWrapper = document.getElementById('maintenance_rate_per_sqft_wrapper');
+                const sidebarRatesLink = document.getElementById('sidebar-maintenance-rates-link');
+                if (billingSelect && rateWrapper) {
+                    billingSelect.addEventListener('change', function() {
+                        if (this.value === 'fixed') {
+                            rateWrapper.classList.add('d-none');
+                            if (sidebarRatesLink) sidebarRatesLink.classList.remove('d-none');
+                        } else {
+                            rateWrapper.classList.remove('d-none');
+                            if (sidebarRatesLink) sidebarRatesLink.classList.add('d-none');
+                        }
+                    });
+                }
+
                 const debuggerSwitch = document.getElementById('enable_debugger');
                 if (debuggerSwitch) {
                     debuggerSwitch.addEventListener('change', function() {
@@ -1096,4 +1116,76 @@
             });
         </script>
     @endpush
+
+    <!-- Manage Property Types Modal -->
+    <div class="modal fade" id="managePropertyTypesModal" tabindex="-1" aria-labelledby="managePropertyTypesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="managePropertyTypesModalLabel"><i class="fa-solid fa-city text-primary me-2"></i>Manage Society Structure Types</h5>
+                    <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Add New Form -->
+                    <form action="{{ route('property-types.store') }}" method="POST" class="mb-4 bg-body-tertiary p-3 rounded border">
+                        @csrf
+                        <label class="form-label small fw-semibold text-uppercase">Add New Structure Type</label>
+                        <div class="input-group">
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Row House Sector / Bungalows" required>
+                            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Add</button>
+                        </div>
+                    </form>
+
+                    <!-- Existing List -->
+                    <h6 class="small fw-semibold text-uppercase mb-2">Available Structure Types</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Structure Type Name</th>
+                                    <th>System Code</th>
+                                    <th class="text-end" style="width: 120px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if(isset($propertyTypes) && $propertyTypes->count() > 0)
+                                    @foreach($propertyTypes as $pt)
+                                        <tr>
+                                            <td>{{ $pt->id }}</td>
+                                            <td>
+                                                <form action="{{ route('property-types.update', $pt->id) }}" method="POST" class="d-flex align-items-center">
+                                                    @csrf
+                                                    @method('PUT')
+                                                    <input type="text" name="name" value="{{ $pt->name }}" class="form-control form-control-sm me-2" required>
+                                                    <button type="submit" class="btn btn-sm btn-outline-primary py-0 px-2" title="Update"><i class="fa-solid fa-check"></i></button>
+                                                </form>
+                                            </td>
+                                            <td><code>{{ $pt->code }}</code></td>
+                                            <td class="text-end">
+                                                @if(($settings['society_property_type'] ?? 'flat_residential') !== $pt->code)
+                                                    <form action="{{ route('property-types.destroy', $pt->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this structure type?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-2" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                                                    </form>
+                                                @else
+                                                    <span class="badge bg-success small">Active</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @else
+                                    <tr><td colspan="4" class="text-center text-muted py-3">No structure types found.</td></tr>
+                                @endif
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </x-user-page>
