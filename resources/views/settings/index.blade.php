@@ -68,6 +68,16 @@
                                 <input type="number" step="0.01" name="name_transfer_fee" class="form-control"
                                     value="{{ $settings['name_transfer_fee'] ?? '0' }}">
                             </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Society GSTIN (Tax ID)</label>
+                                <input type="text" name="society_gstin" class="form-control" placeholder="e.g. 22AAAAA0000A1Z5"
+                                    value="{{ $settings['society_gstin'] ?? '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Society Registration No.</label>
+                                <input type="text" name="society_registration_no" class="form-control" placeholder="e.g. SOC/REG/2026/001"
+                                    value="{{ $settings['society_registration_no'] ?? '' }}">
+                            </div>
                             <div class="col-md-4 mb-3 d-flex flex-column justify-content-between">
                                 <label class="form-label text-body small fw-semibold text-uppercase">Laravel Debugger</label>
                                 <div class="form-check form-switch m-0 p-2 px-3 bg-body-tertiary rounded border d-flex align-items-center justify-content-between shadow-sm" style="height: 38px;">
@@ -96,7 +106,7 @@
                                         <i class="fa-solid fa-gear me-1"></i>Manage Types
                                     </button>
                                 </div>
-                                <select name="society_property_type" class="form-select">
+                                <select name="society_property_type" id="society_property_type_select" class="form-select">
                                     @if(isset($propertyTypes) && $propertyTypes->count() > 0)
                                         @foreach($propertyTypes as $pt)
                                             <option value="{{ $pt->code }}" {{ ($settings['society_property_type'] ?? 'flat_residential') == $pt->code ? 'selected' : '' }}>{{ $pt->name }}</option>
@@ -121,6 +131,34 @@
                                 <div class="input-group">
                                     <span class="input-group-text">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
                                     <input type="number" step="0.01" min="0" name="maintenance_rate_per_sqft" id="maintenance_rate_per_sqft_input" class="form-control" value="{{ $settings['maintenance_rate_per_sqft'] ?? '0' }}" placeholder="e.g. 2.50">
+                                </div>
+                            </div>
+                            <div class="col-md-5 mb-3 {{ (($settings['maintenance_billing_method'] ?? 'fixed') == 'per_sqft' || ($settings['society_property_type'] ?? 'flat_residential') === 'commercial_complex') ? 'd-none' : '' }}" id="maintenance_fixed_rate_wrapper">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Fixed Maintenance Configuration</label>
+                                <div class="p-3 bg-body-tertiary rounded border">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <span class="small fw-semibold text-body">Category & Role Rates</span>
+                                        <a href="{{ route('flat-types.index') }}" class="btn btn-outline-primary btn-sm py-1 px-2 d-inline-flex align-items-center gap-1">
+                                            <i class="fa-solid fa-sliders"></i> Configure by Category
+                                        </a>
+                                    </div>
+                                    <div class="row g-2 pt-2 border-top">
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1">Owner Default (₹)</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
+                                                <input type="number" step="0.01" min="0" name="default_owner_fixed_maintenance" class="form-control" value="{{ $settings['default_owner_fixed_maintenance'] ?? '0' }}" placeholder="e.g. 2500">
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1">Rental Default (₹)</label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
+                                                <input type="number" step="0.01" min="0" name="default_tenant_fixed_maintenance" class="form-control" value="{{ $settings['default_tenant_fixed_maintenance'] ?? '0' }}" placeholder="e.g. 3000">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-text small mt-2 mb-0" style="font-size: 0.75rem;"><i class="fas fa-info-circle me-1"></i>Global fallback fees when unit type rate is 0.</div>
                                 </div>
                             </div>
                             <div class="col-md-4 mb-3">
@@ -453,9 +491,10 @@
                     </div>
                 </div>
 
-                <div class="text-end mb-4">
-                    <button type="submit" class="btn btn-primary fw-bold px-5 py-3 rounded-3 shadow"><i
-                            class="fa-solid fa-save me-2"></i> Save Global Settings</button>
+                <div class="d-flex align-items-center justify-content-end mb-4 py-2 px-3 bg-body-tertiary rounded-3 border">
+                    <span id="global_auto_save_status" class="text-success small fw-bold d-flex align-items-center">
+                        <i class="fa-solid fa-cloud-check me-2"></i> All global settings are saved automatically when modified
+                    </span>
                 </div>
             </form>
         </div>
@@ -520,10 +559,10 @@
                                 class="shadow-sm border"></div>
                         </div>
 
-                        <div class="text-end border-top pt-3">
-                            <button type="submit" class="btn btn-primary fw-bold px-5 py-2 rounded-3">
-                                <i class="fa-solid fa-save me-2"></i> Save Society Location
-                            </button>
+                        <div class="d-flex align-items-center justify-content-end border-top pt-3">
+                            <span id="location_auto_save_status" class="text-success small fw-bold d-flex align-items-center">
+                                <i class="fa-solid fa-cloud-check me-2"></i> Society GPS & address auto-saved immediately on change
+                            </span>
                         </div>
                     </form>
                 </div>
@@ -1038,19 +1077,192 @@
 
             document.addEventListener('DOMContentLoaded', function() {
                 const billingSelect = document.getElementById('maintenance_billing_method_select');
+                const propertyTypeSelect = document.getElementById('society_property_type_select');
                 const rateWrapper = document.getElementById('maintenance_rate_per_sqft_wrapper');
+                const fixedWrapper = document.getElementById('maintenance_fixed_rate_wrapper');
                 const sidebarRatesLink = document.getElementById('sidebar-maintenance-rates-link');
-                if (billingSelect && rateWrapper) {
-                    billingSelect.addEventListener('change', function() {
-                        if (this.value === 'fixed') {
-                            rateWrapper.classList.add('d-none');
-                            if (sidebarRatesLink) sidebarRatesLink.classList.remove('d-none');
-                        } else {
-                            rateWrapper.classList.remove('d-none');
-                            if (sidebarRatesLink) sidebarRatesLink.classList.add('d-none');
+
+                function updateFixedMaintenanceVisibility() {
+                    const isFixed = billingSelect ? (billingSelect.value === 'fixed') : true;
+                    const propType = propertyTypeSelect ? propertyTypeSelect.value : 'flat_residential';
+                    const isNotCommercial = (propType !== 'commercial_complex');
+
+                    if (isFixed) {
+                        if (rateWrapper) rateWrapper.classList.add('d-none');
+                        if (fixedWrapper) {
+                            if (isNotCommercial) fixedWrapper.classList.remove('d-none');
+                            else fixedWrapper.classList.add('d-none');
+                        }
+                    } else {
+                        if (rateWrapper) rateWrapper.classList.remove('d-none');
+                        if (fixedWrapper) fixedWrapper.classList.add('d-none');
+                    }
+
+                    if (sidebarRatesLink) {
+                        if (isNotCommercial) sidebarRatesLink.classList.remove('d-none');
+                        else sidebarRatesLink.classList.add('d-none');
+                    }
+                }
+
+                window.applyStructureLiveUpdate = function(propType, customUnit, customBlock, customResident) {
+                    let unit = customUnit;
+                    let block = customBlock;
+                    let resident = customResident;
+
+                    const unitInput = document.querySelector('input[name="ui_label_unit"]');
+                    const blockInput = document.querySelector('input[name="ui_label_block"]');
+                    const residentInput = document.querySelector('input[name="ui_label_resident"]');
+
+                    if (!unit && unitInput) unit = unitInput.value;
+                    if (!block && blockInput) block = blockInput.value;
+                    if (!resident && residentInput) resident = residentInput.value;
+
+                    // Adapt preset terminology dynamically when propType changes
+                    if (propType && (!customUnit || unit === 'Flat' || unit === 'Shop' || unit === 'Villa' || unit === 'Villa / Bungalow' || unit === 'house' || unit === 'Property')) {
+                        if (propType === 'commercial_complex') {
+                            unit = 'Shop';
+                            block = 'Wing';
+                            resident = 'Occupant';
+                        } else if (propType === 'rowhouse_villa') {
+                            unit = 'Villa';
+                            block = 'Phase';
+                            resident = 'Owner / Resident';
+                        } else if (propType === 'mixed_use') {
+                            unit = 'Property';
+                            block = 'Phase / Block';
+                            resident = 'Occupant';
+                        } else if (propType === 'flat_residential') {
+                            unit = 'Flat';
+                            block = 'Block/Wing';
+                            resident = 'Resident';
+                        }
+                        if (unitInput && unitInput.value !== unit) unitInput.value = unit;
+                        if (blockInput && blockInput.value !== block) blockInput.value = block;
+                        if (residentInput && residentInput.value !== resident) residentInput.value = resident;
+                    }
+
+                    const cleanUnit = (unit || 'Flat').split('/')[0].trim();
+                    const cleanBlock = (block || 'Block/Wing').split('/')[0].trim();
+                    const cleanResident = (resident || 'Resident').split('/')[0].trim();
+
+                    document.querySelectorAll('.sidebar-label-unit').forEach(el => el.textContent = cleanUnit);
+                    document.querySelectorAll('.sidebar-label-block').forEach(el => el.textContent = cleanBlock);
+                    document.querySelectorAll('.sidebar-label-resident').forEach(el => el.textContent = cleanResident);
+                };
+
+                if (billingSelect) {
+                    billingSelect.addEventListener('change', updateFixedMaintenanceVisibility);
+                }
+                if (propertyTypeSelect) {
+                    propertyTypeSelect.addEventListener('change', function() {
+                        updateFixedMaintenanceVisibility();
+                        window.applyStructureLiveUpdate(this.value, null, null, null);
+                        if (window.triggerGlobalSettingsAutoSave) {
+                            window.triggerGlobalSettingsAutoSave(this.form);
                         }
                     });
                 }
+
+                const unitInputEl = document.querySelector('input[name="ui_label_unit"]');
+                const blockInputEl = document.querySelector('input[name="ui_label_block"]');
+                const residentInputEl = document.querySelector('input[name="ui_label_resident"]');
+
+                if (unitInputEl || blockInputEl || residentInputEl) {
+                    [unitInputEl, blockInputEl, residentInputEl].forEach(inputEl => {
+                        if (inputEl) {
+                            inputEl.addEventListener('input', function() {
+                                window.applyStructureLiveUpdate(
+                                    propertyTypeSelect ? propertyTypeSelect.value : null,
+                                    unitInputEl ? unitInputEl.value : null,
+                                    blockInputEl ? blockInputEl.value : null,
+                                    residentInputEl ? residentInputEl.value : null
+                                );
+                            });
+                        }
+                    });
+                }
+
+                updateFixedMaintenanceVisibility();
+                window.applyStructureLiveUpdate(propertyTypeSelect ? propertyTypeSelect.value : null, null, null, null);
+
+                // Auto-Save Global & Location Settings without any manual Save Button
+                const autoSaveForms = document.querySelectorAll('form[action="{{ route('settings.store') }}"]');
+                
+                window.triggerGlobalSettingsAutoSave = function(targetForm) {
+                    const form = targetForm || document.querySelector('form[action="{{ route('settings.store') }}"]');
+                    if (!form) return;
+                    const statusElem = form.querySelector('#global_auto_save_status') || form.querySelector('#location_auto_save_status');
+
+                    function runSave() {
+                        if (statusElem) {
+                            statusElem.className = "text-primary small fw-bold d-flex align-items-center";
+                            statusElem.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Saving changes automatically...';
+                        }
+                        // Ensure all document cards have accurate real-setting-input values before collecting FormData
+                        form.querySelectorAll('.doc-setting-card').forEach(card => {
+                            const hiddenInput = card.querySelector('.real-setting-input');
+                            const toggle = card.querySelector('.doc-enable-toggle');
+                            const select = card.querySelector('.doc-type-select');
+                            if (hiddenInput && toggle && select) {
+                                hiddenInput.value = toggle.checked ? select.value : '0';
+                            }
+                        });
+
+                        const formData = new FormData(form);
+                        fetch("{{ route('settings.store') }}", {
+                            method: 'POST',
+                            body: formData,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (statusElem) {
+                                statusElem.className = "text-success small fw-bold d-flex align-items-center";
+                                statusElem.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i> All changes saved automatically right now';
+                                setTimeout(() => {
+                                    if (statusElem && statusElem.className.includes('text-success')) {
+                                        statusElem.innerHTML = '<i class="fa-solid fa-cloud-check me-2"></i> All settings are saved automatically when modified';
+                                    }
+                                }, 3500);
+                            }
+                        })
+                        .catch(error => {
+                            if (statusElem) {
+                                statusElem.className = "text-danger small fw-bold d-flex align-items-center";
+                                statusElem.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i> Error saving automatically';
+                            }
+                            console.error('Auto-save error:', error);
+                        });
+                    }
+
+                    runSave();
+                };
+
+                autoSaveForms.forEach(form => {
+                    let debounceTimer = null;
+
+                    function triggerAutoSave() {
+                        window.triggerGlobalSettingsAutoSave(form);
+                    }
+
+                    form.querySelectorAll('input, select, textarea').forEach(elem => {
+                        if (elem.id === 'enable_debugger') return;
+                        if (elem.type === 'text' || elem.type === 'number' || elem.tagName === 'TEXTAREA' || elem.type === 'email' || elem.type === 'url' || elem.type === 'hidden') {
+                            elem.addEventListener('input', function() {
+                                clearTimeout(debounceTimer);
+                                debounceTimer = setTimeout(triggerAutoSave, 600);
+                            });
+                        } else {
+                            elem.addEventListener('change', function() {
+                                clearTimeout(debounceTimer);
+                                debounceTimer = setTimeout(triggerAutoSave, 150);
+                            });
+                        }
+                    });
+                });
 
                 const debuggerSwitch = document.getElementById('enable_debugger');
                 if (debuggerSwitch) {
@@ -1102,6 +1314,9 @@
                             }
                             if (hiddenInput) hiddenInput.value = '0';
                         }
+                        if (typeof window.triggerGlobalSettingsAutoSave === 'function') {
+                            window.triggerGlobalSettingsAutoSave(card.closest('form'));
+                        }
                     } else if (e.target.classList.contains('doc-type-select')) {
                         const card = e.target.closest('.doc-setting-card');
                         if (!card) return;
@@ -1110,6 +1325,9 @@
 
                         if (toggle && toggle.checked && hiddenInput) {
                             hiddenInput.value = e.target.value;
+                        }
+                        if (typeof window.triggerGlobalSettingsAutoSave === 'function') {
+                            window.triggerGlobalSettingsAutoSave(card.closest('form'));
                         }
                     }
                 });

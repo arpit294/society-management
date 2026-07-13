@@ -115,7 +115,11 @@ class FlatController extends Controller
             ]);
 
             $validatedData['unit_type'] = $validatedData['unit_type'] ?? 'flat';
-            $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
+            if (in_array(strtolower($validatedData['unit_type']), ['villa', 'rowhouse', 'row_house', 'plot', 'bungalow'])) {
+                $validatedData['floor_no'] = 0;
+            } else {
+                $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
+            }
 
             $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
             $flatTypeObj = FlatType::find($validatedData['flat_type_id'] ?? null);
@@ -235,7 +239,11 @@ class FlatController extends Controller
             ]);
 
             $validatedData['unit_type'] = $validatedData['unit_type'] ?? 'flat';
-            $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
+            if (in_array(strtolower($validatedData['unit_type']), ['villa', 'rowhouse', 'row_house', 'plot', 'bungalow'])) {
+                $validatedData['floor_no'] = 0;
+            } else {
+                $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
+            }
 
             $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
             $flatTypeObj = FlatType::find($validatedData['flat_type_id'] ?? null);

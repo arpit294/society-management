@@ -56,6 +56,12 @@ class FlatsDatatables extends DataTable
                 $label = ucwords(str_replace('_', ' ', $model->unit_type ?? 'flat'));
                 return '<span class="badge '.$badgeClass.' px-2 py-1">'.$label.'</span>';
             })
+            ->editColumn('floor_no', function ($model) {
+                if (in_array(strtolower($model->unit_type ?? ''), ['villa', 'rowhouse', 'row_house', 'plot', 'bungalow']) || $model->floor_no == 0) {
+                    return '<span class="badge bg-light text-dark border"><i class="fa-solid fa-layer-group me-1 text-muted"></i>Grounded (0)</span>';
+                }
+                return '<span class="fw-semibold">Floor ' . $model->floor_no . '</span>';
+            })
             ->editColumn('area_sqft', function ($model) {
                 if ($model->area_sqft > 0) {
                     return '<span class="fw-bold">'.number_format($model->area_sqft, 2).'</span> <small class="text-muted">Sq.Ft.</small>';

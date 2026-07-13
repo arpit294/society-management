@@ -16,7 +16,10 @@ class Resident extends Model
         'type',
         'occupant_category',
         'company_name',
+        'business_name',
+        'contact_person',
         'gstin',
+        'gst_number',
         'trade_license_no',
         'move_in_date',
         'move_out_date',
@@ -28,6 +31,31 @@ class Resident extends Model
             'move_in_date' => 'date',
             'move_out_date' => 'date',
         ];
+    }
+
+    public function getBusinessNameAttribute($value)
+    {
+        return !empty($value) ? $value : ($this->attributes['company_name'] ?? null);
+    }
+
+    public function getCompanyNameAttribute($value)
+    {
+        return !empty($value) ? $value : ($this->attributes['business_name'] ?? null);
+    }
+
+    public function getGstNumberAttribute($value)
+    {
+        return !empty($value) ? $value : ($this->attributes['gstin'] ?? null);
+    }
+
+    public function getGstinAttribute($value)
+    {
+        return !empty($value) ? $value : ($this->attributes['gst_number'] ?? null);
+    }
+
+    public function getContactPersonAttribute($value)
+    {
+        return !empty($value) ? $value : ($this->user ? $this->user->name : null);
     }
 
     public function block()
@@ -53,5 +81,57 @@ class Resident extends Model
     public function getIsTenantAttribute()
     {
         return $this->type === 'rental';
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function ($resident) {
+            if ($resident->isDirty('user_id') && $resident->getOriginal('user_id')) {
+                self::syncUserStatus($resident->getOriginal('user_id'));
+            }
+            self::syncUserStatus($resident->user_id);
+        });
+
+        static::deleted(function ($resident) {
+            self::syncUserStatus($resident->user_id);
+        });
+    }
+
+    public static function syncUserStatus($userId): void
+    {
+        if (! $userId) {
+            return;
+        }
+
+        $user = \App\Models\User::find($userId);
+        if (! $user) {
+            return;
+        }
+
+        // Do not deactivate admin or non-resident staff accounts by residency rule
+        if (in_array(strtolower((string) $user->role), ['admin'])) {
+            return;
+        }
+
+        // Check if user currently has at least one active residency
+        $hasActiveResidency = self::where('user_id', $userId)
+            ->where(function ($q) {
+                $q->whereNull('move_out_date')
+                    ->orWhere('move_out_date', '>', now()->startOfDay());
+            })
+            ->exists();
+
+        if ($hasActiveResidency) {
+            // If they are active resident, ensure status is active
+            if ($user->status !== 'active') {
+                $user->update(['status' => 1]);
+            }
+        } else {
+            // If they have past residency history and no active residency, mark them inactive in users table
+            $hasPastResidency = self::where('user_id', $userId)->exists();
+            if ($hasPastResidency && $user->status !== 'inactive') {
+                $user->update(['status' => 0]);
+            }
+        }
     }
 }

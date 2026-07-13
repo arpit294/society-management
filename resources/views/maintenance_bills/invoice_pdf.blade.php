@@ -16,8 +16,22 @@
             <table width="100%">
                 <tr>
                     <td>
-                        <h1>INVOICE</h1>
+                        @php
+                            $societyGstin = \App\Models\Setting::get('society_gstin');
+                            $societyRegNo = \App\Models\Setting::get('society_registration_no');
+                        @endphp
+                        <h1>{{ !empty($societyGstin) ? 'TAX INVOICE' : 'INVOICE' }}</h1>
                         <div class="society-name">{{ \App\Models\Setting::get('society_name', 'Society Name') }}</div>
+                        @if(!empty($societyGstin))
+                            <div style="font-size: 11px; font-weight: bold; color: #2d3748; margin-top: 3px;">
+                                GSTIN: {{ $societyGstin }}
+                            </div>
+                        @endif
+                        @if(!empty($societyRegNo))
+                            <div style="font-size: 11px; color: #4a5568; margin-top: 2px;">
+                                Reg No: {{ $societyRegNo }}
+                            </div>
+                        @endif
                     </td>
                     <td align="right" style="vertical-align: bottom;">
                         <div>
@@ -61,9 +75,24 @@
             <table class="info-table">
                 <tr>
                     <td style="margin-right: 10px;">
+                        @php
+                            $resident = $bill->flat ? ($bill->flat->residents()->where('user_id', $bill->user_id)->latest()->first() ?? $bill->flat->owner ?? $bill->flat->tenant) : null;
+                            $businessName = $resident ? ($resident->business_name ?? $resident->company_name) : null;
+                            $contactPerson = $resident ? ($resident->contact_person ?? ($bill->user->name ?? null)) : ($bill->user->name ?? null);
+                            $gstNumber = $resident ? ($resident->gst_number ?? $resident->gstin) : null;
+                            $isCommercialOccupant = !empty($businessName) || !empty($gstNumber) || ($resident && $resident->occupant_category !== 'individual') || in_array(strtolower($bill->flat->unit_type ?? ''), ['shop', 'office', 'commercial', 'it_arcade', 'warehouse']);
+                        @endphp
                         <div class="info-title">Billed To</div>
                         <div class="info-content">
-                            {{ $bill->user->name ?? 'N/A' }}<br>
+                            @if($isCommercialOccupant && !empty($businessName))
+                                <div style="font-weight: bold; color: #1a202c; font-size: 15px;">{{ $businessName }}</div>
+                                <div style="font-size: 13px; color: #4a5568;"><strong>Attn:</strong> {{ $contactPerson }}</div>
+                                @if(!empty($gstNumber))
+                                    <div style="font-size: 13px; font-weight: bold; color: #2d3748; margin-bottom: 3px;">Occupant GSTIN: {{ $gstNumber }}</div>
+                                @endif
+                            @else
+                                <div style="font-weight: bold; color: #1a202c; font-size: 15px;">{{ $bill->user->name ?? 'N/A' }}</div>
+                            @endif
                             <span style="font-size: 13px; color: #666; font-weight: normal;">
                                 <strong>Email:</strong> {{ $bill->user->email ?? 'N/A' }}<br>
                                 <strong>Phone:</strong> {{ $bill->user->phone ?? 'N/A' }}

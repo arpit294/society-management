@@ -95,7 +95,7 @@ class NameTransferBillsDataTable extends DataTable
     {
         return [
             Column::make('id')->title('ID')->width(50),
-            Column::make('flat_id')->title('Flat'),
+            Column::make('flat_id')->title(\App\Models\Setting::label('unit', 'Flat')),
             Column::make('old_owner_id')->title('Old Owner'),
             Column::make('new_owner_id')->title('New Owner'),
             Column::make('amount')->title('Amount'),

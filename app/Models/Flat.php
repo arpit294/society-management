@@ -22,15 +22,22 @@ class Flat extends Model
         $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
         $globalSqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
 
+        $fallbackFixed = ($residentType === 'rental')
+            ? (float) \App\Models\Setting::get('default_tenant_fixed_maintenance', 0)
+            : (float) \App\Models\Setting::get('default_owner_fixed_maintenance', 0);
+
         $type = $this->flatType;
         if (!$type) {
             if ($globalMethod === 'per_sqft' && $this->area_sqft > 0 && $globalSqftRate > 0) {
                 return round($this->area_sqft * $globalSqftRate, 2);
             }
-            return 0;
+            return round($fallbackFixed, 2);
         }
 
         $baseRate = ($residentType === 'rental') ? $type->rental_maintenance_fee : $type->owner_maintenance_fee;
+        if ($baseRate <= 0 && $fallbackFixed > 0) {
+            $baseRate = $fallbackFixed;
+        }
 
         if ($globalMethod === 'per_sqft' || $type->calculation_method === 'per_sqft') {
             $sqftRate = ($type->rate_per_sqft > 0) ? $type->rate_per_sqft : $globalSqftRate;

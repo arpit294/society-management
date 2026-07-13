@@ -815,6 +815,7 @@ $(document).ready(function () {
         progressBar: true,
         positionClass: "toast-top-right",
         timeOut: 3000,
+        preventDuplicates: true,
     };
 
     // CSRF TOKEN
@@ -2287,25 +2288,37 @@ $(document).ready(function () {
             }
         });
     });
+    const shownMessages = new Set();
     const flashMessages = document.getElementById("global-flash-messages");
-    if (flashMessages) {
-        if (flashMessages.dataset.success)
+    if (flashMessages && typeof toastr !== "undefined") {
+        if (flashMessages.dataset.success) {
             toastr.success(flashMessages.dataset.success);
-        if (flashMessages.dataset.error)
+            shownMessages.add(flashMessages.dataset.success);
+        }
+        if (flashMessages.dataset.error) {
             toastr.error(flashMessages.dataset.error);
-        if (flashMessages.dataset.status)
+            shownMessages.add(flashMessages.dataset.error);
+        }
+        if (flashMessages.dataset.status && !shownMessages.has(flashMessages.dataset.status)) {
             toastr.success(flashMessages.dataset.status);
-        if (flashMessages.dataset.validation)
+            shownMessages.add(flashMessages.dataset.status);
+        }
+        if (flashMessages.dataset.validation && !shownMessages.has(flashMessages.dataset.validation)) {
             toastr.error(flashMessages.dataset.validation);
+            shownMessages.add(flashMessages.dataset.validation);
+        }
     }
 
     const toastSource = document.getElementById("users-toast-source");
     if (toastSource && typeof toastr !== "undefined") {
         const msg = toastSource.dataset.message;
         const type = toastSource.dataset.type || "success";
-        if (type === "success") toastr.success(msg);
-        else if (type === "danger" || type === "error") toastr.error(msg);
-        else toastr.info(msg);
+        if (msg && !shownMessages.has(msg)) {
+            if (type === "success") toastr.success(msg);
+            else if (type === "danger" || type === "error") toastr.error(msg);
+            else toastr.info(msg);
+            shownMessages.add(msg);
+        }
     }
 });
 
@@ -3011,6 +3024,13 @@ document.addEventListener("DOMContentLoaded", function () {
             document.querySelectorAll(`select[name^="${targetPrefix}"]`).forEach((sel) => {
                 sel.value = val;
             });
+
+            if (typeof window.triggerGlobalSettingsAutoSave === 'function') {
+                window.triggerGlobalSettingsAutoSave(this.closest('form'));
+            } else {
+                const form = this.closest('form');
+                if (form) form.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         });
     });
 
@@ -3034,6 +3054,13 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             this.textContent = isCheckAll ? "Uncheck All" : "Check All";
+
+            if (typeof window.triggerGlobalSettingsAutoSave === 'function') {
+                window.triggerGlobalSettingsAutoSave(this.closest('form'));
+            } else {
+                const form = this.closest('form');
+                if (form) form.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         });
 
         // Update button state when individual checkboxes change
@@ -3495,6 +3522,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         document.getElementById("map_search_input");
                     if (searchInput && data && data.display_name) {
                         searchInput.value = data.display_name;
+                        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                     }
                 })
                 .catch((err) => console.log(err));
@@ -3506,6 +3534,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (latInput && lngInput) {
                 latInput.value = lat.toFixed(6);
                 lngInput.value = lng.toFixed(6);
+                latInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
             if (doReverse) {
                 reverseGeocode(lat, lng);

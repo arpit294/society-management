@@ -77,7 +77,62 @@ class Setting extends Model
 
     public static function label(string $key, string $default = ''): string
     {
-        return self::get("ui_label_{$key}", $default);
+        $value = self::get("ui_label_{$key}");
+        $propType = self::get('society_property_type', 'flat_residential');
+
+        // Check if value equals generic default or is empty, so we can apply dynamic property type vocabulary
+        $genericDefaults = ['Block/Wing', 'Block', 'Flat', 'Flats', 'Resident', 'Residents', ''];
+        if (in_array($value, $genericDefaults)) {
+            if ($propType === 'commercial_complex') {
+                $vocabulary = [
+                    'block' => 'Commercial Wing',
+                    'unit' => 'Shop / Office',
+                    'unit_plural' => 'Shops & Offices',
+                    'resident' => 'Occupant / Corporate',
+                ];
+                if (isset($vocabulary[$key])) return $vocabulary[$key];
+            } elseif ($propType === 'rowhouse_villa') {
+                $vocabulary = [
+                    'block' => 'Phase / Sector',
+                    'unit' => 'Villa / Row House',
+                    'unit_plural' => 'Villas / Row Houses',
+                    'resident' => 'Villa Owner / Occupant',
+                ];
+                if (isset($vocabulary[$key])) return $vocabulary[$key];
+            } elseif ($propType === 'mixed_use') {
+                $vocabulary = [
+                    'block' => 'Wing / Phase',
+                    'unit' => 'Property Unit',
+                    'unit_plural' => 'Property Units',
+                    'resident' => 'Occupant / Resident',
+                ];
+                if (isset($vocabulary[$key])) return $vocabulary[$key];
+            }
+        }
+
+        return !empty($value) ? $value : ($default ?: (self::defaults()["ui_label_{$key}"] ?? $key));
+    }
+
+    public static function unitIconClass(): string
+    {
+        $propType = self::get('society_property_type', 'flat_residential');
+        return match ($propType) {
+            'commercial_complex' => 'fa-store',
+            'rowhouse_villa' => 'fa-house-chimney',
+            'mixed_use' => 'fa-city',
+            default => 'fa-building',
+        };
+    }
+
+    public static function blockIconClass(): string
+    {
+        $propType = self::get('society_property_type', 'flat_residential');
+        return match ($propType) {
+            'commercial_complex' => 'fa-building-columns',
+            'rowhouse_villa' => 'fa-map-location-dot',
+            'mixed_use' => 'fa-sitemap',
+            default => 'fa-building',
+        };
     }
 
     protected static $cachedSettings = null;

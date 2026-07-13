@@ -11,15 +11,49 @@
 <div class="row mb-4">
     <div class="col-md-8 mx-auto">
         <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Invoice Information</h5>
+            @php
+                $societyGstin = \App\Models\Setting::get('society_gstin');
+                $societyRegNo = \App\Models\Setting::get('society_registration_no');
+            @endphp
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
+                <div>
+                    <h5 class="mb-1 fw-bold">{{ !empty($societyGstin) ? 'TAX INVOICE' : 'INVOICE' }} DETAILS</h5>
+                    <div class="small text-white-50">{{ \App\Models\Setting::get('society_name', 'Society Name') }}</div>
+                    @if(!empty($societyGstin))
+                        <div class="small fw-semibold text-warning" style="font-size: 0.85rem;">GSTIN: {{ $societyGstin }}</div>
+                    @endif
+                    @if(!empty($societyRegNo))
+                        <div class="small text-light" style="font-size: 0.8rem;">Reg No: {{ $societyRegNo }}</div>
+                    @endif
+                </div>
+                <div class="text-end">
+                    <span class="badge {{ $bill->status === 'paid' ? 'bg-success' : ($bill->status === 'due' ? 'bg-warning text-dark' : 'bg-danger') }} fs-6 px-3 py-2 text-uppercase">{{ $bill->status }}</span>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row mb-3">
                     <div class="col-md-6">
-                        <strong>{{ \App\Models\Setting::label('resident', 'Resident') }}:</strong> {{ $bill->user->name ?? 'N/A' }}<br>
-                        <strong>Email:</strong> {{ $bill->user->email ?? 'N/A' }}<br>
-                        <strong>Phone:</strong> {{ $bill->user->phone ?? 'N/A' }}
+                        @php
+                            $resident = $bill->flat ? ($bill->flat->residents()->where('user_id', $bill->user_id)->latest()->first() ?? $bill->flat->owner ?? $bill->flat->tenant) : null;
+                            $businessName = $resident ? ($resident->business_name ?? $resident->company_name) : null;
+                            $contactPerson = $resident ? ($resident->contact_person ?? ($bill->user->name ?? null)) : ($bill->user->name ?? null);
+                            $gstNumber = $resident ? ($resident->gst_number ?? $resident->gstin) : null;
+                            $isCommercialOccupant = !empty($businessName) || !empty($gstNumber) || ($resident && $resident->occupant_category !== 'individual') || in_array(strtolower($bill->flat->unit_type ?? ''), ['shop', 'office', 'commercial', 'it_arcade', 'warehouse']);
+                        @endphp
+                        <strong class="text-uppercase text-muted small d-block mb-1">Billed To / {{ \App\Models\Setting::label('resident', 'Resident') }}</strong>
+                        @if($isCommercialOccupant && !empty($businessName))
+                            <div class="fs-6 fw-bold text-dark">{{ $businessName }}</div>
+                            <div class="small text-secondary"><strong>Attn:</strong> {{ $contactPerson }}</div>
+                            @if(!empty($gstNumber))
+                                <div class="small fw-bold text-primary mb-1">Occupant GSTIN: {{ $gstNumber }}</div>
+                            @endif
+                        @else
+                            <div class="fs-6 fw-bold text-dark">{{ $bill->user->name ?? 'N/A' }}</div>
+                        @endif
+                        <div class="small text-muted mt-1">
+                            <strong>Email:</strong> {{ $bill->user->email ?? 'N/A' }}<br>
+                            <strong>Phone:</strong> {{ $bill->user->phone ?? 'N/A' }}
+                        </div>
                     </div>
                     <div class="col-md-6 text-md-end">
                         <strong>{{ \App\Models\Setting::label('block', 'Block/Wing') }} & {{ \App\Models\Setting::label('unit', 'Flat') }}:</strong> {{ $bill->flat->block->block_name ?? '' }}-{{ $bill->flat->flat_no ?? '' }}<br>

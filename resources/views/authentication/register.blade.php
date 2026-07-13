@@ -1,11 +1,4 @@
 <x-layout>
-    <div id="users-toasts" class="users-toast-container" aria-live="polite" aria-atomic="true"></div>
-
-    @if (session('success'))
-        <div id="users-toast-source" data-message="{{ e(session('success')) }}" data-type="success" hidden></div>
-    @elseif ($errors->any())
-        <div id="users-toast-source" data-message="{{ e($errors->first()) }}" data-type="danger" hidden></div>
-    @endif
 
 
 

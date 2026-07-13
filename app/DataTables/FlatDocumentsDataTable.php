@@ -87,9 +87,9 @@ class FlatDocumentsDataTable extends DataTable
     {
         return [
             Column::make('id')->width(50),
-            Column::make('block')->title('Block')->orderable(false),
-            Column::make('flat_no')->title('Flat')->orderable(false),
-            Column::make('resident_name')->title('Resident Name')->orderable(false),
+            Column::make('block')->title(\App\Models\Setting::label('block', 'Block'))->orderable(false),
+            Column::make('flat_no')->title(\App\Models\Setting::label('unit', 'Flat'))->orderable(false),
+            Column::make('resident_name')->title(\App\Models\Setting::label('resident', 'Resident') . ' Name')->orderable(false),
             Column::make('resident_type')->title('Type')->render('data === "owner" ? "Owner" : "Tenant"'),
             Column::make('documents_count')->title('Uploaded Docs')->searchable(false)->orderable(false),
             Column::make('created_at'),

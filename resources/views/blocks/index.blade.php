@@ -1,12 +1,5 @@
 <x-user-page>
 
-
-    <div id="users-toasts" class="users-toast-container" aria-live="polite" aria-atomic="true"></div>
-
-    @if (session('success'))
-        <div id="users-toast-source" data-message="{{ e(session('success')) }}" data-type="success" hidden></div>
-    @endif
-
     <!-- TOP CAPACITY CARDS -->
     <div class="row g-4 mb-4">
         <div class="col-sm-6 col-md-6 col-xl-6">
@@ -14,7 +7,7 @@
                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="kpi-icon-pedestal">
-                            <i class="fas fa-building"></i>
+                            <i class="fas {{ \App\Models\Setting::unitIconClass() }}"></i>
                         </div>
                         <span class="kpi-status-pill">
                             <span class="kpi-status-dot"></span> Capacity
@@ -24,7 +17,7 @@
                         <div class="kpi-label mb-1">Total Capacity</div>
                         <div class="d-flex align-items-baseline gap-2">
                             <span class="kpi-number counter-animate" data-target="{{ $totalFlats }}">0</span>
-                            <span class="fs-4 fw-bold text-light opacity-75">Flats</span>
+                            <span class="fs-4 fw-bold text-light opacity-75">{{ \App\Models\Setting::label('unit_plural', 'Flats') }}</span>
                         </div>
                     </div>
                     <div class="kpi-glow-orb"></div>
@@ -47,7 +40,7 @@
                         <div class="kpi-label mb-1">Total Occupied</div>
                         <div class="d-flex align-items-baseline gap-2">
                             <span class="kpi-number counter-animate" data-target="{{ $totalOccupiedFlats }}">0</span>
-                            <span class="fs-4 fw-bold text-light opacity-75">Flats</span>
+                            <span class="fs-4 fw-bold text-light opacity-75">{{ \App\Models\Setting::label('unit_plural', 'Flats') }}</span>
                         </div>
                     </div>
                     <div class="kpi-glow-orb"></div>
@@ -70,18 +63,18 @@
                     <div class="card-body p-4 d-flex flex-column justify-content-between">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div class="kpi-icon-pedestal">
-                                <i class="fas fa-city"></i>
+                                <i class="fas {{ \App\Models\Setting::blockIconClass() }}"></i>
                             </div>
                             <span class="kpi-status-pill">
                                 <span class="kpi-status-dot"></span> Active
                             </span>
                         </div>
                         <div class="mt-2">
-                            <div class="kpi-label mb-1">Block {{ $block->block_name }}</div>
+                            <div class="kpi-label mb-1">{{ \App\Models\Setting::label('block', 'Block') }} {{ $block->block_name }}</div>
                             <div class="d-flex align-items-baseline gap-1">
                                 <span class="kpi-number">{{ $block->occupied_flats_count }}</span>
                                 <span class="fs-4 fw-bold text-muted">/{{ $block->total_flats }}</span>
-                                <span class="fs-6 fw-semibold text-light opacity-75 ms-1">Flats</span>
+                                <span class="fs-6 fw-semibold text-light opacity-75 ms-1">{{ \App\Models\Setting::label('unit_plural', 'Flats') }}</span>
                             </div>
                         </div>
                         <div class="kpi-glow-orb"></div>
