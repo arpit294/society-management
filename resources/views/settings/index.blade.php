@@ -163,15 +163,15 @@
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label text-body small fw-semibold text-uppercase">Block/Group Vocabulary</label>
-                                <input type="text" name="ui_label_block" class="form-control" value="{{ $settings['ui_label_block'] ?? 'Block/Wing' }}" placeholder="e.g., Wing, Tower, Sector, Lane">
+                                <input type="text" name="ui_label_block" class="form-control" value="{{ \App\Models\Setting::label('block', 'Block/Wing') }}" placeholder="e.g., Wing, Tower, Sector, Phase">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label text-body small fw-semibold text-uppercase">Unit Vocabulary (Singular)</label>
-                                <input type="text" name="ui_label_unit" class="form-control" value="{{ $settings['ui_label_unit'] ?? 'Flat' }}" placeholder="e.g., Flat, Shop, Villa, Unit">
+                                <input type="text" name="ui_label_unit" class="form-control" value="{{ \App\Models\Setting::label('unit', 'Flat') }}" placeholder="e.g., Flat, Shop, Villa, Unit">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label text-body small fw-semibold text-uppercase">Occupant Vocabulary</label>
-                                <input type="text" name="ui_label_resident" class="form-control" value="{{ $settings['ui_label_resident'] ?? 'Resident' }}" placeholder="e.g., Resident, Occupant, Tenant">
+                                <input type="text" name="ui_label_resident" class="form-control" value="{{ \App\Models\Setting::label('resident', 'Resident') }}" placeholder="e.g., Resident, Occupant, Owner / Occupant">
                             </div>
                         </div>
                     </div>
@@ -491,10 +491,10 @@
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center justify-content-end mb-4 py-2 px-3 bg-body-tertiary rounded-3 border">
-                    <span id="global_auto_save_status" class="text-success small fw-bold d-flex align-items-center">
-                        <i class="fa-solid fa-cloud-check me-2"></i> All global settings are saved automatically when modified
-                    </span>
+                <div class="d-flex align-items-center justify-content-end mb-4 py-3 px-4 bg-body-tertiary rounded-3 border shadow-sm">
+                    <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
+                        <i class="fa-solid fa-save me-2"></i>Save Settings
+                    </button>
                 </div>
             </form>
         </div>
@@ -560,9 +560,9 @@
                         </div>
 
                         <div class="d-flex align-items-center justify-content-end border-top pt-3">
-                            <span id="location_auto_save_status" class="text-success small fw-bold d-flex align-items-center">
-                                <i class="fa-solid fa-cloud-check me-2"></i> Society GPS & address auto-saved immediately on change
-                            </span>
+                            <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm">
+                                <i class="fa-solid fa-save me-2"></i>Save Location Settings
+                            </button>
                         </div>
                     </form>
                 </div>
@@ -760,7 +760,7 @@
                                                                 type="checkbox" name="tables[]" value="flat_types"
                                                                 id="em_flat_types" checked><label
                                                                 class="form-check-label text-body fw-medium"
-                                                                for="em_flat_types">Flat Types</label></div>
+                                                                for="em_flat_types">{{ \App\Models\Setting::label('unit_types', 'Flat Types') }}</label></div>
                                                     </div>
                                                     <div class="col-6">
                                                         <div class="form-check small"><input
@@ -1104,7 +1104,7 @@
                     }
                 }
 
-                window.applyStructureLiveUpdate = function(propType, customUnit, customBlock, customResident) {
+                window.applyStructureLiveUpdate = function(propType, customUnit, customBlock, customResident, fromDropdownChange = false) {
                     let unit = customUnit;
                     let block = customBlock;
                     let resident = customResident;
@@ -1117,28 +1117,28 @@
                     if (!block && blockInput) block = blockInput.value;
                     if (!resident && residentInput) resident = residentInput.value;
 
-                    // Adapt preset terminology dynamically when propType changes
-                    if (propType && (!customUnit || unit === 'Flat' || unit === 'Shop' || unit === 'Villa' || unit === 'Villa / Bungalow' || unit === 'house' || unit === 'Property')) {
+                    // Adapt preset terminology dynamically ONLY when the user explicitly changes the Society Structure Type dropdown
+                    if (fromDropdownChange && propType) {
                         if (propType === 'commercial_complex') {
-                            unit = 'Shop';
+                            unit = 'Shop / Office';
                             block = 'Wing';
-                            resident = 'Occupant';
+                            resident = 'Occupant / Corporate';
                         } else if (propType === 'rowhouse_villa') {
                             unit = 'Villa';
                             block = 'Phase';
-                            resident = 'Owner / Resident';
+                            resident = 'Villa Owner / Occupant';
                         } else if (propType === 'mixed_use') {
-                            unit = 'Property';
-                            block = 'Phase / Block';
-                            resident = 'Occupant';
+                            unit = 'Property Unit';
+                            block = 'Wing / Phase';
+                            resident = 'Occupant / Resident';
                         } else if (propType === 'flat_residential') {
                             unit = 'Flat';
                             block = 'Block/Wing';
                             resident = 'Resident';
                         }
-                        if (unitInput && unitInput.value !== unit) unitInput.value = unit;
-                        if (blockInput && blockInput.value !== block) blockInput.value = block;
-                        if (residentInput && residentInput.value !== resident) residentInput.value = resident;
+                        if (unitInput) unitInput.value = unit;
+                        if (blockInput) blockInput.value = block;
+                        if (residentInput) residentInput.value = resident;
                     }
 
                     const cleanUnit = (unit || 'Flat').split('/')[0].trim();
@@ -1156,10 +1156,7 @@
                 if (propertyTypeSelect) {
                     propertyTypeSelect.addEventListener('change', function() {
                         updateFixedMaintenanceVisibility();
-                        window.applyStructureLiveUpdate(this.value, null, null, null);
-                        if (window.triggerGlobalSettingsAutoSave) {
-                            window.triggerGlobalSettingsAutoSave(this.form);
-                        }
+                        window.applyStructureLiveUpdate(this.value, null, null, null, true);
                     });
                 }
 
@@ -1175,7 +1172,8 @@
                                     propertyTypeSelect ? propertyTypeSelect.value : null,
                                     unitInputEl ? unitInputEl.value : null,
                                     blockInputEl ? blockInputEl.value : null,
-                                    residentInputEl ? residentInputEl.value : null
+                                    residentInputEl ? residentInputEl.value : null,
+                                    false
                                 );
                             });
                         }
@@ -1183,23 +1181,12 @@
                 }
 
                 updateFixedMaintenanceVisibility();
-                window.applyStructureLiveUpdate(propertyTypeSelect ? propertyTypeSelect.value : null, null, null, null);
+                window.applyStructureLiveUpdate(propertyTypeSelect ? propertyTypeSelect.value : null, null, null, null, false);
 
-                // Auto-Save Global & Location Settings without any manual Save Button
-                const autoSaveForms = document.querySelectorAll('form[action="{{ route('settings.store') }}"]');
-                
-                window.triggerGlobalSettingsAutoSave = function(targetForm) {
-                    const form = targetForm || document.querySelector('form[action="{{ route('settings.store') }}"]');
-                    if (!form) return;
-                    const statusElem = form.querySelector('#global_auto_save_status') || form.querySelector('#location_auto_save_status');
-
-                    function runSave() {
-                        if (statusElem) {
-                            statusElem.className = "text-primary small fw-bold d-flex align-items-center";
-                            statusElem.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Saving changes automatically...';
-                        }
-                        // Ensure all document cards have accurate real-setting-input values before collecting FormData
-                        form.querySelectorAll('.doc-setting-card').forEach(card => {
+                // Ensure document requirement hidden values sync right before form submission when clicking Save Settings
+                document.querySelectorAll('form[action="{{ route('settings.store') }}"]').forEach(form => {
+                    form.addEventListener('submit', function() {
+                        this.querySelectorAll('.doc-setting-card').forEach(card => {
                             const hiddenInput = card.querySelector('.real-setting-input');
                             const toggle = card.querySelector('.doc-enable-toggle');
                             const select = card.querySelector('.doc-type-select');
@@ -1207,60 +1194,6 @@
                                 hiddenInput.value = toggle.checked ? select.value : '0';
                             }
                         });
-
-                        const formData = new FormData(form);
-                        fetch("{{ route('settings.store') }}", {
-                            method: 'POST',
-                            body: formData,
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest',
-                                'Accept': 'application/json'
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (statusElem) {
-                                statusElem.className = "text-success small fw-bold d-flex align-items-center";
-                                statusElem.innerHTML = '<i class="fa-solid fa-check-circle me-2"></i> All changes saved automatically right now';
-                                setTimeout(() => {
-                                    if (statusElem && statusElem.className.includes('text-success')) {
-                                        statusElem.innerHTML = '<i class="fa-solid fa-cloud-check me-2"></i> All settings are saved automatically when modified';
-                                    }
-                                }, 3500);
-                            }
-                        })
-                        .catch(error => {
-                            if (statusElem) {
-                                statusElem.className = "text-danger small fw-bold d-flex align-items-center";
-                                statusElem.innerHTML = '<i class="fa-solid fa-triangle-exclamation me-2"></i> Error saving automatically';
-                            }
-                            console.error('Auto-save error:', error);
-                        });
-                    }
-
-                    runSave();
-                };
-
-                autoSaveForms.forEach(form => {
-                    let debounceTimer = null;
-
-                    function triggerAutoSave() {
-                        window.triggerGlobalSettingsAutoSave(form);
-                    }
-
-                    form.querySelectorAll('input, select, textarea').forEach(elem => {
-                        if (elem.id === 'enable_debugger') return;
-                        if (elem.type === 'text' || elem.type === 'number' || elem.tagName === 'TEXTAREA' || elem.type === 'email' || elem.type === 'url' || elem.type === 'hidden') {
-                            elem.addEventListener('input', function() {
-                                clearTimeout(debounceTimer);
-                                debounceTimer = setTimeout(triggerAutoSave, 600);
-                            });
-                        } else {
-                            elem.addEventListener('change', function() {
-                                clearTimeout(debounceTimer);
-                                debounceTimer = setTimeout(triggerAutoSave, 150);
-                            });
-                        }
                     });
                 });
 

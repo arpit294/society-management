@@ -1,7 +1,7 @@
 <form action="{{ route('flat-types.store') }}" method="POST" id="flat-type-ajax-form">
     @csrf
     <div class="modal-header">
-        <h5 class="modal-title">Add Flat Type</h5>
+        <h5 class="modal-title">Add {{ \App\Models\Setting::label('unit_type', 'Flat Type') }}</h5>
         <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
     </div>
     <div class="modal-body">
@@ -54,6 +54,6 @@
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Save Flat Type</button>
+        <button type="submit" class="btn btn-primary">Save {{ \App\Models\Setting::label('unit_type', 'Flat Type') }}</button>
     </div>
 </form>

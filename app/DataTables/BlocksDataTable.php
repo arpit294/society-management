@@ -61,7 +61,7 @@ class BlocksDataTable extends DataTable
                 ->addClass('text-center'),
             Column::make('block_name')->title(\App\Models\Setting::label('block', 'Block/Wing') . ' Name'),
             Column::make('total_floor')->title('Total Floors / Levels'),
-            Column::make('total_flats')->title('Total ' . \App\Models\Setting::label('unit', 'Flat') . 's'),
+            Column::make('total_flats')->title('Total ' . \App\Models\Setting::label('unit_plural', 'Flats')),
             Column::make('created_at'),
             Column::make('action')->orderable(false)->searchable(false),
         ];

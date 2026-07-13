@@ -8,15 +8,15 @@
     </div>
     <div class="modal-body">
         <div class="alert alert-warning mb-4">
-            <h6 class="alert-heading fw-bold"><i class="fa-solid fa-circle-info me-2"></i>Current Owner</h6>
+            <h6 class="alert-heading fw-bold"><i class="fa-solid fa-circle-info me-2"></i>Current {{ \App\Models\Setting::label('resident', 'Owner') }}</h6>
             <p class="mb-0">
                 <strong>Name:</strong> {{ $currentOwner->user->name ?? 'Unknown' }}<br>
                 <strong>Move-in Date:</strong>
                 {{ $currentOwner->move_in_date ? \Carbon\Carbon::parse($currentOwner->move_in_date)->format('d M Y') : 'N/A' }}
             </p>
             <p class="mb-0 mt-2 small text-dark">
-                Transferring ownership will set the move-out date for the current owner and generate a Name Transfer
-                Bill for the new owner.
+                Transferring ownership will set the move-out date for the current {{ strtolower(\App\Models\Setting::label('resident', 'owner')) }} and generate a Name Transfer
+                Bill for the new {{ strtolower(\App\Models\Setting::label('resident', 'owner')) }}.
             </p>
         </div>
 
@@ -160,11 +160,11 @@
                 <div class="modal-body p-4 text-start">
                     <div class="bg-light p-3 rounded mb-3 border">
                         <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted small">Flat:</span>
+                            <span class="text-muted small">{{ \App\Models\Setting::label('unit', 'Flat') }}:</span>
                             <strong class="text-dark">{{ $flat->block->block_name ?? '' }} - {{ $flat->flat_no }}</strong>
                         </div>
                         <div class="d-flex justify-content-between mb-1">
-                            <span class="text-muted small">Current Owner:</span>
+                            <span class="text-muted small">Current {{ \App\Models\Setting::label('resident', 'Owner') }}:</span>
                             <strong class="text-dark">{{ $currentOwner->user->name ?? 'Unknown' }}</strong>
                         </div>
                         <div class="d-flex justify-content-between mb-1">

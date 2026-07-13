@@ -75,7 +75,7 @@ class FlatTypeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Flat Type created successfully.',
+                'message' => \App\Models\Setting::label('unit_type', 'Flat Type') . ' created successfully.',
             ]);
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
@@ -133,7 +133,7 @@ class FlatTypeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Flat Type updated successfully.',
+                'message' => \App\Models\Setting::label('unit_type', 'Flat Type') . ' updated successfully.',
             ]);
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
@@ -156,7 +156,7 @@ class FlatTypeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Flat Type deleted successfully.',
+                'message' => \App\Models\Setting::label('unit_type', 'Flat Type') . ' deleted successfully.',
             ]);
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {

@@ -6,7 +6,7 @@
 </div>
 <div class="modal-body">
     <div class="mb-4">
-        <h6 class="fw-bold">Resident Details</h6>
+        <h6 class="fw-bold">{{ \App\Models\Setting::label('resident', 'Resident') }} Details</h6>
         <div class="row">
             <div class="col-md-4">
                 <p class="mb-1 text-muted small">Name</p>

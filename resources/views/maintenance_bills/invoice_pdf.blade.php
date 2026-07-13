@@ -20,7 +20,7 @@
                             $societyGstin = \App\Models\Setting::get('society_gstin');
                             $societyRegNo = \App\Models\Setting::get('society_registration_no');
                         @endphp
-                        <h1>{{ !empty($societyGstin) ? 'TAX INVOICE' : 'INVOICE' }}</h1>
+                        <h1>{{ !empty($societyGstin) ? 'TAX INVOICE' : 'MAINTENANCE INVOICE' }}</h1>
                         <div class="society-name">{{ \App\Models\Setting::get('society_name', 'Society Name') }}</div>
                         @if(!empty($societyGstin))
                             <div style="font-size: 11px; font-weight: bold; color: #2d3748; margin-top: 3px;">
@@ -101,9 +101,31 @@
                     </td>
                     <td style="width: 20px; background: transparent; border: none;"></td>
                     <td class="right-col">
+                        @php
+                            $unitTypeStr = strtolower($bill->flat->unit_type ?? 'flat');
+                            $dynamicUnitLabel = match($unitTypeStr) {
+                                'shop' => 'Shop No',
+                                'office' => 'Office No',
+                                'villa' => 'Villa No',
+                                'row_house', 'rowhouse' => 'Row House No',
+                                'plot' => 'Plot No',
+                                'it_arcade', 'commercial' => 'Arcade Unit No',
+                                default => \App\Models\Setting::label('unit', 'Flat') . ' No'
+                            };
+                            $dynamicBlockLabel = match($unitTypeStr) {
+                                'shop', 'office', 'it_arcade', 'commercial' => \App\Models\Setting::label('block', 'Complex / Wing'),
+                                'villa', 'row_house', 'rowhouse', 'plot' => \App\Models\Setting::label('block', 'Sector / Township'),
+                                default => \App\Models\Setting::label('block', 'Block / Wing')
+                            };
+                            $blockName = $bill->flat->block->block_name ?? null;
+                            $showBlock = !empty($blockName) && $blockName !== '-' && $blockName !== '0' && strtolower($blockName) !== 'none';
+                        @endphp
                         <div class="info-title">Property Details</div>
                         <div class="info-content">
-                            {{ \App\Models\Setting::label('block', 'Block/Wing') }} {{ $bill->flat->block->block_name ?? 'N/A' }}, {{ \App\Models\Setting::label('unit', 'Flat') }} {{ $bill->flat->flat_no ?? 'N/A' }}<br>
+                            @if($showBlock)
+                                {{ $dynamicBlockLabel }}: <strong>{{ $blockName }}</strong> &nbsp;|&nbsp; 
+                            @endif
+                            {{ $dynamicUnitLabel }}: <strong>{{ $bill->flat->flat_no ?? 'N/A' }}</strong><br>
                             <span style="font-size: 13px; color: #666; font-weight: normal;">
                                 <strong>Category:</strong> {{ $bill->flat->flatType->name ?? 'N/A' }}<br>
                                 @php

@@ -22,7 +22,7 @@ class MaintenanceBillsDataTable extends DataTable
                 // If payment is paid, we can download invoice
                 $downloadBtn = '';
                 if ($row->status === 'paid') {
-                    $downloadBtn = '<a href="'.route('maintenance-bills.download-invoice', $billIdentifier).'" class="btn btn-sm btn-outline-info me-1" data-coreui-toggle="tooltip" title="Download Invoice"><i class="fa-solid fa-download"></i></a>';
+                    $downloadBtn = '<a href="'.route('maintenance-bills.download-invoice', $billIdentifier).'" class="btn btn-sm btn-outline-info me-1 no-loader" data-coreui-toggle="tooltip" title="Download Invoice" download><i class="fa-solid fa-download"></i></a>';
                 }
 
                 $deleteBtn = '<button type="button" class="btn btn-sm btn-outline-danger btn-delete-maintenance-bill" data-url="'.route('maintenance-bills.destroy', $billIdentifier).'" data-coreui-toggle="tooltip" title="Delete Payment Batch"><i class="fa-solid fa-trash"></i></button>';

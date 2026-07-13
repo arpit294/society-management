@@ -17,7 +17,7 @@
             @endphp
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
                 <div>
-                    <h5 class="mb-1 fw-bold">{{ !empty($societyGstin) ? 'TAX INVOICE' : 'INVOICE' }} DETAILS</h5>
+                    <h5 class="mb-1 fw-bold">{{ !empty($societyGstin) ? 'TAX INVOICE' : 'MAINTENANCE INVOICE' }} DETAILS</h5>
                     <div class="small text-white-50">{{ \App\Models\Setting::get('society_name', 'Society Name') }}</div>
                     @if(!empty($societyGstin))
                         <div class="small fw-semibold text-warning" style="font-size: 0.85rem;">GSTIN: {{ $societyGstin }}</div>
@@ -56,7 +56,29 @@
                         </div>
                     </div>
                     <div class="col-md-6 text-md-end">
-                        <strong>{{ \App\Models\Setting::label('block', 'Block/Wing') }} & {{ \App\Models\Setting::label('unit', 'Flat') }}:</strong> {{ $bill->flat->block->block_name ?? '' }}-{{ $bill->flat->flat_no ?? '' }}<br>
+                        @php
+                            $unitTypeStr = strtolower($bill->flat->unit_type ?? 'flat');
+                            $dynamicUnitLabel = match($unitTypeStr) {
+                                'shop' => 'Shop No',
+                                'office' => 'Office No',
+                                'villa' => 'Villa No',
+                                'row_house', 'rowhouse' => 'Row House No',
+                                'plot' => 'Plot No',
+                                'it_arcade', 'commercial' => 'Arcade Unit No',
+                                default => \App\Models\Setting::label('unit', 'Flat') . ' No'
+                            };
+                            $dynamicBlockLabel = match($unitTypeStr) {
+                                'shop', 'office', 'it_arcade', 'commercial' => \App\Models\Setting::label('block', 'Complex / Wing'),
+                                'villa', 'row_house', 'rowhouse', 'plot' => \App\Models\Setting::label('block', 'Sector / Township'),
+                                default => \App\Models\Setting::label('block', 'Block / Wing')
+                            };
+                            $blockName = $bill->flat->block->block_name ?? null;
+                            $showBlock = !empty($blockName) && $blockName !== '-' && $blockName !== '0' && strtolower($blockName) !== 'none';
+                        @endphp
+                        @if($showBlock)
+                            <strong>{{ $dynamicBlockLabel }}:</strong> {{ $blockName }} &nbsp;|&nbsp; 
+                        @endif
+                        <strong>{{ $dynamicUnitLabel }}:</strong> {{ $bill->flat->flat_no ?? 'N/A' }}<br>
                         <strong>Property Category:</strong> <span class="badge bg-info text-dark fw-bold">{{ $bill->flat->flatType->name ?? 'Standard' }}</span><br>
                         @php
                             $flatType = $bill->flat->flatType ?? null;
@@ -140,7 +162,7 @@
                 </table>
             </div>
             <div class="card-footer text-center border-top border-secondary">
-                <a href="{{ route('maintenance-bills.download-invoice', $bill->id) }}" class="btn btn-primary">
+                <a href="{{ route('maintenance-bills.download-invoice', $bill->id) }}" class="btn btn-primary no-loader" download>
                     <i class="fa-solid fa-download me-1"></i> Download Invoice
                 </a>
             </div>

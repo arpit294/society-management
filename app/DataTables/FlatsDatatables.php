@@ -90,7 +90,7 @@ class FlatsDatatables extends DataTable
 
                 return '<span class="badge '.$class.'">'.$displayStatus.'</span>';
             })
-            ->rawColumns(['status', 'action', 'owner_name', 'tenant_name', 'unit_type', 'area_sqft'])
+            ->rawColumns(['status', 'action', 'owner_name', 'tenant_name', 'unit_type', 'area_sqft', 'floor_no'])
             ->setRowId('id');
     }
 

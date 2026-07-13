@@ -81,17 +81,15 @@
         </li>
         @endcan
         @can('flat_type_view')
-        @if(\App\Models\Setting::get('society_property_type', 'flat_residential') !== 'commercial_complex')
         <li class="nav-item" id="sidebar-maintenance-rates-link">
             <a class="nav-link" href="{{ route('flat-types.index') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M224 48H32v128h192V48zm0 192H32v224h192V240zm64-192v224h192V48H288zm0 288v160h192V336H288z" />
                 </svg>
-                Maintenance Rates & Categories
+                <span class="sidebar-label-unit-types">{{ \App\Models\Setting::label('unit_types', \App\Models\Setting::label('unit', 'Flat') . ' Types') }}</span>
             </a>
         </li>
-        @endif
         @endcan
         @can('flat_document_view')
         <li class="nav-item">

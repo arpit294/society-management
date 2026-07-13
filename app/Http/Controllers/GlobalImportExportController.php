@@ -85,7 +85,7 @@ class GlobalImportExportController extends Controller
                 'required' => ['title', 'total_amount'],
             ],
             'flat_types' => [
-                'label' => 'Flat Types',
+                'label' => \App\Models\Setting::label('unit_types', 'Flat Types'),
                 'model' => FlatType::class,
                 'headers' => ['name', 'owner_maintenance_fee', 'rental_maintenance_fee', 'description', 'status'],
                 'labels' => ['Type Name (*)', "Owner Fee ({$currencySymbol})", "Rental Fee ({$currencySymbol})", 'Description', 'Status (active/inactive)'],
@@ -738,8 +738,21 @@ class GlobalImportExportController extends Controller
             }
         }
 
-        // Handle status conversions if needed (e.g., 'active' to 1, 'inactive' to 0)
-        // This part can be expanded based on specific status fields and their expected values
+        // Map horizontal structure headers (like Villa No, Shop No, Office No, Unit No) directly into flat_no
+        if (in_array($table, ['flats', 'residents', 'maintenance_bills', 'transfer_fees'])) {
+            if (empty($rowData['flat_no'])) {
+                foreach (['villa_no', 'shop_no', 'office_no', 'row_house_no', 'unit_no', 'property_unit_no', 'villa no', 'shop no', 'office no', 'unit no'] as $alias) {
+                    if (!empty($rowData[$alias])) {
+                        $rowData['flat_no'] = $rowData[$alias];
+                        break;
+                    }
+                }
+            }
+            // If importing flats specifically, default floor_no to 0 if not provided (for villas/horizontal structures)
+            if ($table === 'flats' && (!isset($rowData['floor_no']) || $rowData['floor_no'] === '')) {
+                $rowData['floor_no'] = 0;
+            }
+        }
 
         return $rowData;
     }

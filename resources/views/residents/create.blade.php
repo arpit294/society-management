@@ -34,7 +34,7 @@
             </div>
 
             <div class="col-md-12">
-                <label for="type" class="form-label">Resident Type <span class="text-danger">*</span></label>
+                <label for="type" class="form-label">{{ \App\Models\Setting::label('resident', 'Resident') }} Type <span class="text-danger">*</span></label>
                 <select class="form-select js-resident-type-toggle" id="type" name="type" data-owner-section="#owner-details-section">
                     <option value="">Select Type</option>
                     <option value="owner">Owner</option>

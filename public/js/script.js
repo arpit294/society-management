@@ -4341,7 +4341,7 @@ window.addEventListener("load", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-    // Fallback to hide preloader after 500ms so user is never stuck
+    // Fallback to hide preloader after 500ms initially so user is never stuck
     setTimeout(function () {
         const preloader = document.getElementById("page-preloader");
         if (preloader) {
@@ -4350,13 +4350,35 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 500);
 });
 
+// Hide preloader automatically when window regains focus (e.g., after save-file/download dialog closes or finishes)
+window.addEventListener("focus", function () {
+    setTimeout(function () {
+        const preloader = document.getElementById("page-preloader");
+        if (preloader) {
+            preloader.classList.add("hidden");
+        }
+    }, 300);
+});
+
 // Show preloader on page navigation (clicking internal links)
 document.addEventListener("click", function (e) {
     const link = e.target.closest("a");
     if (link && link.href && !link.href.startsWith("javascript:") && !link.href.includes("#") && link.target !== "_blank" && !link.hasAttribute("download") && !link.classList.contains("no-loader") && link.origin === window.location.origin) {
+        // Check if the URL or class indicates a file download or export
+        const isDownloadOrExport = /\b(download|export|pdf|csv|excel|template)\b/i.test(link.href) || /\b(download|export|no-loader)\b/i.test(link.className);
+        if (isDownloadOrExport) {
+            return; // Do NOT trigger the loading spinner for file downloads
+        }
+
         const preloader = document.getElementById("page-preloader");
         if (preloader && !preloader.classList.contains("no-trigger")) {
             preloader.classList.remove("hidden");
+            // Safety fallback: auto-hide preloader after 4 seconds if navigation hasn't unloaded the page
+            setTimeout(function () {
+                if (preloader && !preloader.classList.contains("hidden")) {
+                    preloader.classList.add("hidden");
+                }
+            }, 4000);
         }
     }
 });

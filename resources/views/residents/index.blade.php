@@ -66,7 +66,7 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="importResidentModalLabel">Import Residents</h5>
+                    <h5 class="modal-title" id="importResidentModalLabel">Import {{ \App\Models\Setting::label('resident', 'Resident') }}s</h5>
                     <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
                 </div>
                 
@@ -169,7 +169,7 @@
                 <div class="modal-header border-0 pb-2 pt-4 px-4 d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center">
                         <div class="rounded-pill me-2" style="width: 4px; height: 24px; background: #6c5ce7;"></div>
-                        <h5 class="modal-title fw-bold text-body mb-0 fs-5">Export Resident</h5>
+                        <h5 class="modal-title fw-bold text-body mb-0 fs-5">Export {{ \App\Models\Setting::label('resident', 'Resident') }}s</h5>
                     </div>
                     <button type="button" class="btn-close small" data-coreui-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -194,7 +194,7 @@
                                     'phone' => 'Mobile',
                                     'aadhar_id' => 'Aadhar ID',
                                     'block_name' => \App\Models\Setting::label('block', 'Block') . ' Name',
-                                    'flat_no' => \App\Models\Setting::label('unit', 'Flat') . ' No',
+                                    'flat_no' => \App\Models\Setting::label('unit_no', \App\Models\Setting::label('unit', 'Flat') . ' No'),
                                     'type' => \App\Models\Setting::label('resident', 'Resident') . ' Type',
                                     'status' => 'Status',
                                     'move_in_date' => 'Move In Date',

@@ -2,7 +2,7 @@
     @csrf
     @method('PUT')
     <div class="modal-header">
-        <h5 class="modal-title">Edit Flat Type</h5>
+        <h5 class="modal-title">Edit {{ \App\Models\Setting::label('unit_type', 'Flat Type') }}</h5>
         <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
     </div>
     <div class="modal-body">
@@ -55,6 +55,6 @@
     </div>
     <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-coreui-dismiss="modal">Close</button>
-        <button type="submit" class="btn btn-primary">Update Flat Type</button>
+        <button type="submit" class="btn btn-primary">Update {{ \App\Models\Setting::label('unit_type', 'Flat Type') }}</button>
     </div>
 </form>
