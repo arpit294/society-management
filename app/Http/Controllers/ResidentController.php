@@ -307,7 +307,7 @@ class ResidentController extends Controller
     {
         abort_if(Gate::denies('resident_view'), 403);
         try {
-            $flats = Flat::where('block_id', $block_id)->get();
+            $flats = Flat::with('flatType')->where('block_id', $block_id)->get();
 
             return response()->json($flats);
         } catch (\Exception $e) {

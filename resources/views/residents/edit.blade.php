@@ -29,7 +29,7 @@
                 <select name="flat_id" class="form-control">
                     <option value="">Select {{ \App\Models\Setting::label('unit', 'Flat') }}</option>
                     @foreach ($flats as $flat)
-                        <option value="{{ $flat->id }}" {{ $resident->flat_id == $flat->id ? 'selected' : '' }}>{{ $flat->flat_no }}</option>
+                        <option value="{{ $flat->id }}" data-is-commercial="{{ $flat->is_commercial ? '1' : '0' }}" {{ $resident->flat_id == $flat->id ? 'selected' : '' }}>{{ $flat->flat_no }} {{ $flat->unit_type && strtolower($flat->unit_type) !== 'flat' ? '(' . strtoupper($flat->unit_type) . ')' : '' }}</option>
                     @endforeach
                 </select>
             </div>
@@ -58,9 +58,8 @@
                 </div>
             </div>
 
-            @if(in_array(\App\Models\Setting::get('society_property_type', 'flat_residential'), ['commercial_complex', 'mixed_use']))
             <!-- Commercial / Business Occupant Profile -->
-            <div class="col-md-12 mt-3" id="commercial-profile-section-edit">
+            <div class="col-md-12 mt-3 {{ $resident->flat && $resident->flat->is_commercial ? '' : 'd-none' }}" id="commercial-profile-section-edit" style="{{ $resident->flat && $resident->flat->is_commercial ? '' : 'display: none;' }}">
                 <div class="card border-0 bg-body-tertiary rounded-3 p-3 shadow-sm">
                     <h6 class="mb-3 fw-bold text-primary"><i class="fas fa-briefcase me-2"></i>Occupant & Commercial Profile</h6>
                     <div class="row g-3">
@@ -91,7 +90,6 @@
                     </div>
                 </div>
             </div>
-            @endif
 
             <div class="col-md-6">
                 <label class="form-label">User</label>

@@ -17,6 +17,29 @@ class Flat extends Model
         'status',
     ];
 
+    protected $appends = ['is_commercial'];
+
+    public function getIsCommercialAttribute()
+    {
+        if (in_array(strtolower($this->unit_type ?? ''), ['shop', 'office', 'commercial', 'showroom'])) {
+            return true;
+        }
+        if ($this->relationLoaded('flatType') && $this->flatType) {
+            if (in_array(strtolower($this->flatType->category_type ?? ''), ['commercial', 'shop', 'office'])) {
+                return true;
+            }
+            if (in_array(strtolower($this->flatType->name ?? ''), ['shop', 'office', 'commercial', 'showroom'])) {
+                return true;
+            }
+        } elseif ($this->flat_type_id) {
+            $ft = \App\Models\FlatType::find($this->flat_type_id);
+            if ($ft && (in_array(strtolower($ft->category_type ?? ''), ['commercial', 'shop', 'office']) || in_array(strtolower($ft->name ?? ''), ['shop', 'office', 'commercial', 'showroom']))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public function calculateMaintenanceFee($residentType = 'owner')
     {
         $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');

@@ -210,6 +210,30 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#penalty-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Late Penalty Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#discount-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Prepayment Discounts
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#documents-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Required Documents
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#toaster-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Notification Popups
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="{{ route('settings.index') }}#location-settings">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         Society Location

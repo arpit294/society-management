@@ -84,6 +84,18 @@
     <script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.waves.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
 
+    <!-- Dynamic Toaster Configuration from Settings -->
+    <script>
+        window.SMP_TOASTR_CONFIG = {
+            enabled: {{ \App\Models\Setting::get('toastr_enabled', '1') == '1' ? 'true' : 'false' }},
+            positionClass: "{{ \App\Models\Setting::get('toastr_position', 'toast-top-right') }}",
+            timeOut: {{ (int) \App\Models\Setting::get('toastr_timeout', '3000') }},
+            closeButton: {{ \App\Models\Setting::get('toastr_close_button', '1') == '1' ? 'true' : 'false' }},
+            progressBar: {{ \App\Models\Setting::get('toastr_progress_bar', '1') == '1' ? 'true' : 'false' }},
+            preventDuplicates: true
+        };
+    </script>
+
     <!-- Main Consolidated Script -->
     <script src="{{ asset('js/script.js') }}?v={{ filemtime(public_path('js/script.js')) }}"></script>
     {{-- <script src="{{ asset('js/main.js') }}"></script> --}}

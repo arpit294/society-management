@@ -22,11 +22,29 @@ class ResidentsDataTable extends DataTable
             ->addColumn('block', function (Resident $resident) {
                 return $resident->block?->block_name;
             })
-            ->addColumn('flat', function (Resident $resident) {
-                return $resident->flat?->flat_no;
+            ->editColumn('flat', function (Resident $resident) {
+                if (!$resident->flat) return '-';
+                $flatNo = e($resident->flat->flat_no);
+                $unitType = $resident->flat->unit_type ?? 'flat';
+                if (strtolower($unitType) === 'flat') {
+                    return '<span class="fw-semibold">' . $flatNo . '</span>';
+                }
+                $badgeClass = match(strtolower($unitType)) {
+                    'shop' => 'bg-warning text-dark',
+                    'office' => 'bg-info text-dark',
+                    'villa', 'row_house', 'rowhouse' => 'bg-primary',
+                    default => 'bg-secondary'
+                };
+                $label = ucwords(str_replace('_', ' ', $unitType));
+                return '<span class="fw-semibold">' . $flatNo . '</span> <span class="badge ' . $badgeClass . ' ms-1 px-2 py-1" style="font-size:0.7rem;">' . $label . '</span>';
             })
-            ->addColumn('user', function (Resident $resident) {
-                return $resident->user?->name;
+            ->editColumn('user', function (Resident $resident) {
+                $name = e($resident->user?->name ?? '-');
+                $html = '<div class="fw-bold fs-6">' . $name . '</div>';
+                if ($resident->business_name) {
+                    $html .= '<div class="small text-primary fw-bold mt-1"><i class="fas fa-store me-1"></i>' . e($resident->business_name) . '</div>';
+                }
+                return $html;
             })
             ->editColumn('created_at', function (Resident $resident) {
                 return $resident->created_at?->format('d-m-Y h:i A');
@@ -52,12 +70,17 @@ class ResidentsDataTable extends DataTable
                 });
             })
             ->filterColumn('user', function ($query, $keyword) {
-                $query->whereHas('user', function ($q) use ($keyword) {
-                    $q->where('name', 'like', "%{$keyword}%");
+                $query->where(function($q) use ($keyword) {
+                    $q->whereHas('user', function ($uq) use ($keyword) {
+                        $uq->where('name', 'like', "%{$keyword}%");
+                    })
+                    ->orWhere('business_name', 'like', "%{$keyword}%")
+                    ->orWhere('contact_person', 'like', "%{$keyword}%")
+                    ->orWhere('gst_number', 'like', "%{$keyword}%");
                 });
             })
             ->addColumn('action', 'residents.action')
-            ->rawColumns(['type', 'action'])
+            ->rawColumns(['flat', 'user', 'type', 'action'])
             ->setRowId('id');
     }
 

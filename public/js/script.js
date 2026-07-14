@@ -809,14 +809,34 @@ $(document).ready(function () {
         buttonsStyling: false,
     });
 
-    // Toastr Configuration
-    toastr.options = {
-        closeButton: true,
-        progressBar: true,
-        positionClass: "toast-top-right",
-        timeOut: 3000,
-        preventDuplicates: true,
-    };
+    // Toastr Configuration (Dynamic from Settings)
+    if (typeof toastr !== "undefined") {
+        const toastrConfig = window.SMP_TOASTR_CONFIG || {
+            enabled: true,
+            closeButton: true,
+            progressBar: true,
+            positionClass: "toast-top-right",
+            timeOut: 3000,
+            preventDuplicates: true,
+        };
+
+        toastr.options = {
+            closeButton: toastrConfig.closeButton,
+            progressBar: toastrConfig.progressBar,
+            positionClass: toastrConfig.positionClass || "toast-top-right",
+            timeOut: toastrConfig.timeOut !== undefined ? toastrConfig.timeOut : 3000,
+            preventDuplicates: true,
+        };
+
+        if (toastrConfig.enabled === false) {
+            const noop = function () {};
+            toastr.success = noop;
+            toastr.error = noop;
+            toastr.info = noop;
+            toastr.warning = noop;
+            toastr.clear = noop;
+        }
+    }
 
     // CSRF TOKEN
     $.ajaxSetup({
@@ -1694,9 +1714,15 @@ $(document).ready(function () {
                 success: function (data) {
                     let html = '<option value="">Select Flat</option>';
                     data.forEach(function (flat) {
-                        html += `<option value="${flat.id}">${flat.flat_no}</option>`;
+                        let isComm = flat.is_commercial ? '1' : '0';
+                        let label = flat.flat_no;
+                        if (flat.unit_type && flat.unit_type.toLowerCase() !== 'flat') {
+                            label += ' (' + flat.unit_type.toUpperCase() + ')';
+                        }
+                        html += `<option value="${flat.id}" data-is-commercial="${isComm}" data-unit-type="${flat.unit_type || ''}">${label}</option>`;
                     });
                     flatSelect.html(html);
+                    flatSelect.trigger("change");
                 },
                 error: function () {
                     flatSelect.html(
@@ -1707,12 +1733,26 @@ $(document).ready(function () {
         },
     );
 
-    // Handle flat change to fetch existing owner for rental
+    // Handle flat change to fetch existing owner for rental and toggle commercial profile card
     $(document).on(
         "change",
         "#resident-ajax-form select[name='flat_id']",
         function () {
             let flatId = $(this).val();
+            let selectedOption = $(this).find("option:selected");
+            let isCommercial = selectedOption.data("is-commercial") == "1" || selectedOption.data("is-commercial") === 1 || selectedOption.data("is-commercial") === true;
+
+            let createSection = $("#commercial-profile-section-create");
+            let editSection = $("#commercial-profile-section-edit");
+
+            if (isCommercial) {
+                createSection.removeClass("d-none").show();
+                editSection.removeClass("d-none").show();
+            } else {
+                createSection.addClass("d-none").hide();
+                editSection.addClass("d-none").hide();
+            }
+
             let ownerSelect = $(
                 "#resident-ajax-form select[name='owner_user_id']",
             );
@@ -1743,6 +1783,20 @@ $(document).ready(function () {
             (settings.url.includes("flats/") && settings.type === "GET")
         ) {
             $('#flat-ajax-form select[name="block_id"]').trigger("change");
+        }
+        if (
+            settings.url.includes("residents/create") ||
+            (settings.url.includes("residents/") && settings.type === "GET")
+        ) {
+            let flatSelect = $("#resident-ajax-form select[name='flat_id']");
+            if (flatSelect.length && flatSelect.val()) {
+                flatSelect.trigger("change");
+            } else {
+                $("#commercial-profile-section-create").addClass("d-none").hide();
+                if (!flatSelect.val()) {
+                    $("#commercial-profile-section-edit").addClass("d-none").hide();
+                }
+            }
         }
 
         // Initialize Plugins when loaded

@@ -57,9 +57,8 @@
                 </div>
             </div>
 
-            @if(in_array(\App\Models\Setting::get('society_property_type', 'flat_residential'), ['commercial_complex', 'mixed_use']))
             <!-- Commercial / Business Occupant Profile -->
-            <div class="col-md-12 mt-3" id="commercial-profile-section-create">
+            <div class="col-md-12 mt-3 d-none" id="commercial-profile-section-create" style="display: none;">
                 <div class="card border-0 bg-body-tertiary rounded-3 p-3 shadow-sm">
                     <h6 class="mb-3 fw-bold text-primary"><i class="fas fa-briefcase me-2"></i>Occupant & Commercial Profile</h6>
                     <div class="row g-3">
@@ -90,7 +89,6 @@
                     </div>
                 </div>
             </div>
-            @endif
 
             <div class="col-md-6">
                 <label for="move_in_date" class="form-label">Move In Date <span class="text-danger">*</span></label>

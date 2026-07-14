@@ -85,18 +85,32 @@
                         <div class="info-title">Billed To</div>
                         <div class="info-content">
                             @if($isCommercialOccupant && !empty($businessName))
-                                <div style="font-weight: bold; color: #1a202c; font-size: 15px;">{{ $businessName }}</div>
-                                <div style="font-size: 13px; color: #4a5568;"><strong>Attn:</strong> {{ $contactPerson }}</div>
-                                @if(!empty($gstNumber))
-                                    <div style="font-size: 13px; font-weight: bold; color: #2d3748; margin-bottom: 3px;">Occupant GSTIN: {{ $gstNumber }}</div>
-                                @endif
+                                <div style="font-weight: bold; color: #1a202c; font-size: 15px; margin-bottom: 4px;">{{ $businessName }}</div>
                             @else
-                                <div style="font-weight: bold; color: #1a202c; font-size: 15px;">{{ $bill->user->name ?? 'N/A' }}</div>
+                                <div style="font-weight: bold; color: #1a202c; font-size: 15px; margin-bottom: 4px;">{{ $bill->user->name ?? 'N/A' }}</div>
                             @endif
-                            <span style="font-size: 13px; color: #666; font-weight: normal;">
-                                <strong>Email:</strong> {{ $bill->user->email ?? 'N/A' }}<br>
-                                <strong>Phone:</strong> {{ $bill->user->phone ?? 'N/A' }}
-                            </span>
+                            <table class="details-inner-table" width="100%" cellpadding="0" cellspacing="0">
+                                @if($isCommercialOccupant && !empty($businessName) && !empty($contactPerson))
+                                <tr>
+                                    <td class="billed-label">Attn:</td>
+                                    <td class="prop-value">{{ $contactPerson }}</td>
+                                </tr>
+                                @endif
+                                @if(!empty($gstNumber))
+                                <tr>
+                                    <td class="billed-label">GSTIN:</td>
+                                    <td class="prop-value" style="font-weight: bold; color: #2d3748;">{{ $gstNumber }}</td>
+                                </tr>
+                                @endif
+                                <tr>
+                                    <td class="billed-label">Email:</td>
+                                    <td class="prop-value">{{ $bill->user->email ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="billed-label">Phone:</td>
+                                    <td class="prop-value">{{ $bill->user->phone ?? 'N/A' }}</td>
+                                </tr>
+                            </table>
                         </div>
                     </td>
                     <td style="width: 20px; background: transparent; border: none;"></td>
@@ -122,33 +136,55 @@
                         @endphp
                         <div class="info-title">Property Details</div>
                         <div class="info-content">
-                            @if($showBlock)
-                                {{ $dynamicBlockLabel }}: <strong>{{ $blockName }}</strong> &nbsp;|&nbsp; 
-                            @endif
-                            {{ $dynamicUnitLabel }}: <strong>{{ $bill->flat->flat_no ?? 'N/A' }}</strong><br>
-                            <span style="font-size: 13px; color: #666; font-weight: normal;">
-                                <strong>Category:</strong> {{ $bill->flat->flatType->name ?? 'N/A' }}<br>
-                                @php
-                                    $flatType = $bill->flat->flatType ?? null;
-                                    $calcMethod = $flatType ? ($flatType->calculation_method ?? 'fixed') : 'fixed';
-                                    $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
-                                    $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
-                                    $sqftRate = $flatType && $flatType->rate_per_sqft > 0 ? $flatType->rate_per_sqft : (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
-                                @endphp
+                            <div style="font-size: 14px; color: #1a202c; margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px dashed #ced4da;">
+                                @if($showBlock)
+                                    <span style="color: #666; font-weight: bold;">{{ $dynamicBlockLabel }}:</span> <span style="font-weight: bold; color: #111;">{{ $blockName }}</span> &nbsp;&nbsp;|&nbsp;&nbsp; 
+                                @endif
+                                <span style="color: #666; font-weight: bold;">{{ $dynamicUnitLabel }}:</span> <span style="font-weight: bold; color: #111;">{{ $bill->flat->flat_no ?? 'N/A' }}</span>
+                            </div>
+                            @php
+                                $flatType = $bill->flat->flatType ?? null;
+                                $calcMethod = $flatType ? ($flatType->calculation_method ?? 'fixed') : 'fixed';
+                                $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+                                $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
+                                $sqftRate = $flatType && $flatType->rate_per_sqft > 0 ? $flatType->rate_per_sqft : (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
+                            @endphp
+                            <table class="details-inner-table" width="100%" cellpadding="0" cellspacing="0">
+                                @if(!empty($bill->flat->flatType->name) && $bill->flat->flatType->name !== 'N/A')
+                                <tr>
+                                    <td class="prop-label">Category:</td>
+                                    <td class="prop-value">{{ $bill->flat->flatType->name }}</td>
+                                </tr>
+                                @endif
                                 @if($bill->flat && $bill->flat->area_sqft > 0)
-                                    <strong>Carpet Area:</strong> {{ number_format($bill->flat->area_sqft, 2) }} Sq. Ft.<br>
+                                <tr>
+                                    <td class="prop-label">Carpet Area:</td>
+                                    <td class="prop-value">{{ number_format($bill->flat->area_sqft, 2) }} Sq. Ft.</td>
+                                </tr>
                                 @endif
                                 @if($isPerSqft && $sqftRate > 0)
-                                    <strong>Applied Rate:</strong> {{ \App\Helpers\CurrencyHelper::formatCurrency($sqftRate) }} / Sq. Ft.<br>
+                                <tr>
+                                    <td class="prop-label">Applied Rate:</td>
+                                    <td class="prop-value">{{ \App\Helpers\CurrencyHelper::formatCurrency($sqftRate) }} / Sq. Ft.</td>
+                                </tr>
                                 @endif
-                                <strong>Payment Mode:</strong> {{ strtoupper($bill->payment_method) }}
+                                <tr>
+                                    <td class="prop-label">Payment Mode:</td>
+                                    <td class="prop-value">{{ strtoupper($bill->payment_method) }}</td>
+                                </tr>
                                 @if($bill->receivedBy)
-                                    <br><strong>Received By:</strong> {{ $bill->receivedBy->name }}
+                                <tr>
+                                    <td class="prop-label">Received By:</td>
+                                    <td class="prop-value">{{ $bill->receivedBy->name }}</td>
+                                </tr>
                                 @endif
                                 @if($bill->transaction_id)
-                                    <br><strong>UTR Number:</strong> {{ $bill->transaction_id }}
+                                <tr>
+                                    <td class="prop-label">UTR Number:</td>
+                                    <td class="prop-value">{{ $bill->transaction_id }}</td>
+                                </tr>
                                 @endif
-                            </span>
+                            </table>
                         </div>
                     </td>
                 </tr>

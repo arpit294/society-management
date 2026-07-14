@@ -19,7 +19,7 @@
                 </select>
             </div>
             
-            <div class="col-md-4 mb-3">
+            <div class="col-md-6 mb-3">
                 <label for="owner_maintenance_fee" class="form-label">Owner Fee (Fixed) <span class="text-danger">*</span></label>
                 <div class="input-group">
                     <span class="input-group-text">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
@@ -27,19 +27,11 @@
                 </div>
             </div>
             
-            <div class="col-md-4 mb-3">
+            <div class="col-md-6 mb-3">
                 <label for="rental_maintenance_fee" class="form-label">Rental Fee (Fixed) <span class="text-danger">*</span></label>
                 <div class="input-group">
                     <span class="input-group-text">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
                     <input type="number" step="0.01" class="form-control" id="rental_maintenance_fee" name="rental_maintenance_fee" required placeholder="0.00">
-                </div>
-            </div>
-
-            <div class="col-md-4 mb-3">
-                <label for="rate_per_sqft" class="form-label">Rate / Sq.Ft. (₹)</label>
-                <div class="input-group">
-                    <span class="input-group-text">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
-                    <input type="number" step="0.01" min="0" class="form-control" id="rate_per_sqft" name="rate_per_sqft" placeholder="0.00">
                 </div>
             </div>
             

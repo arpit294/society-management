@@ -74,6 +74,12 @@ class Setting extends Model
             'enable_area_based_billing' => '0',
             'enable_commercial_gst' => '0',
             'commercial_gst_percentage' => '18',
+            // Toaster & Notification Settings
+            'toastr_enabled' => '1',
+            'toastr_position' => 'toast-top-right',
+            'toastr_timeout' => '3000',
+            'toastr_close_button' => '1',
+            'toastr_progress_bar' => '1',
         ];
     }
 

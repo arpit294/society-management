@@ -26,12 +26,6 @@ class FlatTypesDataTable extends DataTable
             ->editColumn('rental_maintenance_fee', function ($row) {
                 return '<span class="badge bg-info fw-bold px-3 py-2 fs-6">'.CurrencyHelper::formatCurrency($row->rental_maintenance_fee).'</span>';
             })
-            ->editColumn('rate_per_sqft', function ($row) {
-                if ($row->rate_per_sqft > 0) {
-                    return '<span class="badge bg-warning text-dark fw-bold px-3 py-2 fs-6">'.CurrencyHelper::formatCurrency($row->rate_per_sqft).' / Sq.Ft.</span>';
-                }
-                return '<span class="text-muted small">-</span>';
-            })
             ->editColumn('status', function ($row) {
                 if ($row->status === 'active') {
                     return '<span class="badge bg-success">Active</span>';
@@ -39,7 +33,7 @@ class FlatTypesDataTable extends DataTable
 
                 return '<span class="badge bg-secondary">Inactive</span>';
             })
-            ->rawColumns(['action', 'status', 'owner_maintenance_fee', 'rental_maintenance_fee', 'rate_per_sqft'])
+            ->rawColumns(['action', 'status', 'owner_maintenance_fee', 'rental_maintenance_fee'])
             ->setRowId('id');
     }
 
@@ -90,7 +84,6 @@ class FlatTypesDataTable extends DataTable
             Column::make('name')->data('name')->name('name'),
             Column::make('owner_maintenance_fee')->data('owner_maintenance_fee')->name('owner_maintenance_fee')->title('Owner Fee (Fixed)'),
             Column::make('rental_maintenance_fee')->data('rental_maintenance_fee')->name('rental_maintenance_fee')->title('Rental Fee (Fixed)'),
-            Column::make('rate_per_sqft')->data('rate_per_sqft')->name('rate_per_sqft')->title('Rate / Sq.Ft.'),
             Column::make('status')->data('status')->name('status'),
             Column::make('created_at')->data('created_at')->name('created_at')->title('Created At'),
             Column::computed('action')->orderable(false)->searchable(false)->width(120),

@@ -37,9 +37,10 @@ class UpdateUserRequest extends FormRequest
             ],
             'password' => 'nullable|string|min:6',
             'aadhar_id' => [
-                'required',
-                'digits:12',
-                Rule::unique('users', 'aadhar_id')->ignore(optional($this->route('user'))->id),
+                'nullable',
+                'string',
+                'max:25',
+                Rule::unique('users', 'aadhar_id')->whereNotNull('aadhar_id')->ignore(optional($this->route('user'))->id),
             ],
             'status' => [
                 'required',

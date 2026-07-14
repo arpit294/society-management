@@ -53,11 +53,11 @@
         </div>
 
         <div class="mb-3">
-            <label class="form-label text-success fw-semibold">Aadhar ID <span class="text-danger">*</span></label>
+            <label class="form-label text-success fw-semibold">National ID / Aadhar / Tax ID <span class="opacity-50 small">(Optional)</span></label>
             <input type="text" name="aadhar_id" class="form-control @error('aadhar_id') is-invalid @enderror"
-                placeholder="12-digit Aadhar number" inputmode="numeric" pattern="[0-9]{12}" maxlength="12"
+                placeholder="Aadhar, PAN, or Tax ID" maxlength="25"
                 value="{{ old('aadhar_id', $user->aadhar_id ?? '') }}">
-            <small class="field-hint">Must be exactly 12 digits</small>
+            <small class="field-hint">Enter Gov/Tax ID up to 25 alphanumeric characters</small>
             @error('aadhar_id')
                 <div class="invalid-feedback d-block field-error">{{ $message }}</div>
             @enderror
