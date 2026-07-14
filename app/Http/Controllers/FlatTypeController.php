@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DataTables\FlatTypesDataTable;
 use App\Models\FlatType;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Nette\Schema\ValidationException;
@@ -75,7 +76,7 @@ class FlatTypeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => \App\Models\Setting::label('unit_type', 'Flat Type') . ' created successfully.',
+                'message' => Setting::label('unit_type', 'Flat Type') . ' created successfully.',
             ]);
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
@@ -133,7 +134,7 @@ class FlatTypeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => \App\Models\Setting::label('unit_type', 'Flat Type') . ' updated successfully.',
+                'message' => Setting::label('unit_type', 'Flat Type') . ' updated successfully.',
             ]);
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
