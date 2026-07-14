@@ -1,22 +1,22 @@
 <x-user-page>
 
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-        <h4 class="mb-0">Residents Management</h4>
+        <h4 class="mb-0">{{ __('Residents Management') }}</h4>
         <div class="d-flex flex-wrap align-items-center gap-2">
 
             @can('resident_view')
             <button type="button" class="btn btn-outline-info export-btn-pulse" data-coreui-toggle="modal" data-coreui-target="#export-resident-modal" id="export-residents-btn">
-                <i class="fa-solid fa-file-export me-2"></i>Export Records
+                <i class="fa-solid fa-file-export me-2"></i>{{ __('Export Records') }}
             </button>
             @endcan
             
             @can('resident_create')
             <button type="button" class="btn btn-outline-success" data-coreui-toggle="modal" data-coreui-target="#import-resident-modal">
-                <i class="fa-solid fa-file-import me-2"></i>Import Records
+                <i class="fa-solid fa-file-import me-2"></i>{{ __('Import Records') }}
             </button>
             <button type="button" class="btn btn-primary" id="btn-add-resident"
-                data-url="{{ route('residents.create') }}" data-title="Add New Resident">
-                <i class="fa-solid fa-plus me-2"></i>Add Resident
+                data-url="{{ route('residents.create') }}" data-title="{{ __('Add Resident') }}">
+                <i class="fa-solid fa-plus me-2"></i>{{ __('Add Resident') }}
             </button>
             @endcan
         </div>
@@ -25,9 +25,9 @@
     <div class="mb-3">
         <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
             <div class="filter-col" style="min-width: 220px;">
-                <label class="form-label mb-1" for="residents-filter-block">Filter by Block</label>
+                <label class="form-label mb-1" for="residents-filter-block">{{ __('Filter by Block') }}</label>
                 <select id="residents-filter-block" class="form-select" style="max-width: 320px;">
-                    <option value="">All Blocks</option>
+                    <option value="">{{ __('All Blocks') }}</option>
                     @foreach($blocks as $block)
                         <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
                     @endforeach
@@ -36,7 +36,7 @@
 
             <div class="filter-col d-none" id="residents-filter-reset-col" style="min-width: 200px;">
                 <button type="button" id="residents-filter-reset" class="btn btn-outline-secondary w-100">
-                    Reset filters
+                    {{ __('Reset filters') }}
                 </button>
             </div>
         </div>
