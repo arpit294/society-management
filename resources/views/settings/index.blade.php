@@ -1,5 +1,5 @@
 <x-user-page>
-    {{-- Styles moved to public/css/custom-premium.css --}}
+    {{-- Styles consolidated into public/css/style.css --}}
 
     @php
         $currencySymbol = \App\Helpers\CurrencyHelper::getCurrencySymbol();
@@ -1141,13 +1141,29 @@
                         if (residentInput) residentInput.value = resident;
                     }
 
-                    const cleanUnit = (unit || 'Flat').split('/')[0].trim();
-                    const cleanBlock = (block || 'Block/Wing').split('/')[0].trim();
-                    const cleanResident = (resident || 'Resident').split('/')[0].trim();
+                    const cleanUnit = (unit || 'Flat').trim();
+                    const cleanBlock = (block || 'Block/Wing').trim();
+                    const cleanResident = (resident || 'Resident').trim();
+
+                    let residentPlural = cleanResident;
+                    if (cleanResident === 'Villa Owner / Occupant') residentPlural = 'Villa Owner / Occupants';
+                    else if (cleanResident === 'Occupant / Corporate') residentPlural = 'Occupants / Corporates';
+                    else if (cleanResident === 'Occupant / Resident') residentPlural = 'Occupants / Residents';
+                    else if (cleanResident === 'Tenant / Owner') residentPlural = 'Tenant / Owners';
+                    else if (cleanResident === 'Villa Owner') residentPlural = 'Villa Owners';
+                    else residentPlural = cleanResident.endsWith('s') ? cleanResident : (cleanResident + 's');
+
+                    let unitTypes = cleanUnit + ' Types';
+                    if (cleanUnit === 'Villa') unitTypes = 'Villa Categories';
+                    else if (cleanUnit === 'Shop') unitTypes = 'Shop Categories';
+                    else if (cleanUnit === 'Shop / Office') unitTypes = 'Shop & Office Categories';
+                    else if (cleanUnit === 'Property Unit') unitTypes = 'Property Unit Categories';
 
                     document.querySelectorAll('.sidebar-label-unit').forEach(el => el.textContent = cleanUnit);
+                    document.querySelectorAll('.sidebar-label-unit-types').forEach(el => el.textContent = unitTypes);
                     document.querySelectorAll('.sidebar-label-block').forEach(el => el.textContent = cleanBlock);
                     document.querySelectorAll('.sidebar-label-resident').forEach(el => el.textContent = cleanResident);
+                    document.querySelectorAll('.sidebar-label-resident-plural').forEach(el => el.textContent = residentPlural);
                 };
 
                 if (billingSelect) {

@@ -133,8 +133,7 @@
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M256 160c-44.2 0-80 35.8-80 80s35.8 80 80 80 80-35.8 80-80-35.8-80-80-80zm0 128c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm171.1-125.1L355.2 234.8c-2.4 12.5-8 23.9-15.8 33.6l64.1 64.1c12.5 12.5 32.8 12.5 45.3 0 12.5-12.5 12.5-32.8 0-45.3l-21.7-24.3zM140.7 268.4c-7.8-9.7-13.4-21.1-15.8-33.6L52.9 162.9c-12.5-12.5-12.5-32.8 0-45.3 12.5-12.5 32.8-12.5 45.3 0l71.9 71.9L140.7 268.4z" />
-                </svg>
-                <span class="sidebar-label-resident">{{ \App\Models\Setting::label('resident', 'Resident') }}</span>s
+                <span class="sidebar-label-resident-plural">{{ \App\Models\Setting::label('resident_plural', 'Residents') }}</span>
             </a>
         </li>
         @endcan

@@ -25,8 +25,6 @@
 
     <!-- Main styles for this application-->
     <link href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}" rel="stylesheet">
-    <link href="{{ asset('css/custom-premium.css') }}?v={{ filemtime(public_path('css/custom-premium.css')) }}" rel="stylesheet">
-    <link href="{{ asset('css/3d-4d-animations.css') }}?v={{ filemtime(public_path('css/3d-4d-animations.css')) }}" rel="stylesheet">
 
     <!-- We use those styles to show code examples, you should remove them in your application.-->
     <link href="{{ asset('css/examples.css') }}" rel="stylesheet">
@@ -79,15 +77,16 @@
             resident: @json(\App\Models\Setting::label('resident', 'Resident'))
         };
     </script>
-    <script src="{{ asset('js/script.js') }}?v={{ filemtime(public_path('js/script.js')) }}"></script>
-    {{-- <script src="{{ asset('js/main.js') }}"></script> --}}
 
     <!-- 3D & 4D Animation Engine & Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.net.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.waves.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
-    <script src="{{ asset('js/3d-4d-animations.js') }}?v={{ filemtime(public_path('js/3d-4d-animations.js')) }}"></script>
+
+    <!-- Main Consolidated Script -->
+    <script src="{{ asset('js/script.js') }}?v={{ filemtime(public_path('js/script.js')) }}"></script>
+    {{-- <script src="{{ asset('js/main.js') }}"></script> --}}
 
     <div id="global-flash-messages" class="d-none" data-success="{{ session('success') }}"
         data-error="{{ !str_contains(session('error', ''), '<br>') ? session('error') : '' }}"

@@ -79,7 +79,9 @@ class Setting extends Model
 
     public static function label(string $key, string $default = ''): string
     {
-        $value = self::get("ui_label_{$key}");
+        $allSettings = self::getAll();
+        $hasExplicitSetting = array_key_exists("ui_label_{$key}", $allSettings) && !empty($allSettings["ui_label_{$key}"]);
+        $value = $hasExplicitSetting ? $allSettings["ui_label_{$key}"] : self::get("ui_label_{$key}");
         $propType = self::get('society_property_type', 'flat_residential');
 
         $genericDefaults = [
@@ -90,8 +92,8 @@ class Setting extends Model
             'Property & Unit Category', 'Property & Unit Categories'
         ];
 
-        // If asking for unit derived fields (types, plural, no) and the specific value is empty or generic/old preset
-        if (in_array($key, ['unit_type', 'unit_types', 'unit_plural', 'unit_no']) && in_array($value, $genericDefaults)) {
+        // If asking for unit derived fields (types, plural, no) and no explicit setting exists for them
+        if (in_array($key, ['unit_type', 'unit_types', 'unit_plural', 'unit_no']) && !$hasExplicitSetting) {
             $baseUnit = self::label('unit', 'Flat');
             
             if ($baseUnit === 'Villa') {
@@ -123,11 +125,21 @@ class Setting extends Model
                 if ($key === 'unit_type') return $propType !== 'flat_residential' ? "{$baseUnit} Category" : "{$baseUnit} Type";
                 if ($key === 'unit_types') return $propType !== 'flat_residential' ? "{$baseUnit} Categories" : "{$baseUnit} Types";
                 if ($key === 'unit_plural') return str_ends_with($baseUnit, 's') ? $baseUnit : "{$baseUnit}s";
-                if ($key === 'unit_no') return "{$baseUnit} No";
             }
         }
 
-        if (in_array($value, $genericDefaults)) {
+        // If asking for resident_plural derived field
+        if ($key === 'resident_plural' && !$hasExplicitSetting) {
+            $baseResident = self::label('resident', 'Resident');
+            if ($baseResident === 'Villa Owner / Occupant') return 'Villa Owner / Occupants';
+            if ($baseResident === 'Occupant / Corporate') return 'Occupants / Corporates';
+            if ($baseResident === 'Occupant / Resident') return 'Occupants / Residents';
+            if ($baseResident === 'Tenant / Owner') return 'Tenant / Owners';
+            if ($baseResident === 'Villa Owner') return 'Villa Owners';
+            return str_ends_with($baseResident, 's') ? $baseResident : "{$baseResident}s";
+        }
+
+        if (!$hasExplicitSetting) {
             if ($propType === 'commercial_complex') {
                 $vocabulary = [
                     'block' => 'Wing',
