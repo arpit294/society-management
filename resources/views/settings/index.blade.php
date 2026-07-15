@@ -285,19 +285,19 @@
                             <div class="col-md-3 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="penalty_half_yearly_enabled" value="0">
-                                    <input class="form-check-input" type="checkbox" id="penalty_half_yearly_enabled"
+                                        <input class="form-check-input" type="checkbox" id="penalty_half_yearly_enabled"
                                         name="penalty_half_yearly_enabled" value="1"
                                         {{ ($settings['penalty_half_yearly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
                                     <label
                                         class="form-check-label text-body small fw-semibold text-uppercase label-penalty"
                                         for="penalty_half_yearly_enabled">Half-Yearly (6 Months)</label>
                                 </div>
-                                <div class="input-group">
-                                    <input type="number" step="0.01" name="penalty_half_yearly_value"
-                                        class="form-control" value="{{ $settings['penalty_half_yearly_value'] }}">
-                                    <span class="input-group-text penalty-suffix">{{ $penaltyRateSuffix }}</span>
+                                    <div class="input-group">
+                                        <input type="number" step="0.01" name="penalty_half_yearly_value"
+                                            class="form-control" value="{{ $settings['penalty_half_yearly_value'] }}">
+                                        <span class="input-group-text penalty-suffix">{{ $penaltyRateSuffix }}</span>
+                                    </div>
                                 </div>
-                            </div>
                             <div class="col-md-3 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="penalty_yearly_enabled" value="0">
