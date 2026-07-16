@@ -33,11 +33,10 @@ class StoreUserRequest extends FormRequest
             ],
             'password' => 'required|string|min:6',
             'aadhar_id' => [
-                'required',
-                'digits:12',
-                Rule::unique('users', 'aadhar_id')->where(function ($query) {
-                    return $query;
-                }),
+                'nullable',
+                'string',
+                'max:25',
+                Rule::unique('users', 'aadhar_id')->whereNotNull('aadhar_id'),
             ],
             'status' => [
                 'required',

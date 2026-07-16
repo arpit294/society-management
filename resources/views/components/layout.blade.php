@@ -25,8 +25,6 @@
 
     <!-- Main styles for this application-->
     <link href="{{ asset('css/style.css') }}?v={{ filemtime(public_path('css/style.css')) }}" rel="stylesheet">
-    <link href="{{ asset('css/custom-premium.css') }}?v={{ filemtime(public_path('css/custom-premium.css')) }}" rel="stylesheet">
-    <link href="{{ asset('css/3d-4d-animations.css') }}?v={{ filemtime(public_path('css/3d-4d-animations.css')) }}" rel="stylesheet">
 
     <!-- We use those styles to show code examples, you should remove them in your application.-->
     <link href="{{ asset('css/examples.css') }}" rel="stylesheet">
@@ -72,15 +70,35 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/monthSelect/index.js"></script>
-    <script src="{{ asset('js/script.js') }}?v={{ filemtime(public_path('js/script.js')) }}"></script>
-    {{-- <script src="{{ asset('js/main.js') }}"></script> --}}
+    <script>
+        window.SMP_UI_LABELS = {
+            block: @json(\App\Models\Setting::label('block', 'Block')),
+            unit: @json(\App\Models\Setting::label('unit', 'Flat')),
+            resident: @json(\App\Models\Setting::label('resident', 'Resident'))
+        };
+    </script>
 
     <!-- 3D & 4D Animation Engine & Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.net.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/vanta@0.5.24/dist/vanta.waves.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
-    <script src="{{ asset('js/3d-4d-animations.js') }}?v={{ filemtime(public_path('js/3d-4d-animations.js')) }}"></script>
+
+    <!-- Dynamic Toaster Configuration from Settings -->
+    <script>
+        window.SMP_TOASTR_CONFIG = {
+            enabled: {{ \App\Models\Setting::get('toastr_enabled', '1') == '1' ? 'true' : 'false' }},
+            positionClass: "{{ \App\Models\Setting::get('toastr_position', 'toast-top-right') }}",
+            timeOut: {{ (int) \App\Models\Setting::get('toastr_timeout', '3000') }},
+            closeButton: {{ \App\Models\Setting::get('toastr_close_button', '1') == '1' ? 'true' : 'false' }},
+            progressBar: {{ \App\Models\Setting::get('toastr_progress_bar', '1') == '1' ? 'true' : 'false' }},
+            preventDuplicates: true
+        };
+    </script>
+
+    <!-- Main Consolidated Script -->
+    <script src="{{ asset('js/script.js') }}?v={{ filemtime(public_path('js/script.js')) }}"></script>
+    {{-- <script src="{{ asset('js/main.js') }}"></script> --}}
 
     <div id="global-flash-messages" class="d-none" data-success="{{ session('success') }}"
         data-error="{{ !str_contains(session('error', ''), '<br>') ? session('error') : '' }}"

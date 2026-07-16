@@ -72,13 +72,8 @@ class DashboardController extends Controller
                 'overdue' => $overdueBills,
             ];
 
-            // Flat Occupancy Chart Data
-            $occupiedFlats = Flat::where('status', config('status.flats.occupied'))->count();
-            $emptyFlats = Flat::where('status', config('status.flats.empty'))->count();
-            $occupancyData = [
-                'occupied' => $occupiedFlats,
-                'empty' => $emptyFlats,
-            ];
+            // Flat Occupancy Chart Data (Auto-syncs and calculates occupied vs empty accurately based on residents)
+            $occupancyData = Flat::syncAllOccupancyStatus();
 
             // Expense Breakdown Chart Data
             $expensesByCategory = Expense::join('expense_categories', 'expenses.category_id', '=', 'expense_categories.id')

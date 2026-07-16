@@ -17,6 +17,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ResidentController;
 use App\Http\Controllers\RoleAndPermissionController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\PropertyTypeController;
 use App\Http\Controllers\GlobalImportExportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -182,6 +183,11 @@ Route::middleware('auth')->group(function () {
         // Settings
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
+
+        // Property Types CRUD
+        Route::post('property-types', [PropertyTypeController::class, 'store'])->name('property-types.store');
+        Route::put('property-types/{property_type}', [PropertyTypeController::class, 'update'])->name('property-types.update');
+        Route::delete('property-types/{property_type}', [PropertyTypeController::class, 'destroy'])->name('property-types.destroy');
 
         // Global Import Export
         Route::get('settings/global-backup/export', [GlobalImportExportController::class, 'export'])->name('settings.global.export');

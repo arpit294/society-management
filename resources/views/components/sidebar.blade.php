@@ -77,17 +77,19 @@
                         d="M96 48C78.3 48 64 62.3 64 80v352c0 17.7 14.3 32 32 32h96V336h128v128h96c17.7 0 32-14.3 32-32V80c0-17.7-14.3-32-32-32H96zm64 64h48v48h-48v-48zm0 96h48v48h-48v-48zm0 96h48v48h-48v-48zm144-192h48v48h-48v-48zm0 96h48v48h-48v-48zm0 96h48v48h-48v-48z" />
                 </svg>
                 {{ __('Flat Management') }}
+                <span class="sidebar-label-unit">{{ \App\Models\Setting::label('unit', 'Flat') }}</span> Management
             </a>
         </li>
         @endcan
         @can('flat_type_view')
-        <li class="nav-item">
+        <li class="nav-item" id="sidebar-maintenance-rates-link">
             <a class="nav-link" href="{{ route('flat-types.index') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M224 48H32v128h192V48zm0 192H32v224h192V240zm64-192v224h192V48H288zm0 288v160h192V336H288z" />
                 </svg>
                 {{ __('Maintenance Rates') }}
+                <span class="sidebar-label-unit-types">{{ \App\Models\Setting::label('unit_types', \App\Models\Setting::label('unit', 'Flat') . ' Types') }}</span>
             </a>
         </li>
         @endcan
@@ -98,7 +100,7 @@
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M416 64H96C78.3 64 64 78.3 64 96v320c0 17.7 14.3 32 32 32h320c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32zM256 384H128v-32h128v32zm128-80H128v-32h256v32zm0-80H128v-32h256v32z" />
                 </svg>
-                {{ __('Flat Documents') }}
+                <span class="sidebar-label-unit">{{ \App\Models\Setting::label('unit', 'Flat') }}</span> Documents
             </a>
         </li>
         @endcan
@@ -110,7 +112,7 @@
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M32 32C14.3 32 0 46.3 0 64V448c0 17.7 14.3 32 32 32H480c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32H32zm64 64H224V224H96V96zm192 0H416V224H288V96zM96 288H224V416H96V288zm192 0H416V416H288V288z" />
                 </svg>
-                {{ __('Block Management') }}
+                <span class="sidebar-label-block">{{ \App\Models\Setting::label('block', 'Block/Wing') }}</span> Management
             </a>
         </li>
         @endcan
@@ -133,8 +135,7 @@
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                     <path fill="var(--ci-primary-color, currentcolor)"
                         d="M256 160c-44.2 0-80 35.8-80 80s35.8 80 80 80 80-35.8 80-80-35.8-80-80-80zm0 128c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm171.1-125.1L355.2 234.8c-2.4 12.5-8 23.9-15.8 33.6l64.1 64.1c12.5 12.5 32.8 12.5 45.3 0 12.5-12.5 12.5-32.8 0-45.3l-21.7-24.3zM140.7 268.4c-7.8-9.7-13.4-21.1-15.8-33.6L52.9 162.9c-12.5-12.5-12.5-32.8 0-45.3 12.5-12.5 32.8-12.5 45.3 0l71.9 71.9L140.7 268.4z" />
-                </svg>
-                {{ __('Residents') }}
+                <span class="sidebar-label-resident-plural">{{ \App\Models\Setting::label('resident_plural', 'Residents') }}</span>
             </a>
         </li>
         @endcan
@@ -202,6 +203,36 @@
                     <a class="nav-link {{ request()->is('settings*') ? 'active' : '' }}" href="{{ route('settings.index') }}#general-settings">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         {{ __('General Settings') }}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#structure-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Property & Structure
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#penalty-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Late Penalty Settings
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#discount-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Prepayment Discounts
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#documents-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Required Documents
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#toaster-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        Notification Popups
                     </a>
                 </li>
                 <li class="nav-item">

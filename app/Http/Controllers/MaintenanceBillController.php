@@ -112,23 +112,43 @@ class MaintenanceBillController extends Controller
             // Get all active residents (filtering out old owners if a tenant lives there)
             $residents = $this->getUniqueActiveResidents();
 
-            // Pre-calculate the base monthly fee for each resident based on flat type (Owner vs Tenant rate)
+            // Pre-calculate the base monthly fee for each resident based on flat type & area
             $residentFees = $residents->mapWithKeys(function ($resident) {
                 $fee = 0;
-                if ($resident->flat && $resident->flat->flatType) {
-                    $fee = ($resident->type === 'owner')
-                        ? $resident->flat->flatType->owner_maintenance_fee
-                        : $resident->flat->flatType->rental_maintenance_fee;
+                if ($resident->flat) {
+                    $fee = $resident->flat->calculateMaintenanceFee($resident->type);
                 }
 
                 return [$resident->id => $fee];
+            });
+
+            $residentDetails = $residents->mapWithKeys(function ($resident) {
+                $details = 'Basic Maintenance Fee';
+                if ($resident->flat) {
+                    $isCommercial = in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
+                    $flatType = $resident->flat->flatType;
+                    $sqftRate = (float) \App\Models\Setting::get('commercial_rate_per_sqft', 0);
+                    if ($sqftRate <= 0) $sqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 10);
+                    if ($sqftRate <= 0) $sqftRate = 10.00;
+
+                    $categoryLabel = $flatType ? $flatType->name : ucfirst($resident->flat->unit_type ?? 'Standard');
+                    if ($isCommercial) {
+                        $area = (float) $resident->flat->area_sqft;
+                        $details = 'Category: ' . $categoryLabel . ' — Commercial Sq.Ft. Rate (' . number_format($area, 2) . ' Sq.Ft. @ ₹' . number_format($sqftRate, 2) . ')';
+                    } elseif ($flatType) {
+                        $details = 'Category: ' . $flatType->name . ' — Fixed Residential Rate';
+                    } else {
+                        $details = 'Category: ' . $categoryLabel . ' — Fixed Residential Rate';
+                    }
+                }
+                return [$resident->id => $details];
             });
 
             // Load the global penalty and discount settings to pass to the frontend JavaScript
             $discountSettings = $this->getSettingValues('discount');
             $penaltySettings = $this->getSettingValues('penalty');
 
-            return view('maintenance_bills.create', compact('residents', 'residentFees', 'discountSettings', 'penaltySettings'));
+            return view('maintenance_bills.create', compact('residents', 'residentFees', 'residentDetails', 'discountSettings', 'penaltySettings'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -158,16 +178,27 @@ class MaintenanceBillController extends Controller
         try {
             $resident = Resident::with(['user', 'flat.flatType'])->findOrFail($request->resident_id);
 
-            if (! $resident->flat || ! $resident->flat->flatType) {
-                throw new \Exception('Resident does not have a flat assigned with a valid flat type.');
+            if (! $resident->flat) {
+                throw new \Exception('Resident does not have a property unit (flat/shop) assigned.');
             }
 
-            // Determine the base fee (Owner vs Rental rate)
-            $monthlyFee = ($resident->type === 'owner')
-                ? $resident->flat->flatType->owner_maintenance_fee
-                : $resident->flat->flatType->rental_maintenance_fee;
+            // Determine the base fee using dynamic rate engine
+            $monthlyFee = $resident->flat->calculateMaintenanceFee($resident->type);
+
+            if ($monthlyFee <= 0 && ! $resident->flat->flatType) {
+                throw new \Exception('This property unit does not have a maintenance rate configured or a valid property type assigned.');
+            }
 
             $numberOfMonths = (int) $request->months;
+
+            // Calculate GST if enabled and unit or flat_type is commercial
+            $gstPercentage = 0;
+            $gstAmount = 0;
+            if (Setting::get('enable_commercial_gst') == '1' &&
+                ($resident->flat->unit_type === 'shop' || $resident->flat->unit_type === 'office' || $resident->flat->has_commercial_license || ($resident->flat->flatType && $resident->flat->flatType->category_type === 'commercial'))) {
+                $gstPercentage = (float) Setting::get('commercial_gst_percentage', 18);
+                $gstAmount = round(($monthlyFee * $gstPercentage) / 100, 2);
+            }
 
             // Handle file upload for payment slips
             $paymentSlipPath = null;
@@ -183,8 +214,8 @@ class MaintenanceBillController extends Controller
                 $request, $monthlyFee, $numberOfMonths, $currentDate
             );
 
-            // Split the total amount evenly across the selected number of months
-            $amountPerMonth = $monthlyFee + ($totalPenaltyAmount / $numberOfMonths) - ($totalDiscountAmount / $numberOfMonths);
+            // Split the total amount evenly across the selected number of months including GST
+            $amountPerMonth = $monthlyFee + $gstAmount + ($totalPenaltyAmount / $numberOfMonths) - ($totalDiscountAmount / $numberOfMonths);
             $amountPerMonth = max(0, $amountPerMonth); // Prevent negative bills
 
             // Generate a unique batch ID to group these multi-month payments together
@@ -218,6 +249,8 @@ class MaintenanceBillController extends Controller
                         'user_id' => $resident->user_id,
                         'block_id' => $resident->block_id,
                         'amount' => $monthlyFee,
+                        'gst_percentage' => $gstPercentage,
+                        'gst_amount' => $gstAmount,
                         'discount_amount' => $totalDiscountAmount / $numberOfMonths,
                         'penalty_amount' => $totalPenaltyAmount / $numberOfMonths,
                         'total_amount' => $amountPerMonth,
@@ -332,10 +365,8 @@ class MaintenanceBillController extends Controller
 
             if ($request->status === config('status.maintenance_bills.paid') && $maintenanceBill->status !== config('status.maintenance_bills.paid')) {
 
-                // Re-fetch the correct monthly fee based on user type
-                $monthlyFee = ($maintenanceBill->resident->type === 'owner')
-                    ? $maintenanceBill->flat->flatType->owner_maintenance_fee
-                    : $maintenanceBill->flat->flatType->rental_maintenance_fee;
+                // Re-fetch the correct monthly fee using dynamic rate engine
+                $monthlyFee = $maintenanceBill->flat->calculateMaintenanceFee($maintenanceBill->resident->type);
 
                 $currentDate = Carbon::createFromDate(
                     $maintenanceBill->maintenance->year,
@@ -362,7 +393,7 @@ class MaintenanceBillController extends Controller
                 // Lock in the dynamically calculated amounts so they never change again
                 $maintenanceBill->penalty_amount = $totalPenaltyAmount;
                 $maintenanceBill->discount_amount = $totalDiscountAmount;
-                $maintenanceBill->total_amount = $monthlyFee + $totalPenaltyAmount - $totalDiscountAmount;
+                $maintenanceBill->total_amount = max(0, $monthlyFee + ($maintenanceBill->gst_amount ?? 0) + $totalPenaltyAmount - $totalDiscountAmount);
 
             } elseif ($request->status !== config('status.maintenance_bills.paid')) {
                 // Revert back to unpaid state
@@ -376,7 +407,7 @@ class MaintenanceBillController extends Controller
                 // Reset modifiers
                 $maintenanceBill->penalty_amount = 0;
                 $maintenanceBill->discount_amount = 0;
-                // The total_amount should revert back to just the base fee (adjusted as needed by business rules)
+                $maintenanceBill->total_amount = ($maintenanceBill->amount ?? 0) + ($maintenanceBill->gst_amount ?? 0);
             }
 
             $maintenanceBill->save();
@@ -489,16 +520,31 @@ class MaintenanceBillController extends Controller
                         ->orWhere('move_out_date', '>=', Carbon::now()->startOfDay());
                 })->first();
 
-            if ($resident && $resident->flat && $resident->flat->flatType) {
-                $amount = ($resident->type === 'owner')
-                    ? $resident->flat->flatType->owner_maintenance_fee
-                    : $resident->flat->flatType->rental_maintenance_fee;
+            if ($resident && $resident->flat) {
+                $amount = $resident->flat->calculateMaintenanceFee($resident->type);
+                $details = 'Basic Maintenance Fee';
+                $isCommercial = in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
+                $flatType = $resident->flat->flatType;
+                $sqftRate = (float) Setting::get('commercial_rate_per_sqft', 0);
+                if ($sqftRate <= 0) $sqftRate = (float) Setting::get('maintenance_rate_per_sqft', 10);
+                if ($sqftRate <= 0) $sqftRate = 10.00;
+
+                $categoryLabel = $flatType ? $flatType->name : ucfirst($resident->flat->unit_type ?? 'Standard');
+                if ($isCommercial) {
+                    $area = (float) $resident->flat->area_sqft;
+                    $details = 'Category: ' . $categoryLabel . ' — Commercial Sq.Ft. Rate (' . number_format($area, 2) . ' Sq.Ft. @ ₹' . number_format($sqftRate, 2) . ')';
+                } elseif ($flatType) {
+                    $details = 'Category: ' . $flatType->name . ' — Fixed Residential Rate';
+                } else {
+                    $details = 'Category: ' . $categoryLabel . ' — Fixed Residential Rate';
+                }
 
                 return response()->json([
                     'success' => true,
                     'block_id' => $resident->block_id,
                     'flat_id' => $resident->flat_id,
                     'amount' => $amount,
+                    'details' => $details,
                 ]);
             }
 

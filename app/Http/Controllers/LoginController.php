@@ -58,6 +58,7 @@ class LoginController extends Controller
         }
     }
 
+
     public function destroy(Request $request): RedirectResponse
     {
         try {

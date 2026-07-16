@@ -18,7 +18,10 @@ class ResidentsImport implements ToCollection, WithHeadingRow
     {
         foreach ($rows as $row) {
             // Skip empty rows
-            if (!isset($row['email']) || !isset($row['flat'])) {
+            $flatNo = $row['flat'] ?? $row['flat_no'] ?? $row['villa_no'] ?? $row['shop_no'] ?? $row['office_no'] ?? $row['row_house_no'] ?? $row['unit_no'] ?? null;
+            $blockName = $row['block'] ?? $row['block_name'] ?? $row['commercial_wing'] ?? $row['phase'] ?? $row['sector'] ?? null;
+
+            if (!isset($row['email']) || empty($flatNo) || empty($blockName)) {
                 continue;
             }
 
@@ -40,15 +43,15 @@ class ResidentsImport implements ToCollection, WithHeadingRow
             }
 
             // 2. Find the block and flat
-            $block = Block::where('name', $row['block'])->first();
+            $block = Block::where('name', $blockName)->orWhere('block_name', $blockName)->first();
             if (!$block) {
-                Log::warning("Block '{$row['block']}' not found for resident {$row['name']}. Skipping.");
+                Log::warning("Block '{$blockName}' not found for resident {$row['name']}. Skipping.");
                 continue;
             }
 
-            $flat = Flat::where('block_id', $block->id)->where('flat_no', $row['flat'])->first();
+            $flat = Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->first();
             if (!$flat) {
-                Log::warning("Flat '{$row['flat']}' not found in block '{$row['block']}' for resident {$row['name']}. Skipping.");
+                Log::warning("Flat '{$flatNo}' not found in block '{$blockName}' for resident {$row['name']}. Skipping.");
                 continue;
             }
 
@@ -58,7 +61,7 @@ class ResidentsImport implements ToCollection, WithHeadingRow
                 ->exists();
 
             if ($isOccupied) {
-                Log::warning("Flat '{$row['flat']}' in block '{$row['block']}' is already occupied. Skipping resident {$row['name']}.");
+                Log::warning("Flat '{$flatNo}' in block '{$blockName}' is already occupied. Skipping resident {$row['name']}.");
                 continue; // Skip or handle it based on requirements
             }
 

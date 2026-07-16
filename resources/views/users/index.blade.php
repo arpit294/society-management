@@ -1,12 +1,5 @@
 <x-user-page>
 
-
-    <div id="users-toasts" class="users-toast-container" aria-live="polite" aria-atomic="true"></div>
-
-    @if (session('success'))
-        <div id="users-toast-source" data-message="{{ e(session('success')) }}" data-type="success" hidden></div>
-    @endif
-
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">User Management</h4>
         @can('user_create')

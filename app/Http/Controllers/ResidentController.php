@@ -30,8 +30,12 @@ class ResidentController extends Controller
         abort_if(Gate::denies('resident_view'), 403);
         try {
             $blocks = Block::all();
+            $dbTypes = \App\Models\Flat::whereNotNull('unit_type')->distinct()->pluck('unit_type')->toArray();
+            $standardTypes = ['flat', 'shop', 'office', 'showroom', 'warehouse', 'villa', 'row_house', 'tenement', 'penthouse', 'duplex', 'plot'];
+            $unitTypes = array_values(array_unique(array_merge($dbTypes, $standardTypes)));
+            sort($unitTypes);
 
-            return $dataTable->render('residents.index', compact('blocks'));
+            return $dataTable->render('residents.index', compact('blocks', 'unitTypes'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -52,7 +56,7 @@ class ResidentController extends Controller
         abort_if(Gate::denies('resident_create'), 403);
         try {
             $blocks = Block::all();
-            $users = User::with(['resident.flat.block'])->get();
+            $users = User::where('status', 1)->with(['resident.flat.block'])->get();
 
             return view('residents.create', compact('blocks', 'users'));
         } catch (\Exception $e) {
@@ -74,12 +78,21 @@ class ResidentController extends Controller
     {
         abort_if(Gate::denies('resident_create'), 403);
         try {
-            // Check if the flat already has an owner
-            $flatHasOwner = Resident::where('flat_id', $request->flat_id)->where('type', 'owner')->exists();
+            // Check if the flat already has an active owner
+            $flatHasOwner = Resident::where('flat_id', $request->flat_id)
+                ->where('type', 'owner')
+                ->where(function ($q) {
+                    $q->whereNull('move_out_date')
+                        ->orWhere('move_out_date', '>', now()->startOfDay());
+                })
+                ->exists();
 
-            // Check if flat is already occupied
+            // Check if flat is already occupied by active resident
             $isOccupied = Resident::where('flat_id', $request->flat_id)
-                ->whereNull('move_out_date')
+                ->where(function ($q) {
+                    $q->whereNull('move_out_date')
+                        ->orWhere('move_out_date', '>', now()->startOfDay());
+                })
                 ->exists();
 
             if ($isOccupied) {
@@ -93,6 +106,13 @@ class ResidentController extends Controller
                 'block_id' => 'required|exists:blocks,id',
                 'flat_id' => 'required|exists:flats,id',
                 'type' => 'required|string|in:owner,rental',
+                'occupant_category' => 'nullable|string|max:255',
+                'company_name' => 'nullable|string|max:255',
+                'business_name' => 'nullable|string|max:255',
+                'contact_person' => 'nullable|string|max:255',
+                'gstin' => 'nullable|string|max:255',
+                'gst_number' => 'nullable|string|max:255',
+                'trade_license_no' => 'nullable|string|max:255',
                 'user_id' => 'required|exists:users,id',
                 'move_in_date' => 'required|date',
                 'move_out_date' => 'nullable|date',
@@ -106,6 +126,12 @@ class ResidentController extends Controller
             $validatedData = $request->validate($rules, [
                 'owner_user_id.required' => 'A flat must have an owner before it can be rented. Please assign an owner.',
             ]);
+
+            $validatedData['occupant_category'] = $validatedData['occupant_category'] ?? 'individual';
+            $validatedData['company_name'] = $validatedData['company_name'] ?? ($validatedData['business_name'] ?? null);
+            $validatedData['business_name'] = $validatedData['business_name'] ?? ($validatedData['company_name'] ?? null);
+            $validatedData['gstin'] = $validatedData['gstin'] ?? ($validatedData['gst_number'] ?? null);
+            $validatedData['gst_number'] = $validatedData['gst_number'] ?? ($validatedData['gstin'] ?? null);
 
             // Remove owner_user_id from validatedData before creating the tenant
             $ownerUserId = $validatedData['owner_user_id'] ?? null;
@@ -122,6 +148,13 @@ class ResidentController extends Controller
                     'type' => 'owner',
                     'move_in_date' => $validatedData['move_in_date'],
                 ]);
+            }
+
+            if (!empty($validatedData['flat_id'])) {
+                $flat = \App\Models\Flat::find($validatedData['flat_id']);
+                if ($flat) {
+                    $flat->syncOccupancyStatus();
+                }
             }
 
             return response()->json([
@@ -151,7 +184,9 @@ class ResidentController extends Controller
             $blocks = Block::all();
 
             $flats = Flat::where('block_id', $resident->block_id)->get();
-            $users = User::with(['resident.flat.block'])->get();
+            $users = User::where(function ($q) use ($resident) {
+                $q->where('status', 1)->orWhere('id', $resident->user_id);
+            })->with(['resident.flat.block'])->get();
 
             return view('residents.edit', compact('resident', 'blocks', 'flats', 'users'));
         } catch (\Exception $e) {
@@ -195,6 +230,13 @@ class ResidentController extends Controller
                 'block_id' => 'required|exists:blocks,id',
                 'flat_id' => 'required|exists:flats,id',
                 'type' => 'required|string|in:owner,rental',
+                'occupant_category' => 'nullable|string|max:255',
+                'company_name' => 'nullable|string|max:255',
+                'business_name' => 'nullable|string|max:255',
+                'contact_person' => 'nullable|string|max:255',
+                'gstin' => 'nullable|string|max:255',
+                'gst_number' => 'nullable|string|max:255',
+                'trade_license_no' => 'nullable|string|max:255',
                 'user_id' => 'required|exists:users,id',
                 'move_in_date' => 'required|date',
                 'move_out_date' => 'nullable|date',
@@ -208,6 +250,12 @@ class ResidentController extends Controller
             $validatedData = $request->validate($rules, [
                 'owner_user_id.required' => 'A flat must have an owner before it can be rented. Please assign an owner.',
             ]);
+
+            $validatedData['occupant_category'] = $validatedData['occupant_category'] ?? 'individual';
+            $validatedData['company_name'] = $validatedData['company_name'] ?? ($validatedData['business_name'] ?? null);
+            $validatedData['business_name'] = $validatedData['business_name'] ?? ($validatedData['company_name'] ?? null);
+            $validatedData['gstin'] = $validatedData['gstin'] ?? ($validatedData['gst_number'] ?? null);
+            $validatedData['gst_number'] = $validatedData['gst_number'] ?? ($validatedData['gstin'] ?? null);
 
             // Remove owner_user_id from validatedData before updating the tenant
             $ownerUserId = $validatedData['owner_user_id'] ?? null;
@@ -224,6 +272,10 @@ class ResidentController extends Controller
                     'type' => 'owner',
                     'move_in_date' => $validatedData['move_in_date'],
                 ]);
+            }
+
+            if ($resident->flat) {
+                $resident->flat->syncOccupancyStatus();
             }
 
             return response()->json([
@@ -249,7 +301,11 @@ class ResidentController extends Controller
     {
         abort_if(Gate::denies('resident_delete'), 403);
         try {
+            $flat = $resident->flat;
             $resident->delete();
+            if ($flat) {
+                $flat->syncOccupancyStatus();
+            }
 
             return response()->json([
                 'success' => true,
@@ -270,7 +326,7 @@ class ResidentController extends Controller
     {
         abort_if(Gate::denies('resident_view'), 403);
         try {
-            $flats = Flat::where('block_id', $block_id)->get();
+            $flats = Flat::with('flatType')->where('block_id', $block_id)->get();
 
             return response()->json($flats);
         } catch (\Exception $e) {
@@ -287,8 +343,17 @@ class ResidentController extends Controller
     {
         abort_if(Gate::denies('resident_view'), 403);
         try {
-            $ownerResident = Resident::where('flat_id', $flat_id)->where('type', 'owner')->first();
-            if ($ownerResident) {
+            $ownerResident = Resident::where('flat_id', $flat_id)
+                ->where('type', 'owner')
+                ->where(function ($q) {
+                    $q->whereNull('move_out_date')
+                        ->orWhere('move_out_date', '>', now()->startOfDay());
+                })
+                ->orderByRaw('move_out_date IS NOT NULL')
+                ->latest('move_in_date')
+                ->first();
+
+            if ($ownerResident && $ownerResident->user) {
                 return response()->json(['has_owner' => true, 'user_id' => $ownerResident->user_id]);
             }
 
@@ -307,9 +372,16 @@ class ResidentController extends Controller
     {
         abort_if(Gate::denies('resident_view'), 403);
         try {
-            $residents = Resident::with('user')->where('flat_id', $flat_id)->get();
+            $residents = Resident::with('user')
+                ->where('flat_id', $flat_id)
+                ->where(function ($q) {
+                    $q->whereNull('move_out_date')
+                        ->orWhere('move_out_date', '>', now()->startOfDay());
+                })
+                ->get();
 
             $users = $residents->map(function ($resident) {
+                if (!$resident->user) return null;
                 return [
                     'id' => $resident->user->id,
                     'name' => $resident->user->name,
@@ -317,7 +389,7 @@ class ResidentController extends Controller
                     'phone' => $resident->user->phone,
                     'resident_type' => $resident->type,
                 ];
-            });
+            })->filter()->values();
 
             return response()->json($users);
         } catch (\Exception $e) {

@@ -44,6 +44,37 @@ class FlatsDatatables extends DataTable
             ->editColumn('block_id', function ($model) {
                 return $model->block ? $model->block->block_name : '-';
             })
+            ->editColumn('unit_type', function ($model) {
+                $type = strtolower($model->unit_type ?? 'flat');
+                [$badgeClass, $badgeStyle] = match($type) {
+                    'shop' => ['bg-warning text-dark border border-warning', ''],
+                    'office' => ['bg-info text-dark border border-info', ''],
+                    'showroom' => ['bg-success text-white border border-success', ''],
+                    'warehouse' => ['text-white border border-warning', 'background-color: #fd7e14 !important; color: #fff !important;'],
+                    'villa', 'bungalow' => ['bg-primary text-white border border-primary', ''],
+                    'row_house', 'rowhouse' => ['bg-danger text-white border border-danger', ''],
+                    'tenement' => ['bg-success-subtle text-success border border-success-subtle', ''],
+                    'penthouse' => ['text-white border border-secondary', 'background-color: #6f42c1 !important; color: #fff !important;'],
+                    'duplex' => ['bg-info text-dark border border-info', ''],
+                    'plot', 'land' => ['bg-dark text-white border border-dark', ''],
+                    'flat', 'apartment' => ['bg-secondary text-white border border-secondary', ''],
+                    default => ['bg-secondary text-white border border-secondary', '']
+                };
+                $label = ucwords(str_replace('_', ' ', $model->unit_type ?? 'flat'));
+                return '<span class="badge '.$badgeClass.' px-2 py-1" style="'.$badgeStyle.'">'.$label.'</span>';
+            })
+            ->editColumn('floor_no', function ($model) {
+                if (in_array(strtolower($model->unit_type ?? ''), ['villa', 'rowhouse', 'row_house', 'plot', 'bungalow']) || $model->floor_no == 0) {
+                    return '<span class="fw-semibold">Grounded</span>';
+                }
+                return '<span class="fw-semibold">Floor ' . $model->floor_no . '</span>';
+            })
+            ->editColumn('area_sqft', function ($model) {
+                if ($model->area_sqft > 0) {
+                    return '<span class="fw-bold">'.number_format($model->area_sqft, 2).'</span> <small class="text-muted">Sq.Ft.</small>';
+                }
+                return '<span class="text-muted small">-</span>';
+            })
             ->editColumn('flat_type_id', function ($model) {
                 return $model->flatType ? $model->flatType->name : '-';
             })
@@ -66,7 +97,7 @@ class FlatsDatatables extends DataTable
 
                 return '<span class="badge '.$class.'">'.$displayStatus.'</span>';
             })
-            ->rawColumns(['status', 'action', 'owner_name', 'tenant_name'])
+            ->rawColumns(['status', 'action', 'owner_name', 'tenant_name', 'unit_type', 'area_sqft', 'floor_no'])
             ->setRowId('id');
     }
 
@@ -106,12 +137,22 @@ class FlatsDatatables extends DataTable
      */
     public function getColumns(): array
     {
-        return [
+        $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+
+        $columns = [
             Column::make('id'),
-            Column::make('block_id')->title('Block'),
-            Column::make('flat_no'),
-            Column::make('floor_no'),
-            Column::make('flat_type_id')->title('Flat Type'),
+            Column::make('block_id')->title(\App\Models\Setting::label('block', 'Block')),
+            Column::make('unit_type')->title('Structure Type'),
+            Column::make('flat_no')->title(\App\Models\Setting::label('unit', 'Flat') . ' No'),
+            Column::make('floor_no')->title('Floor'),
+            Column::make('area_sqft')->title('Carpet Area (Sq.Ft.)'),
+        ];
+
+        if ($globalMethod !== 'per_sqft') {
+            $columns[] = Column::make('flat_type_id')->title('Category');
+        }
+
+        $columns = array_merge($columns, [
             Column::make('status'),
             Column::make('owner_name')->title('Owner')->orderable(false),
             Column::make('tenant_name')->title('Tenant')->orderable(false),
@@ -122,7 +163,9 @@ class FlatsDatatables extends DataTable
                 ->printable(false)
                 ->width(60)
                 ->addClass('text-center'),
-        ];
+        ]);
+
+        return $columns;
     }
 
     /**

@@ -125,18 +125,18 @@
                 <div class="mb-3">
                     <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
                         <div class="filter-col" style="min-width: 220px;">
-                            <label class="form-label mb-1" for="maintenance-bills-filter-block">Filter by Block</label>
+                            <label class="form-label mb-1" for="maintenance-bills-filter-block">Filter by {{ \App\Models\Setting::label('block', 'Block') }}</label>
                             <select id="maintenance-bills-filter-block" class="form-select select2-filter" style="width: 100%;">
-                                <option value="">All Blocks</option>
+                                <option value="">All {{ \App\Models\Setting::label('block', 'Block') }}s</option>
                                 @foreach($blocks as $block)
                                     <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
                                 @endforeach
                             </select>
                         </div>
                         <div class="filter-col" style="min-width: 280px;">
-                            <label class="form-label mb-1" for="maintenance-bills-filter-resident">Filter by Resident</label>
+                            <label class="form-label mb-1" for="maintenance-bills-filter-resident">Filter by {{ \App\Models\Setting::label('resident', 'Resident') }}</label>
                             <select id="maintenance-bills-filter-resident" class="form-select select2-filter" style="width: 100%;">
-                                <option value="">All Residents</option>
+                                <option value="">All {{ \App\Models\Setting::label('resident', 'Resident') }}s</option>
                                 @foreach($residents as $resident)
                                     <option value="{{ $resident->user->name ?? '' }}">
                                         {{ $resident->user->name ?? 'Unknown' }} ({{ $resident->flat->block->block_name ?? '' }} - {{ $resident->flat->flat_no ?? '' }})

@@ -1,5 +1,5 @@
 <form id="prepayment-form" action="{{ route('maintenance-bills.store') }}" method="POST" enctype="multipart/form-data"
-    data-fees="{{ json_encode($residentFees) }}" data-discount="{{ json_encode($discountSettings) }}"
+    data-fees="{{ json_encode($residentFees) }}" data-details="{{ json_encode($residentDetails ?? []) }}" data-discount="{{ json_encode($discountSettings) }}"
     data-penalty="{{ json_encode($penaltySettings) }}">
     @csrf
     <div class="modal-header">
@@ -18,13 +18,16 @@
         <!-- Select Resident -->
         <div class="mb-4">
             <label for="resident_id" class="form-label fw-semibold text-muted small text-uppercase">Select
-                Resident</label>
+                {{ \App\Models\Setting::label('resident', 'Resident') }}</label>
             <select name="resident_id" id="resident_id" class="form-select" required>
-                <option value="">Select Resident</option>
+                <option value="">Select {{ \App\Models\Setting::label('resident', 'Resident') }}</option>
                 @foreach ($residents as $resident)
+                    @php
+                        $categoryName = $resident->flat && $resident->flat->flatType ? $resident->flat->flatType->name : ucfirst($resident->flat->unit_type ?? 'Standard');
+                    @endphp
                     <option value="{{ $resident->id }}">
                         {{ $resident->user->name ?? 'Unknown' }}
-                        ({{ $resident->flat->block->block_name ?? '' }} - {{ $resident->flat->flat_no ?? '' }})
+                        ({{ $resident->flat->block->block_name ?? '' }} - {{ $resident->flat->flat_no ?? '' }} | Category: {{ $categoryName }})
                     </option>
                 @endforeach
             </select>

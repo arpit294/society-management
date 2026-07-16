@@ -102,9 +102,36 @@
             color: #333;
         }
         .info-content strong {
+            color: #222;
+            font-weight: bold;
+        }
+        .details-inner-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 4px;
+        }
+        .details-inner-table td {
+            padding: 3px 0;
+            border: none !important;
+            background: transparent !important;
+            vertical-align: top;
+            font-size: 13px;
+            line-height: 1.45;
+        }
+        .details-inner-table td.prop-label {
+            width: 105px;
             color: #666;
-            display: inline-block;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .details-inner-table td.billed-label {
             width: 65px;
+            color: #666;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        .details-inner-table td.prop-value {
+            color: #222;
             font-weight: normal;
         }
 
