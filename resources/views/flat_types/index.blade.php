@@ -1,11 +1,11 @@
 <x-user-page>
 <div class="container-fluid">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0 text-gray-800">Flat Types</h1>
+        <h1 class="h3 mb-0 text-gray-800">{{ \App\Models\Setting::label('unit_types', 'Flat Types') }}</h1>
         @can('flat_type_create')
         <button type="button" class="btn btn-primary" id="btn-add-flat-type"
-            data-url="{{ route('flat-types.create') }}" data-title="Add Flat Type">
-            <i class="fa-solid fa-plus me-1"></i> Add Flat Type
+            data-url="{{ route('flat-types.create') }}" data-title="Add {{ \App\Models\Setting::label('unit_type', 'Flat Type') }}">
+            <i class="fa-solid fa-plus me-1"></i> Add {{ \App\Models\Setting::label('unit_type', 'Flat Type') }}
         </button>
         @endcan
     </div>

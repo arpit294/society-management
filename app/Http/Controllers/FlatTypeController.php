@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DataTables\FlatTypesDataTable;
 use App\Models\FlatType;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Nette\Schema\ValidationException;
@@ -17,6 +18,7 @@ class FlatTypeController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_type_view'), 403);
         try {
+            \App\Http\Controllers\FlatController::syncDefaultFlatTypes();
             return $dataTable->render('flat_types.index');
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
@@ -56,17 +58,26 @@ class FlatTypeController extends Controller
         abort_if(! \Auth::user()->can('flat_type_create'), 403);
         try {
             $validatedData = $request->validate([
-                'name' => 'required|string|in:'.implode(',', self::FLAT_TYPE_NAMES).'|unique:flat_types,name',
+                'name' => 'required|string|max:255|unique:flat_types,name',
                 'owner_maintenance_fee' => 'required|numeric|min:0',
                 'rental_maintenance_fee' => 'required|numeric|min:0',
+                'rate_per_sqft' => 'nullable|numeric|min:0',
+                'calculation_method' => 'nullable|string|in:fixed,per_sqft,hybrid',
+                'category_type' => 'nullable|string|max:255',
+                'commercial_surcharge_percentage' => 'nullable|numeric|min:0',
                 'status' => 'required|in:active,inactive',
             ]);
+
+            $validatedData['rate_per_sqft'] = $validatedData['rate_per_sqft'] ?? 0;
+            $validatedData['calculation_method'] = $validatedData['calculation_method'] ?? 'fixed';
+            $validatedData['category_type'] = $validatedData['category_type'] ?? 'residential';
+            $validatedData['commercial_surcharge_percentage'] = $validatedData['commercial_surcharge_percentage'] ?? 0;
 
             FlatType::create($validatedData);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Flat Type created successfully.',
+                'message' => Setting::label('unit_type', 'Flat Type') . ' created successfully.',
             ]);
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
@@ -105,17 +116,26 @@ class FlatTypeController extends Controller
         abort_if(! \Auth::user()->can('flat_type_edit'), 403);
         try {
             $validatedData = $request->validate([
-                'name' => 'required|string|in:'.implode(',', self::FLAT_TYPE_NAMES).'|unique:flat_types,name,'.$flatType->id,
+                'name' => 'required|string|max:255|unique:flat_types,name,'.$flatType->id,
                 'owner_maintenance_fee' => 'required|numeric|min:0',
                 'rental_maintenance_fee' => 'required|numeric|min:0',
+                'rate_per_sqft' => 'nullable|numeric|min:0',
+                'calculation_method' => 'nullable|string|in:fixed,per_sqft,hybrid',
+                'category_type' => 'nullable|string|max:255',
+                'commercial_surcharge_percentage' => 'nullable|numeric|min:0',
                 'status' => 'required|in:active,inactive',
             ]);
+
+            $validatedData['rate_per_sqft'] = $validatedData['rate_per_sqft'] ?? 0;
+            $validatedData['calculation_method'] = $validatedData['calculation_method'] ?? 'fixed';
+            $validatedData['category_type'] = $validatedData['category_type'] ?? 'residential';
+            $validatedData['commercial_surcharge_percentage'] = $validatedData['commercial_surcharge_percentage'] ?? 0;
 
             $flatType->update($validatedData);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Flat Type updated successfully.',
+                'message' => Setting::label('unit_type', 'Flat Type') . ' updated successfully.',
             ]);
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
@@ -138,7 +158,7 @@ class FlatTypeController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Flat Type deleted successfully.',
+                'message' => \App\Models\Setting::label('unit_type', 'Flat Type') . ' deleted successfully.',
             ]);
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {

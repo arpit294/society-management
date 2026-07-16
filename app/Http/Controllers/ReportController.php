@@ -8,6 +8,7 @@ use App\Models\Maintenance;
 use App\Models\MaintenanceBill;
 use App\Models\Resident;
 use App\Models\Expense;
+use App\Models\NameTransferBill;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -44,9 +45,12 @@ class ReportController extends Controller
 
             // Base query for active residents
             $residentBaseQuery = Resident::with(['user', 'flat.block', 'flat.flatType'])
-                ->where(function ($query) {
+                ->where(function ($query) use ($reportType, $selectedYear) {
                     $query->whereNull('move_out_date')
-                        ->orWhere('move_out_date', '>=', now()->startOfDay());
+                        ->orWhere('move_out_date', '>', now());
+                    if ($reportType === 'yearly') {
+                        $query->orWhereYear('move_out_date', '>=', $selectedYear);
+                    }
                 });
 
             if ($filterBlockId && $filterUserId) {
@@ -83,7 +87,7 @@ class ReportController extends Controller
                     if (! $resident || ! $resident->user) continue;
                     $userTotals = ['totalExpected' => 0, 'totalPaid' => 0, 'totalPending' => 0];
                     foreach ($months as $month) {
-                        $stats = $this->calculateMonthlyStats($month, $selectedYear, collect([$resident]), $userId, $filterBlockId);
+                        $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $userId, $filterBlockId);
                         $userTotals['totalExpected'] += $stats['totalExpected'];
                         $userTotals['totalPaid'] += $stats['totalPaid'];
                         $userTotals['totalPending'] += $stats['totalPending'];
@@ -94,12 +98,14 @@ class ReportController extends Controller
                                 ->orWhereYear('paid_at', $selectedYear)
                                 ->orWhereYear('created_at', $selectedYear);
                         })
-                        ->where(function ($q) use ($userId, $resident) {
-                            $q->where('new_owner_id', $userId)
-                                ->orWhere('old_owner_id', $userId)
-                                ->orWhere('flat_id', $resident->flat_id);
-                        })
+                        ->where('new_owner_id', $userId)
                         ->sum('amount');
+
+                    if (!$filterUserId && $userTotals['totalExpected'] == 0 && $userTotals['totalPaid'] == 0 && $userTotals['totalPending'] == 0 && $userTransferFees == 0) {
+                        if (!is_null($resident->move_out_date) && Carbon::parse($resident->move_out_date)->lte(now())) {
+                            continue;
+                        }
+                    }
 
                     $usersYearly->push((object)[
                         'user' => $resident->user,
@@ -140,10 +146,7 @@ class ReportController extends Controller
                     });
                 }
                 if ($filterUserId) {
-                    $yearlyTransferFeesQuery->where(function ($q) use ($filterUserId) {
-                        $q->where('new_owner_id', $filterUserId)
-                            ->orWhere('old_owner_id', $filterUserId);
-                    });
+                    $yearlyTransferFeesQuery->where('new_owner_id', $filterUserId);
                 }
                 $yearlyTransferFees = $yearlyTransferFeesQuery->sum('amount');
 
@@ -223,10 +226,7 @@ class ReportController extends Controller
                 });
             }
             if ($filterUserId) {
-                $monthlyTransferFeesQuery->where(function ($q) use ($filterUserId) {
-                    $q->where('new_owner_id', $filterUserId)
-                        ->orWhere('old_owner_id', $filterUserId);
-                });
+                $monthlyTransferFeesQuery->where('new_owner_id', $filterUserId);
             }
             $totalTransferFees = $monthlyTransferFeesQuery->sum('amount');
 
@@ -304,9 +304,12 @@ class ReportController extends Controller
 
             // Base query for active residents
             $residentBaseQuery = Resident::with(['user', 'flat.block', 'flat.flatType'])
-                ->where(function ($query) {
+                ->where(function ($query) use ($reportType, $selectedYear) {
                     $query->whereNull('move_out_date')
-                        ->orWhere('move_out_date', '>=', now()->startOfDay());
+                        ->orWhere('move_out_date', '>', now());
+                    if ($reportType === 'yearly') {
+                        $query->orWhereYear('move_out_date', '>=', $selectedYear);
+                    }
                 });
 
             if ($filterBlockId && $filterUserId) {
@@ -343,7 +346,7 @@ class ReportController extends Controller
                     if (! $resident || ! $resident->user) continue;
                     $userTotals = ['totalExpected' => 0, 'totalPaid' => 0, 'totalPending' => 0];
                     foreach ($months as $month) {
-                        $stats = $this->calculateMonthlyStats($month, $selectedYear, collect([$resident]), $userId, $filterBlockId);
+                        $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $userId, $filterBlockId);
                         $userTotals['totalExpected'] += $stats['totalExpected'];
                         $userTotals['totalPaid'] += $stats['totalPaid'];
                         $userTotals['totalPending'] += $stats['totalPending'];
@@ -354,12 +357,14 @@ class ReportController extends Controller
                                 ->orWhereYear('paid_at', $selectedYear)
                                 ->orWhereYear('created_at', $selectedYear);
                         })
-                        ->where(function ($q) use ($userId, $resident) {
-                            $q->where('new_owner_id', $userId)
-                                ->orWhere('old_owner_id', $userId)
-                                ->orWhere('flat_id', $resident->flat_id);
-                        })
+                        ->where('new_owner_id', $userId)
                         ->sum('amount');
+
+                    if (!$filterUserId && $userTotals['totalExpected'] == 0 && $userTotals['totalPaid'] == 0 && $userTotals['totalPending'] == 0 && $userTransferFees == 0) {
+                        if (!is_null($resident->move_out_date) && Carbon::parse($resident->move_out_date)->lte(now())) {
+                            continue;
+                        }
+                    }
 
                     $usersYearly->push((object)[
                         'user' => $resident->user,
@@ -465,6 +470,7 @@ class ReportController extends Controller
                     return;
                 }
 
+                // For the summary report, we will generate a Revenue vs Expense Summary
                 if ($activeTab === '#main-summary') {
                     if ($reportType === 'yearly') {
                         $writer->addRow(Row::fromValues(["Financial Revenue vs Expense Summary - Yearly ($selectedYear)"]));
@@ -479,7 +485,7 @@ class ReportController extends Controller
                         $totMaint = $totTrans = $totInc = $totExp = 0;
                         foreach ($months as $month) {
                             $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $filterUserId, $filterBlockId);
-                            $transFee = \App\Models\NameTransferBill::where('status', 'paid')
+                            $transFee = NameTransferBill::where('status', 'paid')
                                 ->where(function ($q) use ($selectedYear, $month) {
                                     $q->where(function ($sub) use ($selectedYear, $month) {
                                         $sub->whereYear('transfer_date', $selectedYear)->whereRaw('MONTHNAME(transfer_date) = ?', [$month]);
@@ -495,9 +501,7 @@ class ReportController extends Controller
                                 });
                             }
                             if ($filterUserId) {
-                                $transFee->where(function ($q) use ($filterUserId) {
-                                    $q->where('new_owner_id', $filterUserId)->orWhere('old_owner_id', $filterUserId);
-                                });
+                                $transFee->where('new_owner_id', $filterUserId);
                             }
                             $trans = round($transFee->sum('amount'), 2);
                             $rev = round($stats['totalPaid'], 2);
@@ -517,7 +521,7 @@ class ReportController extends Controller
                             ->whereRaw('MONTHNAME(COALESCE(expense_date, created_at)) = ?', [$selectedMonth])
                             ->sum('total_amount');
 
-                        $transFee = \App\Models\NameTransferBill::where('status', 'paid')
+                        $transFee = NameTransferBill::where('status', 'paid')
                             ->where(function ($q) use ($selectedYear, $selectedMonth) {
                                 $q->where(function ($sub) use ($selectedYear, $selectedMonth) {
                                     $sub->whereYear('transfer_date', $selectedYear)->whereRaw('MONTHNAME(transfer_date) = ?', [$selectedMonth]);
@@ -533,9 +537,7 @@ class ReportController extends Controller
                             });
                         }
                         if ($filterUserId) {
-                            $transFee->where(function ($q) use ($filterUserId) {
-                                $q->where('new_owner_id', $filterUserId)->orWhere('old_owner_id', $filterUserId);
-                            });
+                            $transFee->where('new_owner_id', $filterUserId);
                         }
                         $trans = round($transFee->sum('amount'), 2);
                         $rev = round($stats['totalPaid'], 2);
@@ -582,7 +584,7 @@ class ReportController extends Controller
                         round($yearlyPending, 2)
                     ]));
 
-                    // Add Per-User Yearly Summary (if available)
+                    // Add Per-User Yearly Summary 
                     if (!empty($usersYearly) && $usersYearly->isNotEmpty()) {
                         $writer->addRow(Row::fromValues([]));
                         $writer->addRow(Row::fromValues(["Per-User Yearly Summary - $selectedYear"]));
@@ -743,9 +745,10 @@ class ReportController extends Controller
         $filterBlockId = $request->input('block_id', null);
 
         $residentBaseQuery = Resident::with(['user', 'flat.block', 'flat.flatType'])
-            ->where(function ($query) {
+            ->where(function ($query) use ($selectedYear) {
                 $query->whereNull('move_out_date')
-                    ->orWhere('move_out_date', '>=', now()->startOfDay());
+                    ->orWhere('move_out_date', '>', now())
+                    ->orWhereYear('move_out_date', '>=', $selectedYear);
             });
 
         if ($filterBlockId && $filterUserId) {
@@ -779,23 +782,25 @@ class ReportController extends Controller
             if (! $resident || ! $resident->user) continue;
             $userTotals = ['totalExpected' => 0, 'totalPaid' => 0, 'totalPending' => 0];
             foreach ($months as $month) {
-                $stats = $this->calculateMonthlyStats($month, $selectedYear, collect([$resident]), $userId, $filterBlockId);
+                $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $userId, $filterBlockId);
                 $userTotals['totalExpected'] += $stats['totalExpected'];
                 $userTotals['totalPaid'] += $stats['totalPaid'];
                 $userTotals['totalPending'] += $stats['totalPending'];
             }
-            $userTransferFees = \App\Models\NameTransferBill::where('status', 'paid')
+            $userTransferFees = NameTransferBill::where('status', 'paid')
                 ->where(function ($q) use ($selectedYear) {
                     $q->whereYear('transfer_date', $selectedYear)
                         ->orWhereYear('paid_at', $selectedYear)
                         ->orWhereYear('created_at', $selectedYear);
                 })
-                ->where(function ($q) use ($userId, $resident) {
-                    $q->where('new_owner_id', $userId)
-                        ->orWhere('old_owner_id', $userId)
-                        ->orWhere('flat_id', $resident->flat_id);
-                })
+                ->where('new_owner_id', $userId)
                 ->sum('amount');
+
+            if (!$filterUserId && $userTotals['totalExpected'] == 0 && $userTotals['totalPaid'] == 0 && $userTotals['totalPending'] == 0 && $userTransferFees == 0) {
+                if (!is_null($resident->move_out_date) && Carbon::parse($resident->move_out_date)->lte(now())) {
+                    continue;
+                }
+            }
 
             $usersYearly->push((object)[
                 'user_id' => $resident->user_id,
@@ -834,6 +839,19 @@ class ReportController extends Controller
         $totalPaid = 0;
         $totalPending = 0;
         $processedFlatIds = [];
+
+        $billedFlatIds = [];
+        if ($maintenance) {
+            $billedFlatIds = MaintenanceBill::where('maintenance_id', $maintenance->id)
+                ->pluck('flat_id')
+                ->toArray();
+        }
+
+        $latestResidentByFlat = $activeResidents->groupBy('flat_id')->map(function ($group) {
+            return $group->sortByDesc(function ($r) {
+                return is_null($r->move_out_date) ? PHP_INT_MAX : Carbon::parse($r->move_out_date)->timestamp;
+            })->first();
+        });
 
         if ($maintenance) {
             $allBills = MaintenanceBill::with(['user', 'block', 'flat'])
@@ -882,15 +900,22 @@ class ReportController extends Controller
         }
 
         foreach ($activeResidents as $resident) {
-            if (in_array($resident->flat_id, $processedFlatIds)) {
+            if (in_array($resident->flat_id, $processedFlatIds) || in_array($resident->flat_id, $billedFlatIds)) {
+                continue;
+            }
+
+            $latestRes = $latestResidentByFlat->get($resident->flat_id);
+            if ($latestRes && $latestRes->id !== $resident->id) {
+                continue;
+            }
+
+            if ($filterUserId && $resident->user_id != $filterUserId) {
                 continue;
             }
 
             $baseAmount = 0;
-            if ($resident->flat && $resident->flat->flatType) {
-                $baseAmount = $resident->type === 'owner'
-                    ? (float)$resident->flat->flatType->owner_maintenance_fee
-                    : (float)$resident->flat->flatType->rental_maintenance_fee;
+            if ($resident->flat) {
+                $baseAmount = $resident->flat->calculateMaintenanceFee($resident->type);
             }
 
             $pendingBills->push((object)[

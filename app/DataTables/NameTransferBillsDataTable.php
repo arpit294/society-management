@@ -25,7 +25,38 @@ class NameTransferBillsDataTable extends DataTable
         return (new EloquentDataTable($query))
             ->addColumn('action', 'name_transfer_bills.action')
             ->editColumn('flat_id', function ($model) {
-                return $model->flat ? ($model->flat->block->block_name ?? '') . ' ' . $model->flat->flat_no : '-';
+                if (!$model->flat || ($model->flat && method_exists($model->flat, 'trashed') && $model->flat->trashed())) {
+                    $unitType = $model->flat ? ucwords(str_replace('_', ' ', $model->flat->unit_type ?? 'Shop')) : 'Shop';
+                    if ($model->flat && $model->flat->flat_no) {
+                        return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa-solid fa-store-slash me-1"></i>' . ($model->flat->block->block_name ?? '') . ' ' . $model->flat->flat_no . ' (' . $unitType . ' Deleted)</span>';
+                    }
+                    return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa-solid fa-store-slash me-1"></i>Shop Deleted</span>';
+                }
+                return ($model->flat->block->block_name ?? '') . ' ' . $model->flat->flat_no;
+            })
+            ->addColumn('unit_type', function ($model) {
+                if (!$model->flat || ($model->flat && method_exists($model->flat, 'trashed') && $model->flat->trashed())) {
+                    $type = $model->flat ? ($model->flat->unit_type ?? 'shop') : 'shop';
+                    $label = ucwords(str_replace('_', ' ', $type));
+                    return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa-solid fa-store-slash me-1"></i>'.$label.' (Deleted)</span>';
+                }
+                $unitType = strtolower($model->flat->unit_type ?? 'flat');
+                [$badgeClass, $badgeStyle] = match($unitType) {
+                    'shop' => ['bg-warning text-dark border border-warning', ''],
+                    'office' => ['bg-info text-dark border border-info', ''],
+                    'showroom' => ['bg-success text-white border border-success', ''],
+                    'warehouse' => ['text-white border border-warning', 'background-color: #fd7e14 !important; color: #fff !important;'],
+                    'villa', 'bungalow' => ['bg-primary text-white border border-primary', ''],
+                    'row_house', 'rowhouse' => ['bg-danger text-white border border-danger', ''],
+                    'tenement' => ['bg-success-subtle text-success border border-success-subtle', ''],
+                    'penthouse' => ['text-white border border-secondary', 'background-color: #6f42c1 !important; color: #fff !important;'],
+                    'duplex' => ['bg-info text-dark border border-info', ''],
+                    'plot', 'land' => ['bg-dark text-white border border-dark', ''],
+                    'flat', 'apartment' => ['bg-secondary text-white border border-secondary', ''],
+                    default => ['bg-secondary text-white border border-secondary', '']
+                };
+                $label = ucwords(str_replace('_', ' ', $model->flat->unit_type ?? 'flat'));
+                return '<span class="badge '.$badgeClass.' px-2 py-1" style="'.$badgeStyle.'">'.$label.'</span>';
             })
             ->editColumn('old_owner_id', function ($model) {
                 return $model->oldOwner ? $model->oldOwner->name : '-';
@@ -55,7 +86,7 @@ class NameTransferBillsDataTable extends DataTable
             ->editColumn('paid_at', function ($model) {
                 return $model->paid_at ? $model->paid_at->format('d M Y h:i A') : '-';
             })
-            ->rawColumns(['amount', 'status', 'approval', 'approved_by', 'action'])
+            ->rawColumns(['amount', 'status', 'approval', 'approved_by', 'action', 'flat_id', 'unit_type'])
             ->setRowId('id');
     }
 
@@ -95,7 +126,8 @@ class NameTransferBillsDataTable extends DataTable
     {
         return [
             Column::make('id')->title('ID')->width(50),
-            Column::make('flat_id')->title('Flat'),
+            Column::make('unit_type')->title('Structure Type')->name('unit_type')->orderable(false),
+            Column::make('flat_id')->title(\App\Models\Setting::label('unit', 'Flat')),
             Column::make('old_owner_id')->title('Old Owner'),
             Column::make('new_owner_id')->title('New Owner'),
             Column::make('amount')->title('Amount'),

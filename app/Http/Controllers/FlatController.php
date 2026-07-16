@@ -51,8 +51,9 @@ class FlatController extends Controller
         try {
             $blocks = Block::all();
             $flatTypes = FlatType::where('status', config('status.general.active'))->get();
+            $globalBillingMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
 
-            return $dataTable->render('flats.index', compact('blocks', 'flatTypes'));
+            return $dataTable->render('flats.index', compact('blocks', 'flatTypes', 'globalBillingMethod'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -67,6 +68,40 @@ class FlatController extends Controller
         }
     }
 
+    public static function syncDefaultFlatTypes()
+    {
+        $allDefaults = [
+            // Flat / Apartment Categories
+            ['name' => '1 BHK', 'owner_maintenance_fee' => 1000, 'rental_maintenance_fee' => 1500, 'category_type' => 'flat', 'status' => 'active', 'description' => '1 Bedroom, Hall, Kitchen'],
+            ['name' => '2 BHK', 'owner_maintenance_fee' => 1500, 'rental_maintenance_fee' => 2000, 'category_type' => 'flat', 'status' => 'active', 'description' => '2 Bedroom, Hall, Kitchen'],
+            ['name' => '3 BHK', 'owner_maintenance_fee' => 2500, 'rental_maintenance_fee' => 3000, 'category_type' => 'flat', 'status' => 'active', 'description' => '3 Bedroom, Hall, Kitchen'],
+            ['name' => '4 BHK', 'owner_maintenance_fee' => 3500, 'rental_maintenance_fee' => 4500, 'category_type' => 'flat', 'status' => 'active', 'description' => '4 Bedroom, Hall, Kitchen'],
+            ['name' => '5 BHK', 'owner_maintenance_fee' => 5000, 'rental_maintenance_fee' => 6000, 'category_type' => 'flat', 'status' => 'active', 'description' => '5 Bedroom, Hall, Kitchen'],
+            ['name' => 'Flat / Apartment', 'owner_maintenance_fee' => 2000, 'rental_maintenance_fee' => 2500, 'category_type' => 'flat', 'status' => 'active', 'description' => 'Standard Flat / Apartment'],
+            ['name' => 'Studio Apartment', 'owner_maintenance_fee' => 800, 'rental_maintenance_fee' => 1200, 'category_type' => 'flat', 'status' => 'active', 'description' => 'Studio Unit / 1 RK'],
+            
+            // Other Residential Unit Types
+            ['name' => 'Penthouse', 'owner_maintenance_fee' => 6000, 'rental_maintenance_fee' => 7500, 'category_type' => 'penthouse', 'status' => 'active', 'description' => 'Luxury Penthouse Unit'],
+            ['name' => 'Duplex', 'owner_maintenance_fee' => 4500, 'rental_maintenance_fee' => 5500, 'category_type' => 'duplex', 'status' => 'active', 'description' => 'Multi-level Duplex Unit'],
+            ['name' => 'Villa / Bungalow', 'owner_maintenance_fee' => 4000, 'rental_maintenance_fee' => 5000, 'category_type' => 'villa', 'status' => 'active', 'description' => 'Independent Villa / Bungalow'],
+            ['name' => 'Row House', 'owner_maintenance_fee' => 3000, 'rental_maintenance_fee' => 3800, 'category_type' => 'rowhouse', 'status' => 'active', 'description' => 'Row House Unit'],
+            ['name' => 'Tenement', 'owner_maintenance_fee' => 2000, 'rental_maintenance_fee' => 2500, 'category_type' => 'tenement', 'status' => 'active', 'description' => 'Tenement Unit'],
+            ['name' => 'Plot / Land', 'owner_maintenance_fee' => 1000, 'rental_maintenance_fee' => 1200, 'category_type' => 'plot', 'status' => 'active', 'description' => 'Open Plot / Land'],
+
+            // Commercial Categories
+            ['name' => 'Commercial Shop', 'owner_maintenance_fee' => 1500, 'rental_maintenance_fee' => 2000, 'category_type' => 'shop', 'status' => 'active', 'description' => 'Commercial Shop'],
+            ['name' => 'Office Space', 'owner_maintenance_fee' => 2500, 'rental_maintenance_fee' => 3000, 'category_type' => 'office', 'status' => 'active', 'description' => 'Commercial Office Space'],
+            ['name' => 'Showroom', 'owner_maintenance_fee' => 5000, 'rental_maintenance_fee' => 6000, 'category_type' => 'showroom', 'status' => 'active', 'description' => 'Retail Showroom'],
+            ['name' => 'Warehouse / Godown', 'owner_maintenance_fee' => 3500, 'rental_maintenance_fee' => 4000, 'category_type' => 'warehouse', 'status' => 'active', 'description' => 'Storage Warehouse / Godown'],
+        ];
+
+        if (FlatType::count() === 0) {
+            foreach ($allDefaults as $item) {
+                FlatType::create($item);
+            }
+        }
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -74,12 +109,15 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_create'), 403);
         try {
+            self::syncDefaultFlatTypes();
             // Get all blocks and flat types to populate the dropdowns in the form
             $blocks = Block::all();
             // Only get active flat types for the dropdown
             $flatTypes = FlatType::where('status', config('status.general.active'))->get();
+            $globalBillingMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+            $structureType = \App\Models\Setting::get('society_property_type', 'flat_residential');
 
-            return view('flats.create', compact('blocks', 'flatTypes'));
+            return view('flats.create', compact('blocks', 'flatTypes', 'globalBillingMethod', 'structureType'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -99,18 +137,40 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_create'), 403);
         try {
+            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
             $validatedData = $request->validate([
                 'block_id' => 'required|integer|exists:blocks,id',
+                'unit_type' => 'nullable|string|max:255',
                 'flat_no' => 'required|string|max:255',
-                'floor_no' => 'required|integer|min:0',
-                'flat_type_id' => 'required|integer|exists:flat_types,id',
+                'floor_no' => 'nullable|integer|min:0',
+                'flat_type_id' => ($globalMethod === 'per_sqft' || in_array(strtolower($request->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse'])) ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
+                'area_sqft' => 'nullable|numeric|min:0',
+                'plot_area_sqyards' => 'nullable|numeric|min:0',
                 'status' => 'required|string|max:255',
             ]);
 
-            // Check if a block is selected and ensure the provided floor_no does not exceed the block's total_floor
+            $validatedData['unit_type'] = $validatedData['unit_type'] ?? 'flat';
+            if (in_array(strtolower($validatedData['unit_type']), ['villa', 'rowhouse', 'row_house', 'plot', 'bungalow'])) {
+                $validatedData['floor_no'] = 0;
+            } else {
+                $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
+            }
+
+            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+            $flatTypeObj = FlatType::find($validatedData['flat_type_id'] ?? null);
+            $calcMethod = $flatTypeObj ? ($flatTypeObj->calculation_method ?? 'fixed') : 'fixed';
+            $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
+
+            if ($isPerSqft && (empty($validatedData['area_sqft']) || (float) $validatedData['area_sqft'] <= 0)) {
+                throw ValidationException::withMessages([
+                    'area_sqft' => ['Carpet Area (Sq. Ft.) is mandatory and must be greater than 0 because Carpet Area Based maintenance billing is active (' . ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' ? 'Category Level' : 'Global Level') . '). Otherwise area 0 hone par bill 0 ban jayega.'],
+                ]);
+            }
+
+            // Check if a block is selected and ensure the provided floor_no does not exceed the block's total_floor (if block has floors)
             if (! empty($validatedData['block_id'])) {
                 $block = Block::find($validatedData['block_id']);
-                if ($block && $validatedData['floor_no'] > $block->total_floor) {
+                if ($block && $block->total_floor > 0 && $validatedData['floor_no'] > $block->total_floor) {
                     throw ValidationException::withMessages([
                         'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.'],
                     ]);
@@ -174,10 +234,13 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_edit'), 403);
         try {
+            self::syncDefaultFlatTypes();
             $blocks = Block::all();
             $flatTypes = FlatType::all();
+            $globalBillingMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+            $structureType = \App\Models\Setting::get('society_property_type', 'flat_residential');
 
-            return view('flats.edit', compact('flat', 'blocks', 'flatTypes'));
+            return view('flats.edit', compact('flat', 'blocks', 'flatTypes', 'globalBillingMethod', 'structureType'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -199,18 +262,40 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_edit'), 403);
         try {
+            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
             $validatedData = $request->validate([
                 'block_id' => 'required|integer|exists:blocks,id',
+                'unit_type' => 'nullable|string|max:255',
                 'flat_no' => 'required|string|max:255',
-                'floor_no' => 'required|integer|min:0',
-                'flat_type_id' => 'required|integer|exists:flat_types,id',
+                'floor_no' => 'nullable|integer|min:0',
+                'flat_type_id' => ($globalMethod === 'per_sqft' || in_array(strtolower($request->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse'])) ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
+                'area_sqft' => 'nullable|numeric|min:0',
+                'plot_area_sqyards' => 'nullable|numeric|min:0',
                 'status' => 'required|string|max:255',
             ]);
 
-            // Check the selected floor number is valid or not based on block table
+            $validatedData['unit_type'] = $validatedData['unit_type'] ?? 'flat';
+            if (in_array(strtolower($validatedData['unit_type']), ['villa', 'rowhouse', 'row_house', 'plot', 'bungalow'])) {
+                $validatedData['floor_no'] = 0;
+            } else {
+                $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
+            }
+
+            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+            $flatTypeObj = FlatType::find($validatedData['flat_type_id'] ?? null);
+            $calcMethod = $flatTypeObj ? ($flatTypeObj->calculation_method ?? 'fixed') : 'fixed';
+            $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
+
+            if ($isPerSqft && (empty($validatedData['area_sqft']) || (float) $validatedData['area_sqft'] <= 0)) {
+                throw ValidationException::withMessages([
+                    'area_sqft' => ['Carpet Area (Sq. Ft.) is mandatory and must be greater than 0 because Carpet Area Based maintenance billing is active (' . ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' ? 'Category Level' : 'Global Level') . '). Otherwise area 0 hone par bill 0 ban jayega.'],
+                ]);
+            }
+
+            // Check the selected floor number is valid or not based on block table (if block has floors)
             if (! empty($validatedData['block_id'])) {
                 $block = Block::find($validatedData['block_id']);
-                if ($block && $validatedData['floor_no'] > $block->total_floor) {
+                if ($block && $block->total_floor > 0 && $validatedData['floor_no'] > $block->total_floor) {
                     throw ValidationException::withMessages([
                         'floor_no' => ['Floor No cannot be greater than ' . $block->total_floor . ' for the selected block.'],
                     ]);

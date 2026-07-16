@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\NameTransferBill;
 use App\DataTables\NameTransferBillsDataTable;
 use App\Models\Resident;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Nette\Schema\ValidationException;
@@ -144,6 +145,10 @@ class NameTransferBillController extends Controller
                     'move_in_date' => $transferDate,
                 ]);
 
+                // Sync user statuses for both old and new owners
+                Resident::syncUserStatus($bill->old_owner_id);
+                Resident::syncUserStatus($bill->new_owner_id);
+
                 // 3. Mark as approved
                 $bill->update([
                     'is_approved' => true,
@@ -151,7 +156,7 @@ class NameTransferBillController extends Controller
                 ]);
 
                 if ($bill->new_owner_id) {
-                    \App\Models\User::where('id', $bill->new_owner_id)->update(['updated_at' => now()]);
+                    User::where('id', $bill->new_owner_id)->update(['updated_at' => now()]);
                 }
 
                 DB::commit();

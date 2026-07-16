@@ -12,6 +12,8 @@ class Block extends Model
 
     protected $fillable = [
         'block_name',
+        'block_type',
+        'label_type',
         'total_floor',
         'total_flats',
     ];

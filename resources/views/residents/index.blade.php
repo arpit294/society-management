@@ -1,7 +1,7 @@
 <x-user-page>
 
     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-        <h4 class="mb-0">Residents Management</h4>
+        <h4 class="mb-0">{{ \App\Models\Setting::label('resident', 'Resident') }}s Management</h4>
         <div class="d-flex flex-wrap align-items-center gap-2">
 
             @can('resident_view')
@@ -15,30 +15,41 @@
                 <i class="fa-solid fa-file-import me-2"></i>Import Records
             </button>
             <button type="button" class="btn btn-primary" id="btn-add-resident"
-                data-url="{{ route('residents.create') }}" data-title="Add New Resident">
-                <i class="fa-solid fa-plus me-2"></i>Add Resident
+                data-url="{{ route('residents.create') }}" data-title="Add New {{ \App\Models\Setting::label('resident', 'Resident') }}">
+                <i class="fa-solid fa-plus me-2"></i>Add {{ \App\Models\Setting::label('resident', 'Resident') }}
             </button>
             @endcan
         </div>
     </div>
 
-    <div class="mb-3">
-        <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
-            <div class="filter-col" style="min-width: 220px;">
-                <label class="form-label mb-1" for="residents-filter-block">Filter by Block</label>
-                <select id="residents-filter-block" class="form-select" style="max-width: 320px;">
-                    <option value="">All Blocks</option>
-                    @foreach($blocks as $block)
-                        <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
-                    @endforeach
-                </select>
-            </div>
+    <div class="d-flex flex-wrap align-items-end gap-3 mb-4">
+        <div class="filter-col" style="min-width: 220px; flex: 1; max-width: 320px;">
+            <label class="form-label text-muted fw-semibold mb-1" style="font-size: 0.8rem;" for="residents-filter-block">FILTER BY {{ strtoupper(\App\Models\Setting::label('block', 'BLOCK')) }}/WING</label>
+            <select id="residents-filter-block" class="form-select">
+                <option value="">All {{ \App\Models\Setting::label('block', 'Block') }}/Wings</option>
+                @foreach($blocks as $block)
+                    <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
+                @endforeach
+            </select>
+        </div>
 
-            <div class="filter-col d-none" id="residents-filter-reset-col" style="min-width: 200px;">
-                <button type="button" id="residents-filter-reset" class="btn btn-outline-secondary w-100">
-                    Reset filters
-                </button>
-            </div>
+        <div class="filter-col" style="min-width: 220px; flex: 1; max-width: 320px;">
+            <label class="form-label text-muted fw-semibold mb-1" style="font-size: 0.8rem;" for="residents-filter-unit-type">FILTER BY CATEGORY</label>
+            <select id="residents-filter-unit-type" class="form-select">
+                <option value="">All Categories / Types</option>
+                @php
+                    $availableUnitTypes = $unitTypes ?? ['flat', 'shop', 'office', 'showroom', 'warehouse', 'villa', 'row_house', 'tenement', 'penthouse', 'duplex', 'plot'];
+                @endphp
+                @foreach($availableUnitTypes as $uType)
+                    <option value="{{ $uType }}">{{ ucwords(str_replace('_', ' ', $uType)) }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="filter-col d-none" id="residents-filter-reset-col" style="min-width: 150px;">
+            <button type="button" id="residents-filter-reset" class="btn btn-outline-secondary w-100">
+                <i class="fa-solid fa-rotate-right me-1"></i>Reset filters
+            </button>
         </div>
     </div>
 
@@ -66,7 +77,7 @@
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="importResidentModalLabel">Import Residents</h5>
+                    <h5 class="modal-title" id="importResidentModalLabel">Import {{ \App\Models\Setting::label('resident', 'Resident') }}s</h5>
                     <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
                 </div>
                 
@@ -169,7 +180,7 @@
                 <div class="modal-header border-0 pb-2 pt-4 px-4 d-flex justify-content-between align-items-center">
                     <div class="d-flex align-items-center">
                         <div class="rounded-pill me-2" style="width: 4px; height: 24px; background: #6c5ce7;"></div>
-                        <h5 class="modal-title fw-bold text-body mb-0 fs-5">Export Resident</h5>
+                        <h5 class="modal-title fw-bold text-body mb-0 fs-5">Export {{ \App\Models\Setting::label('resident', 'Resident') }}s</h5>
                     </div>
                     <button type="button" class="btn-close small" data-coreui-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -193,9 +204,9 @@
                                     'email' => 'Email',
                                     'phone' => 'Mobile',
                                     'aadhar_id' => 'Aadhar ID',
-                                    'block_name' => 'Block Name',
-                                    'flat_no' => 'Flat No',
-                                    'type' => 'Resident Type',
+                                    'block_name' => \App\Models\Setting::label('block', 'Block') . ' Name',
+                                    'flat_no' => \App\Models\Setting::label('unit_no', \App\Models\Setting::label('unit', 'Flat') . ' No'),
+                                    'type' => \App\Models\Setting::label('resident', 'Resident') . ' Type',
                                     'status' => 'Status',
                                     'move_in_date' => 'Move In Date',
                                     'move_out_date' => 'Move Out Date',

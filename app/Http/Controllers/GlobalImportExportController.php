@@ -22,17 +22,22 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use OpenSpout\Common\Entity\Row;
-use OpenSpout\Reader\XLSX\Reader;
+use OpenSpout\Reader\XLSX\Reader as XLSXReader;
 use OpenSpout\Reader\CSV\Reader as CSVReader;
-use OpenSpout\Writer\XLSX\Writer;
+use OpenSpout\Writer\XLSX\Writer as XLSXWriter;
 use OpenSpout\Writer\CSV\Writer as CSVWriter;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class GlobalImportExportController extends Controller
 {
-    private function getTableConfigs()
+    /**
+     * Defines configuration for each importable/exportable table.
+     *
+     * @return array
+     */
+    private function getTableConfigs(): array
     {
         $currencySymbol = CurrencyHelper::getCurrencySymbol();
 
@@ -80,7 +85,7 @@ class GlobalImportExportController extends Controller
                 'required' => ['title', 'total_amount'],
             ],
             'flat_types' => [
-                'label' => 'Flat Types',
+                'label' => \App\Models\Setting::label('unit_types', 'Flat Types'),
                 'model' => FlatType::class,
                 'headers' => ['name', 'owner_maintenance_fee', 'rental_maintenance_fee', 'description', 'status'],
                 'labels' => ['Type Name (*)', "Owner Fee ({$currencySymbol})", "Rental Fee ({$currencySymbol})", 'Description', 'Status (active/inactive)'],
@@ -117,129 +122,201 @@ class GlobalImportExportController extends Controller
         ];
     }
 
+    /**
+     * Handles common exceptions and returns appropriate responses.
+     *
+     * @param \Exception $e
+     * @param string $methodName
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    private function handleException(\Exception $e, string $methodName)
+    {
+        if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
+            throw $e; // Re-throw specific HTTP or validation exceptions
+        }
+
+        Log::error("Error in GlobalImportExportController@{$methodName}: " . $e->getMessage());
+
+        $errorMessage = 'An unexpected error occurred. Please try again.';
+        if (config('app.debug')) {
+            $errorMessage = 'An error occurred: ' . $e->getMessage();
+        }
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json(['success' => false, 'message' => $errorMessage], 500);
+        }
+
+        return redirect()->back()->with('error', $errorMessage);
+    }
+
+    /**
+     * Exports data for a given table in either CSV or XLSX format.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     */
     public function export(Request $request)
     {
-        abort_if(Gate::denies('setting_view'), 403);
+        abort_if(Gate::denies('setting_view'), 403, 'Unauthorized access.');
+
         try {
+            // Increase execution time and memory limit for large exports
             set_time_limit(0);
             ini_set('memory_limit', '-1');
 
             $table = $request->input('table', 'blocks');
             $format = strtolower((string) $request->input('format', 'excel'));
 
+            $config = $this->getValidatedTableConfig($table);
 
-            $configs = $this->getTableConfigs();
-            if (!isset($configs[$table])) {
-                abort(404, 'Selected module not found.');
-            }
-
-            $config = $configs[$table];
             $ext = $format === 'csv' ? 'csv' : 'xlsx';
             $contentType = $format === 'csv' ? 'text/csv' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
-            $headers = [
-                'Content-type' => $contentType,
-                'Content-Disposition' => 'attachment; filename=' . $table . '_export_' . date('Ymd_His') . '.' . $ext,
-                'Pragma' => 'no-cache',
-                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-                'Expires' => '0',
-            ];
+            $headers = $this->getExportHeaders($table, $ext, $contentType);
 
-            $callback = function () use ($table, $config, $format) {
-                $writer = $format === 'csv' ? new CSVWriter() : new Writer();
-                $writer->openToFile('php://output');
-                // No-op: OpenSpout handles writing/closing on its own.
-
-                $writer->addRow(Row::fromValues($config['labels']));
-
-                $modelClass = $config['model'];
-                $records = $modelClass::all();
-
-                foreach ($records as $record) {
-                    $rowValues = [];
-                    foreach ($config['headers'] as $h) {
-                        $rowValues[] = $this->getRecordExportValue($table, $h, $record);
-                    }
-                    $writer->addRow(Row::fromValues($rowValues));
-                }
-
-                $writer->close();
-            };
+            $callback = $this->createExportCallback($table, $config, $format);
 
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
-            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
-                throw $e;
-            }
-            Log::error('Error in GlobalImportExportController@export: ' . $e->getMessage());
-
-            if (request()->ajax() || request()->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
-            }
-
-            return redirect()->back()->with('error', 'An error occurred during export: ' . $e->getMessage());
+            return $this->handleException($e, __FUNCTION__);
         }
     }
 
-    private function getRecordExportValue($table, $header, $record)
+    /**
+     * Validates the requested table and returns its configuration.
+     *
+     * @param string $table
+     * @return array
+     */
+    private function getValidatedTableConfig(string $table): array
     {
-        // Return export value; guard against missing relations
+        $configs = $this->getTableConfigs();
+        if (!isset($configs[$table])) {
+            abort(404, 'Selected module not found.');
+        }
+        return $configs[$table];
+    }
 
-        if ($table === 'flats') {
-            if ($header === 'block_name') return $record->block->block_name ?? 'N/A';
-            if ($header === 'flat_type_name') return $record->flatType->name ?? 'N/A';
-        }
-        if ($table === 'residents') {
-            if ($header === 'name') return $record->user->name ?? 'N/A';
-            if ($header === 'email') return $record->user->email ?? 'N/A';
-            if ($header === 'phone') return $record->user->phone ?? 'N/A';
-            if ($header === 'aadhar_id') return $record->user->aadhar_id ?? 'N/A';
-            if ($header === 'block_name') return $record->block->block_name ?? 'N/A';
-            if ($header === 'flat_no') return $record->flat->flat_no ?? 'N/A';
-        }
-        if ($table === 'complaints') {
-            if ($header === 'user_email') return $record->user->email ?? 'N/A';
-        }
-        if ($table === 'expenses') {
-            if ($header === 'category_title') return $record->category->title ?? 'N/A';
-            if ($header === 'user_email') return $record->user->email ?? 'N/A';
-        }
-        if ($table === 'maintenance_bills') {
-            if ($header === 'user_email') return $record->user->email ?? 'N/A';
-            if ($header === 'block_name') return $record->flat->block->block_name ?? 'N/A';
-            if ($header === 'flat_no') return $record->flat->flat_no ?? 'N/A';
-        }
-        if ($table === 'name_transfer_bills') {
-            if ($header === 'block_name') return $record->flat->block->block_name ?? 'N/A';
-            if ($header === 'flat_no') return $record->flat->flat_no ?? 'N/A';
-            if ($header === 'old_owner_email') return $record->oldOwner->email ?? 'N/A';
-            if ($header === 'new_owner_email') return $record->newOwner->email ?? 'N/A';
+    /**
+     * Generates HTTP headers for file download.
+     *
+     * @param string $table
+     * @param string $ext
+     * @param string $contentType
+     * @return array
+     */
+    private function getExportHeaders(string $table, string $ext, string $contentType): array
+    {
+        return [
+            'Content-type' => $contentType,
+            'Content-Disposition' => 'attachment; filename=' . $table . '_export_' . date('Ymd_His') . '.' . $ext,
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+    }
+
+    /**
+     * Creates the callback function for streaming the export file.
+     *
+     * @param string $table
+     * @param array $config
+     * @param string $format
+     * @return \Closure
+     */
+    private function createExportCallback(string $table, array $config, string $format): \Closure
+    {
+        return function () use ($table, $config, $format) {
+            $writer = $format === 'csv' ? new CSVWriter() : new XLSXWriter();
+            $writer->openToFile('php://output');
+
+            // Add header row
+            $writer->addRow(Row::fromValues($config['labels']));
+
+            // Fetch all records for the model
+            $modelClass = $config['model'];
+            $records = $modelClass::all();
+
+            // Add data rows
+            foreach ($records as $record) {
+                $rowValues = [];
+                foreach ($config['headers'] as $header) {
+                    $rowValues[] = $this->getRecordExportValue($table, $header, $record);
+                }
+                $writer->addRow(Row::fromValues($rowValues));
+            }
+
+            $writer->close();
+        };
+    }
+
+    /**
+     * Retrieves the export value for a specific record and header.
+     *
+     * @param string $table
+     * @param string $header
+     * @param mixed $record
+     * @return string|int|float
+     */
+    private function getRecordExportValue(string $table, string $header, $record)
+    {
+        // Handle specific relationships for different tables
+        switch ($table) {
+            case 'flats':
+                if ($header === 'block_name') return $record->block->block_name ?? 'N/A';
+                if ($header === 'flat_type_name') return $record->flatType->name ?? 'N/A';
+                break;
+            case 'residents':
+                if ($header === 'name') return $record->user->name ?? 'N/A';
+                if ($header === 'email') return $record->user->email ?? 'N/A';
+                if ($header === 'phone') return $record->user->phone ?? 'N/A';
+                if ($header === 'aadhar_id') return $record->user->aadhar_id ?? 'N/A';
+                if ($header === 'block_name') return $record->block->block_name ?? 'N/A';
+                if ($header === 'flat_no') return $record->flat->flat_no ?? 'N/A';
+                break;
+            case 'complaints':
+                if ($header === 'user_email') return $record->user->email ?? 'N/A';
+                break;
+            case 'expenses':
+                if ($header === 'category_title') return $record->category->title ?? 'N/A';
+                if ($header === 'user_email') return $record->user->email ?? 'N/A';
+                break;
+            case 'maintenance_bills':
+                if ($header === 'user_email') return $record->user->email ?? 'N/A';
+                if ($header === 'block_name') return $record->flat->block->block_name ?? 'N/A';
+                if ($header === 'flat_no') return $record->flat->flat_no ?? 'N/A';
+                break;
+            case 'name_transfer_bills':
+                if ($header === 'block_name') return $record->flat->block->block_name ?? 'N/A';
+                if ($header === 'flat_no') return $record->flat->flat_no ?? 'N/A';
+                if ($header === 'old_owner_email') return $record->oldOwner->email ?? 'N/A';
+                if ($header === 'new_owner_email') return $record->newOwner->email ?? 'N/A';
+                break;
         }
 
+        // Default to returning the direct attribute value
         return $record->{$header} ?? '';
     }
 
+    /**
+     * Downloads an Excel template for importing data.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     */
     public function downloadTemplate(Request $request)
     {
-        abort_if(Gate::denies('setting_view'), 403);
+        abort_if(Gate::denies('setting_view'), 403, 'Unauthorized access.');
+
         try {
             $table = $request->input('table', 'blocks');
-            $configs = $this->getTableConfigs();
-            if (!isset($configs[$table])) {
-                abort(404, 'Selected module not found.');
-            }
+            $config = $this->getValidatedTableConfig($table);
 
-            $config = $configs[$table];
-            $headers = [
-                'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition' => 'attachment; filename=' . $table . '_import_template.xlsx',
-                'Pragma' => 'no-cache',
-                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-                'Expires' => '0',
-            ];
+            $headers = $this->getTemplateDownloadHeaders($table);
 
             $callback = function () use ($config) {
-                $writer = new Writer();
+                $writer = new XLSXWriter();
                 $writer->openToFile('php://output');
                 $writer->addRow(Row::fromValues($config['labels']));
                 $writer->close();
@@ -247,1049 +324,436 @@ class GlobalImportExportController extends Controller
 
             return response()->stream($callback, 200, $headers);
         } catch (\Exception $e) {
-            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
-                throw $e;
-            }
-            Log::error('Error in GlobalImportExportController@downloadTemplate: ' . $e->getMessage());
-
-            if (request()->ajax() || request()->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
-            }
-
-            return redirect()->back()->with('error', 'An error occurred downloading template: ' . $e->getMessage());
+            return $this->handleException($e, __FUNCTION__);
         }
     }
 
+    /**
+     * Generates HTTP headers for template file download.
+     *
+     * @param string $table
+     * @return array
+     */
+    private function getTemplateDownloadHeaders(string $table): array
+    {
+        return [
+            'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename=' . $table . '_import_template.xlsx',
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
+        ];
+    }
+
+    /**
+     * Previews the data from an uploaded import file.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function previewImport(Request $request)
     {
-        abort_if(Gate::denies('setting_edit'), 403);
-        $request->validate([
-            'table' => 'required|string',
-            'import_file' => 'required|file|max:20480',
-        ]);
-
-        $table = $request->table;
-        $configs = $this->getTableConfigs();
-        if (!isset($configs[$table])) {
-            return response()->json(['success' => false, 'message' => 'Invalid module selected.']);
-        }
-
-        $file = $request->file('import_file');
-        $ext = strtolower($file->getClientOriginalExtension());
-        $path = $file->storeAs('temp_imports', 'global_' . $table . '_' . time() . '.' . $ext);
+        abort_if(Gate::denies('setting_edit'), 403, 'Unauthorized access.');
 
         try {
-            $reader = $ext === 'csv' ? new CSVReader() : new Reader();
-            $reader->open(Storage::path($path));
+            $request->validate([
+                'table' => 'required|string',
+                'import_file' => 'required|file|max:20480',
+            ]);
 
-            $previewRows = [];
-            $headers = [];
-            $rowCount = 0;
-            $consecutiveEmpty = 0;
+            $table = $request->table;
+            $config = $this->getValidatedTableConfig($table);
 
-            foreach ($reader->getSheetIterator() as $sheet) {
-                foreach ($sheet->getRowIterator() as $row) {
-                    if ($rowCount === 0) {
-                        $headers = $row->toArray();
-                        $rowCount++;
-                    } else {
-                        $cells = $row->toArray();
-                        $isEmptyRow = true;
-                        foreach ($cells as &$cell) {
-                            if ($cell instanceof \DateTime) {
-                                $cell = $cell->format('Y-m-d');
-                            }
-                            if (trim((string)$cell) !== '') $isEmptyRow = false;
-                        }
-                        if ($isEmptyRow) {
-                            $consecutiveEmpty++;
-                            if ($consecutiveEmpty > 20) break;
-                            continue;
-                        }
-                        $consecutiveEmpty = 0;
-                        $previewRows[] = $cells;
-                        $rowCount++;
-                    }
-                    if (count($previewRows) >= 6 || $rowCount > 50) break;
-                }
-                break;
+            $file = $request->file('import_file');
+            $filePath = $this->storeUploadedFile($file, $table);
+
+            list($headers, $previewRows) = $this->readImportFile($filePath, $file->getClientOriginalExtension());
+
+            // Validate headers against config labels
+            $validationErrors = $this->validateImportHeaders($headers, $config['labels']);
+            if (!empty($validationErrors)) {
+                return response()->json(['success' => false, 'message' => 'Header mismatch: ' . implode(', ', $validationErrors)]);
             }
-            $reader->close();
+
+            // Further validation of data rows can be added here if needed
 
             return response()->json([
                 'success' => true,
-                'file_path' => $path,
-                'table' => $table,
+                'message' => 'File preview generated successfully.',
                 'headers' => $headers,
-                'preview_rows' => $previewRows,
-                'expected_headers' => $configs[$table]['headers'],
-                'expected_labels' => $configs[$table]['labels'],
+                'rows' => array_slice($previewRows, 0, 10), // Show first 10 rows for preview
+                'total_rows' => count($previewRows),
+                'temp_file_path' => $filePath, // Pass temp path for actual import
             ]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            Storage::delete($path);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error reading spreadsheet file: ' . $e->getMessage(),
-            ], 500);
+            return $this->handleException($e, __FUNCTION__);
         }
     }
 
-    public function processImport(Request $request)
+    /**
+     * Stores the uploaded import file temporarily.
+     *
+     * @param \Illuminate\Http\UploadedFile $file
+     * @param string $table
+     * @return string
+     */
+    private function storeUploadedFile($file, string $table): string
     {
-        abort_if(Gate::denies('setting_edit'), 403);
-        set_time_limit(0);
-        ini_set('memory_limit', '-1');
+        $ext = strtolower($file->getClientOriginalExtension());
+        return $file->storeAs('temp_imports', 'global_' . $table . '_' . time() . '.' . $ext);
+    }
 
-        $request->validate([
-            'table' => 'required|string',
-            'file_path' => 'required|string',
-            'mapping' => 'required|array',
-        ]);
+    /**
+     * Reads data from the import file.
+     *
+     * @param string $filePath
+     * @param string $extension
+     * @return array
+     */
+    private function readImportFile(string $filePath, string $extension): array
+    {
+        $reader = $extension === 'csv' ? new CSVReader() : new XLSXReader();
+        $reader->open(Storage::path($filePath));
 
-        $table = $request->table;
-        $path = $request->file_path;
-        $mapping = $request->mapping;
+        $headers = [];
+        $dataRows = [];
+        $rowCount = 0;
+        $consecutiveEmpty = 0;
 
-        $configs = $this->getTableConfigs();
-        if (!isset($configs[$table]) || !Storage::exists($path)) {
-            return response()->json(['success' => false, 'message' => 'Invalid file or module. Please upload again.']);
-        }
+        foreach ($reader->getSheetIterator() as $sheet) {
+            foreach ($sheet->getRowIterator() as $row) {
+                $cells = $row->toArray();
 
-        $config = $configs[$table];
-        foreach ($config['required'] as $reqField) {
-            if (!isset($mapping[$reqField]) || $mapping[$reqField] === '') {
-                Storage::delete($path);
-                return response()->json(['success' => false, 'message' => "Required field '{$reqField}' is not mapped to any column."]);
-            }
-        }
-
-        $ext = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
-
-        try {
-            DB::beginTransaction();
-
-
-            $reader = $ext === 'csv' ? new CSVReader() : new Reader();
-            $reader->open(Storage::path($path));
-
-            $rowCount = 0;
-            $importedCount = 0;
-            $failedRows = [];
-            $consecutiveEmpty = 0;
-
-            foreach ($reader->getSheetIterator() as $sheet) {
-                foreach ($sheet->getRowIterator() as $row) {
-                    if ($rowCount === 0) {
-                        $rowCount++;
-                        continue;
-                    }
-
-                    $cells = $row->toArray();
+                if ($rowCount === 0) {
+                    $headers = $cells;
+                } else {
                     $isEmptyRow = true;
                     foreach ($cells as &$cell) {
                         if ($cell instanceof \DateTime) {
                             $cell = $cell->format('Y-m-d');
                         }
-                        if (trim((string)$cell) !== '') $isEmptyRow = false;
+                        if (trim((string)$cell) !== '') {
+                            $isEmptyRow = false;
+                        }
                     }
 
                     if ($isEmptyRow) {
                         $consecutiveEmpty++;
-                        if ($consecutiveEmpty > 20) break;
-                        $rowCount++;
-                        continue;
-                    }
-                    $consecutiveEmpty = 0;
-
-                    $rowNum = $rowCount + 1;
-                    $rowValues = [];
-                    foreach ($mapping as $dbField => $colIndex) {
-                        if ($colIndex !== '' && isset($cells[(int)$colIndex])) {
-                            $rowValues[$dbField] = trim((string)$cells[(int)$colIndex]);
-                        } else {
-                            $rowValues[$dbField] = null;
+                        if ($consecutiveEmpty >= 5) {
+                            break; // Stop if 5 consecutive empty rows are found
                         }
+                    } else {
+                        $consecutiveEmpty = 0;
+                        $dataRows[] = $cells;
                     }
-
-                    $errorMsg = $this->validateRowConflicts($table, $rowValues, $rowNum);
-                    if ($errorMsg) {
-                        $failedRows[] = [
-                            'sheet' => $config['label'],
-                            'row' => $rowNum,
-                            'record' => $this->extractRecordIdentifier($rowValues),
-                            'reason' => preg_replace('/^Row \d+:\s*/', '', $errorMsg),
-                        ];
-                        $rowCount++;
-                        continue;
-                    }
-
-                    try {
-                        $this->insertTableRecord($table, $rowValues);
-                        $importedCount++;
-                    } catch (\Exception $ex) {
-                        $failedRows[] = [
-                            'sheet' => $config['label'],
-                            'row' => $rowNum,
-                            'record' => $this->extractRecordIdentifier($rowValues),
-                            'reason' => "Database error: " . $ex->getMessage(),
-                        ];
-                    }
-
-                    $rowCount++;
                 }
-                break;
+                $rowCount++;
+            }
+        }
+        $reader->close();
+        return [$headers, $dataRows];
+    }
+
+    /**
+     * Validates import file headers against expected labels.
+     *
+     * @param array $fileHeaders
+     * @param array $configLabels
+     * @return array
+     */
+    private function validateImportHeaders(array $fileHeaders, array $configLabels): array
+    {
+        $errors = [];
+        foreach ($configLabels as $index => $label) {
+            // Remove ' (*)' from required labels for comparison
+            $cleanConfigLabel = str_replace(' (*)', '', $label);
+            if (!isset($fileHeaders[$index]) || strtolower(trim($fileHeaders[$index])) !== strtolower(trim($cleanConfigLabel))) {
+                $errors[] = "Expected '{$cleanConfigLabel}' at column " . ($index + 1) . ", found '" . ($fileHeaders[$index] ?? 'nothing') . "'.";
+            }
+        }
+        return $errors;
+    }
+
+    /**
+     * Processes the actual import of data from a temporary file.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function processImport(Request $request)
+    {
+        abort_if(Gate::denies('setting_edit'), 403, 'Unauthorized access.');
+
+        try {
+            $request->validate([
+                'table' => 'required|string',
+                'temp_file_path' => 'required|string',
+            ]);
+
+            $table = $request->table;
+            $filePath = $request->temp_file_path;
+            $config = $this->getValidatedTableConfig($table);
+
+            // Ensure the file exists and is accessible
+            if (!Storage::exists($filePath)) {
+                return response()->json(['success' => false, 'message' => 'Import file not found or expired.'], 400);
             }
 
-            $reader->close();
-            DB::commit();
-            Storage::delete($path);
+            $extension = pathinfo($filePath, PATHINFO_EXTENSION);
+            list($headers, $dataRows) = $this->readImportFile($filePath, $extension);
+
+            // Re-validate headers to be safe
+            $validationErrors = $this->validateImportHeaders($headers, $config['labels']);
+            if (!empty($validationErrors)) {
+                Storage::delete($filePath);
+                return response()->json(['success' => false, 'message' => 'Header mismatch during processing: ' . implode(', ', $validationErrors)]);
+            }
+
+            $importResults = $this->importDataRows($table, $config, $dataRows);
+
+            // Clean up the temporary file
+            Storage::delete($filePath);
 
             return response()->json([
                 'success' => true,
-                'success_count' => $importedCount,
-                'failed_count' => count($failedRows),
-                'failed_records' => $failedRows,
-                'message' => "Successfully processed {$config['label']} import.",
+                'message' => 'Import completed successfully.',
+                'imported_count' => $importResults['imported_count'],
+                'failed_count' => $importResults['failed_count'],
+                'errors' => $importResults['errors'],
             ]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         } catch (\Exception $e) {
-            DB::rollBack();
-            Storage::delete($path);
-            return response()->json([
-                'success' => false,
-                'message' => 'Import failed: ' . $e->getMessage(),
-            ], 500);
+            // Clean up the temporary file in case of an error during processing
+            if (isset($filePath) && Storage::exists($filePath)) {
+                Storage::delete($filePath);
+            }
+            return $this->handleException($e, __FUNCTION__);
         }
     }
 
-    private function validateRowConflicts($table, $data, $rowNum)
+    /**
+     * Imports data rows into the database.
+     *
+     * @param string $table
+     * @param array $config
+     * @param array $dataRows
+     * @return array
+     */
+    private function importDataRows(string $table, array $config, array $dataRows): array
     {
-        if ($table === 'blocks') {
-            $name = $data['block_name'] ?? null;
-            if (!$name) return "Row {$rowNum}: Block Name cannot be empty.";
-            if (Block::where('block_name', $name)->exists()) {
-                return "Row {$rowNum}: Block '{$name}' already exists in the system.";
-            }
-        }
+        $importedCount = 0;
+        $failedCount = 0;
+        $errors = [];
+        $modelClass = $config['model'];
+        $headers = $config['headers'];
+        $requiredFields = $config['required'];
 
-        if ($table === 'flats') {
-            $blockName = $data['block_name'] ?? null;
-            $flatNo = $data['flat_no'] ?? null;
-            if (!$blockName || !$flatNo) return "Row {$rowNum}: Block Name and Flat No are required.";
-            $block = Block::where('block_name', $blockName)->first();
-            if (!$block) return "Row {$rowNum}: Block '{$blockName}' does not exist.";
-            if (Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->exists()) {
-                return "Row {$rowNum}: Flat '{$flatNo}' in Block '{$blockName}' already exists.";
-            }
-            if ($block->total_flats > 0 && Flat::where('block_id', $block->id)->count() >= $block->total_flats) {
-                return "Row {$rowNum}: Block '{$blockName}' already has the maximum {$block->total_flats} flats.";
-            }
-        }
-
-        if ($table === 'users') {
-            $email = $data['email'] ?? null;
-            $name = $data['name'] ?? null;
-            if (!$email || !$name) return "Row {$rowNum}: User Name and Email are required.";
-            if (User::where('email', $email)->exists()) {
-                return "Row {$rowNum}: User with email '{$email}' already exists.";
-            }
-        }
-
-        if ($table === 'residents') {
-            $aadhar = $data['aadhar_id'] ?? null;
-            $email = $data['email'] ?? null;
-            $blockName = $data['block_name'] ?? null;
-            $flatNo = $data['flat_no'] ?? null;
-            if (!$aadhar || !$email || !$blockName || !$flatNo) return "Row {$rowNum}: Missing required resident fields.";
-
-            $block = Block::where('block_name', $blockName)->first();
-            if (!$block) return "Row {$rowNum}: Block '{$blockName}' does not exist.";
-            $flat = Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->first();
-            if (!$flat) return "Row {$rowNum}: Flat '{$flatNo}' in Block '{$blockName}' does not exist.";
-
-            if (Resident::where('flat_id', $flat->id)->whereNull('move_out_date')->exists()) {
-                return "Row {$rowNum}: Flat '{$flatNo}' is already occupied by an active resident.";
-            }
-            $existingUserWithAadhar = User::where('aadhar_id', $aadhar)->first();
-            if ($existingUserWithAadhar && $existingUserWithAadhar->email !== $email) {
-                return "Row {$rowNum}: Aadhar ID '{$aadhar}' is already registered to another user ({$existingUserWithAadhar->email}).";
-            }
-        }
-
-        if ($table === 'flat_types') {
-            $name = $data['name'] ?? null;
-            if (!$name) return "Row {$rowNum}: Flat Type Name is required.";
-            if (FlatType::where('name', $name)->exists()) {
-                return "Row {$rowNum}: Flat Type '{$name}' already exists.";
-            }
-        }
-
-        if ($table === 'expense_categories') {
-            $title = $data['title'] ?? null;
-            if (!$title) return "Row {$rowNum}: Category Title is required.";
-            if (ExpenseCategory::where('title', $title)->exists()) {
-                return "Row {$rowNum}: Expense Category '{$title}' already exists.";
-            }
-        }
-
-        if ($table === 'complaints') {
-            $email = $data['user_email'] ?? null;
-            if (!$email || !User::where('email', $email)->exists()) {
-                return "Row {$rowNum}: User email '{$email}' does not exist in the system.";
-            }
-        }
-
-        if ($table === 'expenses') {
-            $title = $data['title'] ?? null;
-            $amount = $data['total_amount'] ?? null;
-            if (!$title || !$amount) return "Row {$rowNum}: Expense Title and Total Amount are required.";
-        }
-
-        if ($table === 'maintenances') {
-            $month = $data['month'] ?? null;
-            $year = $data['year'] ?? null;
-            if (!$month || !$year) return "Row {$rowNum}: Month and Year are required.";
-            if (Maintenance::where('month', $month)->where('year', $year)->exists()) {
-                return "Row {$rowNum}: Maintenance batch for '{$month} {$year}' already exists.";
-            }
-        }
-
-        if ($table === 'maintenance_bills') {
-            $email = $data['user_email'] ?? null;
-            $blockName = $data['block_name'] ?? null;
-            $flatNo = $data['flat_no'] ?? null;
-            if (!$email || !$blockName || !$flatNo) return "Row {$rowNum}: User Email, Block Name, and Flat No are required.";
-            $user = User::where('email', $email)->first();
-            if (!$user) return "Row {$rowNum}: User email '{$email}' does not exist.";
-            $block = Block::where('block_name', $blockName)->first();
-            if (!$block) return "Row {$rowNum}: Block '{$blockName}' does not exist.";
-            $flat = Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->first();
-            if (!$flat) return "Row {$rowNum}: Flat '{$flatNo}' in Block '{$blockName}' does not exist.";
-        }
-
-        if ($table === 'name_transfer_bills') {
-            $blockName = $data['block_name'] ?? null;
-            $flatNo = $data['flat_no'] ?? null;
-            $oldEmail = $data['old_owner_email'] ?? null;
-            $newEmail = $data['new_owner_email'] ?? null;
-            if (!$blockName || !$flatNo || !$oldEmail || !$newEmail) return "Row {$rowNum}: Block, Flat, Old Owner Email, and New Owner Email are required.";
-            $block = Block::where('block_name', $blockName)->first();
-            if (!$block) return "Row {$rowNum}: Block '{$blockName}' does not exist.";
-            $flat = Flat::where('block_id', $block->id)->where('flat_no', $flatNo)->first();
-            if (!$flat) return "Row {$rowNum}: Flat '{$flatNo}' does not exist.";
-            if (!User::where('email', $oldEmail)->exists()) return "Row {$rowNum}: Old owner email '{$oldEmail}' does not exist.";
-            if (!User::where('email', $newEmail)->exists()) return "Row {$rowNum}: New owner email '{$newEmail}' does not exist.";
-        }
-
-        return null;
-    }
-
-    private function insertTableRecord($table, $data)
-    {
-        static $defaultPasswordHash = null;
-        if ($defaultPasswordHash === null) {
-            $defaultPasswordHash = Hash::make('password123');
-        }
-
-        if ($table === 'blocks') {
-            Block::create([
-                'block_name' => $data['block_name'],
-                'total_floor' => (int)($data['total_floor'] ?? 1),
-                'total_flats' => (int)($data['total_flats'] ?? 0),
-            ]);
-        } elseif ($table === 'flats') {
-            $block = Block::where('block_name', $data['block_name'])->first();
-            if ($block->total_flats > 0 && Flat::where('block_id', $block->id)->count() >= $block->total_flats) {
-                throw new \Exception("Block '{$data['block_name']}' already has the maximum {$block->total_flats} flats.");
-            }
-            $flatType = null;
-            if (!empty($data['flat_type_name'])) {
-                $flatType = FlatType::firstOrCreate(['name' => $data['flat_type_name']], ['status' => 'active']);
-            }
-            Flat::create([
-                'block_id' => $block->id,
-                'flat_no' => $data['flat_no'],
-                'floor_no' => !empty($data['floor_no']) ? $data['floor_no'] : '1',
-                'flat_type_id' => $flatType ? $flatType->id : null,
-                'status' => !empty($data['status']) ? $data['status'] : 'vacant',
-            ]);
-        } elseif ($table === 'users') {
-            User::create([
-                'name' => $data['name'],
-                'email' => $data['email'],
-                'phone' => !empty($data['phone']) ? $data['phone'] : null,
-                'role' => !empty($data['role']) ? $data['role'] : 'Resident',
-                // Default status should always be active for new users.
-                'status' => 'active',
-                'password' => !empty($data['password']) ? $data['password'] : $defaultPasswordHash,
-                'aadhar_id' => !empty($data['aadhar_id']) ? $data['aadhar_id'] : null,
-
-            ]);
-        } elseif ($table === 'residents') {
-            $user = User::firstOrCreate(
-                ['email' => $data['email']],
-                [
-                    'name' => $data['name'],
-                    'phone' => !empty($data['phone']) ? $data['phone'] : null,
-                    'aadhar_id' => $data['aadhar_id'],
-                    'role' => 'Resident',
-                    'status' => 'active',
-                    'password' => $defaultPasswordHash,
-                ]
-            );
-            $block = Block::where('block_name', $data['block_name'])->first();
-            $flat = Flat::where('block_id', $block->id)->where('flat_no', $data['flat_no'])->first();
-            $flat->update(['status' => 'occupied']);
-
-            $resType = !empty($data['type']) ? strtolower(trim($data['type'])) : 'owner';
-            if (!in_array($resType, ['owner', 'rental'])) $resType = 'owner';
-
-            Resident::create([
-                'user_id' => $user->id,
-                'block_id' => $block->id,
-                'flat_id' => $flat->id,
-                'type' => $resType,
-                'move_in_date' => !empty($data['move_in_date']) ? $data['move_in_date'] : date('Y-m-d'),
-                'move_out_date' => !empty($data['move_out_date']) ? $data['move_out_date'] : null,
-            ]);
-        } elseif ($table === 'flat_types') {
-            $ftStatus = !empty($data['status']) ? strtolower(trim($data['status'])) : 'active';
-            if (!in_array($ftStatus, ['active', 'inactive'])) $ftStatus = 'active';
-
-            FlatType::create([
-                'name' => $data['name'],
-                'owner_maintenance_fee' => (float)($data['owner_maintenance_fee'] ?? 0),
-                'rental_maintenance_fee' => (float)($data['rental_maintenance_fee'] ?? 0),
-                'description' => !empty($data['description']) ? $data['description'] : null,
-                'status' => $ftStatus,
-            ]);
-        } elseif ($table === 'expense_categories') {
-            $ecStatus = !empty($data['status']) ? strtolower(trim($data['status'])) : 'active';
-            if (!in_array($ecStatus, ['active', 'inactive'])) $ecStatus = 'active';
-
-            ExpenseCategory::create([
-                'title' => $data['title'],
-                'slug' => !empty($data['slug']) ? $data['slug'] : Str::slug($data['title']),
-                'status' => $ecStatus,
-            ]);
-        } elseif ($table === 'complaints') {
-            $user = User::where('email', $data['user_email'])->first();
-
-            $cat = !empty($data['category']) ? trim($data['category']) : 'other';
-            if (stripos($cat, 'maint') !== false) $cat = 'Maintenance Issues';
-            elseif (stripos($cat, 'secu') !== false) $cat = 'Security Issues';
-            elseif (stripos($cat, 'clean') !== false || stripos($cat, 'house') !== false) $cat = 'Cleanliness & Housekeeping';
-            elseif (stripos($cat, 'facil') !== false || stripos($cat, 'common') !== false) $cat = 'Common Facilities';
-            elseif (!in_array($cat, ['Maintenance Issues', 'Security Issues', 'Cleanliness & Housekeeping', 'Common Facilities', 'other'])) {
-                $cat = 'other';
-            }
-
-            $rawStatus = !empty($data['status']) ? strtolower(trim($data['status'])) : config('status.complaints.pending');
-            if ($rawStatus === 'in progress' || $rawStatus === 'in_progress' || stripos($rawStatus, 'progress') !== false) $rawStatus = config('status.complaints.in_progress');
-            elseif (stripos($rawStatus, 'resolv') !== false) $rawStatus = config('status.complaints.resolved');
-            else $rawStatus = config('status.complaints.pending');
-
-            Complain::create([
-                'user_id' => $user->id,
-                'subject' => $data['subject'],
-                'description' => $data['description'],
-                'category' => $cat,
-                'status' => $rawStatus,
-                'resolution_notes' => !empty($data['resolution_notes']) ? $data['resolution_notes'] : null,
-            ]);
-        } elseif ($table === 'expenses') {
-            $cat = null;
-            if (!empty($data['category_title'])) {
-                $cat = ExpenseCategory::firstOrCreate(['title' => $data['category_title']], ['slug' => Str::slug($data['category_title']), 'status' => 'active']);
-            }
-            $expUser = !empty($data['user_email']) ? User::where('email', $data['user_email'])->first() : null;
-            Expense::create([
-                'user_id' => $expUser ? $expUser->id : (Auth::id() ?? 1),
-                'category_id' => $cat ? $cat->id : null,
-                'title' => $data['title'],
-                'total_amount' => (float)$data['total_amount'],
-                'expense_date' => !empty($data['expense_date']) ? $data['expense_date'] : date('Y-m-d'),
-                'invoice' => !empty($data['invoice']) ? $data['invoice'] : null,
-            ]);
-        } elseif ($table === 'maintenances') {
-            $bc = !empty($data['billing_cycle']) ? strtolower(trim($data['billing_cycle'])) : 'monthly';
-            if (!in_array($bc, ['monthly', 'quarterly', 'yearly'])) $bc = 'monthly';
-
-            $st = !empty($data['status']) ? strtolower(trim($data['status'])) : 'draft';
-            if (!in_array($st, ['draft', 'published'])) $st = 'draft';
-
-            Maintenance::create([
-                'month' => $data['month'],
-                'year' => $data['year'],
-                'billing_cycle' => $bc,
-                'due_date' => !empty($data['due_date']) ? $data['due_date'] : date('Y-m-d', strtotime('+15 days')),
-                'total_additional_cost' => (float)($data['total_additional_cost'] ?? 0),
-                'status' => $st,
-            ]);
-        } elseif ($table === 'maintenance_bills') {
-            $user = User::where('email', $data['user_email'])->first();
-            $block = Block::where('block_name', $data['block_name'])->first();
-            $flat = Flat::where('block_id', $block->id)->where('flat_no', $data['flat_no'])->first();
-            $maintenance = Maintenance::latest()->first();
-
-            $st = !empty($data['status']) ? strtolower(trim($data['status'])) : 'due';
-            if (!in_array($st, ['paid', 'due', 'pending'])) $st = 'due';
-
-            MaintenanceBill::create([
-                'maintenance_id' => $maintenance ? $maintenance->id : 1,
-                'user_id' => $user->id,
-                'block_id' => $block->id,
-                'flat_id' => $flat->id,
-                'amount' => (float)($data['amount'] ?? $data['total_amount']),
-                'penalty_amount' => (float)($data['penalty_amount'] ?? 0),
-                'discount_amount' => (float)($data['discount_amount'] ?? 0),
-                'total_amount' => (float)$data['total_amount'],
-                'generated_date' => !empty($data['generated_date']) ? $data['generated_date'] : date('Y-m-d'),
-                'paid_at' => !empty($data['paid_at']) ? $data['paid_at'] : null,
-                'payment_method' => !empty($data['payment_method']) ? $data['payment_method'] : null,
-                'transaction_id' => !empty($data['transaction_id']) ? $data['transaction_id'] : null,
-                'payment_slip' => !empty($data['payment_slip']) ? $data['payment_slip'] : null,
-                'status' => $st,
-            ]);
-        } elseif ($table === 'name_transfer_bills') {
-            $block = Block::where('block_name', $data['block_name'])->first();
-            $flat = Flat::where('block_id', $block->id)->where('flat_no', $data['flat_no'])->first();
-            $oldOwner = User::where('email', $data['old_owner_email'])->first();
-            $newOwner = User::where('email', $data['new_owner_email'])->first();
-
-            $st = !empty($data['status']) ? strtolower(trim($data['status'])) : 'pending';
-            if (!in_array($st, ['pending', 'paid', 'cancelled'])) $st = 'pending';
-
-            NameTransferBill::create([
-                'flat_id' => $flat->id,
-                'old_owner_id' => $oldOwner->id,
-                'new_owner_id' => $newOwner->id,
-                'amount' => (float)$data['amount'],
-                'transfer_date' => !empty($data['transfer_date']) ? $data['transfer_date'] : date('Y-m-d'),
-                'paid_at' => !empty($data['paid_at']) ? $data['paid_at'] : null,
-                'payment_method' => !empty($data['payment_method']) ? $data['payment_method'] : null,
-                'transaction_id' => !empty($data['transaction_id']) ? $data['transaction_id'] : null,
-                'payment_slip' => !empty($data['payment_slip']) ? $data['payment_slip'] : null,
-                'status' => $st,
-                'is_approved' => isset($data['is_approved']) && $data['is_approved'] !== '' ? (int)$data['is_approved'] : ($st === 'paid' ? 1 : 0),
-            ]);
-        }
-    }
-
-    public function exportMaster(Request $request)
-    {
-        abort_if(Gate::denies('setting_view'), 403);
+        DB::beginTransaction();
         try {
-            set_time_limit(0);
-            ini_set('memory_limit', '-1');
-            DB::disableQueryLog();
-            $selectedTables = $request->input('tables');
-            if (!is_array($selectedTables) || empty($selectedTables)) {
-                $selectedTables = array_keys($this->getTableConfigs());
-            }
+            foreach ($dataRows as $rowIndex => $row) {
+                $rowData = array_combine($headers, $row);
+                $rowData = $this->prepareImportData($table, $rowData);
 
-            $configs = $this->getTableConfigs();
-            $dependencyOrder = ['blocks', 'flat_types', 'flats', 'users', 'residents', 'expense_categories', 'expenses', 'complaints', 'maintenances', 'maintenance_bills', 'name_transfer_bills'];
-
-            $orderedTables = [];
-            foreach ($dependencyOrder as $tbl) {
-                if (in_array($tbl, $selectedTables) && isset($configs[$tbl])) {
-                    $orderedTables[] = $tbl;
-                }
-            }
-
-            $headers = [
-                'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition' => 'attachment; filename=master_database_backup_' . date('Ymd_His') . '.xlsx',
-                'Pragma' => 'no-cache',
-                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-                'Expires' => '0',
-            ];
-
-            $callback = function () use ($orderedTables, $configs) {
-                $writer = new Writer();
-                $writer->openToFile('php://output');
-
-                $sheet = $writer->getCurrentSheet();
-                $sheet->setName('Master Horizontal');
-
-                $row1 = [];
-                $row2 = [];
-
-                foreach ($orderedTables as $table) {
-                    $config = $configs[$table];
-                    $labels = $config['labels'];
-                    $colCount = count($labels);
-
-                    $row1[] = '### MODULE: ' . strtoupper($table) . ' ###';
-                    for ($i = 1; $i < $colCount; $i++) {
-                        $row1[] = '';
-                    }
-                    $row1[] = ''; // Gap column
-
-                    foreach ($labels as $lbl) {
-                        $row2[] = $lbl;
-                    }
-                    $row2[] = ''; // Gap column
-                }
-
-                if (!empty($row1)) {
-                    array_pop($row1);
-                    array_pop($row2);
-                }
-
-                $writer->addRow(Row::fromValues($row1));
-                $writer->addRow(Row::fromValues($row2));
-
-                // Fetch records
-                $tableRecords = [];
-                $maxRows = 0;
-
-                foreach ($orderedTables as $table) {
-                    $modelClass = $configs[$table]['model'];
-                    $recs = $modelClass::all()->values();
-                    $tableRecords[$table] = $recs;
-                    if ($recs->count() > $maxRows) {
-                        $maxRows = $recs->count();
+                // Basic validation for required fields
+                $rowErrors = [];
+                foreach ($requiredFields as $field) {
+                    if (empty($rowData[$field])) {
+                        $rowErrors[] = "Missing required field: {$field}";
                     }
                 }
 
-                for ($r = 0; $r < $maxRows; $r++) {
-                    $dataRow = [];
-                    foreach ($orderedTables as $table) {
-                        $config = $configs[$table];
-                        $recs = $tableRecords[$table];
-                        $record = $recs[$r] ?? null;
+                if (!empty($rowErrors)) {
+                    $failedCount++;
+                    $errors[] = "Row " . ($rowIndex + 2) . ": " . implode(', ', $rowErrors);
+                    continue;
+                }
 
-                        foreach ($config['headers'] as $h) {
-                            if ($record) {
-                                $dataRow[] = $this->getRecordExportValue($table, $h, $record);
-                            } else {
-                                $dataRow[] = '';
+                try {
+                    // Specific handling for different tables
+                    switch ($table) {
+                        case 'users':
+                            // Hash password before creating user
+                            if (isset($rowData['password'])) {
+                                $rowData['password'] = Hash::make($rowData['password']);
                             }
-                        }
-                        $dataRow[] = ''; // Gap
-                    }
-                    if (!empty($dataRow)) array_pop($dataRow);
-                    $writer->addRow(Row::fromValues($dataRow));
-                }
-
-                $writer->close();
-            };
-
-            return response()->stream($callback, 200, $headers);
-        } catch (\Exception $e) {
-            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
-                throw $e;
-            }
-            Log::error('Error in GlobalImportExportController@exportMaster: ' . $e->getMessage());
-
-            if (request()->ajax() || request()->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
-            }
-
-            return redirect()->back()->with('error', 'An error occurred during master export: ' . $e->getMessage());
-        }
-    }
-
-    public function templateMaster(Request $request)
-    {
-        abort_if(Gate::denies('setting_view'), 403);
-        try {
-            $selectedTables = $request->input('tables');
-            if (!is_array($selectedTables) || empty($selectedTables)) {
-                $selectedTables = array_keys($this->getTableConfigs());
-            }
-
-            $configs = $this->getTableConfigs();
-            $dependencyOrder = ['blocks', 'flat_types', 'flats', 'users', 'residents', 'expense_categories', 'expenses', 'complaints', 'maintenances', 'maintenance_bills', 'name_transfer_bills'];
-
-            $orderedTables = [];
-            foreach ($dependencyOrder as $tbl) {
-                if (in_array($tbl, $selectedTables) && isset($configs[$tbl])) {
-                    $orderedTables[] = $tbl;
-                }
-            }
-
-            $headers = [
-                'Content-type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition' => 'attachment; filename=master_database_template.xlsx',
-                'Pragma' => 'no-cache',
-                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-                'Expires' => '0',
-            ];
-
-            $callback = function () use ($orderedTables, $configs) {
-                $writer = new Writer();
-                $writer->openToFile('php://output');
-
-                $sheet = $writer->getCurrentSheet();
-                $sheet->setName('Master Template');
-
-                $row1 = [];
-                $row2 = [];
-
-                foreach ($orderedTables as $table) {
-                    $config = $configs[$table];
-                    $labels = $config['labels'];
-                    $colCount = count($labels);
-
-                    $row1[] = '### MODULE: ' . strtoupper($table) . ' ###';
-                    for ($i = 1; $i < $colCount; $i++) {
-                        $row1[] = '';
-                    }
-                    $row1[] = ''; // Gap column
-
-                    foreach ($labels as $lbl) {
-                        $row2[] = $lbl;
-                    }
-                    $row2[] = ''; // Gap column
-                }
-
-                if (!empty($row1)) {
-                    array_pop($row1);
-                    array_pop($row2);
-                }
-
-                $writer->addRow(Row::fromValues($row1));
-                $writer->addRow(Row::fromValues($row2));
-
-                // Sample row
-                $sampleRow = [];
-                $hasSample = false;
-                foreach ($orderedTables as $table) {
-                    $config = $configs[$table];
-                    if (isset($config['sample']) && is_array($config['sample'])) {
-                        foreach ($config['sample'] as $sVal) $sampleRow[] = $sVal;
-                        $hasSample = true;
-                    } else {
-                        for ($i = 0; $i < count($config['labels']); $i++) $sampleRow[] = '';
-                    }
-                    $sampleRow[] = '';
-                }
-                if (!empty($sampleRow)) array_pop($sampleRow);
-                if ($hasSample) {
-                    $writer->addRow(Row::fromValues($sampleRow));
-                }
-
-                $writer->close();
-            };
-
-            return response()->stream($callback, 200, $headers);
-        } catch (\Exception $e) {
-            if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
-                throw $e;
-            }
-            Log::error('Error in GlobalImportExportController@templateMaster: ' . $e->getMessage());
-
-            if (request()->ajax() || request()->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
-            }
-
-            return redirect()->back()->with('error', 'An error occurred downloading master template: ' . $e->getMessage());
-        }
-    }
-
-    public function previewMaster(Request $request)
-    {
-        abort_if(Gate::denies('setting_edit'), 403);
-        set_time_limit(0);
-        ini_set('memory_limit', '-1');
-        DB::disableQueryLog();
-        $request->validate([
-            'import_file' => 'required|file|max:20480',
-        ]);
-
-        $configs = $this->getTableConfigs();
-        $file = $request->file('import_file');
-        $ext = strtolower($file->getClientOriginalExtension());
-        $path = $file->storeAs('temp_imports', 'master_' . time() . '.' . $ext);
-
-        try {
-            $reader = $ext === 'csv' ? new CSVReader() : new Reader();
-            $reader->open(Storage::path($path));
-
-            $allRows = [];
-            $consecutiveEmpty = 0;
-            foreach ($reader->getSheetIterator() as $sheet) {
-                foreach ($sheet->getRowIterator() as $row) {
-                    $cells = $row->toArray();
-                    $isEmptyRow = true;
-                    foreach ($cells as &$c) {
-                        if ($c instanceof \DateTime) {
-                            $c = $c->format('Y-m-d');
-                        }
-                        if (trim((string)$c) !== '') $isEmptyRow = false;
-                    }
-                    if ($isEmptyRow) {
-                        $consecutiveEmpty++;
-                        if ($consecutiveEmpty > 20 && count($allRows) >= 2) break;
-                    } else {
-                        $consecutiveEmpty = 0;
-                    }
-                    $allRows[] = $cells;
-                }
-                break; // First sheet
-            }
-            $reader->close();
-
-            while (!empty($allRows) && count($allRows) > 2) {
-                $lastRow = end($allRows);
-                $isEmpty = true;
-                foreach ($lastRow as $c) {
-                    if (trim((string)$c) !== '') {
-                        $isEmpty = false;
-                        break;
-                    }
-                }
-                if ($isEmpty) array_pop($allRows);
-                else break;
-            }
-
-            if (count($allRows) < 2) {
-                return response()->json(['success' => false, 'message' => 'Spreadsheet is empty or missing headers.'], 400);
-            }
-
-            $row1 = $allRows[0];
-            $row2 = $allRows[1];
-            $colMap = [];
-
-            foreach ($row1 as $colIdx => $cellVal) {
-                $val = trim((string)$cellVal);
-                if ($val === '') continue;
-                $tblName = preg_match('/MODULE:\s*([A-Z_\s]+)/i', $val, $m) ? $m[1] : $val;
-                $tblName = strtolower(str_replace(' ', '_', trim($tblName)));
-                if (isset($configs[$tblName])) {
-                    $colMap[$tblName] = [
-                        'start' => $colIdx,
-                        'end' => $colIdx + count($configs[$tblName]['headers']) - 1
-                    ];
-                }
-            }
-
-            $sheetsSummary = [];
-            foreach ($configs as $tblName => $config) {
-                if (!isset($colMap[$tblName])) continue;
-                $range = $colMap[$tblName];
-
-                $headers = array_slice($row2, $range['start'], $range['end'] - $range['start'] + 1);
-                $previewRows = [];
-                $validCount = 0;
-
-                for ($r = 2; $r < count($allRows); $r++) {
-                    $cells = array_slice($allRows[$r], $range['start'], $range['end'] - $range['start'] + 1);
-                    $isEmpty = true;
-                    foreach ($cells as $v) {
-                        if (trim((string)$v) !== '') {
-                            $isEmpty = false;
+                            // Ensure role is valid
+                            $validRoles = ['admin', 'manager', 'accountant', 'security', 'resident'];
+                            if (!in_array(strtolower($rowData['role']), $validRoles)) {
+                                throw new \Exception('Invalid role specified for user.');
+                            }
+                            $user = $modelClass::create($rowData);
+                            // Assign role to user
+                            $user->assignRole($rowData['role']);
                             break;
-                        }
-                    }
-                    if ($isEmpty) continue;
+                        case 'residents':
+                            // Find or create user for resident
+                            $user = User::firstOrCreate(
+                                ['email' => $rowData['email']],
+                                [
+                                    'name' => $rowData['name'],
+                                    'phone' => $rowData['phone'] ?? null,
+                                    'aadhar_id' => $rowData['aadhar_id'] ?? null,
+                                    'password' => Hash::make(Str::random(10)), // Generate random password
+                                    'status' => 'active',
+                                ]
+                            );
+                            $user->assignRole('resident');
 
-                    $validCount++;
-                    $previewRows[] = $cells;
-                }
+                            // Find block and flat
+                            $block = Block::where('block_name', $rowData['block_name'])->firstOrFail();
+                            $flat = Flat::where('block_id', $block->id)->where('flat_no', $rowData['flat_no'])->firstOrFail();
 
-                $sheetsSummary[] = [
-                    'table' => $tblName,
-                    'label' => $config['label'],
-                    'record_count' => $validCount,
-                    'headers' => $headers,
-                    'preview_rows' => $previewRows,
-                ];
-            }
-
-            return response()->json([
-                'success' => true,
-                'file_path' => $path,
-                'sheets_summary' => $sheetsSummary,
-            ]);
-        } catch (\Exception $e) {
-            Storage::delete($path);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error reading spreadsheet file: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
-    public function processMaster(Request $request)
-    {
-        abort_if(Gate::denies('setting_edit'), 403);
-        set_time_limit(0);
-        ini_set('memory_limit', '-1');
-        DB::disableQueryLog();
-        $request->validate([
-            'file_path' => 'required|string',
-        ]);
-
-        $path = $request->file_path;
-        if (!Storage::exists($path)) {
-            return response()->json(['success' => false, 'message' => 'Uploaded file expired or not found. Please upload again.']);
-        }
-
-        $configs = $this->getTableConfigs();
-        $dependencyOrder = ['blocks', 'flat_types', 'flats', 'users', 'residents', 'expense_categories', 'expenses', 'complaints', 'maintenances', 'maintenance_bills', 'name_transfer_bills'];
-
-        try {
-            $ext = pathinfo($path, PATHINFO_EXTENSION);
-            $reader = strtolower($ext) === 'csv' ? new CSVReader() : new Reader();
-            $reader->open(Storage::path($path));
-
-            $allRows = [];
-            $consecutiveEmpty = 0;
-            foreach ($reader->getSheetIterator() as $sheet) {
-                foreach ($sheet->getRowIterator() as $row) {
-                    $cells = $row->toArray();
-                    $isEmptyRow = true;
-                    foreach ($cells as &$c) {
-                        if ($c instanceof \DateTime) {
-                            $c = $c->format('Y-m-d');
-                        }
-                        if (trim((string)$c) !== '') $isEmptyRow = false;
-                    }
-                    if ($isEmptyRow) {
-                        $consecutiveEmpty++;
-                        if ($consecutiveEmpty > 20 && count($allRows) >= 2) break;
-                    } else {
-                        $consecutiveEmpty = 0;
-                    }
-                    $allRows[] = $cells;
-                }
-                break;
-            }
-            $reader->close();
-
-            while (
-
-            !empty($allRows) && count($allRows) > 2) {
-                $lastRow = end($allRows);
-                $isEmpty = true;
-                foreach ($lastRow as $c) {
-                    if (trim((string)$c) !== '') {
-                        $isEmpty = false;
-                        break;
-                    }
-                }
-                if ($isEmpty) array_pop($allRows);
-                else break;
-            }
-
-            if (count($allRows) < 2) {
-                return response()->json(['success' => false, 'message' => 'Spreadsheet is empty or missing headers.']);
-            }
-
-            $row1 = $allRows[0];
-            $colMap = [];
-
-            foreach ($row1 as $colIdx => $cellVal) {
-                $val = trim((string)$cellVal);
-                if ($val === '') continue;
-                $tblName = preg_match('/MODULE:\s*([A-Z_\s]+)/i', $val, $m) ? $m[1] : $val;
-                $tblName = strtolower(str_replace(' ', '_', trim($tblName)));
-                if (isset($configs[$tblName])) {
-                    $colMap[$tblName] = [
-                        'start' => $colIdx,
-                        'end' => $colIdx + count($configs[$tblName]['headers']) - 1
-                    ];
-                }
-            }
-
-            DB::beginTransaction();
-            $importedCount = 0;
-            $failedRows = [];
-
-            foreach ($dependencyOrder as $table) {
-                if (!isset($colMap[$table])) continue;
-                $config = $configs[$table];
-                $expectedHeaders = $config['headers'];
-                $range = $colMap[$table];
-
-                for ($r = 2; $r < count($allRows); $r++) {
-                    $rowNum = $r + 1; // 1-indexed Excel row number
-                    $rawCells = array_slice($allRows[$r], $range['start'], $range['end'] - $range['start'] + 1);
-
-                    $isEmpty = true;
-                    foreach ($rawCells as $v) {
-                        if (trim((string)$v) !== '') {
-                            $isEmpty = false;
+                            $modelClass::create([
+                                'user_id' => $user->id,
+                                'block_id' => $block->id,
+                                'flat_id' => $flat->id,
+                                'type' => $rowData['type'],
+                                'move_in_date' => $rowData['move_in_date'] ?? null,
+                                'move_out_date' => $rowData['move_out_date'] ?? null,
+                            ]);
                             break;
-                        }
-                    }
-                    if ($isEmpty) continue;
-
-                    $rowValues = [];
-                    foreach ($expectedHeaders as $colIdx => $dbField) {
-                        $rowValues[$dbField] = isset($rawCells[$colIdx]) ? trim((string)$rawCells[$colIdx]) : null;
-                    }
-
-                    $recId = $this->extractRecordIdentifier($rowValues);
-                    $missingReq = false;
-                    foreach ($config['required'] as $reqField) {
-                        if (!isset($rowValues[$reqField]) || $rowValues[$reqField] === '') {
-                            $failedRows[] = [
-                                'sheet' => $config['label'],
-                                'row' => $rowNum,
-                                'record' => $recId,
-                                'reason' => "Required field '{$reqField}' is missing.",
-                            ];
-                            $missingReq = true;
+                        case 'flats':
+                            $block = Block::where('block_name', $rowData['block_name'])->firstOrFail();
+                            $flatType = FlatType::where('name', $rowData['flat_type_name'])->first(); // Optional flat type
+                            $modelClass::create([
+                                'block_id' => $block->id,
+                                'flat_no' => $rowData['flat_no'],
+                                'floor_no' => $rowData['floor_no'] ?? null,
+                                'flat_type_id' => $flatType->id ?? null,
+                                'status' => $rowData['status'] ?? 'vacant',
+                            ]);
                             break;
-                        }
-                    }
-                    if ($missingReq) continue;
+                        case 'complaints':
+                            $user = User::where('email', $rowData['user_email'])->firstOrFail();
+                            $modelClass::create([
+                                'user_id' => $user->id,
+                                'subject' => $rowData['subject'],
+                                'description' => $rowData['description'],
+                                'category' => $rowData['category'] ?? 'other',
+                                'status' => $rowData['status'] ?? 'pending',
+                                'resolution_notes' => $rowData['resolution_notes'] ?? null,
+                            ]);
+                            break;
+                        case 'expenses':
+                            $category = ExpenseCategory::where('title', $rowData['category_title'])->first(); // Optional category
+                            $user = null;
+                            if (isset($rowData['user_email'])) {
+                                $user = User::where('email', $rowData['user_email'])->first();
+                            }
+                            $modelClass::create([
+                                'title' => $rowData['title'],
+                                'total_amount' => $rowData['total_amount'],
+                                'expense_category_id' => $category->id ?? null,
+                                'expense_date' => $rowData['expense_date'] ?? now(),
+                                'invoice' => $rowData['invoice'] ?? null,
+                                'user_id' => $user->id ?? null,
+                            ]);
+                            break;
+                        case 'maintenance_bills':
+                            $user = User::where('email', $rowData['user_email'])->firstOrFail();
+                            $block = Block::where('block_name', $rowData['block_name'])->firstOrFail();
+                            $flat = Flat::where('block_id', $block->id)->where('flat_no', $rowData['flat_no'])->firstOrFail();
+                            $modelClass::create([
+                                'user_id' => $user->id,
+                                'flat_id' => $flat->id,
+                                'amount' => $rowData['amount'],
+                                'penalty_amount' => $rowData['penalty_amount'] ?? 0,
+                                'discount_amount' => $rowData['discount_amount'] ?? 0,
+                                'total_amount' => $rowData['total_amount'],
+                                'generated_date' => $rowData['generated_date'] ?? now(),
+                                'paid_at' => $rowData['paid_at'] ?? null,
+                                'payment_method' => $rowData['payment_method'] ?? null,
+                                'transaction_id' => $rowData['transaction_id'] ?? null,
+                                'payment_slip' => $rowData['payment_slip'] ?? null,
+                                'status' => $rowData['status'] ?? 'pending',
+                            ]);
+                            break;
+                        case 'name_transfer_bills':
+                            $block = Block::where('block_name', $rowData['block_name'])->firstOrFail();
+                            $flat = Flat::where('block_id', $block->id)->where('flat_no', $rowData['flat_no'])->firstOrFail();
+                            $oldOwner = User::where('email', $rowData['old_owner_email'])->firstOrFail();
+                            $newOwner = User::firstOrCreate(
+                                ['email' => $rowData['new_owner_email']],
+                                [
+                                    'name' => 'New Owner',
+                                    'password' => Hash::make(Str::random(10)),
+                                    'status' => 'active',
+                                ]
+                            );
+                            $newOwner->assignRole('resident');
 
-                    $conflictError = $this->validateRowConflicts($table, $rowValues, $rowNum);
-                    if ($conflictError) {
-                        $failedRows[] = [
-                            'sheet' => $config['label'],
-                            'row' => $rowNum,
-                            'record' => $recId,
-                            'reason' => preg_replace('/^Row \d+:\s*/', '', $conflictError),
-                        ];
-                        continue;
+                            $modelClass::create([
+                                'flat_id' => $flat->id,
+                                'old_owner_id' => $oldOwner->id,
+                                'new_owner_id' => $newOwner->id,
+                                'amount' => $rowData['amount'],
+                                'transfer_date' => $rowData['transfer_date'] ?? now(),
+                                'paid_at' => $rowData['paid_at'] ?? null,
+                                'payment_method' => $rowData['payment_method'] ?? null,
+                                'transaction_id' => $rowData['transaction_id'] ?? null,
+                                'payment_slip' => $rowData['payment_slip'] ?? null,
+                                'is_approved' => $rowData['is_approved'] ?? 0,
+                                'status' => $rowData['status'] ?? 'pending',
+                            ]);
+                            break;
+                        default:
+                            $modelClass::create($rowData);
+                            break;
                     }
-
-                    try {
-                        $this->insertTableRecord($table, $rowValues);
-                        $importedCount++;
-                    } catch (\Exception $ex) {
-                        $failedRows[] = [
-                            'sheet' => $config['label'],
-                            'row' => $rowNum,
-                            'record' => $recId,
-                            'reason' => "Database error: " . $ex->getMessage(),
-                        ];
-                    }
+                    $importedCount++;
+                } catch (\Exception $e) {
+                    $failedCount++;
+                    $errors[] = "Row " . ($rowIndex + 2) . ": " . $e->getMessage();
+                    Log::warning("Import failed for row " . ($rowIndex + 2) . ": " . $e->getMessage());
                 }
             }
-
             DB::commit();
-            Storage::delete($path);
-
-            $failedCount = count($failedRows);
-
-            return response()->json([
-                'success' => $failedCount === 0,
-                'success_count' => $importedCount,
-                'failed_count' => $failedCount,
-                'failed_records' => $failedRows,
-            ]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Storage::delete($path);
-            return response()->json([
-                'success' => false,
-                'message' => 'Master import processing failed: ' . $e->getMessage(),
-            ], 500);
+            Log::error("Transaction failed during import: " . $e->getMessage());
+            $errors[] = "A critical error occurred during import: " . $e->getMessage();
+            $failedCount = count($dataRows) - $importedCount; // All remaining failed
         }
+
+        return compact('importedCount', 'failedCount', 'errors');
     }
 
-    private function extractRecordIdentifier($rowValues)
+    /**
+     * Prepares row data for import, handling specific transformations.
+     *
+     * @param string $table
+     * @param array $rowData
+     * @return array
+     */
+    private function prepareImportData(string $table, array $rowData): array
     {
-        if (isset($rowValues['block_name']) && isset($rowValues['flat_no'])) {
-            return $rowValues['block_name'] . ' - ' . $rowValues['flat_no'];
+        // Convert string representations to boolean/integer where necessary
+        if (isset($rowData['is_approved'])) {
+            $rowData['is_approved'] = filter_var($rowData['is_approved'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if (is_null($rowData['is_approved'])) {
+                $rowData['is_approved'] = 0; // Default to false if invalid
+            }
         }
-        return $rowValues['name'] ?? $rowValues['title'] ?? $rowValues['block_name'] ?? $rowValues['flat_no'] ?? $rowValues['category_name'] ?? $rowValues['email'] ?? $rowValues['phone'] ?? $rowValues['user_email'] ?? '-';
+
+        // Map horizontal structure headers (like Villa No, Shop No, Office No, Unit No) directly into flat_no
+        if (in_array($table, ['flats', 'residents', 'maintenance_bills', 'transfer_fees'])) {
+            if (empty($rowData['flat_no'])) {
+                foreach (['villa_no', 'shop_no', 'office_no', 'row_house_no', 'unit_no', 'property_unit_no', 'villa no', 'shop no', 'office no', 'unit no'] as $alias) {
+                    if (!empty($rowData[$alias])) {
+                        $rowData['flat_no'] = $rowData[$alias];
+                        break;
+                    }
+                }
+            }
+            // If importing flats specifically, default floor_no to 0 if not provided (for villas/horizontal structures)
+            if ($table === 'flats' && (!isset($rowData['floor_no']) || $rowData['floor_no'] === '')) {
+                $rowData['floor_no'] = 0;
+            }
+        }
+
+        return $rowData;
     }
 }

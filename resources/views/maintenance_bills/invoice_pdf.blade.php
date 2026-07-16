@@ -16,8 +16,22 @@
             <table width="100%">
                 <tr>
                     <td>
-                        <h1>INVOICE</h1>
+                        @php
+                            $societyGstin = \App\Models\Setting::get('society_gstin');
+                            $societyRegNo = \App\Models\Setting::get('society_registration_no');
+                        @endphp
+                        <h1>{{ !empty($societyGstin) ? 'TAX INVOICE' : 'MAINTENANCE INVOICE' }}</h1>
                         <div class="society-name">{{ \App\Models\Setting::get('society_name', 'Society Name') }}</div>
+                        @if(!empty($societyGstin))
+                            <div style="font-size: 11px; font-weight: bold; color: #2d3748; margin-top: 3px;">
+                                GSTIN: {{ $societyGstin }}
+                            </div>
+                        @endif
+                        @if(!empty($societyRegNo))
+                            <div style="font-size: 11px; color: #4a5568; margin-top: 2px;">
+                                Reg No: {{ $societyRegNo }}
+                            </div>
+                        @endif
                     </td>
                     <td align="right" style="vertical-align: bottom;">
                         <div>
@@ -61,30 +75,117 @@
             <table class="info-table">
                 <tr>
                     <td style="margin-right: 10px;">
+                        @php
+                            $resident = $bill->flat ? ($bill->flat->residents()->where('user_id', $bill->user_id)->latest()->first() ?? $bill->flat->owner ?? $bill->flat->tenant) : null;
+                            $businessName = $resident ? ($resident->business_name ?? $resident->company_name) : null;
+                            $contactPerson = $resident ? ($resident->contact_person ?? ($bill->user->name ?? null)) : ($bill->user->name ?? null);
+                            $gstNumber = $resident ? ($resident->gst_number ?? $resident->gstin) : null;
+                            $isCommercialOccupant = !empty($businessName) || !empty($gstNumber) || ($resident && $resident->occupant_category !== 'individual') || in_array(strtolower($bill->flat->unit_type ?? ''), ['shop', 'office', 'commercial', 'it_arcade', 'warehouse']);
+                        @endphp
                         <div class="info-title">Billed To</div>
                         <div class="info-content">
-                            {{ $bill->user->name ?? 'N/A' }}<br>
-                            <span style="font-size: 13px; color: #666; font-weight: normal;">
-                                <strong>Email:</strong> {{ $bill->user->email ?? 'N/A' }}<br>
-                                <strong>Phone:</strong> {{ $bill->user->phone ?? 'N/A' }}
-                            </span>
+                            @if($isCommercialOccupant && !empty($businessName))
+                                <div style="font-weight: bold; color: #1a202c; font-size: 15px; margin-bottom: 4px;">{{ $businessName }}</div>
+                            @else
+                                <div style="font-weight: bold; color: #1a202c; font-size: 15px; margin-bottom: 4px;">{{ $bill->user->name ?? 'N/A' }}</div>
+                            @endif
+                            <table class="details-inner-table" width="100%" cellpadding="0" cellspacing="0">
+                                @if($isCommercialOccupant && !empty($businessName) && !empty($contactPerson))
+                                <tr>
+                                    <td class="billed-label">Attn:</td>
+                                    <td class="prop-value">{{ $contactPerson }}</td>
+                                </tr>
+                                @endif
+                                @if(!empty($gstNumber))
+                                <tr>
+                                    <td class="billed-label">GSTIN:</td>
+                                    <td class="prop-value" style="font-weight: bold; color: #2d3748;">{{ $gstNumber }}</td>
+                                </tr>
+                                @endif
+                                <tr>
+                                    <td class="billed-label">Email:</td>
+                                    <td class="prop-value">{{ $bill->user->email ?? 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="billed-label">Phone:</td>
+                                    <td class="prop-value">{{ $bill->user->phone ?? 'N/A' }}</td>
+                                </tr>
+                            </table>
                         </div>
                     </td>
                     <td style="width: 20px; background: transparent; border: none;"></td>
                     <td class="right-col">
+                        @php
+                            $unitTypeStr = strtolower($bill->flat->unit_type ?? 'flat');
+                            $dynamicUnitLabel = match($unitTypeStr) {
+                                'shop' => 'Shop No',
+                                'office' => 'Office No',
+                                'villa' => 'Villa No',
+                                'row_house', 'rowhouse' => 'Row House No',
+                                'plot' => 'Plot No',
+                                'it_arcade', 'commercial' => 'Arcade Unit No',
+                                default => \App\Models\Setting::label('unit', 'Flat') . ' No'
+                            };
+                            $dynamicBlockLabel = match($unitTypeStr) {
+                                'shop', 'office', 'it_arcade', 'commercial' => \App\Models\Setting::label('block', 'Complex / Wing'),
+                                'villa', 'row_house', 'rowhouse', 'plot' => \App\Models\Setting::label('block', 'Sector / Township'),
+                                default => \App\Models\Setting::label('block', 'Block / Wing')
+                            };
+                            $blockName = $bill->flat->block->block_name ?? null;
+                            $showBlock = !empty($blockName) && $blockName !== '-' && $blockName !== '0' && strtolower($blockName) !== 'none';
+                        @endphp
                         <div class="info-title">Property Details</div>
                         <div class="info-content">
-                            Block {{ $bill->flat->block->block_name ?? 'N/A' }}, Flat {{ $bill->flat->flat_no ?? 'N/A' }}<br>
-                            <span style="font-size: 13px; color: #666; font-weight: normal;">
-                                <strong>Type:</strong> {{ $bill->flat->flatType->name ?? 'N/A' }}<br>
-                                <strong>Method:</strong> {{ strtoupper($bill->payment_method) }}
+                            <div style="font-size: 14px; color: #1a202c; margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px dashed #ced4da;">
+                                @if($showBlock)
+                                    <span style="color: #666; font-weight: bold;">{{ $dynamicBlockLabel }}:</span> <span style="font-weight: bold; color: #111;">{{ $blockName }}</span> &nbsp;&nbsp;|&nbsp;&nbsp; 
+                                @endif
+                                <span style="color: #666; font-weight: bold;">{{ $dynamicUnitLabel }}:</span> <span style="font-weight: bold; color: #111;">{{ $bill->flat->flat_no ?? 'N/A' }}</span>
+                            </div>
+                            @php
+                                $isCommercial = in_array(strtolower($bill->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
+                                $flatType = $bill->flat->flatType ?? null;
+                                $sqftRate = (float) \App\Models\Setting::get('commercial_rate_per_sqft', 0);
+                                if ($sqftRate <= 0) $sqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 10);
+                                if ($sqftRate <= 0) $sqftRate = 10.00;
+                                $isPerSqft = $isCommercial;
+                            @endphp
+                            <table class="details-inner-table" width="100%" cellpadding="0" cellspacing="0">
+                                @if(!empty($bill->flat->flatType->name) && $bill->flat->flatType->name !== 'N/A')
+                                <tr>
+                                    <td class="prop-label">Category:</td>
+                                    <td class="prop-value">{{ $bill->flat->flatType->name }}</td>
+                                </tr>
+                                @endif
+                                @if($bill->flat && $bill->flat->area_sqft > 0)
+                                <tr>
+                                    <td class="prop-label">Carpet Area:</td>
+                                    <td class="prop-value">{{ number_format($bill->flat->area_sqft, 2) }} Sq. Ft.</td>
+                                </tr>
+                                @endif
+                                @if($isPerSqft && $sqftRate > 0)
+                                <tr>
+                                    <td class="prop-label">Applied Rate:</td>
+                                    <td class="prop-value">{{ \App\Helpers\CurrencyHelper::formatCurrency($sqftRate) }} / Sq. Ft.</td>
+                                </tr>
+                                @endif
+                                <tr>
+                                    <td class="prop-label">Payment Mode:</td>
+                                    <td class="prop-value">{{ strtoupper($bill->payment_method) }}</td>
+                                </tr>
                                 @if($bill->receivedBy)
-                                    <br><strong>Received By:</strong> {{ $bill->receivedBy->name }}
+                                <tr>
+                                    <td class="prop-label">Received By:</td>
+                                    <td class="prop-value">{{ $bill->receivedBy->name }}</td>
+                                </tr>
                                 @endif
                                 @if($bill->transaction_id)
-                                    <br><strong>UTR Number:</strong> {{ $bill->transaction_id }}
+                                <tr>
+                                    <td class="prop-label">UTR Number:</td>
+                                    <td class="prop-value">{{ $bill->transaction_id }}</td>
+                                </tr>
                                 @endif
-                            </span>
+                            </table>
                         </div>
                     </td>
                 </tr>
@@ -117,6 +218,15 @@
                                     For {{ $bill->maintenance->month }} {{ $bill->maintenance->year }}
                                 @endif
                             </div>
+                            @if($bill->flat && $bill->flat->area_sqft > 0 && $isCommercial && $sqftRate > 0)
+                                <div style="font-size: 11px; color: #555; margin-top: 4px; font-style: italic;">
+                                    Commercial Calculation: {{ number_format($bill->flat->area_sqft, 2) }} Sq. Ft. &times; {{ \App\Helpers\CurrencyHelper::formatCurrency($sqftRate) }} / Sq. Ft. (Settings Rate)
+                                </div>
+                            @elseif($flatType)
+                                <div style="font-size: 11px; color: #555; margin-top: 4px; font-style: italic;">
+                                    Fixed Residential Category Rate: {{ $flatType->name }}
+                                </div>
+                            @endif
                         </td>
                         <td class="text-right">{{ \App\Helpers\CurrencyHelper::formatCurrency($totalBase) }}</td>
                     </tr>

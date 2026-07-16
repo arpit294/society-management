@@ -8,8 +8,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\StoreSettingsRequest;
-
-
+use App\Models\PropertyType;
 // (Auth facade is used only for IDE typing; runtime continues to use the existing abort_if logic.)
 
 use Illuminate\Support\Facades\Cache;
@@ -54,7 +53,9 @@ class SettingController extends Controller
             // Fetch all permissions grouped by their module name from the config
             $permissionsByModule = config('permissions.modules', []);
 
-            return view('settings.index', compact('settings', 'roles', 'permissionsByModule'));
+            $propertyTypes = PropertyType::orderBy('id')->get();
+
+            return view('settings.index', compact('settings', 'roles', 'permissionsByModule', 'propertyTypes'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;

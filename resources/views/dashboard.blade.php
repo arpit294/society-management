@@ -1,9 +1,4 @@
 <x-layout>
-    <div id="users-toasts" class="users-toast-container" aria-live="polite" aria-atomic="true"></div>
-
-    @if (session('success'))
-        <div id="users-toast-source" data-message="{{ e(session('success')) }}" data-type="success" hidden></div>
-    @endif
 
     <x-sidebar />
     <div class="wrapper d-flex flex-column min-vh-100">
@@ -21,7 +16,7 @@
                                 <!-- Top Row: Icon Pedestal & Live Badge -->
                                 <div class="d-flex justify-content-between align-items-start mb-3">
                                     <div class="kpi-icon-pedestal">
-                                        <i class="fas fa-building"></i>
+                                        <i class="fas {{ \App\Models\Setting::unitIconClass() }}"></i>
                                     </div>
                                     <span class="kpi-status-pill">
                                         <span class="kpi-status-dot"></span> Active
@@ -29,7 +24,7 @@
                                 </div>
                                 <!-- Bottom Row: Label & Value -->
                                 <div class="mt-2">
-                                    <div class="kpi-label mb-1">Total Flats</div>
+                                    <div class="kpi-label mb-1">Total {{ \App\Models\Setting::label('unit_plural', 'Flats') }}</div>
                                     <div class="kpi-number counter-animate" data-target="{{ $totalFlats }}">0</div>
                                 </div>
                                 <!-- Decorative Glow Orb -->
@@ -53,7 +48,7 @@
                                 </div>
                                 <!-- Bottom Row: Label & Value -->
                                 <div class="mt-2">
-                                    <div class="kpi-label mb-1">Total Residents</div>
+                                    <div class="kpi-label mb-1">Total {{ \App\Models\Setting::label('resident', 'Resident') }}s</div>
                                     <div class="kpi-number counter-animate" data-target="{{ $totalResidents }}">0</div>
                                 </div>
                                 <!-- Decorative Glow Orb -->

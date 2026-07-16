@@ -22,7 +22,7 @@ class MaintenanceBillsDataTable extends DataTable
                 // If payment is paid, we can download invoice
                 $downloadBtn = '';
                 if ($row->status === 'paid') {
-                    $downloadBtn = '<a href="'.route('maintenance-bills.download-invoice', $billIdentifier).'" class="btn btn-sm btn-outline-info me-1" data-coreui-toggle="tooltip" title="Download Invoice"><i class="fa-solid fa-download"></i></a>';
+                    $downloadBtn = '<a href="'.route('maintenance-bills.download-invoice', $billIdentifier).'" class="btn btn-sm btn-outline-info me-1 no-loader" data-coreui-toggle="tooltip" title="Download Invoice" download><i class="fa-solid fa-download"></i></a>';
                 }
 
                 $deleteBtn = '<button type="button" class="btn btn-sm btn-outline-danger btn-delete-maintenance-bill" data-url="'.route('maintenance-bills.destroy', $billIdentifier).'" data-coreui-toggle="tooltip" title="Delete Payment Batch"><i class="fa-solid fa-trash"></i></button>';
@@ -32,7 +32,38 @@ class MaintenanceBillsDataTable extends DataTable
             ->addColumn('resident', function ($row) {
                 return $row->user ? $row->user->name : 'N/A';
             })
+            ->addColumn('unit_type', function ($row) {
+                if (!$row->flat || ($row->flat && method_exists($row->flat, 'trashed') && $row->flat->trashed())) {
+                    $type = $row->flat ? ($row->flat->unit_type ?? 'shop') : 'shop';
+                    $label = ucwords(str_replace('_', ' ', $type));
+                    return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa-solid fa-store-slash me-1"></i>'.$label.' (Deleted)</span>';
+                }
+                $unitType = strtolower($row->flat->unit_type ?? 'flat');
+                [$badgeClass, $badgeStyle] = match($unitType) {
+                    'shop' => ['bg-warning text-dark border border-warning', ''],
+                    'office' => ['bg-info text-dark border border-info', ''],
+                    'showroom' => ['bg-success text-white border border-success', ''],
+                    'warehouse' => ['text-white border border-warning', 'background-color: #fd7e14 !important; color: #fff !important;'],
+                    'villa', 'bungalow' => ['bg-primary text-white border border-primary', ''],
+                    'row_house', 'rowhouse' => ['bg-danger text-white border border-danger', ''],
+                    'tenement' => ['bg-success-subtle text-success border border-success-subtle', ''],
+                    'penthouse' => ['text-white border border-secondary', 'background-color: #6f42c1 !important; color: #fff !important;'],
+                    'duplex' => ['bg-info text-dark border border-info', ''],
+                    'plot', 'land' => ['bg-dark text-white border border-dark', ''],
+                    'flat', 'apartment' => ['bg-secondary text-white border border-secondary', ''],
+                    default => ['bg-secondary text-white border border-secondary', '']
+                };
+                $label = ucwords(str_replace('_', ' ', $row->flat->unit_type ?? 'flat'));
+                return '<span class="badge '.$badgeClass.' px-2 py-1" style="'.$badgeStyle.'">'.$label.'</span>';
+            })
             ->addColumn('flat', function ($row) {
+                if (!$row->flat || ($row->flat && method_exists($row->flat, 'trashed') && $row->flat->trashed())) {
+                    $unitType = $row->flat ? ucwords(str_replace('_', ' ', $row->flat->unit_type ?? 'Shop')) : 'Shop';
+                    if ($row->flat && $row->flat->flat_no) {
+                        return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa-solid fa-store-slash me-1"></i>' . ($row->block ? $row->block->block_name . '-' : '') . $row->flat->flat_no . ' (' . $unitType . ' Deleted)</span>';
+                    }
+                    return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa-solid fa-store-slash me-1"></i>Shop Deleted</span>';
+                }
                 return ($row->block ? $row->block->block_name : '').'-'.($row->flat ? $row->flat->flat_no : '');
             })
             ->addColumn('month_year', function ($row) {
@@ -77,19 +108,32 @@ class MaintenanceBillsDataTable extends DataTable
                     $q->where('name', 'like', "%{$keyword}%");
                 });
             })
+            ->filterColumn('unit_type', function ($query, $keyword) {
+                if (stripos('Deleted', $keyword) !== false) {
+                    $query->whereNull('flat_id')->orWhereDoesntHave('flat');
+                } else {
+                    $query->whereHas('flat', function ($q) use ($keyword) {
+                        $q->where('unit_type', 'like', "%{$keyword}%");
+                    });
+                }
+            })
             ->filterColumn('flat', function ($query, $keyword) {
-                $query->whereHas('flat', function ($q) use ($keyword) {
-                    $q->where('flat_no', 'like', "%{$keyword}%")
-                        ->orWhereHas('block', function ($q2) use ($keyword) {
-                            $q2->where('block_name', 'like', "%{$keyword}%");
-                        });
-                });
+                if (stripos('Shop Deleted', $keyword) !== false || stripos('Deleted', $keyword) !== false) {
+                    $query->whereNull('flat_id')->orWhereDoesntHave('flat');
+                } else {
+                    $query->whereHas('flat', function ($q) use ($keyword) {
+                        $q->where('flat_no', 'like', "%{$keyword}%")
+                            ->orWhereHas('block', function ($q2) use ($keyword) {
+                                $q2->where('block_name', 'like', "%{$keyword}%");
+                            });
+                    });
+                }
             })
             ->filterColumn('month_year', function ($query, $keyword) {
                 // Not perfectly filterable when grouped by subquery, but we can try
                 $query->whereRaw('(SELECT CONCAT(month, " ", year) FROM maintenances WHERE id = maintenance_bills.maintenance_id) LIKE ?', ["%{$keyword}%"]);
             })
-            ->rawColumns(['action', 'payment_method', 'month_year', 'received_by'])
+            ->rawColumns(['action', 'payment_method', 'month_year', 'received_by', 'flat', 'unit_type'])
             ->setRowId(function ($row) {
                 return $row->batch_id ?: $row->id;
             });
@@ -136,10 +180,7 @@ class MaintenanceBillsDataTable extends DataTable
             ->columns($this->getColumns())
             ->minifiedAjax()
             ->orderBy(0, 'desc') // Order by ID
-            ->selectStyleSingle()
-            ->parameters([
-                'scrollX' => true,
-            ]);
+            ->selectStyleSingle();
     }
 
     public function getColumns(): array
@@ -147,7 +188,8 @@ class MaintenanceBillsDataTable extends DataTable
         return [
             Column::make('id')->title('ID')->width(50)->addClass('text-nowrap'),
             Column::make('resident')->title('Resident')->name('resident')->orderable(false),
-            Column::make('flat')->title('Flat')->name('flat')->orderable(false)->addClass('text-nowrap'),
+            Column::make('unit_type')->title('Structure Type')->name('unit_type')->orderable(false)->addClass('text-nowrap'),
+            Column::make('flat')->title(\App\Models\Setting::label('block', 'Block') . ' & ' . \App\Models\Setting::label('unit', 'Flat'))->name('flat')->orderable(false)->addClass('text-nowrap'),
             Column::make('month_year')->title('For Month')->name('month_year')->orderable(false),
             Column::make('amount')->title('Subtotal'),
             Column::make('penalty_amount')->title('Penalty'),

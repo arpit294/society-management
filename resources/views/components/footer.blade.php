@@ -1,4 +1,4 @@
-<footer class="footer px-4">
+<footer class="footer px-4 mt-auto border-top">
     <div>
         <strong>Society Management System</strong> &copy; {{ date('Y') }}. All rights reserved.
     </div>

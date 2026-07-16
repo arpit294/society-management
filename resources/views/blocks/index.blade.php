@@ -1,30 +1,23 @@
 <x-user-page>
 
-
-    <div id="users-toasts" class="users-toast-container" aria-live="polite" aria-atomic="true"></div>
-
-    @if (session('success'))
-        <div id="users-toast-source" data-message="{{ e(session('success')) }}" data-type="success" hidden></div>
-    @endif
-
     <!-- TOP CAPACITY CARDS -->
     <div class="row g-4 mb-4">
         <div class="col-sm-6 col-md-6 col-xl-6">
-            <div class="card kpi-hero-card kpi-theme-indigo h-100 border-0">
+            <div class="card kpi-hero-card block-filter-card kpi-theme-indigo h-100 border-0" data-block-filter="" style="cursor: pointer;" title="Click to show all {{ strtolower(\App\Models\Setting::label('block', 'Blocks')) }}s">
                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="kpi-icon-pedestal">
-                            <i class="fas fa-building"></i>
+                            <i class="fas {{ \App\Models\Setting::unitIconClass() }}"></i>
                         </div>
                         <span class="kpi-status-pill">
                             <span class="kpi-status-dot"></span> Capacity
                         </span>
                     </div>
                     <div class="mt-2">
-                        <div class="kpi-label mb-1">Total Capacity</div>
+                        <div class="kpi-label mb-1">Total {{ \App\Models\Setting::label('unit_plural', 'Flats') }} Capacity</div>
                         <div class="d-flex align-items-baseline gap-2">
                             <span class="kpi-number counter-animate" data-target="{{ $totalFlats }}">0</span>
-                            <span class="fs-4 fw-bold text-light opacity-75">Flats</span>
+                            <span class="fs-4 fw-bold text-light opacity-75">{{ \App\Models\Setting::label('unit_plural', 'Flats') }}</span>
                         </div>
                     </div>
                     <div class="kpi-glow-orb"></div>
@@ -33,7 +26,7 @@
         </div>
         
         <div class="col-sm-6 col-md-6 col-xl-6">
-            <div class="card kpi-hero-card kpi-theme-cyan h-100 border-0">
+            <div class="card kpi-hero-card block-filter-card kpi-theme-cyan h-100 border-0" data-block-filter="" style="cursor: pointer;" title="Click to show all {{ strtolower(\App\Models\Setting::label('block', 'Blocks')) }}s">
                 <div class="card-body p-4 d-flex flex-column justify-content-between">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div class="kpi-icon-pedestal">
@@ -44,10 +37,10 @@
                         </span>
                     </div>
                     <div class="mt-2">
-                        <div class="kpi-label mb-1">Total Occupied</div>
+                        <div class="kpi-label mb-1">Total Occupied {{ \App\Models\Setting::label('unit_plural', 'Flats') }}</div>
                         <div class="d-flex align-items-baseline gap-2">
                             <span class="kpi-number counter-animate" data-target="{{ $totalOccupiedFlats }}">0</span>
-                            <span class="fs-4 fw-bold text-light opacity-75">Flats</span>
+                            <span class="fs-4 fw-bold text-light opacity-75">{{ \App\Models\Setting::label('unit_plural', 'Flats') }}</span>
                         </div>
                     </div>
                     <div class="kpi-glow-orb"></div>
@@ -66,22 +59,22 @@
                 $theme = $themes[$loop->index % count($themes)];
             @endphp
             <div class="col-sm-6 col-md-4 col-xl-4">
-                <div class="card kpi-hero-card {{ $theme }} h-100 border-0">
+                <div class="card kpi-hero-card block-filter-card {{ $theme }} h-100 border-0" data-block-filter="{{ $block->block_name }}" style="cursor: pointer;" title="Click to filter table by {{ \App\Models\Setting::label('block', 'Block') }} {{ $block->block_name }}">
                     <div class="card-body p-4 d-flex flex-column justify-content-between">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div class="kpi-icon-pedestal">
-                                <i class="fas fa-city"></i>
+                                <i class="fas {{ \App\Models\Setting::blockIconClass() }}"></i>
                             </div>
                             <span class="kpi-status-pill">
                                 <span class="kpi-status-dot"></span> Active
                             </span>
                         </div>
                         <div class="mt-2">
-                            <div class="kpi-label mb-1">Block {{ $block->block_name }}</div>
+                            <div class="kpi-label mb-1">{{ \App\Models\Setting::label('block', 'Block') }} {{ $block->block_name }}</div>
                             <div class="d-flex align-items-baseline gap-1">
                                 <span class="kpi-number">{{ $block->occupied_flats_count }}</span>
                                 <span class="fs-4 fw-bold text-muted">/{{ $block->total_flats }}</span>
-                                <span class="fs-6 fw-semibold text-light opacity-75 ms-1">Flats</span>
+                                <span class="fs-6 fw-semibold text-light opacity-75 ms-1">{{ \App\Models\Setting::label('unit_plural', 'Flats') }}</span>
                             </div>
                         </div>
                         <div class="kpi-glow-orb"></div>
@@ -92,11 +85,11 @@
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">Block Management</h4>
+        <h4 class="mb-0">{{ \App\Models\Setting::label('block', 'Block') }} Management</h4>
 
         @can('block_create')
         <button type="button" class="btn btn-primary" id="btn-add-block" data-url="{{ route('blocks.create') }}"
-            data-title="Add Block">Add Block</button>
+            data-title="Add {{ \App\Models\Setting::label('block', 'Block') }}">Add {{ \App\Models\Setting::label('block', 'Block') }}</button>
         @endcan
     </div>
 
@@ -114,5 +107,28 @@
 
     @push('scripts')
         {{ $dataTable->scripts(attributes: ['type' => 'module']) }}
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const filterCards = document.querySelectorAll('.block-filter-card');
+                filterCards.forEach(card => {
+                    card.addEventListener('click', function() {
+                        const filterValue = this.getAttribute('data-block-filter') || '';
+                        
+                        // Highlight active card
+                        filterCards.forEach(c => c.style.boxShadow = '');
+                        if (filterValue !== '') {
+                            this.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.6)';
+                        }
+                        
+                        // Filter DataTable if loaded
+                        if (window.LaravelDataTables && window.LaravelDataTables['blocks-table']) {
+                            window.LaravelDataTables['blocks-table'].search(filterValue).draw();
+                        } else if ($.fn.DataTable && $('#blocks-table').length) {
+                            $('#blocks-table').DataTable().search(filterValue).draw();
+                        }
+                    });
+                });
+            });
+        </script>
     @endpush
 </x-user-page>

@@ -847,13 +847,34 @@ $(document).ready(function () {
         buttonsStyling: false,
     });
 
-    // Toastr Configuration
-    toastr.options = {
-        closeButton: true,
-        progressBar: true,
-        positionClass: "toast-top-right",
-        timeOut: 3000,
-    };
+    // Toastr Configuration (Dynamic from Settings)
+    if (typeof toastr !== "undefined") {
+        const toastrConfig = window.SMP_TOASTR_CONFIG || {
+            enabled: true,
+            closeButton: true,
+            progressBar: true,
+            positionClass: "toast-top-right",
+            timeOut: 3000,
+            preventDuplicates: true,
+        };
+
+        toastr.options = {
+            closeButton: toastrConfig.closeButton,
+            progressBar: toastrConfig.progressBar,
+            positionClass: toastrConfig.positionClass || "toast-top-right",
+            timeOut: toastrConfig.timeOut !== undefined ? toastrConfig.timeOut : 3000,
+            preventDuplicates: true,
+        };
+
+        if (toastrConfig.enabled === false) {
+            const noop = function () {};
+            toastr.success = noop;
+            toastr.error = noop;
+            toastr.info = noop;
+            toastr.warning = noop;
+            toastr.clear = noop;
+        }
+    }
 
     // CSRF TOKEN
     $.ajaxSetup({
@@ -1018,15 +1039,23 @@ $(document).ready(function () {
         "#residents-table",
         "block:name",
         "#residents-filter-reset-col",
+        "#residents-filter-unit-type"
+    );
+    setupFilterChange(
+        "#residents-filter-unit-type",
+        "#residents-table",
+        "unit_type:name",
+        "#residents-filter-reset-col",
+        "#residents-filter-block"
     );
     setupFilterReset(
         "#residents-filter-reset",
         "#residents-filter-block",
-        null,
+        "#residents-filter-unit-type",
         "#residents-table",
         "block:name",
-        null,
-        "#residents-filter-reset-col",
+        "unit_type:name",
+        "#residents-filter-reset-col"
     );
 
     // Maintenance Bills Filters
@@ -1207,7 +1236,8 @@ $(document).ready(function () {
     $(document).on("change", "#addDocumentForm #block_id", function () {
         var blockId = $(this).val();
         var flatSelect = $("#addDocumentForm #flat_id");
-        flatSelect.empty().append('<option value="">Select Flat</option>');
+        var unitLabel = window.SMP_UI_LABELS ? window.SMP_UI_LABELS.unit : "Flat";
+        flatSelect.empty().append('<option value="">Select ' + unitLabel + '</option>');
 
         if (blockId) {
             $.get("/api/flats-by-block/" + blockId, function (data) {
@@ -1419,7 +1449,7 @@ $(document).ready(function () {
     setupDeleteHandler(
         "#blocks-table .btn-delete-block",
         "#blocks-table",
-        "This block will be deleted permanently!",
+        "This structure/block will be deleted permanently along with all its units and records!",
         "Deleted successfully.",
         true,
     );
@@ -1730,9 +1760,15 @@ $(document).ready(function () {
                 success: function (data) {
                     let html = '<option value="">Select Flat</option>';
                     data.forEach(function (flat) {
-                        html += `<option value="${flat.id}">${flat.flat_no}</option>`;
+                        let isComm = flat.is_commercial ? '1' : '0';
+                        let label = flat.flat_no;
+                        if (flat.unit_type && flat.unit_type.toLowerCase() !== 'flat') {
+                            label += ' (' + flat.unit_type.toUpperCase() + ')';
+                        }
+                        html += `<option value="${flat.id}" data-is-commercial="${isComm}" data-unit-type="${flat.unit_type || ''}">${label}</option>`;
                     });
                     flatSelect.html(html);
+                    flatSelect.trigger("change");
                 },
                 error: function () {
                     flatSelect.html(
@@ -1743,12 +1779,26 @@ $(document).ready(function () {
         },
     );
 
-    // Handle flat change to fetch existing owner for rental
+    // Handle flat change to fetch existing owner for rental and toggle commercial profile card
     $(document).on(
         "change",
         "#resident-ajax-form select[name='flat_id']",
         function () {
             let flatId = $(this).val();
+            let selectedOption = $(this).find("option:selected");
+            let isCommercial = selectedOption.data("is-commercial") == "1" || selectedOption.data("is-commercial") === 1 || selectedOption.data("is-commercial") === true;
+
+            let createSection = $("#commercial-profile-section-create");
+            let editSection = $("#commercial-profile-section-edit");
+
+            if (isCommercial) {
+                createSection.removeClass("d-none").show();
+                editSection.removeClass("d-none").show();
+            } else {
+                createSection.addClass("d-none").hide();
+                editSection.addClass("d-none").hide();
+            }
+
             let ownerSelect = $(
                 "#resident-ajax-form select[name='owner_user_id']",
             );
@@ -1780,6 +1830,20 @@ $(document).ready(function () {
         ) {
             $('#flat-ajax-form select[name="block_id"]').trigger("change");
         }
+        if (
+            settings.url.includes("residents/create") ||
+            (settings.url.includes("residents/") && settings.type === "GET")
+        ) {
+            let flatSelect = $("#resident-ajax-form select[name='flat_id']");
+            if (flatSelect.length && flatSelect.val()) {
+                flatSelect.trigger("change");
+            } else {
+                $("#commercial-profile-section-create").addClass("d-none").hide();
+                if (!flatSelect.val()) {
+                    $("#commercial-profile-section-edit").addClass("d-none").hide();
+                }
+            }
+        }
 
         // Initialize Plugins when loaded
         if (
@@ -1789,8 +1853,12 @@ $(document).ready(function () {
             (settings.url.includes("expenses/") && settings.type === "GET")
         ) {
             try {
-                if ($(".dropify").length > 0) {
-                    $(".dropify").dropify();
+                if ($(".dropify:not(.no-dropify)").length > 0) {
+                    $(".dropify:not(.no-dropify)").each(function () {
+                        if ($(this).is(":visible")) {
+                            $(this).dropify();
+                        }
+                    });
                 }
             } catch (e) {
                 console.log("Dropify not loaded.");
@@ -2013,6 +2081,14 @@ $(document).ready(function () {
             upiDetails.removeClass("d-none");
             paymentSlip.attr("required", "required");
             transactionId.attr("required", "required");
+
+            if (paymentSlip.length && typeof $.fn.dropify !== "undefined") {
+                const dropifyObj = paymentSlip.data("dropify");
+                if (dropifyObj && typeof dropifyObj.destroy === "function") {
+                    dropifyObj.destroy();
+                }
+                paymentSlip.dropify();
+            }
         } else {
             upiDetails.addClass("d-none");
             paymentSlip.removeAttr("required");
@@ -2246,6 +2322,11 @@ $(document).ready(function () {
             $("#display_monthly_total").text(
                 window.currentMonthlyFee.toFixed(2),
             );
+            if (window.residentDetails && window.residentDetails[resId]) {
+                $("#fee-description").text(window.residentDetails[resId]);
+            } else {
+                $("#fee-description").text("Basic Maintenance Fee");
+            }
             $("#maintenance-fees-section").slideDown();
         } else {
             window.currentMonthlyFee = 0;
@@ -2278,27 +2359,66 @@ $(document).ready(function () {
 // --- Global Layout Scripts ---
 $(document).ready(function () {
     if ($('input[type="file"]:not(.no-dropify)').length) {
-        $('input[type="file"]:not(.no-dropify)').dropify();
+        $('input[type="file"]:not(.no-dropify)').each(function () {
+            if ($(this).is(":visible")) {
+                $(this).dropify();
+            }
+        });
     }
+
+    // Global click handler to ensure file picker dialog reliably opens when clicking any dropify-wrapper box
+    $(document).on("click", ".dropify-wrapper", function (e) {
+        if ($(this).hasClass("disabled") || e.target.tagName.toLowerCase() === "button" || $(e.target).hasClass("dropify-clear")) {
+            return;
+        }
+        const fileInput = $(this).find('input[type="file"]');
+        if (fileInput.length && e.target !== fileInput[0]) {
+            fileInput[0].click();
+        }
+    });
+
+    // Ensure dropify inputs inside modals get correctly initialized/refreshed when the modal finishes opening
+    $(document).on("shown.coreui.modal", ".modal", function () {
+        $(this).find('.dropify:not(.no-dropify)').each(function () {
+            if ($(this).is(":visible")) {
+                const dropifyObj = $(this).data("dropify");
+                if (!dropifyObj && typeof $.fn.dropify !== "undefined") {
+                    $(this).dropify();
+                }
+            }
+        });
+    });
+    const shownMessages = new Set();
     const flashMessages = document.getElementById("global-flash-messages");
-    if (flashMessages) {
-        if (flashMessages.dataset.success)
+    if (flashMessages && typeof toastr !== "undefined") {
+        if (flashMessages.dataset.success) {
             toastr.success(flashMessages.dataset.success);
-        if (flashMessages.dataset.error)
+            shownMessages.add(flashMessages.dataset.success);
+        }
+        if (flashMessages.dataset.error) {
             toastr.error(flashMessages.dataset.error);
-        if (flashMessages.dataset.status)
+            shownMessages.add(flashMessages.dataset.error);
+        }
+        if (flashMessages.dataset.status && !shownMessages.has(flashMessages.dataset.status)) {
             toastr.success(flashMessages.dataset.status);
-        if (flashMessages.dataset.validation)
+            shownMessages.add(flashMessages.dataset.status);
+        }
+        if (flashMessages.dataset.validation && !shownMessages.has(flashMessages.dataset.validation)) {
             toastr.error(flashMessages.dataset.validation);
+            shownMessages.add(flashMessages.dataset.validation);
+        }
     }
 
     const toastSource = document.getElementById("users-toast-source");
     if (toastSource && typeof toastr !== "undefined") {
         const msg = toastSource.dataset.message;
         const type = toastSource.dataset.type || "success";
-        if (type === "success") toastr.success(msg);
-        else if (type === "danger" || type === "error") toastr.error(msg);
-        else toastr.info(msg);
+        if (msg && !shownMessages.has(msg)) {
+            if (type === "success") toastr.success(msg);
+            else if (type === "danger" || type === "error") toastr.error(msg);
+            else toastr.info(msg);
+            shownMessages.add(msg);
+        }
     }
 });
 
@@ -2358,11 +2478,13 @@ $(document).on("shown.coreui.modal", "#addDocumentModal", function () {
 
 $(document).on("change", "#addDocumentModal #block_id", function () {
     var blockId = $(this).val();
+    var unitLabel = window.SMP_UI_LABELS ? window.SMP_UI_LABELS.unit : "Flat";
+    var residentLabel = window.SMP_UI_LABELS ? window.SMP_UI_LABELS.resident : "Resident";
     $("#addDocumentModal #flat_id").html(
-        '<option value="">Select Flat</option>',
+        '<option value="">Select ' + unitLabel + '</option>',
     );
     $("#addDocumentModal #user_id").html(
-        '<option value="">Select Resident</option>',
+        '<option value="">Select ' + residentLabel + '</option>',
     );
     resetResidentInfo();
 
@@ -2387,8 +2509,9 @@ $(document).on("change", "#addDocumentModal #block_id", function () {
 
 $(document).on("change", "#addDocumentModal #flat_id", function () {
     var flatId = $(this).val();
+    var residentLabel = window.SMP_UI_LABELS ? window.SMP_UI_LABELS.resident : "Resident";
     $("#addDocumentModal #user_id").html(
-        '<option value="">Select Resident</option>',
+        '<option value="">Select ' + residentLabel + '</option>',
     );
     resetResidentInfo();
 
@@ -2535,6 +2658,7 @@ $(document).ajaxComplete(function (event, xhr, settings) {
     const form = document.getElementById("prepayment-form");
     if (form) {
         window.residentFees = JSON.parse(form.dataset.fees || "{}");
+        window.residentDetails = JSON.parse(form.dataset.details || "{}");
         window.discountSettings = JSON.parse(form.dataset.discount || "{}");
         window.penaltySettings = JSON.parse(form.dataset.penalty || "{}");
     }
@@ -2614,6 +2738,16 @@ function initFlatTransferModal() {
             if (this.value === "upi" || this.value === "online") {
                 upiDetailsDiv.style.display = "block";
                 trInput.required = true;
+                if (typeof $ !== "undefined" && typeof $.fn.dropify !== "undefined") {
+                    const modalSlip = $(upiDetailsDiv).find('.dropify');
+                    if (modalSlip.length) {
+                        const dropifyObj = modalSlip.data("dropify");
+                        if (dropifyObj && typeof dropifyObj.destroy === "function") {
+                            dropifyObj.destroy();
+                        }
+                        modalSlip.dropify();
+                    }
+                }
             } else {
                 upiDetailsDiv.style.display = "none";
                 trInput.required = false;
@@ -2670,6 +2804,13 @@ $(document).on("change", "#transfer_payment_method", function () {
         $("#upi_details_container").show();
         $("#payment_slip").prop("required", true);
         $("#transaction_id").prop("required", true);
+        if ($("#payment_slip").length && typeof $.fn.dropify !== "undefined") {
+            const dropifyObj = $("#payment_slip").data("dropify");
+            if (dropifyObj && typeof dropifyObj.destroy === "function") {
+                dropifyObj.destroy();
+            }
+            $("#payment_slip").dropify();
+        }
     } else {
         $("#upi_details_container").hide();
         $("#payment_slip").prop("required", false);
@@ -2983,6 +3124,13 @@ document.addEventListener("DOMContentLoaded", function () {
             document.querySelectorAll(`select[name^="${targetPrefix}"]`).forEach((sel) => {
                 sel.value = val;
             });
+
+            if (typeof window.triggerGlobalSettingsAutoSave === 'function') {
+                window.triggerGlobalSettingsAutoSave(this.closest('form'));
+            } else {
+                const form = this.closest('form');
+                if (form) form.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         });
     });
 
@@ -3006,6 +3154,13 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             this.textContent = isCheckAll ? "Uncheck All" : "Check All";
+
+            if (typeof window.triggerGlobalSettingsAutoSave === 'function') {
+                window.triggerGlobalSettingsAutoSave(this.closest('form'));
+            } else {
+                const form = this.closest('form');
+                if (form) form.dispatchEvent(new Event('change', { bubbles: true }));
+            }
         });
 
         // Update button state when individual checkboxes change
@@ -3467,6 +3622,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         document.getElementById("map_search_input");
                     if (searchInput && data && data.display_name) {
                         searchInput.value = data.display_name;
+                        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
                     }
                 })
                 .catch((err) => console.log(err));
@@ -3478,6 +3634,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (latInput && lngInput) {
                 latInput.value = lat.toFixed(6);
                 lngInput.value = lng.toFixed(6);
+                latInput.dispatchEvent(new Event('input', { bubbles: true }));
             }
             if (doReverse) {
                 reverseGeocode(lat, lng);
@@ -4284,7 +4441,7 @@ window.addEventListener("load", function () {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-    // Fallback to hide preloader after 500ms so user is never stuck
+    // Fallback to hide preloader after 500ms initially so user is never stuck
     setTimeout(function () {
         const preloader = document.getElementById("page-preloader");
         if (preloader) {
@@ -4293,13 +4450,35 @@ document.addEventListener("DOMContentLoaded", function () {
     }, 500);
 });
 
+// Hide preloader automatically when window regains focus (e.g., after save-file/download dialog closes or finishes)
+window.addEventListener("focus", function () {
+    setTimeout(function () {
+        const preloader = document.getElementById("page-preloader");
+        if (preloader) {
+            preloader.classList.add("hidden");
+        }
+    }, 300);
+});
+
 // Show preloader on page navigation (clicking internal links)
 document.addEventListener("click", function (e) {
     const link = e.target.closest("a");
     if (link && link.href && !link.href.startsWith("javascript:") && !link.href.includes("#") && link.target !== "_blank" && !link.hasAttribute("download") && !link.classList.contains("no-loader") && link.origin === window.location.origin) {
+        // Check if the URL or class indicates a file download or export
+        const isDownloadOrExport = /\b(download|export|pdf|csv|excel|template)\b/i.test(link.href) || /\b(download|export|no-loader)\b/i.test(link.className);
+        if (isDownloadOrExport) {
+            return; // Do NOT trigger the loading spinner for file downloads
+        }
+
         const preloader = document.getElementById("page-preloader");
         if (preloader && !preloader.classList.contains("no-trigger")) {
             preloader.classList.remove("hidden");
+            // Safety fallback: auto-hide preloader after 4 seconds if navigation hasn't unloaded the page
+            setTimeout(function () {
+                if (preloader && !preloader.classList.contains("hidden")) {
+                    preloader.classList.add("hidden");
+                }
+            }, 4000);
         }
     }
 });
@@ -4358,5 +4537,358 @@ document.addEventListener('DOMContentLoaded', function () {
         if (btn) btn.style.setProperty('display', 'inline', 'important');
         if (listContainer) listContainer.style.setProperty('display', 'block', 'important');
         if (emptyState) emptyState.style.setProperty('display', 'none', 'important');
+    }
+});
+
+/**
+ * ============================================================================
+ * 3D & 4D INTERACTIVE ANIMATIONS & ENGINE (Society Management System)
+ * UNIVERSAL, 100% CLICK-SAFE, & CONTINUOUS REPEAT ANIMATIONS (NO REFRESH NEEDED)
+ * ============================================================================
+ */
+
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("🌌 Initializing SMP 3D & 4D Animation Engine (Continuous Repeat & Click-Safe Mode)...");
+
+    /* ========================================================================
+     * 1. SAFE 3D VANILLA-TILT INITIALIZATION (ONLY ON VISUAL STAT/KPI CARDS)
+     * ======================================================================== */
+    const init3DTilt = () => {
+        if (typeof VanillaTilt !== 'undefined') {
+            const tiltTargets = document.querySelectorAll('.dash-card, .kpi-card, .stat-box, .interactive-3d, .auth-card .card, .widget-card, .kpi-hero-card');
+            
+            // CRITICAL SAFETY FILTER: NEVER tilt cards that contain data tables, forms, or interactive DataTables!
+            const safeTiltTargets = Array.from(tiltTargets).filter(card => {
+                return !card.querySelector('table, form, .dataTables_wrapper, input, select, textarea');
+            });
+
+            if (safeTiltTargets.length > 0) {
+                // Destroy previous tilt instances if re-initializing after AJAX
+                safeTiltTargets.forEach(el => {
+                    if (el.vanillaTilt) el.vanillaTilt.destroy();
+                });
+
+                VanillaTilt.init(safeTiltTargets, {
+                    max: 6,                   // Gentle, premium tilt rotation (degrees)
+                    perspective: 1000,        // Transform perspective
+                    scale: 1.01,              // Subtle zoom scale on hover
+                    speed: 800,               // Smooth transition speed
+                    glare: true,              // Enable subtle metallic glare
+                    "max-glare": 0.15,        // Gentle glare opacity
+                    "glare-prerender": false, // Automatically create glare element
+                    gyroscope: false          // Disable gyroscope to prevent jiggling on laptops/mobile
+                });
+            }
+        }
+    };
+
+    /* ========================================================================
+     * 2. UNIVERSAL 4D CURSOR SPOTLIGHT TRACKING ENGINE
+     * ======================================================================== */
+    const init4DSpotlight = () => {
+        const cards = document.querySelectorAll('.kpi-hero-card, .dash-card, .auth-card .card, .spotlight-4d, .kpi-card, .stat-card, .widget-card');
+        
+        cards.forEach(card => {
+            if (card.dataset.spotlightActive) return; // Avoid duplicate listeners on AJAX refresh
+            card.dataset.spotlightActive = "true";
+
+            card.addEventListener('mousemove', e => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                card.style.setProperty('--mouse-x', `${x}px`);
+                card.style.setProperty('--mouse-y', `${y}px`);
+            });
+
+            card.addEventListener('mouseleave', () => {
+                const rect = card.getBoundingClientRect();
+                card.style.setProperty('--mouse-x', `${rect.width / 2}px`);
+                card.style.setProperty('--mouse-y', `${rect.height / 2}px`);
+            });
+        });
+    };
+
+    /* ========================================================================
+     * 3. 3D VANTA.JS / THREE.JS INTERACTIVE BACKGROUND (FOR AUTH PAGES)
+     * ======================================================================== */
+    const init3DBackground = () => {
+        const isAuthPage = document.querySelector('.auth-page') || 
+                           document.querySelector('form[action*="login"]') || 
+                           document.querySelector('form[action*="register"]') || 
+                           document.querySelector('form[action*="password"]') ||
+                           window.location.pathname.includes('login') ||
+                           window.location.pathname.includes('register') ||
+                           window.location.pathname.includes('password');
+
+        if (isAuthPage && typeof VANTA !== 'undefined' && typeof THREE !== 'undefined') {
+            let bgCanvas = document.getElementById('vanta-bg-canvas');
+            if (!bgCanvas) {
+                bgCanvas = document.createElement('div');
+                bgCanvas.id = 'vanta-bg-canvas';
+                document.body.prepend(bgCanvas);
+            }
+
+            bgCanvas.style.pointerEvents = 'none';
+            bgCanvas.style.zIndex = '-1';
+
+            try {
+                if (!window.vantaEffect) {
+                    window.vantaEffect = VANTA.NET({
+                        el: "#vanta-bg-canvas",
+                        mouseControls: true,
+                        touchControls: true,
+                        gyroControls: false,
+                        minHeight: 200.00,
+                        minWidth: 200.00,
+                        scale: 1.00,
+                        scaleMobile: 1.00,
+                        color: 0x6366f1,
+                        backgroundColor: 0x0f172a,
+                        points: 14.00,
+                        maxDistance: 22.00,
+                        spacing: 18.00,
+                        showDots: true
+                    });
+                }
+            } catch (err) {
+                console.error("Vanta initialization failed:", err);
+            }
+        }
+    };
+
+    /* ========================================================================
+     * 4. 4D INTERACTIVE CLICK RIPPLE WAVE EFFECT (PHYSICS)
+     * ======================================================================== */
+    if (!window.smpRippleInitialized) {
+        window.smpRippleInitialized = true;
+        document.addEventListener('click', function (e) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple-wave-4d';
+            ripple.style.left = `${e.pageX}px`;
+            ripple.style.top = `${e.pageY}px`;
+            document.body.appendChild(ripple);
+
+            setTimeout(() => {
+                ripple.remove();
+            }, 750);
+        }, { passive: true });
+    }
+
+    /* ========================================================================
+     * 5. 3D FLOATING BADGE INJECTOR ON DASHBOARD
+     * ======================================================================== */
+    const inject3DBadge = () => {
+        const dashTitle = document.querySelector('.card-title');
+        if (dashTitle && !document.querySelector('.smp-3d-badge') && window.location.pathname.includes('dashboard')) {
+            const badge = document.createElement('span');
+            badge.className = 'smp-3d-badge ms-3';
+            badge.innerHTML = '<i class="fa-solid fa-cube fa-spin"></i> 3D & 4D Engine Active';
+            dashTitle.appendChild(badge);
+        }
+    };
+
+    /* ========================================================================
+     * 6. CONTINUOUS REPEAT ORIGAMI SCROLL REVEAL ENGINE (EVERY TIME!)
+     * ======================================================================== */
+    let scrollObserver = null;
+    const init3DScrollReveal = () => {
+        const scrollTargets = document.querySelectorAll(
+            '.dash-card, .chart-container, .kpi-card, .stat-card, .activity-feed, .card:not(.no-reveal):not(.alert), .activity-row-item, .kpi-hero-card, .widget-card'
+        );
+
+        if (scrollTargets.length === 0) return;
+
+        const validTargets = Array.from(scrollTargets).filter(el => {
+            return !el.classList.contains('alert') && !el.closest('.modal');
+        });
+
+        if (scrollObserver) scrollObserver.disconnect();
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px 0px -30px 0px',
+            threshold: 0.05
+        };
+
+        scrollObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Animate IN when scrolling into viewport
+                    entry.target.style.transitionDelay = `${entry.target.dataset.staggerDelay || 0}ms`;
+                    entry.target.classList.add('scroll-3d-visible');
+                    entry.target.classList.remove('scroll-3d-hidden');
+
+                    // CRITICAL: Re-trigger Chart.js animation EVERY TIME chart scrolls into view!
+                    const canvases = entry.target.querySelectorAll('canvas');
+                    if (entry.target.tagName === 'CANVAS') canvases.push(entry.target);
+                    canvases.forEach(canvas => {
+                        if (typeof Chart !== 'undefined' && Chart.getChart) {
+                            const chart = Chart.getChart(canvas);
+                            if (chart && !canvas.dataset.animating) {
+                                canvas.dataset.animating = "true";
+                                setTimeout(() => {
+                                    chart.reset();
+                                    chart.update();
+                                    setTimeout(() => { canvas.dataset.animating = ""; }, 800);
+                                }, Number(entry.target.dataset.staggerDelay || 0));
+                            }
+                        }
+                    });
+                } else {
+                    // CRITICAL: Reset when scrolled out of viewport so animation plays EVERY TIME without page refresh!
+                    entry.target.style.transitionDelay = '0ms';
+                    entry.target.classList.remove('scroll-3d-visible');
+                    entry.target.classList.add('scroll-3d-hidden');
+
+                    // Also reset chart to starting state when scrolled out of view so it re-animates next time!
+                    const canvases = entry.target.querySelectorAll('canvas');
+                    if (entry.target.tagName === 'CANVAS') canvases.push(entry.target);
+                    canvases.forEach(canvas => {
+                        if (typeof Chart !== 'undefined' && Chart.getChart) {
+                            const chart = Chart.getChart(canvas);
+                            if (chart) {
+                                chart.reset();
+                            }
+                        }
+                    });
+                }
+            });
+        }, observerOptions);
+
+        validTargets.forEach((el, index) => {
+            if (!el.classList.contains('scroll-3d-visible')) {
+                el.classList.add('scroll-3d-hidden');
+            }
+            const staggerDelay = (index % 5) * 60;
+            el.dataset.staggerDelay = staggerDelay;
+            scrollObserver.observe(el);
+        });
+
+        // FAILSAFE: Guarantee that ONLY elements currently visible in the INITIAL top viewport are shown!
+        // Elements below the fold stay hidden until scrolled into view so they animate EVERY TIME!
+        setTimeout(() => {
+            validTargets.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top >= 0 && rect.top < window.innerHeight * 0.85 && rect.bottom > 0 && el.classList.contains('scroll-3d-hidden')) {
+                    el.classList.add('scroll-3d-visible');
+                    el.classList.remove('scroll-3d-hidden');
+                }
+            });
+        }, 300);
+    };
+
+    /* ========================================================================
+     * 7. CONTINUOUS REPEAT COUNTER ANIMATION (EVERY TIME STATS ENTER VIEWPORT)
+     * ======================================================================== */
+    let counterObserver = null;
+    const initCounterAnimation = () => {
+        const counters = document.querySelectorAll(".counter-animate");
+        if (counters.length === 0) return;
+
+        if (counterObserver) counterObserver.disconnect();
+
+        counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const counter = entry.target;
+                const targetVal = +counter.getAttribute("data-target") || 0;
+                const speed = 50; // Smooth speed
+
+                if (entry.isIntersecting) {
+                    // Animate count up every time the card scrolls into view!
+                    let currentVal = 0;
+                    const inc = Math.max(1, Math.ceil(targetVal / speed));
+                    
+                    if (counter.animationTimer) clearInterval(counter.animationTimer);
+
+                    counter.animationTimer = setInterval(() => {
+                        currentVal += inc;
+                        if (currentVal >= targetVal) {
+                            counter.innerText = targetVal.toLocaleString();
+                            clearInterval(counter.animationTimer);
+                        } else {
+                            counter.innerText = currentVal.toLocaleString();
+                        }
+                    }, 20);
+                } else {
+                    // Reset to 0 when scrolled out of viewport so it counts up again next time!
+                    if (counter.animationTimer) clearInterval(counter.animationTimer);
+                    counter.innerText = "0";
+                }
+            });
+        }, { threshold: 0.05 });
+
+        counters.forEach(counter => counterObserver.observe(counter));
+    };
+
+    /* ========================================================================
+     * 8. 4D NEON CYBERPUNK SCROLL PROGRESS BAR
+     * ======================================================================== */
+    const initScrollProgressBar = () => {
+        if (!document.getElementById('smp-scroll-progress-container')) {
+            const container = document.createElement('div');
+            container.id = 'smp-scroll-progress-container';
+            container.innerHTML = '<div id="smp-scroll-progress-bar"></div>';
+            document.body.prepend(container);
+        }
+
+        const progressBar = document.getElementById('smp-scroll-progress-bar');
+
+        window.addEventListener('scroll', () => {
+            const scrollTop = window.scrollY || document.documentElement.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const scrollPercent = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+            if (progressBar) {
+                progressBar.style.width = `${scrollPercent}%`;
+            }
+        }, { passive: true });
+    };
+
+    /* ========================================================================
+     * 9. GLOBAL REFRESH & AJAX MUTATION OBSERVER (WORKS WITHOUT PAGE REFRESH!)
+     * ======================================================================== */
+    window.refreshSMPAnimations = () => {
+        init3DTilt();
+        init4DSpotlight();
+        init3DBackground();
+        inject3DBadge();
+        init3DScrollReveal();
+        initCounterAnimation();
+        initScrollProgressBar();
+    };
+
+    // Run initial setup
+    window.refreshSMPAnimations();
+
+    // Attach MutationObserver to detect AJAX content loads, modal opens, or tab switches automatically
+    if (!window.smpMutationObserver) {
+        let mutationTimeout = null;
+        window.smpMutationObserver = new MutationObserver((mutations) => {
+            let shouldRefresh = false;
+            for (const mutation of mutations) {
+                if (mutation.addedNodes.length > 0) {
+                    for (const node of mutation.addedNodes) {
+                        if (node.nodeType === 1 && (node.classList.contains('card') || node.querySelector('.card, .counter-animate'))) {
+                            shouldRefresh = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldRefresh) break;
+            }
+
+            if (shouldRefresh) {
+                clearTimeout(mutationTimeout);
+                mutationTimeout = setTimeout(() => {
+                    console.log("🔄 AJAX/DOM change detected! Re-triggering SMP Animations without refresh...");
+                    window.refreshSMPAnimations();
+                }, 150);
+            }
+        });
+
+        window.smpMutationObserver.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
     }
 });

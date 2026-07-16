@@ -54,10 +54,10 @@
                         </div>
 
                         <div class="col-xl-2 col-md-4 col-sm-6">
-                            <label class="form-label">Block</label>
+                            <label class="form-label">{{ \App\Models\Setting::label('block', 'Block') }}</label>
                             <select name="block_id" class="form-select select2-filter js-auto-submit"
                                 style="width: 100%;">
-                                <option value="">All Blocks</option>
+                                <option value="">All {{ \App\Models\Setting::label('block', 'Block') }}s</option>
                                 @if (isset($blocks))
                                     @foreach ($blocks as $blk)
                                         <option value="{{ $blk->id }}"
@@ -70,10 +70,10 @@
                         </div>
 
                         <div class="col-xl-2 col-md-4 col-sm-6">
-                            <label class="form-label">Resident</label>
+                            <label class="form-label">{{ \App\Models\Setting::label('resident', 'Resident') }}</label>
                             <select name="user_id" class="form-select select2-filter js-auto-submit"
                                 style="width: 100%;">
-                                <option value="">All Residents</option>
+                                <option value="">All {{ \App\Models\Setting::label('resident', 'Resident') }}s</option>
                                 @if (isset($residents))
                                     @foreach ($residents as $res)
                                         @if ($res->user)
@@ -271,7 +271,7 @@
                                     <div class="col-12">
                                         <div class="card shadow-sm border-0 bg-light bg-opacity-50">
                                             <div class="card-header bg-white fw-bold d-flex align-items-center">
-                                                <i class="fa-solid fa-building text-success me-2"></i> Block-Wise
+                                                <i class="fa-solid fa-building text-success me-2"></i> {{ \App\Models\Setting::label('block', 'Block') }}-Wise
                                                 Collection vs Pending Dues
                                             </div>
                                             <div class="card-body">
@@ -286,7 +286,7 @@
                                     <li class="nav-item" role="presentation">
                                         <button class="nav-link active" id="paid-tab" data-coreui-toggle="tab"
                                             data-coreui-target="#paid" type="button" role="tab"
-                                            aria-controls="paid" aria-selected="true">Paid Residents
+                                            aria-controls="paid" aria-selected="true">Paid {{ \App\Models\Setting::label('resident', 'Resident') }}s
                                             ({{ $paidBills->count() }})</button>
                                     </li>
                                     <li class="nav-item" role="presentation">
@@ -305,8 +305,8 @@
                                                 class="table table-bordered table-striped table-hover">
                                                 <thead class="highlight-thead">
                                                     <tr>
-                                                        <th>Resident</th>
-                                                        <th>Block - Flat</th>
+                                                        <th>{{ \App\Models\Setting::label('resident', 'Resident') }}</th>
+                                                        <th>{{ \App\Models\Setting::label('block', 'Block') }} - {{ \App\Models\Setting::label('unit', 'Flat') }}</th>
                                                         <th>Paid Amount</th>
                                                         <th>Payment Method</th>
                                                         <th>Paid Date</th>
@@ -352,8 +352,8 @@
                                                 class="table table-bordered table-striped table-hover">
                                                 <thead class="highlight-thead">
                                                     <tr>
-                                                        <th>Resident</th>
-                                                        <th>Block - Flat</th>
+                                                        <th>{{ \App\Models\Setting::label('resident', 'Resident') }}</th>
+                                                        <th>{{ \App\Models\Setting::label('block', 'Block') }} - {{ \App\Models\Setting::label('unit', 'Flat') }}</th>
                                                         <th>Base Amount</th>
                                                         <th>Penalty Amount</th>
                                                         <th>Total Due</th>
@@ -460,8 +460,8 @@
                                                     <tr>
                                                         <th>#</th>
                                                         <th>User</th>
-                                                        <th>Block</th>
-                                                        <th>Flat</th>
+                                                        <th>{{ \App\Models\Setting::label('block', 'Block') }}</th>
+                                                        <th>{{ \App\Models\Setting::label('unit', 'Flat') }}</th>
                                                         <th class="text-end">Expected</th>
                                                         <th class="text-end text-success">Paid</th>
                                                         <th class="text-end text-primary">Transfer Fees</th>
