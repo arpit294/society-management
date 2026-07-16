@@ -16,8 +16,8 @@
             <div class="row">
                 <div class="col-md-6"><strong>ID:</strong> {{ $block->id }}</div>
                 <div class="col-md-6"><strong>{{ \App\Models\Setting::label('block', 'Block') }} Name:</strong> {{ $block->block_name }}</div>
-                <div class="col-md-6 mt-2"><strong>Total Floor:</strong> {{ $block->total_floor }}</div>
-                <div class="col-md-6 mt-2"><strong>Total {{ \App\Models\Setting::label('unit_plural', 'Flats') }}:</strong> {{ $block->total_flats }}</div>
+                <div class="col-md-6 mt-2"><strong>Total Floors / Levels:</strong> {{ $block->total_floor }}</div>
+                <div class="col-md-6 mt-2"><strong>Total {{ \App\Models\Setting::label('unit_plural', 'Flats') }} Capacity:</strong> {{ $block->total_flats }}</div>
                 <div class="col-md-6 mt-2"><strong>Created At:</strong> {{ $block->created_at }}</div>
             </div>
         </div>

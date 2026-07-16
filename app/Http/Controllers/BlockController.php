@@ -62,8 +62,18 @@ class BlockController extends Controller
                 },
             ])->get();
 
+            foreach ($blocks as $block) {
+                if ($block->flats_count > $block->total_flats) {
+                    $block->total_flats = $block->flats_count;
+                    $block->saveQuietly();
+                }
+            }
+
             $totalFlats = Block::sum('total_flats');
             $totalActualFlats = Flat::count();
+            if ($totalFlats < $totalActualFlats) {
+                $totalFlats = $totalActualFlats;
+            }
             $totalOccupiedFlats = Flat::where('status', config('status.flats.occupied'))->count();
 
             return $dataTable->render('blocks.index', compact('blocks', 'totalFlats', 'totalActualFlats', 'totalOccupiedFlats'));
@@ -113,9 +123,10 @@ class BlockController extends Controller
 
             Block::create($validatedData);
 
+            $blockLabel = \App\Models\Setting::label('block', 'Block');
             return response()->json([
                 'success' => true,
-                'message' => 'Block created successfully.',
+                'message' => "{$blockLabel} created successfully.",
             ]);
         } catch (\Exception $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -166,16 +177,19 @@ class BlockController extends Controller
 
             $existingFlatsCount = Flat::where('block_id', $block->id)->count();
             if ($validatedData['total_flats'] < $existingFlatsCount) {
+                $unitPlural = strtolower(\App\Models\Setting::label('unit_plural', 'flats'));
+                $blockLabel = strtolower(\App\Models\Setting::label('block', 'block'));
                 throw ValidationException::withMessages([
-                    'total_flats' => ["Total flats cannot be less than the {$existingFlatsCount} flat records already created for this block."],
+                    'total_flats' => ["Total {$unitPlural} capacity cannot be less than the {$existingFlatsCount} {$unitPlural} records already created for this {$blockLabel}."],
                 ]);
             }
 
             $block->update($validatedData);
 
+            $blockLabel = \App\Models\Setting::label('block', 'Block');
             return response()->json([
                 'success' => true,
-                'message' => 'Block updated successfully.',
+                'message' => "{$blockLabel} updated successfully.",
             ]);
         } catch (\Exception $e) {
             return $this->handleException($e, __FUNCTION__);
@@ -204,9 +218,10 @@ class BlockController extends Controller
                 $block->delete();
             });
 
+            $blockLabel = \App\Models\Setting::label('block', 'Block');
             return response()->json([
                 'success' => true,
-                'message' => 'Block deleted successfully.',
+                'message' => "{$blockLabel} deleted successfully.",
             ]);
         } catch (\Exception $e) {
             return $this->handleException($e, __FUNCTION__);

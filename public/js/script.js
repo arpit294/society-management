@@ -1411,7 +1411,7 @@ $(document).ready(function () {
     setupDeleteHandler(
         "#blocks-table .btn-delete-block",
         "#blocks-table",
-        "This block will be deleted permanently!",
+        "This structure/block will be deleted permanently along with all its units and records!",
         "Deleted successfully.",
         true,
     );

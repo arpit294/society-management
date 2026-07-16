@@ -17,14 +17,14 @@
             <div class="col-md-12">
                 <label class="form-label">{{ \App\Models\Setting::label('block', 'Block/Wing') }} Name</label>
                 <input type="text" name="block_name" class="form-control"
-                    value="{{ old('block_name', $block->block_name) }}">
+                    value="{{ old('block_name', $block->block_name) }}" placeholder="e.g. {{ \App\Models\Setting::get('society_property_type') === 'rowhouse_villa' ? 'Phase 1' : (\App\Models\Setting::get('society_property_type') === 'commercial_complex' ? 'Wing A' : 'Block A') }}">
                 @error('block_name')
                     <div class="invalid-feedback d-block field-error">{{ $message }}</div>
                 @enderror
             </div>
 
             <div class="col-md-6">
-                <label class="form-label">Total Floors <small class="text-muted">(0 for horizontal)</small></label>
+                <label class="form-label">Total Floors / Levels <small class="text-muted">({{ \App\Models\Setting::get('society_property_type') === 'rowhouse_villa' ? '0 for horizontal plots/villas' : '0 for ground structure' }})</small></label>
                 <input type="number" name="total_floor" class="form-control"
                     value="{{ old('total_floor', $block->total_floor ?? 0) }}" min="0">
                 @error('total_floor')
@@ -33,9 +33,9 @@
             </div>
 
             <div class="col-md-6">
-                <label class="form-label">Total {{ \App\Models\Setting::label('unit', 'Flat') }}s / Units</label>
+                <label class="form-label">Total {{ \App\Models\Setting::label('unit_plural', 'Flats') }} Capacity</label>
                 <input type="number" name="total_flats" class="form-control"
-                    value="{{ old('total_flats', $block->total_flats) }}" min="0">
+                    value="{{ old('total_flats', $block->total_flats) }}" min="0" placeholder="Number of {{ strtolower(\App\Models\Setting::label('unit_plural', 'flats')) }}">
                 @error('total_flats')
                     <div class="invalid-feedback d-block field-error">{{ $message }}</div>
                 @enderror

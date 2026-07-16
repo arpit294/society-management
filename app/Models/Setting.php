@@ -86,8 +86,6 @@ class Setting extends Model
     public static function label(string $key, string $default = ''): string
     {
         $allSettings = self::getAll();
-        $hasExplicitSetting = array_key_exists("ui_label_{$key}", $allSettings) && !empty($allSettings["ui_label_{$key}"]);
-        $value = $hasExplicitSetting ? $allSettings["ui_label_{$key}"] : self::get("ui_label_{$key}");
         $propType = self::get('society_property_type', 'flat_residential');
 
         $genericDefaults = [
@@ -97,6 +95,50 @@ class Setting extends Model
             'Shop & Office Category', 'Shop & Office Categories',
             'Property & Unit Category', 'Property & Unit Categories'
         ];
+
+        $hasExplicitSetting = array_key_exists("ui_label_{$key}", $allSettings) 
+            && !empty($allSettings["ui_label_{$key}"]) 
+            && ($propType === 'flat_residential' || !in_array($allSettings["ui_label_{$key}"], $genericDefaults));
+
+        if (!$hasExplicitSetting && $propType !== 'flat_residential') {
+            if ($propType === 'commercial_complex') {
+                $vocabulary = [
+                    'block' => 'Wing',
+                    'unit' => 'Shop / Office',
+                    'unit_plural' => 'Shops & Offices',
+                    'unit_type' => 'Shop & Office Category',
+                    'unit_types' => 'Shop & Office Categories',
+                    'unit_no' => 'Shop / Office No',
+                    'resident' => 'Occupant / Corporate',
+                    'resident_plural' => 'Occupants / Corporates',
+                ];
+                if (isset($vocabulary[$key])) return $vocabulary[$key];
+            } elseif ($propType === 'rowhouse_villa') {
+                $vocabulary = [
+                    'block' => 'Phase',
+                    'unit' => 'Villa',
+                    'unit_plural' => 'Villas',
+                    'unit_type' => 'Villa Category',
+                    'unit_types' => 'Villa Categories',
+                    'unit_no' => 'Villa No',
+                    'resident' => 'Villa Owner / Occupant',
+                    'resident_plural' => 'Villa Owners / Occupants',
+                ];
+                if (isset($vocabulary[$key])) return $vocabulary[$key];
+            } elseif ($propType === 'mixed_use') {
+                $vocabulary = [
+                    'block' => 'Wing / Phase',
+                    'unit' => 'Property Unit',
+                    'unit_plural' => 'Property Units',
+                    'unit_type' => 'Property Unit Category',
+                    'unit_types' => 'Property Unit Categories',
+                    'unit_no' => 'Property Unit No',
+                    'resident' => 'Occupant / Resident',
+                    'resident_plural' => 'Occupants / Residents',
+                ];
+                if (isset($vocabulary[$key])) return $vocabulary[$key];
+            }
+        }
 
         // If asking for unit derived fields (types, plural, no) and no explicit setting exists for them
         if (in_array($key, ['unit_type', 'unit_types', 'unit_plural', 'unit_no']) && !$hasExplicitSetting) {
@@ -145,43 +187,7 @@ class Setting extends Model
             return str_ends_with($baseResident, 's') ? $baseResident : "{$baseResident}s";
         }
 
-        if (!$hasExplicitSetting) {
-            if ($propType === 'commercial_complex') {
-                $vocabulary = [
-                    'block' => 'Wing',
-                    'unit' => 'Shop / Office',
-                    'unit_plural' => 'Shops & Offices',
-                    'unit_type' => 'Shop & Office Category',
-                    'unit_types' => 'Shop & Office Categories',
-                    'unit_no' => 'Shop / Office No',
-                    'resident' => 'Occupant / Corporate',
-                ];
-                if (isset($vocabulary[$key])) return $vocabulary[$key];
-            } elseif ($propType === 'rowhouse_villa') {
-                $vocabulary = [
-                    'block' => 'Phase',
-                    'unit' => 'Villa',
-                    'unit_plural' => 'Villas',
-                    'unit_type' => 'Villa Category',
-                    'unit_types' => 'Villa Categories',
-                    'unit_no' => 'Villa No',
-                    'resident' => 'Villa Owner / Occupant',
-                ];
-                if (isset($vocabulary[$key])) return $vocabulary[$key];
-            } elseif ($propType === 'mixed_use') {
-                $vocabulary = [
-                    'block' => 'Wing / Phase',
-                    'unit' => 'Property Unit',
-                    'unit_plural' => 'Property Units',
-                    'unit_type' => 'Property Unit Category',
-                    'unit_types' => 'Property Unit Categories',
-                    'unit_no' => 'Property Unit No',
-                    'resident' => 'Occupant / Resident',
-                ];
-                if (isset($vocabulary[$key])) return $vocabulary[$key];
-            }
-        }
-
+        $value = $hasExplicitSetting ? $allSettings["ui_label_{$key}"] : self::get("ui_label_{$key}");
         return !empty($value) ? $value : ($default ?: (self::defaults()["ui_label_{$key}"] ?? $key));
     }
 
