@@ -70,6 +70,7 @@ class Setting extends Model
             'ui_label_unit_plural' => 'Flats',
             'ui_label_unit_type' => 'Flat Type',
             'ui_label_unit_types' => 'Flat Types',
+            'ui_label_unit_no' => 'Flat No',
             'ui_label_resident' => 'Resident',
             'enable_area_based_billing' => '0',
             'enable_commercial_gst' => '0',
@@ -98,7 +99,7 @@ class Setting extends Model
 
         $hasExplicitSetting = array_key_exists("ui_label_{$key}", $allSettings) 
             && !empty($allSettings["ui_label_{$key}"]) 
-            && ($propType === 'flat_residential' || !in_array($allSettings["ui_label_{$key}"], $genericDefaults));
+            && !in_array($allSettings["ui_label_{$key}"], $genericDefaults);
 
         if (!$hasExplicitSetting && $propType !== 'flat_residential') {
             if ($propType === 'commercial_complex') {
@@ -173,6 +174,7 @@ class Setting extends Model
                 if ($key === 'unit_type') return $propType !== 'flat_residential' ? "{$baseUnit} Category" : "{$baseUnit} Type";
                 if ($key === 'unit_types') return $propType !== 'flat_residential' ? "{$baseUnit} Categories" : "{$baseUnit} Types";
                 if ($key === 'unit_plural') return str_ends_with($baseUnit, 's') ? $baseUnit : "{$baseUnit}s";
+                if ($key === 'unit_no') return "{$baseUnit} No";
             }
         }
 
