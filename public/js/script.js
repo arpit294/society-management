@@ -55,9 +55,36 @@ function parseJsonData(value, fallback = {}) {
 
 function toggleSidebar() {
     const sidebar = document.getElementById("sidebar");
-    if (!sidebar || !window.coreui?.Sidebar) return;
-    const instance = window.coreui.Sidebar.getInstance(sidebar);
-    instance?.toggle();
+    if (!sidebar) return;
+
+    if (window.coreui?.Sidebar) {
+        const instance = window.coreui.Sidebar.getInstance(sidebar) || window.coreui.Sidebar.getOrCreateInstance(sidebar);
+        if (instance && typeof instance.toggle === "function") {
+            instance.toggle();
+            return;
+        }
+    }
+
+    // Fallback for responsive mobile/desktop toggling
+    if (window.innerWidth < 992) {
+        const isShown = sidebar.classList.toggle("show");
+        let backdrop = document.querySelector(".sidebar-backdrop");
+        if (isShown) {
+            if (!backdrop) {
+                backdrop = document.createElement("div");
+                backdrop.className = "sidebar-backdrop fade show";
+                backdrop.addEventListener("click", () => {
+                    sidebar.classList.remove("show");
+                    backdrop.remove();
+                });
+                document.body.appendChild(backdrop);
+            }
+        } else if (backdrop) {
+            backdrop.remove();
+        }
+    } else {
+        sidebar.classList.toggle("sidebar-narrow-unfoldable");
+    }
 }
 
 function toggleResidentOwnerSection(select) {
@@ -124,6 +151,17 @@ document.addEventListener("click", function (event) {
     if (event.target.closest(".js-sidebar-toggle")) {
         toggleSidebar();
         return;
+    }
+
+    // Auto-close sidebar on mobile when navigation links are tapped
+    if (window.innerWidth < 992) {
+        const navLink = event.target.closest(".sidebar-nav .nav-link:not([data-coreui-toggle])");
+        if (navLink) {
+            const sidebar = document.getElementById("sidebar");
+            if (sidebar && sidebar.classList.contains("show")) {
+                toggleSidebar();
+            }
+        }
     }
 
     if (event.target.closest(".js-reload-page")) {

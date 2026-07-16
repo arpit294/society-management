@@ -1,5 +1,5 @@
 <header class="header header-sticky glass-header p-0 mb-4">
-    <div class="container-fluid border-bottom px-4">
+    <div class="container-fluid border-bottom px-2 px-md-4">
         <button class="header-toggler header-toggler-offset js-sidebar-toggle" type="button">
             <svg class="icon icon-lg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
                 <path fill="var(--ci-primary-color, currentcolor)"
@@ -7,7 +7,7 @@
             </svg>
         </button>
 
-        <ul class="header-nav ms-auto d-flex align-items-center gap-1">
+        <ul class="header-nav ms-auto d-flex align-items-center gap-1 sm-gap-2">
             <!-- 1. Home Button -->
             <li class="nav-item">
                 <a class="nav-link p-2 d-flex align-items-center justify-content-center rounded-circle transition-hover" href="{{ route('dashboard') }}" title="Dashboard Home" style="width: 40px; height: 40px;">
@@ -26,7 +26,7 @@
 
             <!-- Separator 1 -->
             <li class="nav-item py-1 d-flex align-items-center">
-                <div class="vr mx-2 text-body text-opacity-25" style="height: 20px;"></div>
+                <div class="vr mx-1 mx-sm-2 text-body text-opacity-25" style="height: 20px;"></div>
             </li>
 
             <!-- 3. Real-time Notifications Bell -->
@@ -43,7 +43,7 @@
                         <span class="visually-hidden">unread alerts</span>
                     </span>
                 </a>
-                <div class="dropdown-menu dropdown-menu-end pt-0 pb-0 shadow-lg border-0 rounded-4 overflow-hidden" style="width: 360px; max-width: 90vw;">
+                <div class="dropdown-menu dropdown-menu-end pt-0 pb-0 shadow-lg border-0 rounded-4 overflow-hidden responsive-dropdown-menu" style="width: 360px; max-width: calc(100vw - 1.5rem);">
                     <div class="dropdown-header bg-body-tertiary text-body-secondary fw-bold p-3 d-flex align-items-center justify-content-between border-bottom">
                         <span class="d-flex align-items-center gap-2 text-primary fs-6">
                             <i class="fa-solid fa-bell"></i> Notifications

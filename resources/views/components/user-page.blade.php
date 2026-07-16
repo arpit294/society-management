@@ -2,8 +2,8 @@
     <x-sidebar />
     <div class="wrapper d-flex flex-column min-vh-100">
         <x-header />
-        <div class="body flex-grow-1 d-flex flex-column">
-            <div class="container-lg px-4 py-4 flex-grow-1">
+        <div class="body flex-grow-1">
+            <div class="container-fluid px-2 px-sm-3 px-lg-4 py-3 py-lg-4">
                 @if(session('error') && str_contains(session('error'), '<br>'))
                     <div class="alert alert-danger alert-dismissible fade show shadow-sm border-0 border-start border-4 border-danger" role="alert">
                         <div class="d-flex align-items-center">
