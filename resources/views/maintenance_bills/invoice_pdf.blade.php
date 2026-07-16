@@ -143,11 +143,12 @@
                                 <span style="color: #666; font-weight: bold;">{{ $dynamicUnitLabel }}:</span> <span style="font-weight: bold; color: #111;">{{ $bill->flat->flat_no ?? 'N/A' }}</span>
                             </div>
                             @php
+                                $isCommercial = in_array(strtolower($bill->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
                                 $flatType = $bill->flat->flatType ?? null;
-                                $calcMethod = $flatType ? ($flatType->calculation_method ?? 'fixed') : 'fixed';
-                                $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
-                                $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
-                                $sqftRate = $flatType && $flatType->rate_per_sqft > 0 ? $flatType->rate_per_sqft : (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
+                                $sqftRate = (float) \App\Models\Setting::get('commercial_rate_per_sqft', 0);
+                                if ($sqftRate <= 0) $sqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 10);
+                                if ($sqftRate <= 0) $sqftRate = 10.00;
+                                $isPerSqft = $isCommercial;
                             @endphp
                             <table class="details-inner-table" width="100%" cellpadding="0" cellspacing="0">
                                 @if(!empty($bill->flat->flatType->name) && $bill->flat->flatType->name !== 'N/A')
@@ -217,9 +218,13 @@
                                     For {{ $bill->maintenance->month }} {{ $bill->maintenance->year }}
                                 @endif
                             </div>
-                            @if($bill->flat && $bill->flat->area_sqft > 0 && $isPerSqft && $sqftRate > 0)
+                            @if($bill->flat && $bill->flat->area_sqft > 0 && $isCommercial && $sqftRate > 0)
                                 <div style="font-size: 11px; color: #555; margin-top: 4px; font-style: italic;">
-                                    Carpet Area Calculation: {{ number_format($bill->flat->area_sqft, 2) }} Sq. Ft. &times; {{ \App\Helpers\CurrencyHelper::formatCurrency($sqftRate) }} / Sq. Ft.
+                                    Commercial Calculation: {{ number_format($bill->flat->area_sqft, 2) }} Sq. Ft. &times; {{ \App\Helpers\CurrencyHelper::formatCurrency($sqftRate) }} / Sq. Ft. (Settings Rate)
+                                </div>
+                            @elseif($flatType)
+                                <div style="font-size: 11px; color: #555; margin-top: 4px; font-style: italic;">
+                                    Fixed Residential Category Rate: {{ $flatType->name }}
                                 </div>
                             @endif
                         </td>

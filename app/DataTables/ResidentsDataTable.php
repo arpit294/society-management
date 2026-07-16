@@ -23,20 +23,31 @@ class ResidentsDataTable extends DataTable
                 return $resident->block?->block_name;
             })
             ->editColumn('flat', function (Resident $resident) {
-                if (!$resident->flat) return '-';
-                $flatNo = e($resident->flat->flat_no);
-                $unitType = $resident->flat->unit_type ?? 'flat';
-                if (strtolower($unitType) === 'flat') {
-                    return '<span class="fw-semibold">' . $flatNo . '</span>';
+                if (!$resident->flat || ($resident->flat && method_exists($resident->flat, 'trashed') && $resident->flat->trashed())) {
+                    $unitType = $resident->flat ? ucwords(str_replace('_', ' ', $resident->flat->unit_type ?? 'Shop')) : 'Shop';
+                    if ($resident->flat && $resident->flat->flat_no) {
+                        return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa-solid fa-store-slash me-1"></i>' . e($resident->flat->flat_no) . ' (' . $unitType . ' Deleted)</span>';
+                    }
+                    return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa-solid fa-store-slash me-1"></i>Shop Deleted</span>';
                 }
-                $badgeClass = match(strtolower($unitType)) {
-                    'shop' => 'bg-warning text-dark',
-                    'office' => 'bg-info text-dark',
-                    'villa', 'row_house', 'rowhouse' => 'bg-primary',
-                    default => 'bg-secondary'
+                $flatNo = e($resident->flat->flat_no);
+                $unitType = strtolower($resident->flat->unit_type ?? 'flat');
+                [$badgeClass, $badgeStyle] = match($unitType) {
+                    'shop' => ['bg-warning text-dark border border-warning', ''],
+                    'office' => ['bg-info text-dark border border-info', ''],
+                    'showroom' => ['bg-success text-white border border-success', ''],
+                    'warehouse' => ['text-white border border-warning', 'background-color: #fd7e14 !important; color: #fff !important;'],
+                    'villa', 'bungalow' => ['bg-primary text-white border border-primary', ''],
+                    'row_house', 'rowhouse' => ['bg-danger text-white border border-danger', ''],
+                    'tenement' => ['bg-success-subtle text-success border border-success-subtle', ''],
+                    'penthouse' => ['text-white border border-secondary', 'background-color: #6f42c1 !important; color: #fff !important;'],
+                    'duplex' => ['bg-info text-dark border border-info', ''],
+                    'plot', 'land' => ['bg-dark text-white border border-dark', ''],
+                    'flat', 'apartment' => ['bg-secondary text-white border border-secondary', ''],
+                    default => ['bg-secondary text-white border border-secondary', '']
                 };
                 $label = ucwords(str_replace('_', ' ', $unitType));
-                return '<span class="fw-semibold">' . $flatNo . '</span> <span class="badge ' . $badgeClass . ' ms-1 px-2 py-1" style="font-size:0.7rem;">' . $label . '</span>';
+                return '<span class="fw-semibold">' . $flatNo . '</span> <span class="badge ' . $badgeClass . ' ms-1 px-2 py-1" style="font-size:0.7rem; ' . $badgeStyle . '">' . $label . '</span>';
             })
             ->editColumn('user', function (Resident $resident) {
                 $name = e($resident->user?->name ?? '-');
@@ -68,6 +79,24 @@ class ResidentsDataTable extends DataTable
                 $query->whereHas('flat', function ($q) use ($keyword) {
                     $q->where('flat_no', 'like', "%{$keyword}%");
                 });
+            })
+            ->addColumn('unit_type', function (Resident $resident) {
+                return $resident->flat?->unit_type ?? 'flat';
+            })
+            ->filterColumn('unit_type', function ($query, $keyword) {
+                if (empty($keyword)) return;
+                $keyword = strtolower(trim($keyword));
+                if ($keyword === 'flat') {
+                    $query->whereHas('flat', function ($q) {
+                        $q->where('unit_type', 'flat')
+                          ->orWhereNull('unit_type')
+                          ->orWhere('unit_type', '');
+                    });
+                } else {
+                    $query->whereHas('flat', function ($q) use ($keyword) {
+                        $q->where('unit_type', $keyword);
+                    });
+                }
             })
             ->filterColumn('user', function ($query, $keyword) {
                 $query->where(function($q) use ($keyword) {
@@ -142,6 +171,7 @@ class ResidentsDataTable extends DataTable
             Column::make('move_in_date')->title('Move In'),
             Column::make('move_out_date')->title('Move Out'),
             Column::make('created_at')->title('Created At'),
+            Column::make('unit_type')->name('unit_type')->visible(false),
             Column::computed('action')
                 ->exportable(false)
                 ->printable(false)

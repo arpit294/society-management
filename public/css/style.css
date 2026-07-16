@@ -15425,6 +15425,15 @@ table.dataTable {
     background-color: #0f172a !important;
 }
 
+[data-coreui-theme=dark] .dataTables_scrollBody table.dataTable thead th,
+[data-coreui-theme=dark] .dataTables_scrollBody table.dataTable thead td {
+    border: none !important;
+    padding: 0 !important;
+    height: 0 !important;
+    line-height: 0 !important;
+    overflow: hidden !important;
+}
+
 [data-coreui-theme=dark] .dataTables_wrapper .dataTables_paginate .paginate_button {
     background: transparent !important;
     border: 1px solid var(--cui-border-color) !important;

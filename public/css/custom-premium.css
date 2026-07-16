@@ -173,6 +173,47 @@ h1, h2, h3, h4, h5, h6, .card-title, .sidebar-brand, .header-brand {
     vertical-align: middle;
 }
 
+/* Ensure DataTables duplicate scroll header inside scrollBody remains completely hidden */
+.dataTables_scrollBody table.dataTable thead tr,
+.dataTables_scrollBody .table thead tr {
+    height: 0 !important;
+}
+.dataTables_scrollBody table.dataTable thead th,
+.dataTables_scrollBody table.dataTable thead td,
+.dataTables_scrollBody .table thead th,
+.dataTables_scrollBody .table thead td,
+[data-coreui-theme="light"] .dataTables_scrollBody table.dataTable thead th,
+[data-coreui-theme="light"] .dataTables_scrollBody table.dataTable thead td,
+[data-coreui-theme="light"] .dataTables_scrollBody .table thead th,
+[data-coreui-theme="light"] .dataTables_scrollBody .table thead td,
+[data-coreui-theme="dark"] .dataTables_scrollBody table.dataTable thead th,
+[data-coreui-theme="dark"] .dataTables_scrollBody table.dataTable thead td,
+[data-coreui-theme="dark"] .dataTables_scrollBody .table thead th,
+[data-coreui-theme="dark"] .dataTables_scrollBody .table thead td {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    line-height: 0 !important;
+    overflow: hidden !important;
+    color: transparent !important;
+    background: transparent !important;
+}
+.dataTables_scrollBody table.dataTable thead th *,
+.dataTables_scrollBody table.dataTable thead td *,
+.dataTables_scrollBody .table thead th *,
+.dataTables_scrollBody .table thead td * {
+    height: 0 !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    line-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
 /* DataTables Pagination Buttons Polish */
 .dataTables_wrapper .dataTables_paginate .paginate_button {
     border-radius: 0.5rem !important;

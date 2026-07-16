@@ -1001,15 +1001,23 @@ $(document).ready(function () {
         "#residents-table",
         "block:name",
         "#residents-filter-reset-col",
+        "#residents-filter-unit-type"
+    );
+    setupFilterChange(
+        "#residents-filter-unit-type",
+        "#residents-table",
+        "unit_type:name",
+        "#residents-filter-reset-col",
+        "#residents-filter-block"
     );
     setupFilterReset(
         "#residents-filter-reset",
         "#residents-filter-block",
-        null,
+        "#residents-filter-unit-type",
         "#residents-table",
         "block:name",
-        null,
-        "#residents-filter-reset-col",
+        "unit_type:name",
+        "#residents-filter-reset-col"
     );
 
     // Maintenance Bills Filters

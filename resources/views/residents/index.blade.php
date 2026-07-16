@@ -22,23 +22,34 @@
         </div>
     </div>
 
-    <div class="mb-3">
-        <div class="d-flex flex-wrap gap-2 align-items-end justify-content-start">
-            <div class="filter-col" style="min-width: 220px;">
-                <label class="form-label mb-1" for="residents-filter-block">Filter by {{ \App\Models\Setting::label('block', 'Block') }}</label>
-                <select id="residents-filter-block" class="form-select" style="max-width: 320px;">
-                    <option value="">All {{ \App\Models\Setting::label('block', 'Block') }}s</option>
-                    @foreach($blocks as $block)
-                        <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
-                    @endforeach
-                </select>
-            </div>
+    <div class="d-flex flex-wrap align-items-end gap-3 mb-4">
+        <div class="filter-col" style="min-width: 220px; flex: 1; max-width: 320px;">
+            <label class="form-label text-muted fw-semibold mb-1" style="font-size: 0.8rem;" for="residents-filter-block">FILTER BY {{ strtoupper(\App\Models\Setting::label('block', 'BLOCK')) }}/WING</label>
+            <select id="residents-filter-block" class="form-select">
+                <option value="">All {{ \App\Models\Setting::label('block', 'Block') }}/Wings</option>
+                @foreach($blocks as $block)
+                    <option value="{{ $block->block_name }}">{{ $block->block_name }}</option>
+                @endforeach
+            </select>
+        </div>
 
-            <div class="filter-col d-none" id="residents-filter-reset-col" style="min-width: 200px;">
-                <button type="button" id="residents-filter-reset" class="btn btn-outline-secondary w-100">
-                    Reset filters
-                </button>
-            </div>
+        <div class="filter-col" style="min-width: 220px; flex: 1; max-width: 320px;">
+            <label class="form-label text-muted fw-semibold mb-1" style="font-size: 0.8rem;" for="residents-filter-unit-type">FILTER BY CATEGORY</label>
+            <select id="residents-filter-unit-type" class="form-select">
+                <option value="">All Categories / Types</option>
+                @php
+                    $availableUnitTypes = $unitTypes ?? ['flat', 'shop', 'office', 'showroom', 'warehouse', 'villa', 'row_house', 'tenement', 'penthouse', 'duplex', 'plot'];
+                @endphp
+                @foreach($availableUnitTypes as $uType)
+                    <option value="{{ $uType }}">{{ ucwords(str_replace('_', ' ', $uType)) }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="filter-col d-none" id="residents-filter-reset-col" style="min-width: 150px;">
+            <button type="button" id="residents-filter-reset" class="btn btn-outline-secondary w-100">
+                <i class="fa-solid fa-rotate-right me-1"></i>Reset filters
+            </button>
         </div>
     </div>
 

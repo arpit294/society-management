@@ -30,8 +30,12 @@ class ResidentController extends Controller
         abort_if(Gate::denies('resident_view'), 403);
         try {
             $blocks = Block::all();
+            $dbTypes = \App\Models\Flat::whereNotNull('unit_type')->distinct()->pluck('unit_type')->toArray();
+            $standardTypes = ['flat', 'shop', 'office', 'showroom', 'warehouse', 'villa', 'row_house', 'tenement', 'penthouse', 'duplex', 'plot'];
+            $unitTypes = array_values(array_unique(array_merge($dbTypes, $standardTypes)));
+            sort($unitTypes);
 
-            return $dataTable->render('residents.index', compact('blocks'));
+            return $dataTable->render('residents.index', compact('blocks', 'unitTypes'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -144,6 +148,13 @@ class ResidentController extends Controller
                     'type' => 'owner',
                     'move_in_date' => $validatedData['move_in_date'],
                 ]);
+            }
+
+            if (!empty($validatedData['flat_id'])) {
+                $flat = \App\Models\Flat::find($validatedData['flat_id']);
+                if ($flat) {
+                    $flat->syncOccupancyStatus();
+                }
             }
 
             return response()->json([
@@ -263,6 +274,10 @@ class ResidentController extends Controller
                 ]);
             }
 
+            if ($resident->flat) {
+                $resident->flat->syncOccupancyStatus();
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Resident updated successfully.',
@@ -286,7 +301,11 @@ class ResidentController extends Controller
     {
         abort_if(Gate::denies('resident_delete'), 403);
         try {
+            $flat = $resident->flat;
             $resident->delete();
+            if ($flat) {
+                $flat->syncOccupancyStatus();
+            }
 
             return response()->json([
                 'success' => true,

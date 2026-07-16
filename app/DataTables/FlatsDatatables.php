@@ -45,20 +45,27 @@ class FlatsDatatables extends DataTable
                 return $model->block ? $model->block->block_name : '-';
             })
             ->editColumn('unit_type', function ($model) {
-                $badgeClass = match($model->unit_type) {
-                    'shop' => 'bg-warning text-dark',
-                    'office' => 'bg-info text-dark',
-                    'villa' => 'bg-primary',
-                    'row_house' => 'bg-primary',
-                    'plot' => 'bg-dark',
-                    default => 'bg-secondary'
+                $type = strtolower($model->unit_type ?? 'flat');
+                [$badgeClass, $badgeStyle] = match($type) {
+                    'shop' => ['bg-warning text-dark border border-warning', ''],
+                    'office' => ['bg-info text-dark border border-info', ''],
+                    'showroom' => ['bg-success text-white border border-success', ''],
+                    'warehouse' => ['text-white border border-warning', 'background-color: #fd7e14 !important; color: #fff !important;'],
+                    'villa', 'bungalow' => ['bg-primary text-white border border-primary', ''],
+                    'row_house', 'rowhouse' => ['bg-danger text-white border border-danger', ''],
+                    'tenement' => ['bg-success-subtle text-success border border-success-subtle', ''],
+                    'penthouse' => ['text-white border border-secondary', 'background-color: #6f42c1 !important; color: #fff !important;'],
+                    'duplex' => ['bg-info text-dark border border-info', ''],
+                    'plot', 'land' => ['bg-dark text-white border border-dark', ''],
+                    'flat', 'apartment' => ['bg-secondary text-white border border-secondary', ''],
+                    default => ['bg-secondary text-white border border-secondary', '']
                 };
                 $label = ucwords(str_replace('_', ' ', $model->unit_type ?? 'flat'));
-                return '<span class="badge '.$badgeClass.' px-2 py-1">'.$label.'</span>';
+                return '<span class="badge '.$badgeClass.' px-2 py-1" style="'.$badgeStyle.'">'.$label.'</span>';
             })
             ->editColumn('floor_no', function ($model) {
                 if (in_array(strtolower($model->unit_type ?? ''), ['villa', 'rowhouse', 'row_house', 'plot', 'bungalow']) || $model->floor_no == 0) {
-                    return '<span class="badge bg-light text-dark border"><i class="fa-solid fa-layer-group me-1 text-muted"></i>Grounded (0)</span>';
+                    return '<span class="fw-semibold">Grounded</span>';
                 }
                 return '<span class="fw-semibold">Floor ' . $model->floor_no . '</span>';
             })

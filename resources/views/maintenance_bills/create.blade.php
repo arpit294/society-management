@@ -22,9 +22,12 @@
             <select name="resident_id" id="resident_id" class="form-select" required>
                 <option value="">Select {{ \App\Models\Setting::label('resident', 'Resident') }}</option>
                 @foreach ($residents as $resident)
+                    @php
+                        $categoryName = $resident->flat && $resident->flat->flatType ? $resident->flat->flatType->name : ucfirst($resident->flat->unit_type ?? 'Standard');
+                    @endphp
                     <option value="{{ $resident->id }}">
                         {{ $resident->user->name ?? 'Unknown' }}
-                        ({{ $resident->flat->block->block_name ?? '' }} - {{ $resident->flat->flat_no ?? '' }})
+                        ({{ $resident->flat->block->block_name ?? '' }} - {{ $resident->flat->flat_no ?? '' }} | Category: {{ $categoryName }})
                     </option>
                 @endforeach
             </select>

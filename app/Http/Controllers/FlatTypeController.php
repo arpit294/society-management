@@ -18,6 +18,7 @@ class FlatTypeController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_type_view'), 403);
         try {
+            \App\Http\Controllers\FlatController::syncDefaultFlatTypes();
             return $dataTable->render('flat_types.index');
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof \Symfony\Component\HttpKernel\Exception\HttpExceptionInterface) {
@@ -62,7 +63,7 @@ class FlatTypeController extends Controller
                 'rental_maintenance_fee' => 'required|numeric|min:0',
                 'rate_per_sqft' => 'nullable|numeric|min:0',
                 'calculation_method' => 'nullable|string|in:fixed,per_sqft,hybrid',
-                'category_type' => 'nullable|string|in:residential,commercial,institutional,industrial',
+                'category_type' => 'nullable|string|max:255',
                 'commercial_surcharge_percentage' => 'nullable|numeric|min:0',
                 'status' => 'required|in:active,inactive',
             ]);
@@ -120,7 +121,7 @@ class FlatTypeController extends Controller
                 'rental_maintenance_fee' => 'required|numeric|min:0',
                 'rate_per_sqft' => 'nullable|numeric|min:0',
                 'calculation_method' => 'nullable|string|in:fixed,per_sqft,hybrid',
-                'category_type' => 'nullable|string|in:residential,commercial,institutional,industrial',
+                'category_type' => 'nullable|string|max:255',
                 'commercial_surcharge_percentage' => 'nullable|numeric|min:0',
                 'status' => 'required|in:active,inactive',
             ]);

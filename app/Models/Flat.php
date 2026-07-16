@@ -42,18 +42,28 @@ class Flat extends Model
 
     public function calculateMaintenanceFee($residentType = 'owner')
     {
-        $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
-        $globalSqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
+        $isCommercial = in_array(strtolower($this->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
+        $type = $this->flatType;
 
+        // Commercial properties: always calculate based on Sq. Feet (Carpet Area) x Global Commercial Rate from Settings
+        if ($isCommercial) {
+            $sqftRate = (float) \App\Models\Setting::get('commercial_rate_per_sqft', 0);
+            if ($sqftRate <= 0) {
+                $sqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 10);
+            }
+            if ($sqftRate <= 0) {
+                $sqftRate = 10.00;
+            }
+            $amount = ((float) $this->area_sqft) * $sqftRate;
+            return round($amount, 2);
+        }
+
+        // Residential properties: always use Fixed amount from selected Property Unit Category (FlatType)
         $fallbackFixed = ($residentType === 'rental')
             ? (float) \App\Models\Setting::get('default_tenant_fixed_maintenance', 0)
             : (float) \App\Models\Setting::get('default_owner_fixed_maintenance', 0);
 
-        $type = $this->flatType;
         if (!$type) {
-            if ($globalMethod === 'per_sqft' && $this->area_sqft > 0 && $globalSqftRate > 0) {
-                return round($this->area_sqft * $globalSqftRate, 2);
-            }
             return round($fallbackFixed, 2);
         }
 
@@ -62,30 +72,7 @@ class Flat extends Model
             $baseRate = $fallbackFixed;
         }
 
-        if ($globalMethod === 'per_sqft' || $type->calculation_method === 'per_sqft') {
-            $sqftRate = ($type->rate_per_sqft > 0) ? $type->rate_per_sqft : $globalSqftRate;
-            if ($this->area_sqft > 0 && $sqftRate > 0) {
-                $amount = $this->area_sqft * $sqftRate;
-            } else {
-                $amount = $baseRate;
-            }
-        } elseif ($type->calculation_method === 'hybrid') {
-            $sqftRate = ($type->rate_per_sqft > 0) ? $type->rate_per_sqft : $globalSqftRate;
-            if ($this->area_sqft > 0 && $sqftRate > 0) {
-                $amount = $baseRate + ($this->area_sqft * $sqftRate);
-            } else {
-                $amount = $baseRate;
-            }
-        } else {
-            $amount = $baseRate;
-        }
-
-        if ($this->unit_type === 'shop' || $this->unit_type === 'office' || $type->category_type === 'commercial') {
-            $surcharge = ($amount * $type->commercial_surcharge_percentage) / 100;
-            $amount += $surcharge;
-        }
-
-        return round($amount, 2);
+        return round($baseRate, 2);
     }
 
     public function block()
@@ -128,5 +115,36 @@ class Flat extends Model
     public function documents()
     {
         return $this->hasMany(FlatDocument::class);
+    }
+
+    public function syncOccupancyStatus()
+    {
+        $this->load(['owner.user', 'tenant.user']);
+        $hasResident = ($this->owner && $this->owner->user) || ($this->tenant && $this->tenant->user);
+        $desiredStatus = $hasResident ? config('status.flats.occupied', 'occupied') : config('status.flats.empty', 'empty');
+        if ($this->status !== $desiredStatus) {
+            $this->update(['status' => $desiredStatus]);
+        }
+        return $desiredStatus;
+    }
+
+    public static function syncAllOccupancyStatus()
+    {
+        $flats = self::with(['owner.user', 'tenant.user'])->get();
+        $occupiedCount = 0;
+        $emptyCount = 0;
+        foreach ($flats as $flat) {
+            $hasResident = ($flat->owner && $flat->owner->user) || ($flat->tenant && $flat->tenant->user);
+            $desiredStatus = $hasResident ? config('status.flats.occupied', 'occupied') : config('status.flats.empty', 'empty');
+            if ($flat->status !== $desiredStatus) {
+                $flat->update(['status' => $desiredStatus]);
+            }
+            if ($hasResident || $flat->status === config('status.flats.occupied', 'occupied')) {
+                $occupiedCount++;
+            } else {
+                $emptyCount++;
+            }
+        }
+        return ['occupied' => $occupiedCount, 'empty' => $emptyCount];
     }
 }

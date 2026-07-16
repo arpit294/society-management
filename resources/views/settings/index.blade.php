@@ -163,18 +163,20 @@
                                         Both (Hybrid: Fixed / Sq. Ft. per Category)</option>
                                 </select>
                             </div>
-                            <div class="col-md-3 mb-3 {{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'fixed' ? 'd-none' : '' }}"
-                                id="maintenance_rate_per_sqft_wrapper" style="{{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'fixed' ? 'display: none;' : '' }}">
+                            <div class="col-md-3 mb-3 {{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'fixed' && !in_array($settings['society_property_type'] ?? 'flat_residential', ['mixed_use', 'commercial_complex']) ? 'd-none' : '' }}"
+                                id="maintenance_rate_per_sqft_wrapper" style="{{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'fixed' && !in_array($settings['society_property_type'] ?? 'flat_residential', ['mixed_use', 'commercial_complex']) ? 'display: none;' : '' }}">
                                 <label class="form-label text-body small fw-semibold text-uppercase">Per Sq. Ft. Rate
-                                    (₹)</label>
+                                    (₹) <small class="text-muted fw-normal" style="font-size: 0.75rem;">(Commercial / Area Based)</small></label>
                                 <div class="input-group">
                                     <span
                                         class="input-group-text">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}</span>
                                     <input type="number" step="0.01" min="0"
                                         name="maintenance_rate_per_sqft" id="maintenance_rate_per_sqft_input"
                                         class="form-control"
-                                        value="{{ $settings['maintenance_rate_per_sqft'] ?? '0' }}"
-                                        placeholder="e.g. 2.50">
+                                        value="{{ $settings['maintenance_rate_per_sqft'] ?? ($settings['commercial_rate_per_sqft'] ?? '0') }}"
+                                        placeholder="e.g. 2.50"
+                                        oninput="document.getElementById('commercial_rate_per_sqft_input').value = this.value;">
+                                    <input type="hidden" name="commercial_rate_per_sqft" id="commercial_rate_per_sqft_input" value="{{ $settings['commercial_rate_per_sqft'] ?? ($settings['maintenance_rate_per_sqft'] ?? '0') }}">
                                 </div>
                             </div>
 
@@ -1291,8 +1293,13 @@
 
                     if (currentMethod === 'fixed') {
                         if (rateWrapper) {
-                            rateWrapper.classList.add('d-none');
-                            rateWrapper.style.display = 'none';
+                            if (propType === 'mixed_use' || propType === 'commercial_complex') {
+                                rateWrapper.classList.remove('d-none');
+                                rateWrapper.style.display = '';
+                            } else {
+                                rateWrapper.classList.add('d-none');
+                                rateWrapper.style.display = 'none';
+                            }
                         }
                         if (fixedWrapper) {
                             if (isNotCommercial) {

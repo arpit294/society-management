@@ -27,9 +27,19 @@ class FlatDocumentsDataTable extends DataTable
                         </button>';
             })
             ->addColumn('block', function ($model) {
+                if (!$model->flat || ($model->flat && method_exists($model->flat, 'trashed') && $model->flat->trashed())) {
+                    return '-';
+                }
                 return $model->flat && $model->flat->block ? $model->flat->block->block_name : '-';
             })
             ->addColumn('flat_no', function ($model) {
+                if (!$model->flat || ($model->flat && method_exists($model->flat, 'trashed') && $model->flat->trashed())) {
+                    $unitType = $model->flat ? ucwords(str_replace('_', ' ', $model->flat->unit_type ?? 'Shop')) : 'Shop';
+                    if ($model->flat && $model->flat->flat_no) {
+                        return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa-solid fa-store-slash me-1"></i>' . $model->flat->flat_no . ' (' . $unitType . ' Deleted)</span>';
+                    }
+                    return '<span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1"><i class="fa-solid fa-store-slash me-1"></i>Shop Deleted</span>';
+                }
                 return $model->flat ? $model->flat->flat_no : '-';
             })
             ->addColumn('resident_name', function ($model) {
@@ -57,7 +67,7 @@ class FlatDocumentsDataTable extends DataTable
             ->editColumn('created_at', function ($model) {
                 return $model->created_at ? $model->created_at->format('Y-m-d H:i') : '-';
             })
-            ->rawColumns(['action'])
+            ->rawColumns(['action', 'flat_no'])
             ->setRowId('id');
     }
 

@@ -68,6 +68,40 @@ class FlatController extends Controller
         }
     }
 
+    public static function syncDefaultFlatTypes()
+    {
+        $allDefaults = [
+            // Flat / Apartment Categories
+            ['name' => '1 BHK', 'owner_maintenance_fee' => 1000, 'rental_maintenance_fee' => 1500, 'category_type' => 'flat', 'status' => 'active', 'description' => '1 Bedroom, Hall, Kitchen'],
+            ['name' => '2 BHK', 'owner_maintenance_fee' => 1500, 'rental_maintenance_fee' => 2000, 'category_type' => 'flat', 'status' => 'active', 'description' => '2 Bedroom, Hall, Kitchen'],
+            ['name' => '3 BHK', 'owner_maintenance_fee' => 2500, 'rental_maintenance_fee' => 3000, 'category_type' => 'flat', 'status' => 'active', 'description' => '3 Bedroom, Hall, Kitchen'],
+            ['name' => '4 BHK', 'owner_maintenance_fee' => 3500, 'rental_maintenance_fee' => 4500, 'category_type' => 'flat', 'status' => 'active', 'description' => '4 Bedroom, Hall, Kitchen'],
+            ['name' => '5 BHK', 'owner_maintenance_fee' => 5000, 'rental_maintenance_fee' => 6000, 'category_type' => 'flat', 'status' => 'active', 'description' => '5 Bedroom, Hall, Kitchen'],
+            ['name' => 'Flat / Apartment', 'owner_maintenance_fee' => 2000, 'rental_maintenance_fee' => 2500, 'category_type' => 'flat', 'status' => 'active', 'description' => 'Standard Flat / Apartment'],
+            ['name' => 'Studio Apartment', 'owner_maintenance_fee' => 800, 'rental_maintenance_fee' => 1200, 'category_type' => 'flat', 'status' => 'active', 'description' => 'Studio Unit / 1 RK'],
+            
+            // Other Residential Unit Types
+            ['name' => 'Penthouse', 'owner_maintenance_fee' => 6000, 'rental_maintenance_fee' => 7500, 'category_type' => 'penthouse', 'status' => 'active', 'description' => 'Luxury Penthouse Unit'],
+            ['name' => 'Duplex', 'owner_maintenance_fee' => 4500, 'rental_maintenance_fee' => 5500, 'category_type' => 'duplex', 'status' => 'active', 'description' => 'Multi-level Duplex Unit'],
+            ['name' => 'Villa / Bungalow', 'owner_maintenance_fee' => 4000, 'rental_maintenance_fee' => 5000, 'category_type' => 'villa', 'status' => 'active', 'description' => 'Independent Villa / Bungalow'],
+            ['name' => 'Row House', 'owner_maintenance_fee' => 3000, 'rental_maintenance_fee' => 3800, 'category_type' => 'rowhouse', 'status' => 'active', 'description' => 'Row House Unit'],
+            ['name' => 'Tenement', 'owner_maintenance_fee' => 2000, 'rental_maintenance_fee' => 2500, 'category_type' => 'tenement', 'status' => 'active', 'description' => 'Tenement Unit'],
+            ['name' => 'Plot / Land', 'owner_maintenance_fee' => 1000, 'rental_maintenance_fee' => 1200, 'category_type' => 'plot', 'status' => 'active', 'description' => 'Open Plot / Land'],
+
+            // Commercial Categories
+            ['name' => 'Commercial Shop', 'owner_maintenance_fee' => 1500, 'rental_maintenance_fee' => 2000, 'category_type' => 'shop', 'status' => 'active', 'description' => 'Commercial Shop'],
+            ['name' => 'Office Space', 'owner_maintenance_fee' => 2500, 'rental_maintenance_fee' => 3000, 'category_type' => 'office', 'status' => 'active', 'description' => 'Commercial Office Space'],
+            ['name' => 'Showroom', 'owner_maintenance_fee' => 5000, 'rental_maintenance_fee' => 6000, 'category_type' => 'showroom', 'status' => 'active', 'description' => 'Retail Showroom'],
+            ['name' => 'Warehouse / Godown', 'owner_maintenance_fee' => 3500, 'rental_maintenance_fee' => 4000, 'category_type' => 'warehouse', 'status' => 'active', 'description' => 'Storage Warehouse / Godown'],
+        ];
+
+        if (FlatType::count() === 0) {
+            foreach ($allDefaults as $item) {
+                FlatType::create($item);
+            }
+        }
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -75,6 +109,7 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_create'), 403);
         try {
+            self::syncDefaultFlatTypes();
             // Get all blocks and flat types to populate the dropdowns in the form
             $blocks = Block::all();
             // Only get active flat types for the dropdown
@@ -108,7 +143,7 @@ class FlatController extends Controller
                 'unit_type' => 'nullable|string|max:255',
                 'flat_no' => 'required|string|max:255',
                 'floor_no' => 'nullable|integer|min:0',
-                'flat_type_id' => ($globalMethod === 'per_sqft') ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
+                'flat_type_id' => ($globalMethod === 'per_sqft' || in_array(strtolower($request->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse'])) ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
                 'area_sqft' => 'nullable|numeric|min:0',
                 'plot_area_sqyards' => 'nullable|numeric|min:0',
                 'status' => 'required|string|max:255',
@@ -199,6 +234,7 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_edit'), 403);
         try {
+            self::syncDefaultFlatTypes();
             $blocks = Block::all();
             $flatTypes = FlatType::all();
             $globalBillingMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
@@ -232,7 +268,7 @@ class FlatController extends Controller
                 'unit_type' => 'nullable|string|max:255',
                 'flat_no' => 'required|string|max:255',
                 'floor_no' => 'nullable|integer|min:0',
-                'flat_type_id' => ($globalMethod === 'per_sqft') ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
+                'flat_type_id' => ($globalMethod === 'per_sqft' || in_array(strtolower($request->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse'])) ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
                 'area_sqft' => 'nullable|numeric|min:0',
                 'plot_area_sqyards' => 'nullable|numeric|min:0',
                 'status' => 'required|string|max:255',

@@ -12,10 +12,16 @@
             </div>
 
             <div class="col-md-4 mb-3">
-                <label for="category_type" class="form-label">Property Category</label>
+                <label for="category_type" class="form-label">Unit Type</label>
                 <select class="form-select" id="category_type" name="category_type">
-                    <option value="residential">Residential</option>
-                    <option value="commercial">Commercial</option>
+                    <option value="flat">Flat / Apartment</option>
+                    <option value="shop">Commercial Shop</option>
+                    <option value="villa">Villa / Bungalow</option>
+                    <option value="rowhouse">Row House</option>
+                    <option value="office">Office Space</option>
+                    <option value="showroom">Showroom</option>
+                    <option value="penthouse">Penthouse</option>
+                    <option value="warehouse">Warehouse / Godown</option>
                 </select>
             </div>
             

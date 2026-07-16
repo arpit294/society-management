@@ -125,16 +125,20 @@ class MaintenanceBillController extends Controller
             $residentDetails = $residents->mapWithKeys(function ($resident) {
                 $details = 'Basic Maintenance Fee';
                 if ($resident->flat) {
+                    $isCommercial = in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
                     $flatType = $resident->flat->flatType;
-                    $calcMethod = $flatType ? ($flatType->calculation_method ?? 'fixed') : 'fixed';
-                    $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
-                    $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
-                    $sqftRate = ($flatType && $flatType->rate_per_sqft > 0) ? $flatType->rate_per_sqft : (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
+                    $sqftRate = (float) \App\Models\Setting::get('commercial_rate_per_sqft', 0);
+                    if ($sqftRate <= 0) $sqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 10);
+                    if ($sqftRate <= 0) $sqftRate = 10.00;
 
-                    if ($isPerSqft && $resident->flat->area_sqft > 0 && $sqftRate > 0) {
-                        $details = 'Carpet Area calculation: ' . number_format($resident->flat->area_sqft, 2) . ' Sq.Ft. @ ₹' . number_format($sqftRate, 2) . '/Sq.Ft.';
+                    $categoryLabel = $flatType ? $flatType->name : ucfirst($resident->flat->unit_type ?? 'Standard');
+                    if ($isCommercial) {
+                        $area = (float) $resident->flat->area_sqft;
+                        $details = 'Category: ' . $categoryLabel . ' — Commercial Sq.Ft. Rate (' . number_format($area, 2) . ' Sq.Ft. @ ₹' . number_format($sqftRate, 2) . ')';
                     } elseif ($flatType) {
-                        $details = $flatType->name . ' (' . ucfirst($calcMethod) . ' Rate)';
+                        $details = 'Category: ' . $flatType->name . ' — Fixed Residential Rate';
+                    } else {
+                        $details = 'Category: ' . $categoryLabel . ' — Fixed Residential Rate';
                     }
                 }
                 return [$resident->id => $details];
@@ -190,9 +194,9 @@ class MaintenanceBillController extends Controller
             // Calculate GST if enabled and unit or flat_type is commercial
             $gstPercentage = 0;
             $gstAmount = 0;
-            if (\App\Models\Setting::get('enable_commercial_gst') == '1' &&
+            if (Setting::get('enable_commercial_gst') == '1' &&
                 ($resident->flat->unit_type === 'shop' || $resident->flat->unit_type === 'office' || $resident->flat->has_commercial_license || ($resident->flat->flatType && $resident->flat->flatType->category_type === 'commercial'))) {
-                $gstPercentage = (float) \App\Models\Setting::get('commercial_gst_percentage', 18);
+                $gstPercentage = (float) Setting::get('commercial_gst_percentage', 18);
                 $gstAmount = round(($monthlyFee * $gstPercentage) / 100, 2);
             }
 
@@ -519,16 +523,20 @@ class MaintenanceBillController extends Controller
             if ($resident && $resident->flat) {
                 $amount = $resident->flat->calculateMaintenanceFee($resident->type);
                 $details = 'Basic Maintenance Fee';
+                $isCommercial = in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
                 $flatType = $resident->flat->flatType;
-                $calcMethod = $flatType ? ($flatType->calculation_method ?? 'fixed') : 'fixed';
-                $globalMethod = Setting::get('maintenance_billing_method', 'fixed');
-                $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
-                $sqftRate = ($flatType && $flatType->rate_per_sqft > 0) ? $flatType->rate_per_sqft : (float) Setting::get('maintenance_rate_per_sqft', 0);
+                $sqftRate = (float) Setting::get('commercial_rate_per_sqft', 0);
+                if ($sqftRate <= 0) $sqftRate = (float) Setting::get('maintenance_rate_per_sqft', 10);
+                if ($sqftRate <= 0) $sqftRate = 10.00;
 
-                if ($isPerSqft && $resident->flat->area_sqft > 0 && $sqftRate > 0) {
-                    $details = 'Carpet Area calculation: ' . number_format($resident->flat->area_sqft, 2) . ' Sq.Ft. @ ₹' . number_format($sqftRate, 2) . '/Sq.Ft.';
+                $categoryLabel = $flatType ? $flatType->name : ucfirst($resident->flat->unit_type ?? 'Standard');
+                if ($isCommercial) {
+                    $area = (float) $resident->flat->area_sqft;
+                    $details = 'Category: ' . $categoryLabel . ' — Commercial Sq.Ft. Rate (' . number_format($area, 2) . ' Sq.Ft. @ ₹' . number_format($sqftRate, 2) . ')';
                 } elseif ($flatType) {
-                    $details = $flatType->name . ' (' . ucfirst($calcMethod) . ' Rate)';
+                    $details = 'Category: ' . $flatType->name . ' — Fixed Residential Rate';
+                } else {
+                    $details = 'Category: ' . $categoryLabel . ' — Fixed Residential Rate';
                 }
 
                 return response()->json([

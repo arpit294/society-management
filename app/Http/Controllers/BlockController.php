@@ -53,6 +53,8 @@ class BlockController extends Controller
         abort_if(! \Auth::user()->can('block_view'), 403, 'Unauthorized access.');
 
         try {
+            Flat::syncAllOccupancyStatus();
+
             $blocks = Block::withCount([
                 'flats',
                 'flats as occupied_flats_count' => function ($query) {

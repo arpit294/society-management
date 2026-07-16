@@ -13,10 +13,16 @@
             </div>
 
             <div class="col-md-4 mb-3">
-                <label for="category_type" class="form-label">Property Category</label>
+                <label for="category_type" class="form-label">Unit Type</label>
                 <select class="form-select" id="category_type" name="category_type">
-                    <option value="residential" {{ $flatType->category_type == 'residential' ? 'selected' : '' }}>Residential</option>
-                    <option value="commercial" {{ $flatType->category_type == 'commercial' ? 'selected' : '' }}>Commercial</option>
+                    <option value="flat" {{ old('category_type', $flatType->category_type ?? 'flat') == 'flat' || old('category_type', $flatType->category_type ?? '') == 'residential' ? 'selected' : '' }}>Flat / Apartment</option>
+                    <option value="shop" {{ old('category_type', $flatType->category_type ?? '') == 'shop' || old('category_type', $flatType->category_type ?? '') == 'commercial' ? 'selected' : '' }}>Commercial Shop</option>
+                    <option value="villa" {{ old('category_type', $flatType->category_type ?? '') == 'villa' ? 'selected' : '' }}>Villa / Bungalow</option>
+                    <option value="rowhouse" {{ old('category_type', $flatType->category_type ?? '') == 'rowhouse' ? 'selected' : '' }}>Row House</option>
+                    <option value="office" {{ old('category_type', $flatType->category_type ?? '') == 'office' ? 'selected' : '' }}>Office Space</option>
+                    <option value="showroom" {{ old('category_type', $flatType->category_type ?? '') == 'showroom' ? 'selected' : '' }}>Showroom</option>
+                    <option value="penthouse" {{ old('category_type', $flatType->category_type ?? '') == 'penthouse' ? 'selected' : '' }}>Penthouse</option>
+                    <option value="warehouse" {{ old('category_type', $flatType->category_type ?? '') == 'warehouse' ? 'selected' : '' }}>Warehouse / Godown</option>
                 </select>
             </div>
             
