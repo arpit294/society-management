@@ -24,6 +24,7 @@
                                 </div>
                                 <!-- Bottom Row: Label & Value -->
                                 <div class="mt-2">
+                                    <div class="kpi-label mb-1">{{ __('Total Flats') }}</div>
                                     <div class="kpi-label mb-1">Total {{ \App\Models\Setting::label('unit_plural', 'Flats') }}</div>
                                     <div class="kpi-number counter-animate" data-target="{{ $totalFlats }}">0</div>
                                 </div>
@@ -72,7 +73,7 @@
                                 </div>
                                 <!-- Bottom Row: Label & Value -->
                                 <div class="mt-2">
-                                    <div class="kpi-label mb-1">Total Complaints</div>
+                                    <div class="kpi-label mb-1">{{ __('Total Complaints') }}</div>
                                     <div class="kpi-number counter-animate" data-target="{{ $totalComplaints }}">0</div>
                                 </div>
                                 <!-- Decorative Glow Orb -->
@@ -96,7 +97,7 @@
                                 </div>
                                 <!-- Bottom Row: Label & Value -->
                                 <div class="mt-2">
-                                    <div class="kpi-label mb-1">Available Fund</div>
+                                    <div class="kpi-label mb-1">{{ __('Available Fund') }}</div>
                                     <div class="kpi-number">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}<span class="counter-animate" data-target="{{ $totalAvailableFund }}">0</span></div>
                                 </div>
                                 <!-- Decorative Glow Orb -->

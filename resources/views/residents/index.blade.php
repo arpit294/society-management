@@ -6,13 +6,13 @@
 
             @can('resident_view')
             <button type="button" class="btn btn-outline-info export-btn-pulse" data-coreui-toggle="modal" data-coreui-target="#export-resident-modal" id="export-residents-btn">
-                <i class="fa-solid fa-file-export me-2"></i>Export Records
+                <i class="fa-solid fa-file-export me-2"></i>{{ __('Export Records') }}
             </button>
             @endcan
             
             @can('resident_create')
             <button type="button" class="btn btn-outline-success" data-coreui-toggle="modal" data-coreui-target="#import-resident-modal">
-                <i class="fa-solid fa-file-import me-2"></i>Import Records
+                <i class="fa-solid fa-file-import me-2"></i>{{ __('Import Records') }}
             </button>
             <button type="button" class="btn btn-primary" id="btn-add-resident"
                 data-url="{{ route('residents.create') }}" data-title="Add New {{ \App\Models\Setting::label('resident', 'Resident') }}">

@@ -136,7 +136,66 @@
                 <div class="vr mx-2 text-body text-opacity-25" style="height: 20px;"></div>
             </li>
 
-            <!-- 5. User Account Avatar Dropdown -->
+            <!-- 5. Language Switcher -->
+            @php
+                $currentLocale = app()->getLocale();
+                $localeNames = [
+                    'en' => ['name' => 'English', 'badge' => 'EN'],
+                    'hi' => ['name' => 'हिन्दी', 'badge' => 'HI'],
+                    'gu' => ['name' => 'ગુજરાતી', 'badge' => 'GU'],
+                ];
+                $activeBadge = $localeNames[$currentLocale]['badge'] ?? 'EN';
+            @endphp
+            <li class="nav-item dropdown d-flex align-items-center">
+                <a class="nav-link p-2 position-relative d-flex align-items-center justify-content-center rounded-circle transition-hover" data-coreui-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false" title="{{ __('Language') }}" style="width: 40px; height: 40px;">
+                    <i class="fa-solid fa-language fs-4 text-body"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary border border-light fw-bold" style="font-size: 0.6rem; padding: 0.2em 0.4em; margin-left: -12px; margin-top: 8px;">
+                        {{ $activeBadge }}
+                    </span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3" style="min-width: 9rem;">
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center justify-content-between py-2 {{ $currentLocale === 'en' ? 'active fw-bold' : '' }}" href="{{ route('locale.change', 'en') }}">
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25" style="width: 28px;">EN</span>
+                                English
+                            </span>
+                            @if($currentLocale === 'en')
+                                <i class="fa-solid fa-check text-primary ms-2"></i>
+                            @endif
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center justify-content-between py-2 {{ $currentLocale === 'hi' ? 'active fw-bold' : '' }}" href="{{ route('locale.change', 'hi') }}">
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25" style="width: 28px;">HI</span>
+                                हिन्दी
+                            </span>
+                            @if($currentLocale === 'hi')
+                                <i class="fa-solid fa-check text-primary ms-2"></i>
+                            @endif
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center justify-content-between py-2 {{ $currentLocale === 'gu' ? 'active fw-bold' : '' }}" href="{{ route('locale.change', 'gu') }}">
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25" style="width: 28px;">GU</span>
+                                ગુજરાતી
+                            </span>
+                            @if($currentLocale === 'gu')
+                                <i class="fa-solid fa-check text-primary ms-2"></i>
+                            @endif
+                        </a>
+                    </li>
+                </ul>
+            </li>
+
+            <!-- Separator 4 -->
+            <li class="nav-item py-1 d-flex align-items-center">
+                <div class="vr mx-2 text-body text-opacity-25" style="height: 20px;"></div>
+            </li>
+
+            <!-- 6. User Account Avatar Dropdown -->
             <li class="nav-item dropdown d-flex align-items-center ms-1">
                 <a class="nav-link py-0 pe-0 d-flex align-items-center" data-coreui-toggle="dropdown" href="#" role="button"
                     aria-haspopup="true" aria-expanded="false" title="Account">
@@ -145,7 +204,7 @@
                 </a>
                 <div class="dropdown-menu dropdown-menu-end pt-0">
                     <div class="dropdown-header bg-body-tertiary text-body-secondary fw-semibold rounded-top mb-2">
-                        Account</div>
+                        {{ __('Account') }}</div>
 
                     @guest
                         <a class="dropdown-item" href="{{ route('register') }}">
@@ -154,7 +213,7 @@
                                     d="M376 256c-44.112 0-80 35.888-80 80s35.888 80 80 80 80-35.888 80-80-35.888-80-80-80m48 96h-32v32h-32v-32h-32v-32h32v-32h32v32h32zM256 272c61.757 0 112-50.243 112-112S317.757 48 256 48 144 98.243 144 160s50.243 112 112 112m0-192c44.112 0 80 35.888 80 80s-35.888 80-80 80-80-35.888-80-80 35.888-80 80-80M256 304c-88.366 0-160 53.726-160 120v40h184.858A111.5 111.5 0 0 1 264 416H128c5.691-44.921 60.929-80 128-80 3.222 0 6.426.083 9.61.247A111.4 111.4 0 0 1 280.858 304z"
                                     class="ci-primary" />
                             </svg>
-                            Register
+                            {{ __('Register') }}
                         </a>
 
                         <a class="dropdown-item" href="{{ route('login') }}">
@@ -165,7 +224,7 @@
                                 <path fill="var(--ci-primary-color, currentcolor)" d="M160 16v32h304v416H160v32h336V16z"
                                     class="ci-primary" />
                             </svg>
-                            Login
+                            {{ __('Login') }}
                         </a>
                     @else
                         <form action="{{ route('logout') }}" method="POST" class="mb-0">
@@ -178,7 +237,7 @@
                                     <path fill="var(--ci-primary-color, currentcolor)" d="M160 16v32h304v416H160v32h336V16z"
                                         class="ci-primary" />
                                 </svg>
-                                Logout
+                                {{ __('Logout') }}
                             </button>
                         </form>
                     @endguest

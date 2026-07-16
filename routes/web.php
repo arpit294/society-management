@@ -22,6 +22,14 @@ use App\Http\Controllers\GlobalImportExportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/locale/{lang}', function ($lang) {
+    if (in_array($lang, ['en', 'hi', 'gu'])) {
+        session()->put('app_locale', $lang);
+        return redirect()->back()->withCookie(cookie()->forever('app_locale', $lang));
+    }
+    return redirect()->back();
+})->name('locale.change');
+
 Route::middleware('guest')->group(function () {
     Route::get('register', [RegisterController::class, 'create'])->name('register');
     Route::post('register', [RegisterController::class, 'store'])->name('register.store');
