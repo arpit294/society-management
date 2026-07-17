@@ -208,13 +208,15 @@ class BlockController extends Controller
 
         try {
             DB::transaction(function () use ($block) {
-                // Delete related maintenance bills first
+                $flatIds = Flat::where('block_id', $block->id)->pluck('id');
+                if ($flatIds->isNotEmpty()) {
+                    \App\Models\Complain::whereIn('flat_id', $flatIds)->delete();
+                    \App\Models\FlatDocument::whereIn('flat_id', $flatIds)->delete();
+                    \App\Models\NameTransferBill::whereIn('flat_id', $flatIds)->delete();
+                    \App\Models\Resident::whereIn('flat_id', $flatIds)->delete();
+                }
                 MaintenanceBill::where('block_id', $block->id)->delete();
-
-                // Delete related flats (this will cascade delete residents via foreign key constraints)
                 Flat::where('block_id', $block->id)->delete();
-
-                // Finally, delete the block itself
                 $block->delete();
             });
 

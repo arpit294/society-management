@@ -41,6 +41,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'Flat Documents' => [
                 'flat_document_view',
                 'flat_document_create',
+                'flat_document_edit',
                 'flat_document_delete',
             ],
             'Block Management' => [
@@ -94,6 +95,10 @@ class RolesAndPermissionsSeeder extends Seeder
                 'create roles',
                 'edit roles',
                 'delete roles',
+                'role_view',
+                'role_create',
+                'role_edit',
+                'role_delete',
             ],
         ];
 

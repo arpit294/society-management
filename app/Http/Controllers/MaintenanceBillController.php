@@ -21,8 +21,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Laravel\Mcp\Response;
-use Nette\Schema\ValidationException;
+use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class MaintenanceBillController extends Controller
@@ -366,7 +366,15 @@ class MaintenanceBillController extends Controller
             if ($request->status === config('status.maintenance_bills.paid') && $maintenanceBill->status !== config('status.maintenance_bills.paid')) {
 
                 // Re-fetch the correct monthly fee using dynamic rate engine
-                $monthlyFee = $maintenanceBill->flat->calculateMaintenanceFee($maintenanceBill->resident->type);
+                $resType = 'owner';
+                if ($maintenanceBill->resident && isset($maintenanceBill->resident->role)) {
+                    $resType = $maintenanceBill->resident->role === 'rental' ? 'rental' : 'owner';
+                }
+                $residentRecord = \App\Models\Resident::where('flat_id', $maintenanceBill->flat_id)->where('user_id', $maintenanceBill->user_id)->first();
+                if ($residentRecord && $residentRecord->type) {
+                    $resType = $residentRecord->type;
+                }
+                $monthlyFee = $maintenanceBill->flat ? $maintenanceBill->flat->calculateMaintenanceFee($resType) : $maintenanceBill->amount;
 
                 $currentDate = Carbon::createFromDate(
                     $maintenanceBill->maintenance->year,

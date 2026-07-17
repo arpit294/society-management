@@ -614,6 +614,7 @@ class GlobalImportExportController extends Controller
                                 'move_in_date' => $rowData['move_in_date'] ?? null,
                                 'move_out_date' => $rowData['move_out_date'] ?? null,
                             ]);
+                            $flat->syncOccupancyStatus();
                             break;
                         case 'flats':
                             $block = Block::where('block_name', $rowData['block_name'])->firstOrFail();
@@ -646,7 +647,7 @@ class GlobalImportExportController extends Controller
                             $modelClass::create([
                                 'title' => $rowData['title'],
                                 'total_amount' => $rowData['total_amount'],
-                                'expense_category_id' => $category->id ?? null,
+                                'category_id' => $category->id ?? null,
                                 'expense_date' => $rowData['expense_date'] ?? now(),
                                 'invoice' => $rowData['invoice'] ?? null,
                                 'user_id' => $user->id ?? null,
@@ -755,5 +756,328 @@ class GlobalImportExportController extends Controller
         }
 
         return $rowData;
+    }
+
+    /**
+     * Exports all tables into a single multi-sheet master Excel file.
+     */
+    public function exportMaster(Request $request)
+    {
+        abort_if(Gate::denies('setting_view'), 403, 'Unauthorized access.');
+
+        try {
+            set_time_limit(0);
+            ini_set('memory_limit', '-1');
+
+            $configs = $this->getTableConfigs();
+            $ext = 'xlsx';
+            $contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+            $headers = [
+                'Content-type' => $contentType,
+                'Content-Disposition' => 'attachment; filename=society_master_backup_' . date('Ymd_His') . '.' . $ext,
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0',
+            ];
+
+            $callback = function () use ($configs) {
+                $writer = new XLSXWriter();
+                $writer->openToFile('php://output');
+                $isFirst = true;
+
+                foreach ($configs as $table => $config) {
+                    if ($isFirst) {
+                        $sheet = $writer->getCurrentSheet();
+                        $isFirst = false;
+                    } else {
+                        $sheet = $writer->addNewSheetAndMakeItCurrent();
+                    }
+                    $sheetName = preg_replace('/[^\w\s-]/', '', substr($config['label'], 0, 30));
+                    $sheet->setName(trim($sheetName ?: $table));
+
+                    $writer->addRow(Row::fromValues($config['labels']));
+
+                    $modelClass = $config['model'];
+                    $records = $modelClass::all();
+
+                    foreach ($records as $record) {
+                        $rowValues = [];
+                        foreach ($config['headers'] as $header) {
+                            $rowValues[] = $this->getRecordExportValue($table, $header, $record);
+                        }
+                        $writer->addRow(Row::fromValues($rowValues));
+                    }
+                }
+
+                $writer->close();
+            };
+
+            return response()->stream($callback, 200, $headers);
+        } catch (\Exception $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    /**
+     * Downloads a multi-sheet master template Excel file (headers only).
+     */
+    public function templateMaster(Request $request)
+    {
+        abort_if(Gate::denies('setting_view'), 403, 'Unauthorized access.');
+
+        try {
+            $configs = $this->getTableConfigs();
+            $ext = 'xlsx';
+            $contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+
+            $headers = [
+                'Content-type' => $contentType,
+                'Content-Disposition' => 'attachment; filename=society_master_template_' . date('Ymd_His') . '.' . $ext,
+                'Pragma' => 'no-cache',
+                'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+                'Expires' => '0',
+            ];
+
+            $callback = function () use ($configs) {
+                $writer = new XLSXWriter();
+                $writer->openToFile('php://output');
+                $isFirst = true;
+
+                foreach ($configs as $table => $config) {
+                    if ($isFirst) {
+                        $sheet = $writer->getCurrentSheet();
+                        $isFirst = false;
+                    } else {
+                        $sheet = $writer->addNewSheetAndMakeItCurrent();
+                    }
+                    $sheetName = preg_replace('/[^\w\s-]/', '', substr($config['label'], 0, 30));
+                    $sheet->setName(trim($sheetName ?: $table));
+
+                    $writer->addRow(Row::fromValues($config['labels']));
+                }
+
+                $writer->close();
+            };
+
+            return response()->stream($callback, 200, $headers);
+        } catch (\Exception $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    /**
+     * Previews sheets and sample data from an uploaded master Excel file.
+     */
+    public function previewMaster(Request $request)
+    {
+        abort_if(Gate::denies('setting_edit'), 403, 'Unauthorized access.');
+
+        try {
+            $request->validate([
+                'import_file' => 'required|file|max:20480',
+            ]);
+
+            $file = $request->file('import_file');
+            $filePath = $this->storeUploadedFile($file, 'master');
+            $extension = strtolower($file->getClientOriginalExtension());
+
+            if ($extension === 'csv') {
+                return response()->json(['success' => false, 'message' => 'Please upload an Excel (.xlsx) file for master import.'], 400);
+            }
+
+            $reader = new XLSXReader();
+            $reader->open(Storage::path($filePath));
+
+            $sheetsSummary = [];
+            $configs = $this->getTableConfigs();
+
+            foreach ($reader->getSheetIterator() as $sheet) {
+                $sheetName = trim($sheet->getName());
+                $matchedTable = null;
+                $matchedConfig = null;
+                foreach ($configs as $tableKey => $cfg) {
+                    $cleanLabel = preg_replace('/[^\w\s-]/', '', substr($cfg['label'], 0, 30));
+                    if (strcasecmp($sheetName, trim($cleanLabel)) === 0 || strcasecmp($sheetName, $tableKey) === 0 || strcasecmp($sheetName, $cfg['label']) === 0) {
+                        $matchedTable = $tableKey;
+                        $matchedConfig = $cfg;
+                        break;
+                    }
+                }
+
+                if (!$matchedConfig) {
+                    continue;
+                }
+
+                $headers = [];
+                $previewRows = [];
+                $rowCount = 0;
+                foreach ($sheet->getRowIterator() as $row) {
+                    $cells = $row->toArray();
+                    if ($rowCount === 0) {
+                        $headers = $cells;
+                    } else {
+                        $isEmptyRow = true;
+                        foreach ($cells as &$cell) {
+                            if ($cell instanceof \DateTime) {
+                                $cell = $cell->format('Y-m-d');
+                            }
+                            if (trim((string)$cell) !== '') {
+                                $isEmptyRow = false;
+                            }
+                        }
+                        if (!$isEmptyRow) {
+                            $previewRows[] = $cells;
+                        }
+                    }
+                    $rowCount++;
+                }
+
+                $sheetsSummary[] = [
+                    'table' => $matchedTable,
+                    'label' => $matchedConfig['label'],
+                    'headers' => $headers,
+                    'preview_rows' => array_slice($previewRows, 0, 10),
+                    'total_rows' => count($previewRows),
+                ];
+            }
+            $reader->close();
+
+            if (empty($sheetsSummary)) {
+                return response()->json(['success' => false, 'message' => 'No recognized sheets found in the master Excel file.'], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Master Excel file analyzed successfully.',
+                'file_path' => $filePath,
+                'sheets_summary' => $sheetsSummary,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            return $this->handleException($e, __FUNCTION__);
+        }
+    }
+
+    /**
+     * Processes master import across multiple tables in dependency order.
+     */
+    public function processMaster(Request $request)
+    {
+        abort_if(Gate::denies('setting_edit'), 403, 'Unauthorized access.');
+
+        try {
+            $request->validate([
+                'file_path' => 'required|string',
+            ]);
+
+            $filePath = $request->file_path;
+            if (!Storage::exists($filePath)) {
+                return response()->json(['success' => false, 'message' => 'Master import file not found or expired.'], 400);
+            }
+
+            $reader = new XLSXReader();
+            $reader->open(Storage::path($filePath));
+            $configs = $this->getTableConfigs();
+
+            $importOrder = [
+                'blocks', 'flat_types', 'expense_categories', 'flats', 'users', 'residents',
+                'maintenances', 'maintenance_bills', 'name_transfer_bills', 'complaints', 'expenses'
+            ];
+
+            $sheetDataByTable = [];
+            foreach ($reader->getSheetIterator() as $sheet) {
+                $sheetName = trim($sheet->getName());
+                $matchedTable = null;
+                $matchedConfig = null;
+                foreach ($configs as $tableKey => $cfg) {
+                    $cleanLabel = preg_replace('/[^\w\s-]/', '', substr($cfg['label'], 0, 30));
+                    if (strcasecmp($sheetName, trim($cleanLabel)) === 0 || strcasecmp($sheetName, $tableKey) === 0 || strcasecmp($sheetName, $cfg['label']) === 0) {
+                        $matchedTable = $tableKey;
+                        $matchedConfig = $cfg;
+                        break;
+                    }
+                }
+                if ($matchedTable) {
+                    $rows = [];
+                    $rowCount = 0;
+                    foreach ($sheet->getRowIterator() as $row) {
+                        $cells = $row->toArray();
+                        if ($rowCount > 0) {
+                            $isEmptyRow = true;
+                            foreach ($cells as &$cell) {
+                                if ($cell instanceof \DateTime) {
+                                    $cell = $cell->format('Y-m-d');
+                                }
+                                if (trim((string)$cell) !== '') {
+                                    $isEmptyRow = false;
+                                }
+                            }
+                            if (!$isEmptyRow) {
+                                $rows[] = $cells;
+                            }
+                        }
+                        $rowCount++;
+                    }
+                    if (!empty($rows)) {
+                        $sheetDataByTable[$matchedTable] = [
+                            'config' => $matchedConfig,
+                            'rows' => $rows,
+                            'sheet_name' => $sheetName,
+                        ];
+                    }
+                }
+            }
+            $reader->close();
+
+            $totalSuccess = 0;
+            $totalFailed = 0;
+            $failedRecords = [];
+
+            DB::beginTransaction();
+            try {
+                foreach ($importOrder as $tableKey) {
+                    if (!isset($sheetDataByTable[$tableKey])) {
+                        continue;
+                    }
+                    $tableInfo = $sheetDataByTable[$tableKey];
+                    $res = $this->importDataRows($tableKey, $tableInfo['config'], $tableInfo['rows']);
+                    $totalSuccess += $res['imported_count'];
+                    $totalFailed += $res['failed_count'];
+                    foreach ($res['errors'] as $idx => $errStr) {
+                        $failedRecords[] = [
+                            'record' => "Row " . ($idx + 2),
+                            'sheet' => $tableInfo['sheet_name'],
+                            'row' => $idx + 2,
+                            'reason' => $errStr,
+                        ];
+                    }
+                }
+                DB::commit();
+            } catch (\Exception $e) {
+                DB::rollBack();
+                throw $e;
+            }
+
+            if (Storage::exists($filePath)) {
+                Storage::delete($filePath);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Master import completed.',
+                'success_count' => $totalSuccess,
+                'failed_count' => $totalFailed,
+                'failed_records' => $failedRecords,
+            ]);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        } catch (\Exception $e) {
+            if (isset($filePath) && Storage::exists($filePath)) {
+                Storage::delete($filePath);
+            }
+            return $this->handleException($e, __FUNCTION__);
+        }
     }
 }

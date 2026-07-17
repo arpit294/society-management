@@ -9,7 +9,7 @@ use App\Models\Resident;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class NameTransferBillController extends Controller
@@ -156,7 +156,10 @@ class NameTransferBillController extends Controller
                 ]);
 
                 if ($bill->new_owner_id) {
-                    User::where('id', $bill->new_owner_id)->update(['updated_at' => now()]);
+                    $user = User::find($bill->new_owner_id);
+                    if ($user) {
+                        $user->touch();
+                    }
                 }
 
                 DB::commit();

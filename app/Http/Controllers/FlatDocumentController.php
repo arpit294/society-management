@@ -9,7 +9,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class FlatDocumentController extends Controller
@@ -102,6 +102,10 @@ class FlatDocumentController extends Controller
 
                 if (! $file || is_array($file)) {
                     continue;
+                }
+
+                if (isset($documents[$key]['file_path']) && Storage::disk('public')->exists($documents[$key]['file_path'])) {
+                    Storage::disk('public')->delete($documents[$key]['file_path']);
                 }
 
                 $fileName = time() . '_' . $file->getClientOriginalName();
@@ -238,7 +242,7 @@ class FlatDocumentController extends Controller
     }
     public function deleteDocument(FlatDocument $flatDocument, $doc_key)
     {
-        abort_if(! \Auth::user()->can('flat_document_delete'), 403);
+        abort_if(! (\Auth::user()->can('flat_document_delete') || \Auth::user()->can('flat_document_view') || \Auth::user()->can('flat_document_edit')), 403);
         try {
             $documents = $flatDocument->documents ?? [];
 
@@ -276,7 +280,7 @@ class FlatDocumentController extends Controller
 
     public function updateDocument(Request $request, FlatDocument $flatDocument, $doc_key)
     {
-        abort_if(! \Auth::user()->can('flat_document_edit'), 403);
+        abort_if(! (\Auth::user()->can('flat_document_edit') || \Auth::user()->can('flat_document_view')), 403);
         try {
             $request->validate([
                 'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -296,7 +300,8 @@ class FlatDocumentController extends Controller
                 $fileSize = $file->getSize();
                 $fileType = $file->getClientOriginalExtension();
 
-                $path = $file->store("flat_documents/{$flatDocument->flat_id}", 'public');
+                $fileName = time() . '_' . $originalName;
+                $path = $file->storeAs("documents/flats/{$flatDocument->flat_id}/{$flatDocument->user_id}", $fileName, 'public');
 
                 // Delete old file
                 if (isset($oldDoc['file_path']) && Storage::disk('public')->exists($oldDoc['file_path'])) {

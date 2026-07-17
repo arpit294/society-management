@@ -7,6 +7,8 @@ use App\Models\ExpenseCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ExpenseCategoryController extends Controller
 {
@@ -129,6 +131,12 @@ class ExpenseCategoryController extends Controller
     {
         abort_if(! \Auth::user()->can('expense_category_delete'), 403);
         try {
+            if ($expenseCategory->expenses()->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete this category because it is assigned to existing expenses.',
+                ], 422);
+            }
             $expenseCategory->delete();
 
             return response()->json([

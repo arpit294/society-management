@@ -141,7 +141,7 @@ class FlatController extends Controller
             $validatedData = $request->validate([
                 'block_id' => 'required|integer|exists:blocks,id',
                 'unit_type' => 'nullable|string|max:255',
-                'flat_no' => 'required|string|max:255',
+                'flat_no' => ['required', 'string', 'max:255', Rule::unique('flats', 'flat_no')->where('block_id', $request->block_id)],
                 'floor_no' => 'nullable|integer|min:0',
                 'flat_type_id' => ($globalMethod === 'per_sqft' || in_array(strtolower($request->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse'])) ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
                 'area_sqft' => 'nullable|numeric|min:0',
@@ -266,7 +266,7 @@ class FlatController extends Controller
             $validatedData = $request->validate([
                 'block_id' => 'required|integer|exists:blocks,id',
                 'unit_type' => 'nullable|string|max:255',
-                'flat_no' => 'required|string|max:255',
+                'flat_no' => ['required', 'string', 'max:255', Rule::unique('flats', 'flat_no')->where('block_id', $request->block_id)->ignore($flat->id)],
                 'floor_no' => 'nullable|integer|min:0',
                 'flat_type_id' => ($globalMethod === 'per_sqft' || in_array(strtolower($request->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse'])) ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
                 'area_sqft' => 'nullable|numeric|min:0',
@@ -489,6 +489,10 @@ class FlatController extends Controller
                 $pendingBills = MaintenanceBill::where('flat_id', $flat->id)
                     ->where('status', '!=', config('status.maintenance_bills.paid'))
                     ->get();
+
+                if ($pendingBills->isNotEmpty()) {
+                    throw new \Exception('Ownership transfer is restricted until all pending maintenance dues (' . $pendingBills->count() . ' pending) are paid.');
+                }
 
 
 

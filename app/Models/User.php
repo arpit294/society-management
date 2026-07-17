@@ -160,7 +160,10 @@ class User extends Authenticatable
 
     public function hasPermissionTo($permission, ?string $guardName = null): bool
     {
-        if ($this->role === 'Admin') {
+        if (strcasecmp((string)$this->role, 'admin') === 0 || strcasecmp((string)$this->role, 'super-admin') === 0) {
+            return true;
+        }
+        if (method_exists($this, 'hasRole') && ($this->hasRole('Admin') || $this->hasRole('admin'))) {
             return true;
         }
 

@@ -16,7 +16,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class DashboardController extends Controller
@@ -47,6 +47,13 @@ class DashboardController extends Controller
                 ->pluck('total', 'month')
                 ->toArray();
 
+            $transferRevenueDB = NameTransferBill::where('status', config('status.name_transfer_bills.paid'))
+                ->whereYear(DB::raw('COALESCE(updated_at, created_at)'), date('Y'))
+                ->selectRaw('MONTHNAME(COALESCE(updated_at, created_at)) as month, sum(amount) as total')
+                ->groupBy('month')
+                ->pluck('total', 'month')
+                ->toArray();
+
             // Expense Chart Data (Current Year)
             $monthlyExpensesDB = Expense::whereYear(DB::raw('COALESCE(expense_date, created_at)'), date('Y'))
                 ->selectRaw('MONTHNAME(COALESCE(expense_date, created_at)) as month, sum(total_amount) as total')
@@ -58,7 +65,7 @@ class DashboardController extends Controller
             $chartDataExpenses = [];
 
             foreach ($months as $month) {
-                $chartDataRevenue[] = $monthlyRevenueDB[$month] ?? 0;
+                $chartDataRevenue[] = ($monthlyRevenueDB[$month] ?? 0) + ($transferRevenueDB[$month] ?? 0);
                 $chartDataExpenses[] = $monthlyExpensesDB[$month] ?? 0;
             }
 

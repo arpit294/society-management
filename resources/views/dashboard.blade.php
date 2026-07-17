@@ -207,7 +207,7 @@
                                                 <span class="text-muted small" style="font-size: 0.75rem;">Collected from overdue maintenance bills</span>
                                             </div>
                                         </div>
-                                        <span class="fw-bold text-warning fs-6">+ {{ \App\Helpers\CurrencyHelper::formatCurrency($thisMonthPenalty ?? 0) }}</span>
+                                        <span class="fw-bold text-warning fs-6" title="Included in Total Inflow">Included: {{ \App\Helpers\CurrencyHelper::formatCurrency($thisMonthPenalty ?? 0) }}</span>
                                     </div>
 
                                     <!-- This Month Transfer Income -->
@@ -221,7 +221,7 @@
                                                 <span class="text-muted small" style="font-size: 0.75rem;">Collected from flat ownership transfers</span>
                                             </div>
                                         </div>
-                                        <span class="fw-bold text-info fs-6">+ {{ \App\Helpers\CurrencyHelper::formatCurrency($thisMonthTransfer ?? 0) }}</span>
+                                        <span class="fw-bold text-info fs-6" title="Included in Total Inflow">Included: {{ \App\Helpers\CurrencyHelper::formatCurrency($thisMonthTransfer ?? 0) }}</span>
                                     </div>
 
                                     <!-- This Month Outflow -->

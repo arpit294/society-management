@@ -7,7 +7,7 @@ use App\Models\FlatType;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class FlatTypeController extends Controller
@@ -154,6 +154,12 @@ class FlatTypeController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_type_delete'), 403);
         try {
+            if (\App\Models\Flat::where('flat_type_id', $flatType->id)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot delete because flats are currently assigned to this unit type.',
+                ], 422);
+            }
             $flatType->delete();
 
             return response()->json([

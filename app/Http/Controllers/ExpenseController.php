@@ -11,7 +11,7 @@ use App\Models\MaintenanceBill;
 use App\Models\NameTransferBill;
 
 use Illuminate\Support\Facades\Log;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class ExpenseController extends Controller
@@ -122,7 +122,7 @@ class ExpenseController extends Controller
         abort_if(! \Auth::user()->can('expense_edit'), 403);
         try {
             $expense->load(['category', 'user']);
-            $users = User::whereIn('role', ['secretary', 'committee_member'])->get();
+            $users = User::whereIn('role', ['Admin', 'admin', 'secretary', 'committee_member'])->get();
 
             $categories = ExpenseCategory::where('status', 'active')->get();
             return view('expenses.edit', compact('expense', 'users', 'categories'));

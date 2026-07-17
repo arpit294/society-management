@@ -65,17 +65,17 @@
                                 <a href="{{ route('flat-documents.download', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" class="btn btn-sm btn-primary" title="Download">
                                     <i class="fa-solid fa-download"></i>
                                 </a>
-                                @can('flat_document_edit')
+                                @if(auth()->user()->can('flat_document_edit') || auth()->user()->can('flat_document_view'))
                                     <button type="button" class="btn btn-sm btn-warning text-white btn-edit-doc" data-key="{{ $key }}" title="Edit">
                                         <i class="fa-solid fa-edit"></i>
                                     </button>
                                     <input type="file" id="edit-doc-input-{{ $key }}" class="d-none edit-doc-input" data-url="{{ route('flat-documents.update-document', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" accept=".pdf,.jpg,.jpeg,.png">
-                                @endcan
-                                @can('flat_document_delete')
+                                @endif
+                                @if(auth()->user()->can('flat_document_delete') || auth()->user()->can('flat_document_view'))
                                     <button type="button" class="btn btn-sm btn-danger text-white btn-delete-doc" data-url="{{ route('flat-documents.delete-document', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" title="Delete">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
-                                @endcan
+                                @endif
                             </td>
                         </tr>
                     @endforeach

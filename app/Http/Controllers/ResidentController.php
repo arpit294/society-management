@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use OpenSpout\Common\Entity\Row;
 use OpenSpout\Reader\XLSX\Reader;
 use OpenSpout\Writer\XLSX\Writer;
@@ -827,27 +827,13 @@ class ResidentController extends Controller
                     }
 
                     // Check or create User (with cache)
-                    if (!isset($userCache[$data['email']])) {
-                        $user = User::firstOrCreate(
-                            ['email' => $data['email']],
-                            [
-                                'name' => $data['name'],
-                                'phone' => $data['phone'],
-                                'aadhar_id' => $data['aadhar_id'],
-                                'password' => $defaultPassword,
-                                'role' => $data['type'],
-                                'status' => 'active',
-                            ]
-                        );
-                        $userCache[$data['email']] = $user->id;
-                    }
-                    $userId = $userCache[$data['email']];
-
-                    // Check for duplicate entry
-                    $isDuplicate = Resident::where('user_id', $userId)
-                        ->where('flat_id', $flat->id)
-                        ->where('type', $data['type'])
-                        ->exists();
+                    // Check for duplicate entry before creating User
+                    $isDuplicate = Resident::whereHas('user', function ($q) use ($data) {
+                        $q->where('email', $data['email']);
+                    })
+                    ->where('flat_id', $flat->id)
+                    ->where('type', $data['type'])
+                    ->exists();
 
                     if ($isDuplicate) {
                         $failedRecords[] = [
@@ -860,6 +846,25 @@ class ResidentController extends Controller
                         continue;
                     }
 
+                    if (!isset($userCache[$data['email']])) {
+                        $user = User::firstOrCreate(
+                            ['email' => $data['email']],
+                            [
+                                'name' => $data['name'],
+                                'phone' => $data['phone'],
+                                'aadhar_id' => $data['aadhar_id'],
+                                'password' => $defaultPassword,
+                                'role' => $data['type'],
+                                'status' => 'active',
+                            ]
+                        );
+                        if ($user->wasRecentlyCreated && ! $user->hasRole($data['type'])) {
+                            try { $user->assignRole($data['type']); } catch (\Exception $e) {}
+                        }
+                        $userCache[$data['email']] = $user->id;
+                    }
+                    $userId = $userCache[$data['email']];
+
                     // Create new resident
                     Resident::create([
                         'user_id' => $userId,
@@ -868,6 +873,8 @@ class ResidentController extends Controller
                         'block_id' => $block->id,
                         'move_in_date' => $moveInDate,
                     ]);
+
+                    $flat->syncOccupancyStatus();
 
                     $successCount++;
                     $rowIndex++;

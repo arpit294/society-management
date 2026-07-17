@@ -4290,11 +4290,41 @@ document.addEventListener("DOMContentLoaded", function () {
     // ==========================================================================
     // Flat Documents Modal Event Delegation (Edit / Delete)
     // ==========================================================================
+    function refreshFlatDocModal(showUrl) {
+        if (!showUrl) {
+            window.location.reload();
+            return;
+        }
+        fetch(showUrl, {
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                Accept: "text/html",
+            },
+        })
+            .then((response) => response.text())
+            .then((html) => {
+                const modalContent = document.querySelector(
+                    "#viewDocumentModal .modal-content",
+                );
+                if (modalContent) {
+                    modalContent.innerHTML = html;
+                } else {
+                    window.location.reload();
+                }
+            })
+            .catch(() => {
+                window.location.reload();
+            });
+    }
+
     document.addEventListener("click", function (e) {
         const editBtn = e.target.closest(".btn-edit-doc");
         if (editBtn) {
             const key = editBtn.getAttribute("data-key");
-            document.getElementById("edit-doc-input-" + key)?.click();
+            const input =
+                editBtn.parentElement?.querySelector(".edit-doc-input") ||
+                document.getElementById("edit-doc-input-" + key);
+            if (input) input.click();
         }
 
         const deleteBtn = e.target.closest(".btn-delete-doc");
@@ -4308,6 +4338,35 @@ document.addEventListener("DOMContentLoaded", function () {
                     .querySelector('meta[name="csrf-token"]')
                     ?.getAttribute("content") || "";
 
+            const doDelete = () => {
+                fetch(url, {
+                    method: "DELETE",
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest",
+                        "X-CSRF-TOKEN": csrfToken,
+                        Accept: "application/json",
+                    },
+                })
+                    .then(async (response) => {
+                        const data = await response.json().catch(() => null);
+                        if (response.ok && data && data.success) {
+                            if (typeof toastr !== "undefined")
+                                toastr.success(data.message);
+                            refreshFlatDocModal(showUrl);
+                        } else {
+                            if (typeof toastr !== "undefined")
+                                toastr.error(
+                                    data?.message || "Error deleting document",
+                                );
+                        }
+                    })
+                    .catch((error) => {
+                        if (typeof toastr !== "undefined")
+                            toastr.error("A network error occurred.");
+                        console.error(error);
+                    });
+            };
+
             if (typeof Swal !== "undefined") {
                 Swal.fire({
                     title: "Are you sure?",
@@ -4318,45 +4377,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     cancelButtonColor: "#3085d6",
                     confirmButtonText: "Yes, delete it!",
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        fetch(url, {
-                            method: "DELETE",
-                            headers: {
-                                "X-Requested-With": "XMLHttpRequest",
-                                "X-CSRF-TOKEN": csrfToken,
-                                Accept: "application/json",
-                            },
-                        })
-                            .then((response) => response.json())
-                            .then((data) => {
-                                if (data.success) {
-                                    if (typeof toastr !== "undefined")
-                                        toastr.success(data.message);
-                                    const viewBtn = showUrl
-                                        ? document.querySelector(
-                                              `[data-url="${showUrl}"]`,
-                                          )
-                                        : null;
-                                    if (viewBtn) {
-                                        viewBtn.click();
-                                    } else {
-                                        window.location.reload();
-                                    }
-                                } else {
-                                    if (typeof toastr !== "undefined")
-                                        toastr.error(
-                                            data.message ||
-                                                "Error deleting document",
-                                        );
-                                }
-                            })
-                            .catch((error) => {
-                                if (typeof toastr !== "undefined")
-                                    toastr.error("A network error occurred.");
-                                console.error(error);
-                            });
-                    }
+                    if (result.isConfirmed) doDelete();
                 });
+            } else if (
+                confirm("Are you sure you want to delete this document?")
+            ) {
+                doDelete();
             }
         }
     });
@@ -4396,23 +4422,16 @@ document.addEventListener("DOMContentLoaded", function () {
                     Accept: "application/json",
                 },
             })
-                .then((response) => response.json())
-                .then((data) => {
-                    if (data.success) {
+                .then(async (response) => {
+                    const data = await response.json().catch(() => null);
+                    if (response.ok && data && data.success) {
                         if (typeof toastr !== "undefined")
                             toastr.success(data.message);
-                        const viewBtn = showUrl
-                            ? document.querySelector(`[data-url="${showUrl}"]`)
-                            : null;
-                        if (viewBtn) {
-                            viewBtn.click();
-                        } else {
-                            window.location.reload();
-                        }
+                        refreshFlatDocModal(showUrl);
                     } else {
                         if (typeof toastr !== "undefined")
                             toastr.error(
-                                data.message || "Error updating document",
+                                data?.message || "Error updating document",
                             );
                     }
                 })

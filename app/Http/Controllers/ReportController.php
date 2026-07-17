@@ -14,7 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use OpenSpout\Writer\XLSX\Writer;
 use OpenSpout\Common\Entity\Row;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;

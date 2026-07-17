@@ -42,37 +42,63 @@ class Flat extends Model
 
     public function calculateMaintenanceFee($residentType = 'owner')
     {
-        $isCommercial = in_array(strtolower($this->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
         $type = $this->flatType;
-
-        // Commercial properties: always calculate based on Sq. Feet (Carpet Area) x Global Commercial Rate from Settings
-        if ($isCommercial) {
-            $sqftRate = (float) \App\Models\Setting::get('commercial_rate_per_sqft', 0);
-            if ($sqftRate <= 0) {
-                $sqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 10);
-            }
-            if ($sqftRate <= 0) {
-                $sqftRate = 10.00;
-            }
-            $amount = ((float) $this->area_sqft) * $sqftRate;
-            return round($amount, 2);
-        }
-
-        // Residential properties: always use Fixed amount from selected Property Unit Category (FlatType)
         $fallbackFixed = ($residentType === 'rental')
             ? (float) \App\Models\Setting::get('default_tenant_fixed_maintenance', 0)
             : (float) \App\Models\Setting::get('default_owner_fixed_maintenance', 0);
 
-        if (!$type) {
-            return round($fallbackFixed, 2);
+        $baseAmount = 0;
+
+        if ($type) {
+            $method = $type->calculation_method ?? 'fixed';
+            $fixedFee = ($residentType === 'rental') ? (float) $type->rental_maintenance_fee : (float) $type->owner_maintenance_fee;
+            if ($fixedFee <= 0 && $fallbackFixed > 0) {
+                $fixedFee = $fallbackFixed;
+            }
+            $sqftRate = (float) $type->rate_per_sqft;
+            $area = (float) $this->area_sqft;
+
+            if ($method === 'per_sqft') {
+                if ($sqftRate <= 0) {
+                    $sqftRate = $this->is_commercial
+                        ? (float) \App\Models\Setting::get('commercial_rate_per_sqft', 10)
+                        : (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
+                }
+                $baseAmount = $area * $sqftRate;
+            } elseif ($method === 'hybrid') {
+                $baseAmount = $fixedFee + ($area * $sqftRate);
+            } else {
+                // 'fixed' or others
+                if ($fixedFee <= 0 && $sqftRate > 0 && $area > 0) {
+                    $baseAmount = $area * $sqftRate;
+                } else {
+                    $baseAmount = $fixedFee;
+                }
+            }
+
+            // Apply commercial surcharge percentage if configured on FlatType
+            $surchargePct = (float) ($type->commercial_surcharge_percentage ?? 0);
+            if ($surchargePct > 0) {
+                $baseAmount += $baseAmount * ($surchargePct / 100);
+            }
+        } else {
+            // No FlatType assigned
+            $isCommercial = $this->is_commercial || in_array(strtolower($this->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
+            if ($isCommercial) {
+                $sqftRate = (float) \App\Models\Setting::get('commercial_rate_per_sqft', 0);
+                if ($sqftRate <= 0) {
+                    $sqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 10);
+                }
+                if ($sqftRate <= 0) {
+                    $sqftRate = 10.00;
+                }
+                $baseAmount = ((float) $this->area_sqft) * $sqftRate;
+            } else {
+                $baseAmount = $fallbackFixed;
+            }
         }
 
-        $baseRate = ($residentType === 'rental') ? $type->rental_maintenance_fee : $type->owner_maintenance_fee;
-        if ($baseRate <= 0 && $fallbackFixed > 0) {
-            $baseRate = $fallbackFixed;
-        }
-
-        return round($baseRate, 2);
+        return round($baseAmount, 2);
     }
 
     public function block()

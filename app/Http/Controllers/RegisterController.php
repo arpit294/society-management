@@ -7,7 +7,7 @@ use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class RegisterController extends Controller
@@ -33,7 +33,14 @@ class RegisterController extends Controller
     public function store(RegisterRequest $request): RedirectResponse
     {
         try {
-            User::create($request->validated());
+            $user = User::create($request->validated());
+            if ($user && $user->role && class_exists(\Spatie\Permission\Models\Role::class)) {
+                try {
+                    $user->assignRole($user->role);
+                } catch (\Exception $ex) {
+                    Log::warning('Could not assign spatie role during registration: ' . $ex->getMessage());
+                }
+            }
 
             return redirect()
                 ->route('login')

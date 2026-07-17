@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
-use Nette\Schema\ValidationException;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class RoleAndPermissionController extends Controller
@@ -66,7 +66,9 @@ class RoleAndPermissionController extends Controller
             $attributes = ['name' => $request->validated('name')];
 
             $role->update($attributes);
-            $role->syncPermissions($request->input('permissions', []));
+            if ($request->has('permissions')) {
+                $role->syncPermissions($request->input('permissions', []));
+            }
 
             return redirect(route('settings.index') . '#role-settings')->with('success', 'Role updated successfully.');
         } catch (\Exception $e) {
