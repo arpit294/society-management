@@ -35,6 +35,7 @@ class UpdateUserRequest extends FormRequest
                 'required',
                 'exists:roles,name',
             ],
+            'designation' => 'nullable|string|max:100',
             'password' => 'nullable|string|min:6',
             'aadhar_id' => [
                 'nullable',

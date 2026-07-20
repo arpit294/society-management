@@ -550,8 +550,9 @@ class ResidentController extends Controller
         abort_if(Gate::denies('resident_create'), 403);
         $path = null;
         try {
+            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
             $request->validate([
-                'excel_file' => 'required|file|mimes:xlsx,xls|max:5120',
+                'excel_file' => 'required|file|mimes:xlsx,xls|max:' . $maxSizeKb,
             ]);
 
             $file = $request->file('excel_file');

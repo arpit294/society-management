@@ -31,6 +31,14 @@ class DashboardController extends Controller
             })->count();
             $totalComplaints = Complain::where('status', '!=', config('status.complaints.resolved'))->count();
 
+            $totalOccupiedFlats = Flat::where('status', config('status.flats.occupied'))->count();
+            $blocks = \App\Models\Block::withCount([
+                'flats',
+                'flats as occupied_flats_count' => function ($query) {
+                    $query->where('status', config('status.flats.occupied'));
+                },
+            ])->get();
+
             $totalRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->sum('total_amount')
                 + NameTransferBill::where('status', config('status.name_transfer_bills.paid'))->sum('amount');
             $totalExpenses = Expense::sum('total_amount');
@@ -341,7 +349,9 @@ class DashboardController extends Controller
                 'thisMonthPenalty',
                 'totalPenaltyRevenue',
                 'thisMonthTransfer',
-                'totalTransferRevenue'
+                'totalTransferRevenue',
+                'blocks',
+                'totalOccupiedFlats'
             ));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {

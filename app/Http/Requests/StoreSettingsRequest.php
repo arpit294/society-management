@@ -34,7 +34,6 @@ class StoreSettingsRequest extends FormRequest
             'penalty_yearly_value' => $penaltyRules,
 
             // Prepayment discount settings
-            'discount_monthly_value' => $discountRules,
             'discount_quarterly_value' => $discountRules,
             'discount_half_yearly_value' => $discountRules,
             'discount_yearly_value' => $discountRules,

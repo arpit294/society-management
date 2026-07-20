@@ -175,6 +175,7 @@ Route::middleware('auth')->group(function () {
         // Settings
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
+        Route::get('settings/database-backup', [SettingController::class, 'databaseBackup'])->name('settings.database_backup');
 
         // Property Types CRUD
         Route::post('property-types', [PropertyTypeController::class, 'store'])->name('property-types.store');

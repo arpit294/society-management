@@ -65,17 +65,17 @@
                                 <a href="{{ route('flat-documents.download', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" class="btn btn-sm btn-primary" title="Download">
                                     <i class="fa-solid fa-download"></i>
                                 </a>
-                                @if(auth()->user()->can('flat_document_edit') || auth()->user()->can('flat_document_view'))
+                                @can('flat_document_edit')
                                     <button type="button" class="btn btn-sm btn-warning text-white btn-edit-doc" data-key="{{ $key }}" title="Edit">
                                         <i class="fa-solid fa-edit"></i>
                                     </button>
-                                    <input type="file" id="edit-doc-input-{{ $key }}" class="d-none edit-doc-input" data-url="{{ route('flat-documents.update-document', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" accept=".pdf,.jpg,.jpeg,.png">
-                                @endif
-                                @if(auth()->user()->can('flat_document_delete') || auth()->user()->can('flat_document_view'))
+                                    <input type="file" id="edit-doc-input-{{ $key }}" class="d-none edit-doc-input" data-url="{{ route('flat-documents.update-document', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                @endcan
+                                @can('flat_document_delete')
                                     <button type="button" class="btn btn-sm btn-danger text-white btn-delete-doc" data-url="{{ route('flat-documents.delete-document', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" title="Delete">
                                         <i class="fa-solid fa-trash"></i>
                                     </button>
-                                @endif
+                                @endcan
                             </td>
                         </tr>
                     @endforeach

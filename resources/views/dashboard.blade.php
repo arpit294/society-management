@@ -107,6 +107,64 @@
                     </div>
                 </div>
 
+                <!-- BLOCKS SUMMARY SECTION -->
+                @if(isset($blocks) && $blocks->count() > 0)
+                <div class="row g-4 mb-4">
+                    <div class="col-12">
+                        <div class="card glass-card shadow-sm border-0">
+                            <div class="card-header bg-transparent border-0 pt-4 pb-0 d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0 fw-bold"><i class="fas {{ \App\Models\Setting::blockIconClass() }} text-primary me-2"></i> {{ \App\Models\Setting::label('block', 'Block') }} Occupancy Details</h5>
+                                <span class="badge bg-primary bg-opacity-10 text-primary">{{ $blocks->count() }} {{ \App\Models\Setting::label('block', 'Blocks') }}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover align-middle mb-0 bg-transparent">
+                                        <thead class="bg-transparent border-bottom" style="border-color: rgba(255, 255, 255, 0.1) !important;">
+                                            <tr>
+                                                <th class="py-2 text-muted small fw-bold">{{ strtoupper(\App\Models\Setting::label('block', 'BLOCK')) }} NAME</th>
+                                                <th class="py-2 text-muted small fw-bold text-center">OCCUPIED {{ strtoupper(\App\Models\Setting::label('unit_plural', 'FLATS')) }}</th>
+                                                <th class="py-2 text-muted small fw-bold text-center">TOTAL {{ strtoupper(\App\Models\Setting::label('unit_plural', 'FLATS')) }}</th>
+                                                <th class="py-2 text-muted small fw-bold text-end">OCCUPANCY RATE</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach($blocks as $block)
+                                                @php
+                                                    $occupancyRate = $block->total_flats > 0 ? round(($block->occupied_flats_count / $block->total_flats) * 100) : 0;
+                                                    $progressColor = $occupancyRate >= 80 ? 'success' : ($occupancyRate >= 50 ? 'warning' : 'danger');
+                                                @endphp
+                                                <tr class="border-bottom" style="border-color: rgba(255, 255, 255, 0.05) !important;">
+                                                    <td class="py-3 fw-semibold text-body">
+                                                        <div class="d-flex align-items-center gap-3">
+                                                            <div class="avatar avatar-sm rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center flex-shrink-0" style="width: 38px; height: 38px;">
+                                                                <i class="fas {{ \App\Models\Setting::blockIconClass() }}"></i>
+                                                            </div>
+                                                            <div>
+                                                                {{ \App\Models\Setting::label('block', 'Block') }} {{ $block->block_name }}
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-3 text-center fw-bold text-primary">{{ $block->occupied_flats_count }}</td>
+                                                    <td class="py-3 text-center fw-bold text-muted">{{ $block->total_flats }}</td>
+                                                    <td class="py-3 text-end">
+                                                        <div class="d-flex flex-column align-items-end">
+                                                            <span class="fw-bold mb-1">{{ $occupancyRate }}%</span>
+                                                            <div class="progress" style="height: 6px; width: 100px; background-color: rgba(255,255,255,0.1);">
+                                                                <div class="progress-bar bg-{{ $progressColor }}" role="progressbar" style="width: {{ $occupancyRate }}%;" aria-valuenow="{{ $occupancyRate }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <!-- CHARTS ROW 1 -->
                 <div class="row g-4 mb-4">
                     <!-- Main Chart: Revenue vs Expenses -->

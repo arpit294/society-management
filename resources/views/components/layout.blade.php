@@ -8,7 +8,7 @@
     <meta name="description" content="Society Management System">
     <meta name="author" content="Łukasz Holeczek">
     <meta name="keyword" content="Bootstrap,Admin,Template,Open,Source,jQuery,CSS,HTML,RWD,Dashboard">
-    <title>Society Management System</title>
+    <title>{{ \App\Models\Setting::get('society_name') ?: 'Society Management System' }}</title>
     <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M3 21h18'/><path d='M9 8h1'/><path d='M9 12h1'/><path d='M9 16h1'/><path d='M14 8h1'/><path d='M14 12h1'/><path d='M14 16h1'/><path d='M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16'/></svg>">
     <meta name="theme-color" content="#ffffff">

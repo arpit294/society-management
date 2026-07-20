@@ -1,7 +1,7 @@
 <div class="sidebar sidebar-dark sidebar-fixed border-end" id="sidebar">
     <div class="sidebar-header border-bottom">
         <div class="sidebar-brand me-auto">
-            <svg class="sidebar-brand-full" width="180" height="40" viewBox="0 0 180 40"
+            <svg class="sidebar-brand-full" width="100%" height="40" viewBox="0 0 200 40" style="overflow: visible;"
                 xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="brandGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -16,7 +16,7 @@
                     <path d="M0 32h30" stroke="#ffffff" stroke-width="2" stroke-linecap="round" opacity="0.2" />
                 </g>
                 <text x="44" y="26" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700"
-                    fill="#f8fafc" letter-spacing="0.5">Society</text>
+                    fill="#f8fafc" letter-spacing="0.5">{{ \Illuminate\Support\Str::limit(\App\Models\Setting::get('society_name') ?: 'Society', 22) }}</text>
             </svg>
             <svg class="sidebar-brand-narrow" width="32" height="32" viewBox="0 0 32 32"
                 xmlns="http://www.w3.org/2000/svg">

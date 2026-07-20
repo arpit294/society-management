@@ -81,7 +81,8 @@ class SettingController extends Controller
 
         abort_if(! auth()->user()->can('setting_edit'), 403);
         try {
-            $data = $request->except(['_token', '_method']);
+            $activeModule = $request->input('active_module');
+            $data = $request->except(['_token', '_method', 'active_module']);
 
 
             if (isset($data['currency'])) {
@@ -104,10 +105,17 @@ class SettingController extends Controller
             Setting::clearCache();
 
             if (request()->ajax() || request()->wantsJson()) {
-                return response()->json(['success' => true, 'message' => 'Settings updated successfully.']);
+                return response()->json(['success' => true, 'message' => 'Settings updated successfully.', 'active_module' => !empty($activeModule) ? ltrim($activeModule, '#') : null]);
             }
 
-            return redirect()->back()->with('success', 'Settings updated successfully.');
+            $redirect = redirect()->back();
+            if (!empty($activeModule)) {
+                $cleanModule = ltrim($activeModule, '#');
+                $url = preg_replace('/#.*$/', '', $redirect->getTargetUrl()) . '#' . $cleanModule;
+                $redirect->setTargetUrl($url);
+            }
+
+            return $redirect->with('success', 'Settings updated successfully.')->with('active_module', !empty($activeModule) ? ltrim($activeModule, '#') : null);
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -118,7 +126,44 @@ class SettingController extends Controller
                 return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
             }
 
-            return redirect()->back()->with('error', 'An error occurred updating settings: ' . $e->getMessage());
+            $activeModule = $request->input('active_module');
+            $redirect = redirect()->back();
+            if (!empty($activeModule)) {
+                $cleanModule = ltrim($activeModule, '#');
+                $url = preg_replace('/#.*$/', '', $redirect->getTargetUrl()) . '#' . $cleanModule;
+                $redirect->setTargetUrl($url);
+            }
+
+            return $redirect->with('error', 'An error occurred updating settings: ' . $e->getMessage())->with('active_module', !empty($activeModule) ? ltrim($activeModule, '#') : null);
+        }
+    }
+
+    public function databaseBackup()
+    {
+        abort_if(\Illuminate\Support\Facades\Gate::denies('setting_edit'), 403, 'Unauthorized access.');
+
+        try {
+            $database = env('DB_DATABASE');
+            $username = env('DB_USERNAME');
+            $password = env('DB_PASSWORD');
+            $host = env('DB_HOST', '127.0.0.1');
+            $port = env('DB_PORT', '3306');
+
+            $dump = new \Ifsnop\Mysqldump\Mysqldump(
+                "mysql:host={$host};port={$port};dbname={$database}",
+                $username,
+                $password
+            );
+
+            $fileName = 'backup_' . date('Y-m-d_H-i-s') . '.sql';
+            $filePath = storage_path('app/' . $fileName);
+
+            $dump->start($filePath);
+
+            return response()->download($filePath)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Backup failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Backup failed: ' . $e->getMessage());
         }
     }
 }

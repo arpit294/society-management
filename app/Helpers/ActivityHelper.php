@@ -35,6 +35,19 @@ class ActivityHelper
                     $flatNo = ($bill->block ? $bill->block->block_name . '-' : '') . ($bill->flat?->flat_no ?? 'N/A');
                     $durationText = $monthsCount > 1 ? " ({$monthsCount} months)" : "";
 
+                    $paymentMethod = strtolower($bill->payment_method ?? '');
+
+                    if (in_array($paymentMethod, ['upi', 'online', 'card', 'netbanking'], true)) {
+                        $badgeText = 'Paid Online';
+                        $badgeClass = 'bg-success bg-opacity-10 text-success border border-success border-opacity-25';
+                    } elseif ($paymentMethod === 'cash') {
+                        $badgeText = 'Paid Cash';
+                        $badgeClass = 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25';
+                    } else {
+                        $badgeText = $paymentMethod ? ucfirst($paymentMethod) : 'Paid';
+                        $badgeClass = 'bg-success bg-opacity-10 text-success border border-success border-opacity-25';
+                    }
+
                     return (object) [
                         'type' => 'payment',
                         'icon' => 'fa-solid fa-money-bill-wave text-success fs-6',
@@ -44,8 +57,8 @@ class ActivityHelper
                         'time' => \Carbon\Carbon::parse($bill->updated_at ?? $bill->created_at ?? now())->diffForHumans(),
                         'timestamp' => \Carbon\Carbon::parse($bill->updated_at ?? $bill->created_at ?? now()),
                         'url' => route('maintenance-bills.index'),
-                        'badge_text' => 'Paid Online',
-                        'badge_class' => 'bg-success bg-opacity-10 text-success border border-success border-opacity-25'
+                        'badge_text' => $badgeText,
+                        'badge_class' => $badgeClass
                     ];
                 })
                 ->values();
@@ -70,7 +83,7 @@ class ActivityHelper
                     ];
                 });
 
-            $unapprovedTransferUserIds = NameTransferBill::where(function($q) {
+            $unapprovedTransferUserIds = NameTransferBill::where(function ($q) {
                 $q->where('is_approved', false)->orWhereNull('is_approved');
             })->pluck('new_owner_id')->filter()->toArray();
 

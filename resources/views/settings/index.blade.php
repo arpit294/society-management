@@ -15,8 +15,9 @@
 
                 <!-- Card 1: General Settings -->
                 <div class="card mb-4 border-0 shadow-sm" id="general-settings">
-                    <div class="card-header bg-white border-bottom py-3">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                         <h4 class="mb-0"><i class="fa-solid fa-gear text-primary me-2"></i>General Settings</h4>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 py-1 shadow-sm fw-semibold rounded-2" data-module="general-settings"><i class="fa-solid fa-save me-1"></i>Save</button>
                     </div>
                     <div class="card-body p-4">
                         <div class="row">
@@ -103,11 +104,46 @@
                     </div>
                 </div>
 
+                <!-- Database Administration Hub -->
+                <div class="card mb-4 border-0 shadow-sm" id="database-administration">
+                    <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between">
+                        <h4 class="mb-0 fw-bold"><i class="fa-solid fa-server text-danger me-2"></i>Database Administration</h4>
+                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill small">System Level</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <div class="card h-100 border shadow-sm rounded-4 p-4">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-danger bg-opacity-10 text-danger p-3 rounded-3 me-3">
+                                            <i class="fa-solid fa-database fa-xl"></i>
+                                        </div>
+                                        <div>
+                                            <h5 class="fw-bold mb-1 text-body">Full SQL Backup</h5>
+                                            <p class="text-body small mb-0">Download complete database structure and data (.sql)</p>
+                                        </div>
+                                    </div>
+                                    <hr class="text-body opacity-25 mb-4">
+                                    <p class="text-muted small mb-4">
+                                        This will generate a complete <code>.sql</code> dump of the current database. This is a system-heavy operation, please do not run it during peak hours.
+                                    </p>
+                                    <div class="mt-auto">
+                                        <a href="{{ route('settings.database_backup') }}" class="btn btn-danger w-100 fw-bold py-2 rounded-3 shadow-sm">
+                                            <i class="fa-solid fa-download me-2"></i>Download SQL Backup
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Card 1.5: Property & Structure Configuration (SMP 2.0) -->
                 <div class="card mb-4 border-0 shadow-sm" id="structure-settings">
-                    <div class="card-header bg-white border-bottom py-3">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                         <h4 class="mb-0"><i class="fa-solid fa-city text-primary me-2"></i>Property & Structure
                             Configuration</h4>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 py-1 shadow-sm fw-semibold rounded-2" data-module="structure-settings"><i class="fa-solid fa-save me-1"></i>Save</button>
                     </div>
                     <div class="card-body p-4">
                         <div class="row">
@@ -207,9 +243,10 @@
 
                 <!-- Card 2: Late Penalty Settings -->
                 <div class="card mb-4 border-0 shadow-sm" id="penalty-settings">
-                    <div class="card-header bg-white border-bottom py-3">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                         <h4 class="mb-0"><i class="fa-solid fa-clock-rotate-left text-danger me-2"></i>Late Penalty
                             Settings</h4>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 py-1 shadow-sm fw-semibold rounded-2" data-module="penalty-settings"><i class="fa-solid fa-save me-1"></i>Save</button>
                     </div>
                     <div class="card-body p-4">
                         <div class="row">
@@ -322,9 +359,10 @@
 
                 <!-- Card 3: Prepayment Discount Settings -->
                 <div class="card mb-4 border-0 shadow-sm" id="discount-settings">
-                    <div class="card-header bg-white border-bottom py-3">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                         <h4 class="mb-0"><i class="fa-solid fa-tag text-success me-2"></i>Prepayment Discount
                             Settings</h4>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 py-1 shadow-sm fw-semibold rounded-2" data-module="discount-settings"><i class="fa-solid fa-save me-1"></i>Save</button>
                     </div>
                     <div class="card-body p-4">
                         <div class="row">
@@ -358,23 +396,7 @@
                                 </select>
                             </div>
 
-                            <div class="col-md-3 mb-3 settings-rate-option">
-                                <div class="form-check mb-1">
-                                    <input type="hidden" name="discount_monthly_enabled" value="0">
-                                    <input class="form-check-input" type="checkbox" id="discount_monthly_enabled"
-                                        name="discount_monthly_enabled" value="1"
-                                        {{ ($settings['discount_monthly_enabled'] ?? '1') == '1' ? 'checked' : '' }}>
-                                    <label
-                                        class="form-check-label text-body small fw-semibold text-uppercase label-discount"
-                                        for="discount_monthly_enabled">Monthly (1 Month)</label>
-                                </div>
-                                <div class="input-group">
-                                    <input type="number" step="0.01" name="discount_monthly_value"
-                                        class="form-control" value="{{ $settings['discount_monthly_value'] }}">
-                                    <span class="input-group-text discount-suffix">{{ $discountRateSuffix }}</span>
-                                </div>
-                            </div>
-                            <div class="col-md-3 mb-3 settings-rate-option">
+                            <div class="col-md-4 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="discount_quarterly_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" id="discount_quarterly_enabled"
@@ -390,7 +412,7 @@
                                     <span class="input-group-text discount-suffix">{{ $discountRateSuffix }}</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3 settings-rate-option">
+                            <div class="col-md-4 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="discount_half_yearly_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" id="discount_half_yearly_enabled"
@@ -406,7 +428,7 @@
                                     <span class="input-group-text discount-suffix">{{ $discountRateSuffix }}</span>
                                 </div>
                             </div>
-                            <div class="col-md-3 mb-3 settings-rate-option">
+                            <div class="col-md-4 mb-3 settings-rate-option">
                                 <div class="form-check mb-1">
                                     <input type="hidden" name="discount_yearly_enabled" value="0">
                                     <input class="form-check-input" type="checkbox" id="discount_yearly_enabled"
@@ -428,11 +450,23 @@
 
                 <!-- Card 4: Required Documents Settings -->
                 <div class="card mb-4 border-0 shadow-sm" id="documents-settings">
-                    <div class="card-header bg-white border-bottom py-3">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                         <h4 class="mb-0"><i class="fa-solid fa-folder-open text-warning me-2"></i>Required Documents
                             Settings</h4>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 py-1 shadow-sm fw-semibold rounded-2" data-module="documents-settings"><i class="fa-solid fa-save me-1"></i>Save</button>
                     </div>
                     <div class="card-body p-4">
+                        <div class="row mb-4 border-bottom pb-4">
+                            <div class="col-md-6">
+                                <label for="max_document_size" class="form-label text-muted small fw-semibold text-uppercase">Max Document Size (in MB)</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.1" min="0.1" name="max_document_size" id="max_document_size" class="form-control" value="{{ $settings['max_document_size'] ?? 2 }}" required>
+                                    <span class="input-group-text">MB</span>
+                                </div>
+                                <small class="text-muted">Maximum allowed file size for all document uploads (e.g., Aadhar, PAN, payment slips).</small>
+                            </div>
+                        </div>
+
                         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                             <h5 class="mb-0 fw-bold">Required Documents for Owner</h5>
                             <div>
@@ -583,9 +617,10 @@
 
                 <!-- Card 5: Toaster & Alert Notification Settings -->
                 <div class="card mb-4 border-0 shadow-sm" id="toaster-settings">
-                    <div class="card-header bg-white border-bottom py-3">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                         <h4 class="mb-0"><i class="fa-solid fa-bell text-primary me-2"></i>Toaster & Alert
                             Notification Settings</h4>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 py-1 shadow-sm fw-semibold rounded-2" data-module="toaster-settings"><i class="fa-solid fa-save me-1"></i>Save</button>
                     </div>
                     <div class="card-body p-4">
                         <div class="row">
@@ -671,12 +706,6 @@
                     </div>
                 </div>
 
-                <div
-                    class="d-flex align-items-center justify-content-end mb-4 py-3 px-4 bg-body-tertiary rounded-3 border shadow-sm">
-                    <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold">
-                        <i class="fa-solid fa-save me-2"></i>Save Settings
-                    </button>
-                </div>
             </form>
         </div>
     </div>
@@ -684,14 +713,15 @@
     <!-- Society Location Settings -->
     <div class="row mt-4" id="location-settings">
         <div class="col-12">
-            <div class="card mb-4 border-0 shadow-sm">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h4 class="mb-0"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Society Location
-                        Setting</h4>
-                </div>
-                <div class="card-body p-4">
-                    <form action="{{ route('settings.store') }}" method="POST">
-                        @csrf
+            <form action="{{ route('settings.store') }}" method="POST" id="society-location-form">
+                @csrf
+                <div class="card mb-4 border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fa-solid fa-map-location-dot text-primary me-2"></i>Society Location
+                            Setting</h4>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 py-1 shadow-sm fw-semibold rounded-2" data-module="location-settings"><i class="fa-solid fa-save me-1"></i>Save</button>
+                    </div>
+                    <div class="card-body p-4">
                         <p class="text-body small mb-4">
                             Search your location or click anywhere on the interactive map below to set your society's
                             exact GPS coordinates. The address bar will automatically update as you move the pin.
@@ -702,52 +732,41 @@
                         <input type="hidden" id="society_longitude" name="society_longitude"
                             value="{{ $settings['society_longitude'] ?? '72.8777' }}">
 
-                        <div class="row mb-3">
-                            <div class="col-md-8 mb-3 position-relative">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Search Location /
+                        <div class="row mb-4">
+                            <div class="col-md-8 mb-3 mb-md-0">
+                                <label class="form-label small fw-semibold text-uppercase">Search Location /
                                     Address</label>
-                                <div class="input-group shadow-sm">
-                                    <span class="input-group-text bg-white border-end-0"><i
-                                            class="fa-solid fa-magnifying-glass text-body"></i></span>
+                                <div class="input-group">
                                     <input type="text" id="map_search_input" name="society_map_address"
-                                        class="form-control border-start-0 ps-0 py-2"
-                                        placeholder="Type city, area, society name or street..."
-                                        value="{{ $settings['society_map_address'] ?? '' }}" autocomplete="off">
-                                    <button class="btn btn-primary px-4 fw-semibold" type="button"
+                                        class="form-control"
+                                        value="{{ $settings['society_map_address'] ?? 'Mumbai, Maharashtra, India' }}"
+                                        placeholder="e.g. Bandra West, Mumbai or Society Name, City"
+                                        autocomplete="off">
+                                    <button class="btn btn-primary" type="button"
                                         id="btn_search_location">Search</button>
                                 </div>
                                 <div id="search_results_list"
-                                    class="list-group position-absolute w-100 shadow-lg border-0 rounded-3 mt-1 d-none text-start bg-white"
-                                    style="z-index: 1050; max-height: 300px; overflow-y: auto; left: 12px; width: calc(100% - 24px) !important;">
-                                </div>
+                                    class="list-group position-absolute w-100 shadow-sm d-none"
+                                    style="z-index: 1050; max-height: 220px; overflow-y: auto;"></div>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">GPS
-                                    Auto-Detect</label>
-                                <button type="button"
-                                    class="btn btn-outline-primary w-100 fw-semibold py-2 shadow-sm"
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="button" class="btn btn-outline-secondary w-100"
                                     id="btn_get_my_current_location">
-                                    <i class="fa-solid fa-location-crosshairs me-2"></i>Detect Device GPS
+                                    <i class="fa-solid fa-location-crosshairs me-1"></i> GPS Auto-Detect
                                 </button>
                             </div>
                         </div>
 
-                        <div class="position-relative mb-4">
+                        <div class="position-relative mb-2">
                             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
                                 integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
                             <div id="society_location_map"
                                 style="height: 420px; width: 100%; border-radius: 12px; z-index: 1;"
                                 class="shadow-sm border"></div>
                         </div>
-
-                        <div class="d-flex align-items-center justify-content-end border-top pt-3">
-                            <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm">
-                                <i class="fa-solid fa-save me-2"></i>Save Location Settings
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
@@ -820,11 +839,19 @@
                             </div>
                         </div>
                     </div>
-                @endforeach
+                @endforeach 
             </div>
 
             <!-- Permissions Table -->
             <div class="card border-0 shadow-sm mb-5" id="permissions-container" style="display: none;">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <h4 class="mb-0"><i class="fa-solid fa-shield-halved text-primary me-2"></i>Module Permissions</h4>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 shadow-sm" id="global-select-all-permissions-btn" style="font-size: 0.8rem;">
+                            <i class="fa-solid fa-check-double me-1"></i>Select All Permissions
+                        </button>
+                    </div>
+                </div>
                 <div class="card-body p-0">
                     <form id="role-permissions-form" action="" method="POST">
                         @csrf
@@ -841,9 +868,17 @@
                                 </thead>
                                 <tbody>
                                     @foreach ($permissionsByModule as $moduleName => $permissions)
-                                        <tr>
-                                            <td class="ps-4 align-middle fw-semibold text-body" style="width: 250px;">
-                                                {{ $moduleName ?? 'General' }}</td>
+                                        <tr class="module-permission-row">
+                                            <td class="ps-4 align-middle fw-semibold text-body" style="width: 270px;">
+                                                <div class="d-flex flex-column align-items-start gap-1 py-1">
+                                                    <span class="fs-6">{{ $moduleName ?? 'General' }}</span>
+                                                    <button type="button"
+                                                        class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 module-select-all-btn shadow-sm"
+                                                        style="font-size: 0.75rem;">
+                                                        <i class="fa-solid fa-check-double me-1"></i>Select All
+                                                    </button>
+                                                </div>
+                                            </td>
                                             <td>
                                                 <div class="d-flex flex-wrap gap-4 py-2">
                                                     @foreach ($permissions as $permission)
@@ -1227,6 +1262,7 @@
         </div>
     </div>
 
+
     <div id="settings-data" class="d-none" data-created-role-id="{{ session('created_role_id') }}"
         data-society-lat="{{ $settings['society_latitude'] ?? '19.0760' }}"
         data-society-lng="{{ $settings['society_longitude'] ?? '72.8777' }}"
@@ -1245,6 +1281,7 @@
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
         <script>
             window.SMP_SETTINGS_CONFIG = {
+                activeModule: @json(session('active_module')),
                 availableCurrencies: @json($availableCurrencies),
                 currencySymbol: '{{ $currencySymbol }}',
                 societyLat: parseFloat("{{ $settings['society_latitude'] ?? '19.0760' }}") || 19.0760,
@@ -1406,9 +1443,31 @@
                     billingSelect.addEventListener('change', updateFixedMaintenanceVisibility);
                 }
                 if (propertyTypeSelect) {
-                    propertyTypeSelect.addEventListener('change', function() {
-                        updateFixedMaintenanceVisibility();
-                        window.applyStructureLiveUpdate(this.value, null, null, null, true);
+                    let previousSocietyPropertyType = propertyTypeSelect.value;
+                    propertyTypeSelect.addEventListener('change', function(e) {
+                        let selectEl = this;
+                        let newValue = selectEl.value;
+
+                        Swal.fire({
+                            title: 'Change Society Structure?',
+                            text: 'Changing this will update default vocabularies and may affect billing calculation methods. Are you sure?',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Yes, change it!',
+                            cancelButtonText: 'No, cancel',
+                            background: document.documentElement.getAttribute('data-coreui-theme') === 'dark' ? '#2b2c3b' : '#fff',
+                            color: document.documentElement.getAttribute('data-coreui-theme') === 'dark' ? '#fff' : '#545454'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                previousSocietyPropertyType = newValue;
+                                updateFixedMaintenanceVisibility();
+                                window.applyStructureLiveUpdate(newValue, null, null, null, true);
+                            } else {
+                                selectEl.value = previousSocietyPropertyType;
+                            }
+                        });
                     });
                 }
 

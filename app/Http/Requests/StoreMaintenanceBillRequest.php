@@ -43,6 +43,7 @@ class StoreMaintenanceBillRequest extends FormRequest
      */
     public function rules(): array
     {
+        $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
         return [
             'resident_id' => 'required|exists:residents,id',
             'months' => 'required|integer|min:1|max:12',
@@ -57,7 +58,7 @@ class StoreMaintenanceBillRequest extends FormRequest
                 Rule::unique('name_transfer_bills', 'transaction_id'),
                 Rule::unique('prepaid_maintenances', 'transaction_id'),
             ],
-            'payment_slip' => 'required_if:payment_method,upi,UPI|image|mimes:jpeg,png,jpg|max:2048',
+            'payment_slip' => 'required_if:payment_method,upi,UPI|image|mimes:jpeg,png,jpg|max:' . $maxSizeKb,
             'discount_amount' => 'nullable|numeric|min:0',
             'penalty_amount' => 'nullable|numeric|min:0',
         ];

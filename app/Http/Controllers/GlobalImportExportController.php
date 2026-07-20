@@ -284,7 +284,7 @@ class GlobalImportExportController extends Controller
                 break;
             case 'maintenance_bills':
                 if ($header === 'user_email') return $record->user->email ?? 'N/A';
-                if ($header === 'block_name') return $record->flat->block->block_name ?? 'N/A';
+                if ($header === 'block_name') return $record->flat->block->block_name ?? ($record->block->block_name ?? 'N/A');
                 if ($header === 'flat_no') return $record->flat->flat_no ?? 'N/A';
                 break;
             case 'name_transfer_bills':
@@ -356,9 +356,10 @@ class GlobalImportExportController extends Controller
         abort_if(Gate::denies('setting_edit'), 403, 'Unauthorized access.');
 
         try {
+            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
             $request->validate([
                 'table' => 'required|string',
-                'import_file' => 'required|file|max:20480',
+                'import_file' => 'required|file|max:' . $maxSizeKb,
             ]);
 
             $table = $request->table;
@@ -719,7 +720,13 @@ class GlobalImportExportController extends Controller
             $failedCount = count($dataRows) - $importedCount; // All remaining failed
         }
 
-        return compact('importedCount', 'failedCount', 'errors');
+        return [
+            'imported_count' => $importedCount,
+            'failed_count' => $failedCount,
+            'importedCount' => $importedCount,
+            'failedCount' => $failedCount,
+            'errors' => $errors,
+        ];
     }
 
     /**
@@ -770,6 +777,11 @@ class GlobalImportExportController extends Controller
             ini_set('memory_limit', '-1');
 
             $configs = $this->getTableConfigs();
+            $selectedTables = $request->input('tables');
+            if (is_array($selectedTables) && !empty($selectedTables)) {
+                $configs = array_intersect_key($configs, array_flip($selectedTables));
+            }
+
             $ext = 'xlsx';
             $contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -828,6 +840,11 @@ class GlobalImportExportController extends Controller
 
         try {
             $configs = $this->getTableConfigs();
+            $selectedTables = $request->input('tables');
+            if (is_array($selectedTables) && !empty($selectedTables)) {
+                $configs = array_intersect_key($configs, array_flip($selectedTables));
+            }
+
             $ext = 'xlsx';
             $contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
@@ -874,8 +891,9 @@ class GlobalImportExportController extends Controller
         abort_if(Gate::denies('setting_edit'), 403, 'Unauthorized access.');
 
         try {
+            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
             $request->validate([
-                'import_file' => 'required|file|max:20480',
+                'import_file' => 'required|file|max:' . $maxSizeKb,
             ]);
 
             $file = $request->file('import_file');

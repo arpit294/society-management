@@ -968,30 +968,41 @@ $(document).ready(function () {
         });
     }
 
-    // User Filters
-    setupFilterChange(
-        "#users-filter-role",
-        "#users-table",
-        4,
-        "#users-filter-reset-col",
-        "#users-filter-status",
-    );
-    setupFilterChange(
-        "#users-filter-status",
-        "#users-table",
-        5,
-        "#users-filter-reset-col",
-        "#users-filter-role",
-    );
-    setupFilterReset(
-        "#users-filter-reset",
-        "#users-filter-role",
-        "#users-filter-status",
-        "#users-table",
-        4,
-        5,
-        "#users-filter-reset-col",
-    );
+    // User Filters (Dedicated triple-filter handler)
+    function checkUserResetVisibility() {
+        if ($("#users-filter-role").val() || $("#users-filter-designation").val() || $("#users-filter-status").val()) {
+            $("#users-filter-reset-col").removeClass("d-none");
+        } else {
+            $("#users-filter-reset-col").addClass("d-none");
+        }
+    }
+
+    $(document).on("change", "#users-filter-role", function () {
+        const dt = $("#users-table").DataTable();
+        dt.column(4).search($(this).val()).draw();
+        checkUserResetVisibility();
+    });
+
+    $(document).on("change", "#users-filter-designation", function () {
+        const dt = $("#users-table").DataTable();
+        dt.column(5).search($(this).val()).draw();
+        checkUserResetVisibility();
+    });
+
+    $(document).on("change", "#users-filter-status", function () {
+        const dt = $("#users-table").DataTable();
+        dt.column(6).search($(this).val()).draw();
+        checkUserResetVisibility();
+    });
+
+    $(document).on("click", "#users-filter-reset", function () {
+        $("#users-filter-role").val("");
+        $("#users-filter-designation").val("");
+        $("#users-filter-status").val("");
+        const dt = $("#users-table").DataTable();
+        dt.column(4).search("").column(5).search("").column(6).search("").draw();
+        checkUserResetVisibility();
+    });
 
     // Flat Filters
     setupFilterChange(
@@ -2259,11 +2270,6 @@ $(document).ready(function () {
                     window.discountSettings.quarterly_enabled
                 ) {
                     discountValue = window.discountSettings.quarterly_value;
-                } else if (
-                    futureMonthsCount >= 1 &&
-                    window.discountSettings.monthly_enabled
-                ) {
-                    discountValue = window.discountSettings.monthly_value;
                 }
 
                 if (discountValue > 0) {
@@ -3225,12 +3231,117 @@ window.selectRole = function (element, event) {
         }
     });
 
+    if (typeof updateAllModuleSelectButtons === "function") {
+        updateAllModuleSelectButtons();
+    }
+
     // Smooth scroll to permissions table
     document.getElementById("permissions-container").scrollIntoView({
         behavior: "smooth",
         block: "start",
     });
 };
+
+function updateGlobalSelectAllButton() {
+    const globalBtn = document.getElementById("global-select-all-permissions-btn");
+    const allCheckboxes = document.querySelectorAll(".permission-checkbox");
+    if (!globalBtn || !allCheckboxes.length) return;
+
+    let checkedCount = 0;
+    allCheckboxes.forEach((cb) => {
+        if (cb.checked) checkedCount++;
+    });
+
+    if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {
+        globalBtn.innerHTML = '<i class="fa-solid fa-xmark me-1"></i>Deselect All Permissions';
+        globalBtn.classList.remove("btn-outline-primary");
+        globalBtn.classList.add("btn-outline-danger");
+    } else {
+        globalBtn.innerHTML = '<i class="fa-solid fa-check-double me-1"></i>Select All Permissions';
+        globalBtn.classList.remove("btn-outline-danger");
+        globalBtn.classList.add("btn-outline-primary");
+    }
+}
+
+function updateModuleSelectButtons(row) {
+    if (!row) return;
+    const checkboxes = row.querySelectorAll(".permission-checkbox");
+    const selectAllBtn = row.querySelector(".module-select-all-btn");
+    if (!checkboxes.length || !selectAllBtn) return;
+
+    let checkedCount = 0;
+    checkboxes.forEach((cb) => {
+        if (cb.checked) checkedCount++;
+    });
+
+    if (checkedCount === checkboxes.length && checkboxes.length > 0) {
+        selectAllBtn.innerHTML = '<i class="fa-solid fa-xmark me-1"></i>Deselect All';
+        selectAllBtn.classList.remove("btn-outline-primary");
+        selectAllBtn.classList.add("btn-outline-danger");
+    } else {
+        selectAllBtn.innerHTML = '<i class="fa-solid fa-check-double me-1"></i>Select All';
+        selectAllBtn.classList.remove("btn-outline-danger");
+        selectAllBtn.classList.add("btn-outline-primary");
+    }
+    updateGlobalSelectAllButton();
+}
+
+function updateAllModuleSelectButtons() {
+    document.querySelectorAll(".module-permission-row").forEach((row) => {
+        updateModuleSelectButtons(row);
+    });
+    updateGlobalSelectAllButton();
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    // Module-wise Select All / Deselect All click handler
+    document.addEventListener("click", function (e) {
+        const selectAllBtn = e.target.closest(".module-select-all-btn");
+        if (selectAllBtn) {
+            e.preventDefault();
+            const row = selectAllBtn.closest(".module-permission-row");
+            if (!row) return;
+
+            const checkboxes = row.querySelectorAll(".permission-checkbox");
+            let checkedCount = 0;
+            checkboxes.forEach((cb) => {
+                if (cb.checked) checkedCount++;
+            });
+
+            const targetChecked = checkedCount !== checkboxes.length;
+            checkboxes.forEach((cb) => {
+                cb.checked = targetChecked;
+            });
+
+            updateModuleSelectButtons(row);
+            return;
+        }
+
+        if (e.target.closest("#global-select-all-permissions-btn")) {
+            e.preventDefault();
+            const allCheckboxes = document.querySelectorAll(".permission-checkbox");
+            let checkedCount = 0;
+            allCheckboxes.forEach((cb) => {
+                if (cb.checked) checkedCount++;
+            });
+
+            const targetChecked = checkedCount !== allCheckboxes.length;
+            allCheckboxes.forEach((cb) => {
+                cb.checked = targetChecked;
+            });
+            updateAllModuleSelectButtons();
+            return;
+        }
+    });
+
+    // Individual permission checkbox change handler
+    document.addEventListener("change", function (e) {
+        if (e.target.classList.contains("permission-checkbox")) {
+            const row = e.target.closest(".module-permission-row");
+            updateModuleSelectButtons(row);
+        }
+    });
+});
 
 // --- Residents Dynamic Import Scripts ---
 document.addEventListener("DOMContentLoaded", function () {
@@ -3837,6 +3948,113 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    // --- Settings Auto-Redirect & Section Tracking ---
+    let activeSettingsModule = config.activeModule || (window.location.hash ? window.location.hash.substring(1) : null) || sessionStorage.getItem('smp_last_settings_module');
+
+    const validModules = ['general-settings', 'structure-settings', 'penalty-settings', 'discount-settings', 'documents-settings', 'toaster-settings', 'location-settings', 'role-settings', 'global-import-export', 'managePropertyTypesModal'];
+
+    // If an active module exists, scroll to it / open it smoothly after DOM is ready
+    if (activeSettingsModule && validModules.includes(activeSettingsModule)) {
+        setTimeout(() => {
+            if (activeSettingsModule === 'managePropertyTypesModal') {
+                const modalEl = document.getElementById('managePropertyTypesModal');
+                if (modalEl && typeof coreui !== 'undefined') {
+                    new coreui.Modal(modalEl).show();
+                }
+                const structCard = document.getElementById('structure-settings');
+                if (structCard) {
+                    structCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            } else {
+                const targetCard = document.getElementById(activeSettingsModule);
+                if (targetCard) {
+                    targetCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Highlight the module briefly so user knows they stayed on the same section
+                    targetCard.style.transition = 'box-shadow 0.6s ease, border-color 0.6s ease';
+                    targetCard.classList.add('border-primary', 'shadow');
+                    setTimeout(() => {
+                        targetCard.classList.remove('border-primary', 'shadow');
+                    }, 2500);
+                }
+            }
+
+            // Update sidebar navigation active item
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                const href = link.getAttribute('href') || '';
+                if (href.includes('#' + activeSettingsModule)) {
+                    document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+                }
+            });
+
+            // Clear session storage once processed so future normal navigations start clean
+            sessionStorage.removeItem('smp_last_settings_module');
+        }, 150);
+    }
+
+    // Track active module on user interaction across any settings card/modal
+    function recordSettingsModule(targetEl) {
+        if (!targetEl) return;
+        const cardOrModal = targetEl.closest('#general-settings, #structure-settings, #penalty-settings, #discount-settings, #documents-settings, #toaster-settings, #location-settings, #role-settings, #global-import-export, #managePropertyTypesModal');
+        if (cardOrModal && cardOrModal.id) {
+            sessionStorage.setItem('smp_last_settings_module', cardOrModal.id);
+        }
+    }
+
+    document.addEventListener('click', function (e) {
+        recordSettingsModule(e.target);
+    }, true);
+
+    document.addEventListener('focusin', function (e) {
+        recordSettingsModule(e.target);
+    }, true);
+
+    document.addEventListener('change', function (e) {
+        recordSettingsModule(e.target);
+    }, true);
+
+    // Before form submission, inject active_module and append hash to form action
+    document.addEventListener('submit', function (e) {
+        const form = e.target;
+        // Check if form is on settings page or related modals
+        if (!form || (!form.closest('.container-fluid, .modal-body') && !window.location.pathname.includes('settings'))) return;
+
+        let targetModule = null;
+        // Check if submit button had data-module
+        if (e.submitter && e.submitter.dataset && e.submitter.dataset.module) {
+            targetModule = e.submitter.dataset.module;
+        } else {
+            const cardOrModal = form.closest('#general-settings, #structure-settings, #penalty-settings, #discount-settings, #documents-settings, #toaster-settings, #location-settings, #role-settings, #global-import-export, #managePropertyTypesModal');
+            if (cardOrModal && cardOrModal.id) {
+                targetModule = cardOrModal.id;
+            }
+        }
+
+        if (!targetModule && sessionStorage.getItem('smp_last_settings_module')) {
+            targetModule = sessionStorage.getItem('smp_last_settings_module');
+        }
+
+        if (targetModule && validModules.includes(targetModule)) {
+            sessionStorage.setItem('smp_last_settings_module', targetModule);
+
+            // Ensure hidden field `active_module` is attached to form
+            let hiddenInput = form.querySelector('input[name="active_module"]');
+            if (!hiddenInput) {
+                hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'active_module';
+                form.appendChild(hiddenInput);
+            }
+            hiddenInput.value = targetModule;
+
+            // Update form action URL hash directly so browser / redirect preserves it
+            if (form.action && !form.action.includes('javascript:')) {
+                const baseAction = form.action.split('#')[0];
+                form.action = baseAction + '#' + targetModule;
+            }
+        }
+    }, true);
+
     // Global Import Export Hub Script
     const emSelectAll = document.getElementById("export_master_select_all");
     if (emSelectAll) {
@@ -4287,15 +4505,19 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    // ==========================================================================
-    // Flat Documents Modal Event Delegation (Edit / Delete)
-    // ==========================================================================
+});
+
+// ==========================================================================
+// Flat Documents Modal Event Delegation (Edit / Delete) - Global & Self-Executing
+// ==========================================================================
+(function () {
     function refreshFlatDocModal(showUrl) {
         if (!showUrl) {
             window.location.reload();
             return;
         }
         fetch(showUrl, {
+            credentials: "same-origin",
             headers: {
                 "X-Requested-With": "XMLHttpRequest",
                 Accept: "text/html",
@@ -4308,6 +4530,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 );
                 if (modalContent) {
                     modalContent.innerHTML = html;
+                    if (window.LaravelDataTables && window.LaravelDataTables["flat-documents-table"]) {
+                        window.LaravelDataTables["flat-documents-table"].ajax.reload(null, false);
+                    } else if (typeof $.fn.DataTable !== "undefined" && $("#flat-documents-table").length && $.fn.DataTable.isDataTable("#flat-documents-table")) {
+                        $("#flat-documents-table").DataTable().ajax.reload(null, false);
+                    }
                 } else {
                     window.location.reload();
                 }
@@ -4320,15 +4547,22 @@ document.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("click", function (e) {
         const editBtn = e.target.closest(".btn-edit-doc");
         if (editBtn) {
+            e.preventDefault();
             const key = editBtn.getAttribute("data-key");
             const input =
                 editBtn.parentElement?.querySelector(".edit-doc-input") ||
                 document.getElementById("edit-doc-input-" + key);
-            if (input) input.click();
+            if (input) {
+                input.click();
+            } else {
+                if (typeof toastr !== "undefined")
+                    toastr.error("File input not found for this document.");
+            }
         }
 
         const deleteBtn = e.target.closest(".btn-delete-doc");
         if (deleteBtn) {
+            e.preventDefault();
             const url = deleteBtn.getAttribute("data-url");
             const showUrl = document
                 .getElementById("flat-doc-modal-config")
@@ -4341,6 +4575,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const doDelete = () => {
                 fetch(url, {
                     method: "DELETE",
+                    credentials: "same-origin",
                     headers: {
                         "X-Requested-With": "XMLHttpRequest",
                         "X-CSRF-TOKEN": csrfToken,
@@ -4356,7 +4591,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         } else {
                             if (typeof toastr !== "undefined")
                                 toastr.error(
-                                    data?.message || "Error deleting document",
+                                    data?.message || response.statusText || "Error deleting document",
                                 );
                         }
                     })
@@ -4367,6 +4602,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
             };
 
+            const modalEl = document.getElementById("viewDocumentModal");
+            const oldTabIndex = modalEl ? modalEl.getAttribute("tabindex") : null;
+            if (modalEl) modalEl.removeAttribute("tabindex");
+
             if (typeof Swal !== "undefined") {
                 Swal.fire({
                     title: "Are you sure?",
@@ -4376,13 +4615,18 @@ document.addEventListener("DOMContentLoaded", function () {
                     confirmButtonColor: "#d33",
                     cancelButtonColor: "#3085d6",
                     confirmButtonText: "Yes, delete it!",
+                    target: modalEl || document.body,
                 }).then((result) => {
+                    if (oldTabIndex !== null && modalEl) modalEl.setAttribute("tabindex", oldTabIndex);
                     if (result.isConfirmed) doDelete();
                 });
             } else if (
                 confirm("Are you sure you want to delete this document?")
             ) {
+                if (oldTabIndex !== null && modalEl) modalEl.setAttribute("tabindex", oldTabIndex);
                 doDelete();
+            } else {
+                if (oldTabIndex !== null && modalEl) modalEl.setAttribute("tabindex", oldTabIndex);
             }
         }
     });
@@ -4417,8 +4661,10 @@ document.addEventListener("DOMContentLoaded", function () {
             fetch(url, {
                 method: "POST",
                 body: formData,
+                credentials: "same-origin",
                 headers: {
                     "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN": csrfToken,
                     Accept: "application/json",
                 },
             })
@@ -4431,7 +4677,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     } else {
                         if (typeof toastr !== "undefined")
                             toastr.error(
-                                data?.message || "Error updating document",
+                                data?.message || response.statusText || "Error updating document",
                             );
                     }
                 })
@@ -4449,7 +4695,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
         }
     });
-});
+})();
 
 // --- Global Page Preloader Overlay & Navigation Loader ---
 window.addEventListener("load", function () {

@@ -82,13 +82,14 @@ class ExpenseController extends Controller
                 $request->merge(['expense_date' => $request->expense_date . '-01']);
             }
 
+            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
             $validatedData = $request->validate([
                 'title' => 'required|string|max:255',
                 'total_amount' => 'required|numeric|min:0',
                 'expense_date' => 'required|date',
                 'user_id' => 'required|exists:users,id',
                 'category_id' => 'required|exists:expense_categories,id',
-                'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
+                'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:' . $maxSizeKb,
             ]);
 
             if ($request->hasFile('invoice')) {
@@ -148,13 +149,14 @@ class ExpenseController extends Controller
                 $request->merge(['expense_date' => $request->expense_date . '-01']);
             }
 
+            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
             $validatedData = $request->validate([
                 'title' => 'required|string|max:255',
                 'total_amount' => 'required|numeric|min:0',
                 'expense_date' => 'required|date',
                 'user_id' => 'required|exists:users,id',
                 'category_id' => 'required|exists:expense_categories,id',
-                'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:2048',
+                'invoice' => 'nullable|file|mimes:jpeg,png,jpg,pdf|max:' . $maxSizeKb,
             ]);
 
             // Delete old file if exists

@@ -153,9 +153,9 @@ class BlockController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @param \App\Models\Block $block
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @param Block $block
+     * @return JsonResponse
      * @throws \Illuminate\Validation\ValidationException
      */
     public function update(Request $request, Block $block)

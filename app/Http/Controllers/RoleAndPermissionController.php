@@ -25,7 +25,8 @@ class RoleAndPermissionController extends Controller
 
             return redirect(route('settings.index') . '#role-settings')
                 ->with('success', 'Role created successfully. Select the role to assign permissions.')
-                ->with('created_role_id', $role->id);
+                ->with('created_role_id', $role->id)
+                ->with('active_module', 'role-settings');
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -36,7 +37,7 @@ class RoleAndPermissionController extends Controller
                 return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
             }
 
-            return redirect(route('settings.index') . '#role-settings')->with('error', 'An error occurred: ' . $e->getMessage());
+            return redirect(route('settings.index') . '#role-settings')->with('error', 'An error occurred: ' . $e->getMessage())->with('active_module', 'role-settings');
         }
     }
 
@@ -70,7 +71,7 @@ class RoleAndPermissionController extends Controller
                 $role->syncPermissions($request->input('permissions', []));
             }
 
-            return redirect(route('settings.index') . '#role-settings')->with('success', 'Role updated successfully.');
+            return redirect(route('settings.index') . '#role-settings')->with('success', 'Role updated successfully.')->with('active_module', 'role-settings');
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof  HttpExceptionInterface) {
                 throw $e;
@@ -81,7 +82,7 @@ class RoleAndPermissionController extends Controller
                 return response()->json(['success' => false, 'message' => 'An error occurred: ' . $e->getMessage()], 500);
             }
 
-            return redirect(route('settings.index') . '#role-settings')->with('error', 'An error occurred: ' . $e->getMessage());
+            return redirect(route('settings.index') . '#role-settings')->with('error', 'An error occurred: ' . $e->getMessage())->with('active_module', 'role-settings');
         }
     }
 
@@ -94,7 +95,7 @@ class RoleAndPermissionController extends Controller
                     return response()->json(['message' => 'Cannot delete Admin role.'], 403);
                 }
 
-                return redirect(route('settings.index') . '#role-settings')->with('error', 'Cannot delete Admin role.');
+                return redirect(route('settings.index') . '#role-settings')->with('error', 'Cannot delete Admin role.')->with('active_module', 'role-settings');
             }
 
             $role->delete();
@@ -103,7 +104,7 @@ class RoleAndPermissionController extends Controller
                 return response()->json(['message' => 'Role deleted successfully.']);
             }
 
-            return redirect(route('settings.index') . '#role-settings')->with('success', 'Role deleted successfully.');
+            return redirect(route('settings.index') . '#role-settings')->with('success', 'Role deleted successfully.')->with('active_module', 'role-settings');
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -114,7 +115,7 @@ class RoleAndPermissionController extends Controller
                 return response()->json(['message' => 'An error occurred: ' . $e->getMessage()], 500);
             }
 
-            return redirect(route('settings.index') . '#role-settings')->with('error', 'An error occurred: ' . $e->getMessage());
+            return redirect(route('settings.index') . '#role-settings')->with('error', 'An error occurred: ' . $e->getMessage())->with('active_module', 'role-settings');
         }
     }
 }

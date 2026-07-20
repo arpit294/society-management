@@ -20,11 +20,11 @@ Artisan::command('app:update-bill-amounts', function () {
             'yearly_enabled' => \App\Models\Setting::get("{$type}_yearly_enabled", '0') === '1',
             'half_yearly_enabled' => \App\Models\Setting::get("{$type}_half_yearly_enabled", '0') === '1',
             'quarterly_enabled' => \App\Models\Setting::get("{$type}_quarterly_enabled", '0') === '1',
-            'monthly_enabled' => \App\Models\Setting::get("{$type}_monthly_enabled", '0') === '1',
+            'monthly_enabled' => $type === 'discount' ? false : (\App\Models\Setting::get("{$type}_monthly_enabled", '0') === '1'),
             'yearly_value' => (float) \App\Models\Setting::get("{$type}_yearly_value", \App\Models\Setting::get("{$type}_yearly_percent", ($type === 'penalty' ? 15 : 10))),
             'half_yearly_value' => (float) \App\Models\Setting::get("{$type}_half_yearly_value", \App\Models\Setting::get("{$type}_half_yearly_percent", ($type === 'penalty' ? 10 : 0))),
             'quarterly_value' => (float) \App\Models\Setting::get("{$type}_quarterly_value", \App\Models\Setting::get("{$type}_quarterly_percent", ($type === 'penalty' ? 5 : 0))),
-            'monthly_value' => (float) \App\Models\Setting::get("{$type}_monthly_value", \App\Models\Setting::get("{$type}_monthly_percent", ($type === 'penalty' ? 2 : 0))),
+            'monthly_value' => $type === 'discount' ? 0 : (float) \App\Models\Setting::get("{$type}_monthly_value", \App\Models\Setting::get("{$type}_monthly_percent", ($type === 'penalty' ? 2 : 0))),
         ];
     };
 
@@ -108,9 +108,7 @@ Artisan::command('app:update-bill-amounts', function () {
             $billingCycle = $bill->maintenance->billing_cycle ?? 'monthly';
             $discountValue = 0;
 
-            if ($billingCycle === 'monthly' && ($discountSettings['monthly_enabled'] ?? false)) {
-                $discountValue = $discountSettings['monthly_value'] ?? 0;
-            } elseif ($billingCycle === 'quarterly' && ($discountSettings['quarterly_enabled'] ?? false)) {
+            if ($billingCycle === 'quarterly' && ($discountSettings['quarterly_enabled'] ?? false)) {
                 $discountValue = $discountSettings['quarterly_value'] ?? 0;
             } elseif ($billingCycle === 'yearly' && ($discountSettings['yearly_enabled'] ?? false)) {
                 $discountValue = $discountSettings['yearly_value'] ?? 0;

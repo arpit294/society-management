@@ -378,8 +378,10 @@ class FlatController extends Controller
 
             $settings = \App\Models\Setting::getAll();
             $defaultFee = isset($settings['name_transfer_fee']) ? (float) $settings['name_transfer_fee'] : 0;
+            
+            $users = \App\Models\User::where('status', 1)->get();
 
-            return view('flats.transfer', compact('flat', 'currentOwner', 'pendingBills', 'defaultFee'));
+            return view('flats.transfer', compact('flat', 'currentOwner', 'pendingBills', 'defaultFee', 'users'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -458,11 +460,14 @@ class FlatController extends Controller
                 ]);
             }
 
+            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
             $validatedData = $request->validate([
-                'new_owner_name' => 'required|string|max:255',
-                'new_owner_email' => 'required|email',
+                'user_type' => 'required|in:new,existing',
+                'existing_user_id' => 'required_if:user_type,existing|nullable|exists:users,id',
+                'new_owner_name' => 'required_if:user_type,new|nullable|string|max:255',
+                'new_owner_email' => 'required_if:user_type,new|nullable|email',
                 'new_owner_phone' => 'nullable|string|max:20',
-                'new_owner_aadhar' => 'required|digits:12',
+                'new_owner_aadhar' => 'required_if:user_type,new|nullable|digits:12',
                 'transfer_date' => 'required|date',
                 'transfer_fee' => 'required|numeric|min:0',
                 'payment_method' => 'required|in:pending,cash,upi',
@@ -474,11 +479,15 @@ class FlatController extends Controller
                     Rule::unique('name_transfer_bills', 'transaction_id'),
                     Rule::unique('prepaid_maintenances', 'transaction_id'),
                 ],
-                'payment_slip' => 'nullable|required_if:payment_method,upi|file|mimes:jpeg,png,jpg,pdf|max:2048',
+                'payment_slip' => 'nullable|required_if:payment_method,upi|file|mimes:jpeg,png,jpg,pdf|max:' . $maxSizeKb,
             ], [
                 'transaction_id.required_if' => 'The UTR number is required for UPI payments.',
                 'transaction_id.digits' => 'The UTR number must be exactly 12 digits.',
                 'transaction_id.unique' => 'This UTR number has already been used.',
+                'existing_user_id.required_if' => 'Please select an existing user.',
+                'new_owner_name.required_if' => 'The new owner name is required for a new user.',
+                'new_owner_email.required_if' => 'The new owner email is required for a new user.',
+                'new_owner_aadhar.required_if' => 'The new owner aadhar is required for a new user.',
             ], [
                 'transaction_id' => 'UTR number',
             ]);
@@ -510,17 +519,21 @@ class FlatController extends Controller
                 }
 
                 // 1. Create or find new user
-                $newUser = User::firstOrCreate(
-                    ['email' => $validatedData['new_owner_email']],
-                    [
-                        'name' => $validatedData['new_owner_name'],
-                        'phone' => $validatedData['new_owner_phone'],
-                        'aadhar_id' => $validatedData['new_owner_aadhar'],
-                        'password' => Hash::make('password123'),
-                        'role' => 'owner',
-                        'status' => config('status.general.active'),
-                    ]
-                );
+                if ($validatedData['user_type'] === 'existing') {
+                    $newUser = User::findOrFail($validatedData['existing_user_id']);
+                } else {
+                    $newUser = User::firstOrCreate(
+                        ['email' => $validatedData['new_owner_email']],
+                        [
+                            'name' => $validatedData['new_owner_name'],
+                            'phone' => $validatedData['new_owner_phone'],
+                            'aadhar_id' => $validatedData['new_owner_aadhar'],
+                            'password' => Hash::make('password123'),
+                            'role' => 'owner',
+                            'status' => config('status.general.active'),
+                        ]
+                    );
+                }
 
                 // 2. Generate Name Transfer Request (Bill)
                 $settings = Setting::getAll();

@@ -72,15 +72,16 @@ class FlatDocumentController extends Controller
             $residentType = $validated['resident_type'];
             $requiredDocuments = $this->enabledDocumentsFor($residentType);
 
+            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
             $fileRules = [];
             $hasAnyRequired = false;
             foreach ($requiredDocuments as $key => $docInfo) {
                 $isRequired = is_array($docInfo) ? $docInfo['required'] : true;
                 if ($isRequired) {
-                    $fileRules[$key] = 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120';
+                    $fileRules[$key] = 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:' . $maxSizeKb;
                     $hasAnyRequired = true;
                 } else {
-                    $fileRules[$key] = 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:5120';
+                    $fileRules[$key] = 'nullable|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:' . $maxSizeKb;
                 }
             }
 
@@ -185,6 +186,9 @@ class FlatDocumentController extends Controller
         abort_if(! \Auth::user()->can('flat_document_view'), 403);
         try {
             $documents = $flatDocument->documents ?? [];
+            if (!isset($documents[$doc_key]) && isset($documents[urldecode($doc_key)])) {
+                $doc_key = urldecode($doc_key);
+            }
             if (!isset($documents[$doc_key])) {
                 abort(404, 'File not found in submission');
             }
@@ -242,9 +246,12 @@ class FlatDocumentController extends Controller
     }
     public function deleteDocument(FlatDocument $flatDocument, $doc_key)
     {
-        abort_if(! (\Auth::user()->can('flat_document_delete') || \Auth::user()->can('flat_document_view') || \Auth::user()->can('flat_document_edit')), 403);
+        abort_if(! \Auth::user()->can('flat_document_delete'), 403);
         try {
             $documents = $flatDocument->documents ?? [];
+            if (!isset($documents[$doc_key]) && isset($documents[urldecode($doc_key)])) {
+                $doc_key = urldecode($doc_key);
+            }
 
             if (isset($documents[$doc_key])) {
                 $doc = $documents[$doc_key];
@@ -252,7 +259,7 @@ class FlatDocumentController extends Controller
                     Storage::disk('public')->delete($doc['file_path']);
                 }
                 unset($documents[$doc_key]);
-                $flatDocument->documents = $documents;
+                $flatDocument->documents = !empty($documents) ? $documents : [];
                 $flatDocument->save();
 
                 return response()->json([
@@ -280,13 +287,17 @@ class FlatDocumentController extends Controller
 
     public function updateDocument(Request $request, FlatDocument $flatDocument, $doc_key)
     {
-        abort_if(! (\Auth::user()->can('flat_document_edit') || \Auth::user()->can('flat_document_view')), 403);
+        abort_if(! \Auth::user()->can('flat_document_edit'), 403);
         try {
+            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
             $request->validate([
-                'file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+                'file' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:' . $maxSizeKb,
             ]);
 
             $documents = $flatDocument->documents ?? [];
+            if (!isset($documents[$doc_key]) && isset($documents[urldecode($doc_key)])) {
+                $doc_key = urldecode($doc_key);
+            }
 
             if (!isset($documents[$doc_key])) {
                 return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
@@ -317,7 +328,7 @@ class FlatDocumentController extends Controller
                     'file_type' => $fileType,
                 ];
 
-                $flatDocument->documents = $documents;
+                $flatDocument->documents = !empty($documents) ? $documents : [];
                 $flatDocument->save();
 
                 return response()->json([

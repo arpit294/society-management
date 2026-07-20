@@ -32,7 +32,9 @@ class PropertyTypeController extends Controller
             'code' => $code,
         ]);
 
-        return redirect()->back()->with('success', 'Property Type added successfully.');
+        return redirect(route('settings.index') . '#structure-settings')
+            ->with('success', 'Property Type added successfully.')
+            ->with('active_module', 'managePropertyTypesModal');
     }
 
     /**
@@ -50,7 +52,9 @@ class PropertyTypeController extends Controller
             'name' => $request->name,
         ]);
 
-        return redirect()->back()->with('success', 'Property Type updated successfully.');
+        return redirect(route('settings.index') . '#structure-settings')
+            ->with('success', 'Property Type updated successfully.')
+            ->with('active_module', 'managePropertyTypesModal');
     }
 
     /**
@@ -62,11 +66,15 @@ class PropertyTypeController extends Controller
 
         $currentSelected = Setting::get('society_property_type', 'flat_residential');
         if ($propertyType->code === $currentSelected) {
-            return redirect()->back()->with('error', 'Cannot delete the currently active Society Property Type.');
+            return redirect(route('settings.index') . '#structure-settings')
+                ->with('error', 'Cannot delete the currently active Society Property Type.')
+                ->with('active_module', 'managePropertyTypesModal');
         }
 
         $propertyType->delete();
 
-        return redirect()->back()->with('success', 'Property Type deleted successfully.');
+        return redirect(route('settings.index') . '#structure-settings')
+            ->with('success', 'Property Type deleted successfully.')
+            ->with('active_module', 'managePropertyTypesModal');
     }
 }

@@ -66,9 +66,35 @@
         @endif
 
         <fieldset {{ $pendingCount > 0 ? 'disabled' : '' }} class="{{ $pendingCount > 0 ? 'opacity-50 pointer-events-none' : '' }}">
-            <h6 class="fw-bold mb-3 border-bottom pb-2">New Owner Details</h6>
+            <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                <h6 class="fw-bold mb-0">New Owner Details</h6>
+                <div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="user_type" id="user_type_new" value="new" checked>
+                        <label class="form-check-label small fw-bold" for="user_type_new">New User</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="user_type" id="user_type_existing" value="existing">
+                        <label class="form-check-label small fw-bold" for="user_type_existing">Existing User</label>
+                    </div>
+                </div>
+            </div>
 
-            <div class="row">
+            <div class="row" id="existing_user_section" style="display: none;">
+                <div class="col-md-12 mb-3">
+                    <label for="existing_user_id" class="form-label text-muted small fw-semibold text-uppercase">Select Existing User <span class="text-danger">*</span></label>
+                    <select class="form-select" id="existing_user_id" name="existing_user_id">
+                        <option value="">-- Select Active User --</option>
+                        @if(isset($users))
+                            @foreach($users as $u)
+                                <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->phone ?? $u->email }})</option>
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
+            </div>
+
+            <div class="row" id="new_user_section">
                 <div class="col-md-6 mb-3">
                     <label for="new_owner_name" class="form-label text-muted small fw-semibold text-uppercase">Full Name
                         <span class="text-danger">*</span></label>
@@ -90,6 +116,9 @@
                     <input type="text" class="form-control" id="new_owner_aadhar" name="new_owner_aadhar"
                         inputmode="numeric" pattern="[0-9]{12}" maxlength="12" required>
                 </div>
+            </div>
+
+            <div class="row">
                 <div class="col-md-12 mb-3">
                     <label for="transfer_date" class="form-label text-muted small fw-semibold text-uppercase">Transfer Date
                         <span class="text-danger">*</span></label>
@@ -103,8 +132,8 @@
                             <label for="transfer_fee"
                                 class="form-label text-muted small fw-semibold text-uppercase">Transfer Fee (₹) <span
                                     class="text-danger">*</span></label>
-                            <input type="number" step="0.01" min="0" class="form-control" id="transfer_fee" name="transfer_fee"
-                                value="{{ isset($defaultFee) ? $defaultFee : 0 }}" required placeholder="Enter transfer fee amount">
+                            <input type="number" step="0.01" min="0" class="form-control bg-light" id="transfer_fee" name="transfer_fee"
+                                value="{{ isset($defaultFee) ? $defaultFee : 0 }}" required readonly placeholder="Enter transfer fee amount">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="payment_method"
@@ -207,3 +236,34 @@
     data-pay-dues-url="{{ route('flats.pay-pending-dues', $flat->id) }}"
     data-transfer-url="{{ route('flats.transfer.create', $flat->id) }}">
 </div>
+
+<script>
+    document.querySelectorAll('input[name="user_type"]').forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            var existingUserSection = document.getElementById('existing_user_section');
+            var newUserSection = document.getElementById('new_user_section');
+            var existingSelect = document.getElementById('existing_user_id');
+            var newName = document.getElementById('new_owner_name');
+            var newEmail = document.getElementById('new_owner_email');
+            var newAadhar = document.getElementById('new_owner_aadhar');
+
+            if (this.value === 'existing') {
+                existingUserSection.style.display = 'block';
+                newUserSection.style.display = 'none';
+                
+                existingSelect.setAttribute('required', 'required');
+                newName.removeAttribute('required');
+                newEmail.removeAttribute('required');
+                newAadhar.removeAttribute('required');
+            } else {
+                existingUserSection.style.display = 'none';
+                newUserSection.style.display = 'flex'; // row uses flex
+                
+                existingSelect.removeAttribute('required');
+                newName.setAttribute('required', 'required');
+                newEmail.setAttribute('required', 'required');
+                newAadhar.setAttribute('required', 'required');
+            }
+        });
+    });
+</script>

@@ -121,13 +121,25 @@ class Resident extends Model
             })
             ->exists();
 
-        if ($hasActiveResidency) {
-            // If they are active resident, ensure status is active
+        // Check if they STILL own any flat (they are the latest owner of it)
+        $stillOwnsAFlat = self::where('user_id', $userId)
+            ->where('type', 'owner')
+            ->whereNotExists(function ($query) {
+                $query->select('id')
+                      ->from('residents as r2')
+                      ->whereColumn('r2.flat_id', 'residents.flat_id')
+                      ->where('r2.type', 'owner')
+                      ->whereColumn('r2.id', '>', 'residents.id');
+            })
+            ->exists();
+
+        if ($hasActiveResidency || $stillOwnsAFlat) {
+            // If they are active resident or still own a flat, ensure status is active
             if ($user->status !== 'active') {
                 $user->update(['status' => 1]);
             }
         } else {
-            // If they have past residency history and no active residency, mark them inactive in users table
+            // If they have past residency history and no active residency/ownership, mark them inactive
             $hasPastResidency = self::where('user_id', $userId)->exists();
             if ($hasPastResidency && $user->status !== 'inactive') {
                 $user->update(['status' => 0]);

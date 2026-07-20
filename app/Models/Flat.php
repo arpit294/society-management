@@ -19,25 +19,45 @@ class Flat extends Model
 
     protected $appends = ['is_commercial'];
 
+    private const COMMERCIAL_KEYWORDS = ['commercial', 'shop', 'office', 'showroom', 'warehouse'];
+
     public function getIsCommercialAttribute()
     {
-        if (in_array(strtolower($this->unit_type ?? ''), ['shop', 'office', 'commercial', 'showroom'])) {
+        if ($this->containsCommercialKeyword($this->unit_type ?? '')) {
             return true;
         }
         if ($this->relationLoaded('flatType') && $this->flatType) {
-            if (in_array(strtolower($this->flatType->category_type ?? ''), ['commercial', 'shop', 'office'])) {
+            if ($this->containsCommercialKeyword($this->flatType->category_type ?? '')) {
                 return true;
             }
-            if (in_array(strtolower($this->flatType->name ?? ''), ['shop', 'office', 'commercial', 'showroom'])) {
+            if ($this->containsCommercialKeyword($this->flatType->name ?? '')) {
                 return true;
             }
         } elseif ($this->flat_type_id) {
             $ft = \App\Models\FlatType::find($this->flat_type_id);
-            if ($ft && (in_array(strtolower($ft->category_type ?? ''), ['commercial', 'shop', 'office']) || in_array(strtolower($ft->name ?? ''), ['shop', 'office', 'commercial', 'showroom']))) {
+            if ($ft && ($this->containsCommercialKeyword($ft->category_type ?? '') || $this->containsCommercialKeyword($ft->name ?? ''))) {
                 return true;
             }
         }
         return false;
+    }
+
+    public function maintenanceSqftRate(): float
+    {
+        $typeRate = (float) ($this->flatType->rate_per_sqft ?? 0);
+        if ($typeRate > 0) {
+            return $typeRate;
+        }
+
+        $sqftRate = $this->is_commercial
+            ? (float) \App\Models\Setting::get('commercial_rate_per_sqft', 0)
+            : (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
+
+        if ($sqftRate <= 0 && $this->is_commercial) {
+            $sqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 10);
+        }
+
+        return $sqftRate > 0 ? $sqftRate : 0;
     }
 
     public function calculateMaintenanceFee($residentType = 'owner')
@@ -48,6 +68,7 @@ class Flat extends Model
             : (float) \App\Models\Setting::get('default_owner_fixed_maintenance', 0);
 
         $baseAmount = 0;
+        $isCommercial = $this->is_commercial;
 
         if ($type) {
             $method = $type->calculation_method ?? 'fixed';
@@ -55,15 +76,10 @@ class Flat extends Model
             if ($fixedFee <= 0 && $fallbackFixed > 0) {
                 $fixedFee = $fallbackFixed;
             }
-            $sqftRate = (float) $type->rate_per_sqft;
+            $sqftRate = $this->maintenanceSqftRate();
             $area = (float) $this->area_sqft;
 
-            if ($method === 'per_sqft') {
-                if ($sqftRate <= 0) {
-                    $sqftRate = $this->is_commercial
-                        ? (float) \App\Models\Setting::get('commercial_rate_per_sqft', 10)
-                        : (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 0);
-                }
+            if ($isCommercial || $method === 'per_sqft') {
                 $baseAmount = $area * $sqftRate;
             } elseif ($method === 'hybrid') {
                 $baseAmount = $fixedFee + ($area * $sqftRate);
@@ -83,22 +99,27 @@ class Flat extends Model
             }
         } else {
             // No FlatType assigned
-            $isCommercial = $this->is_commercial || in_array(strtolower($this->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
             if ($isCommercial) {
-                $sqftRate = (float) \App\Models\Setting::get('commercial_rate_per_sqft', 0);
-                if ($sqftRate <= 0) {
-                    $sqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 10);
-                }
-                if ($sqftRate <= 0) {
-                    $sqftRate = 10.00;
-                }
-                $baseAmount = ((float) $this->area_sqft) * $sqftRate;
+                $baseAmount = ((float) $this->area_sqft) * $this->maintenanceSqftRate();
             } else {
                 $baseAmount = $fallbackFixed;
             }
         }
 
         return round($baseAmount, 2);
+    }
+
+    private function containsCommercialKeyword(string $value): bool
+    {
+        $value = strtolower($value);
+
+        foreach (self::COMMERCIAL_KEYWORDS as $keyword) {
+            if (str_contains($value, $keyword)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function block()

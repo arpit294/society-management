@@ -40,6 +40,7 @@ class UpdateMaintenanceBillStatusRequest extends FormRequest
     {
         $maintenanceBillId = $this->route('maintenanceBill');
 
+        $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
         return [
             'status' => 'required|in:pending,paid,due,cancelled',
             'payment_method' => 'required_if:status,paid|nullable|in:cash,upi,CASH,UPI',
@@ -51,7 +52,7 @@ class UpdateMaintenanceBillStatusRequest extends FormRequest
                 Rule::unique('name_transfer_bills', 'transaction_id'),
                 Rule::unique('prepaid_maintenances', 'transaction_id'),
             ],
-            'payment_slip' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'payment_slip' => 'nullable|image|mimes:jpeg,png,jpg|max:' . $maxSizeKb,
         ];
     }
 

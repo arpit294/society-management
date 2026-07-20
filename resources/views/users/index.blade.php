@@ -21,6 +21,15 @@
                 </select>
             </div>
             <div class="filter-col" style="min-width: 220px;">
+                <label class="form-label mb-1" for="users-filter-designation">Filter by Designation</label>
+                <select id="users-filter-designation" class="form-select" style="max-width: 320px;">
+                    <option value="">All Designations</option>
+                    @foreach (['Secretary', 'Committee Member', 'Admin', 'Chairman', 'Treasurer', 'Joint Secretary'] as $desig)
+                        <option value="{{ $desig }}">{{ $desig }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="filter-col" style="min-width: 220px;">
                 <label class="form-label mb-1" for="users-filter-status">Filter by Status</label>
                 <select id="users-filter-status" class="form-select" style="max-width: 320px;">
                     <option value="">All Status</option>

@@ -125,11 +125,10 @@ class MaintenanceBillController extends Controller
             $residentDetails = $residents->mapWithKeys(function ($resident) {
                 $details = 'Basic Maintenance Fee';
                 if ($resident->flat) {
-                    $isCommercial = in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
+                    $isCommercial = $resident->flat->is_commercial || in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
                     $flatType = $resident->flat->flatType;
-                    $sqftRate = (float) \App\Models\Setting::get('commercial_rate_per_sqft', 0);
-                    if ($sqftRate <= 0) $sqftRate = (float) \App\Models\Setting::get('maintenance_rate_per_sqft', 10);
-                    if ($sqftRate <= 0) $sqftRate = 10.00;
+                    
+                    $sqftRate = $resident->flat->maintenanceSqftRate();
 
                     $categoryLabel = $flatType ? $flatType->name : ucfirst($resident->flat->unit_type ?? 'Standard');
                     if ($isCommercial) {
@@ -531,11 +530,10 @@ class MaintenanceBillController extends Controller
             if ($resident && $resident->flat) {
                 $amount = $resident->flat->calculateMaintenanceFee($resident->type);
                 $details = 'Basic Maintenance Fee';
-                $isCommercial = in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
+                $isCommercial = $resident->flat->is_commercial || in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
                 $flatType = $resident->flat->flatType;
-                $sqftRate = (float) Setting::get('commercial_rate_per_sqft', 0);
-                if ($sqftRate <= 0) $sqftRate = (float) Setting::get('maintenance_rate_per_sqft', 10);
-                if ($sqftRate <= 0) $sqftRate = 10.00;
+                
+                $sqftRate = $resident->flat->maintenanceSqftRate();
 
                 $categoryLabel = $flatType ? $flatType->name : ucfirst($resident->flat->unit_type ?? 'Standard');
                 if ($isCommercial) {
@@ -589,13 +587,13 @@ class MaintenanceBillController extends Controller
             'yearly_value' => (float) Setting::get("{$type}_yearly_value", $defaults["{$type}_yearly_value"] ?? 0),
             'half_yearly_value' => (float) Setting::get("{$type}_half_yearly_value", $defaults["{$type}_half_yearly_value"] ?? 0),
             'quarterly_value' => (float) Setting::get("{$type}_quarterly_value", $defaults["{$type}_quarterly_value"] ?? 0),
-            'monthly_value' => (float) Setting::get("{$type}_monthly_value", $defaults["{$type}_monthly_value"] ?? 0),
+            'monthly_value' => $type === 'discount' ? 0 : (float) Setting::get("{$type}_monthly_value", $defaults["{$type}_monthly_value"] ?? 0),
 
             // Toggle Switches
             'yearly_enabled' => Setting::get("{$type}_yearly_enabled", '1') == '1',
             'half_yearly_enabled' => Setting::get("{$type}_half_yearly_enabled", '1') == '1',
             'quarterly_enabled' => Setting::get("{$type}_quarterly_enabled", '1') == '1',
-            'monthly_enabled' => Setting::get("{$type}_monthly_enabled", '1') == '1',
+            'monthly_enabled' => $type === 'discount' ? false : (Setting::get("{$type}_monthly_enabled", '1') == '1'),
         ];
     }
 
@@ -719,8 +717,6 @@ class MaintenanceBillController extends Controller
                     $discountValue = $discountSettings['half_yearly_value'];
                 } elseif ($futureMonthsCount >= 3 && $discountSettings['quarterly_enabled']) {
                     $discountValue = $discountSettings['quarterly_value'];
-                } elseif ($futureMonthsCount >= 1 && $discountSettings['monthly_enabled']) {
-                    $discountValue = $discountSettings['monthly_value'];
                 }
 
                 // Apply the discount rate to the total advance amount
