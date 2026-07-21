@@ -31,7 +31,6 @@ class StoreUserRequest extends FormRequest
                 'required',
                 'exists:roles,name',
             ],
-            'designation' => 'nullable|string|max:100',
             'password' => 'required|string|min:6',
             'aadhar_id' => [
                 'nullable',

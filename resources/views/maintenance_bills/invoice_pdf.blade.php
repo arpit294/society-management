@@ -77,10 +77,9 @@
                     <td style="margin-right: 10px;">
                         @php
                             $resident = $bill->flat ? ($bill->flat->residents()->where('user_id', $bill->user_id)->latest()->first() ?? $bill->flat->owner ?? $bill->flat->tenant) : null;
-                            $businessName = $resident ? ($resident->business_name ?? $resident->company_name) : null;
+                            $businessName = $resident ? $resident->business_name : null;
                             $contactPerson = $resident ? ($resident->contact_person ?? ($bill->user->name ?? null)) : ($bill->user->name ?? null);
-                            $gstNumber = $resident ? ($resident->gst_number ?? $resident->gstin) : null;
-                            $isCommercialOccupant = !empty($businessName) || !empty($gstNumber) || ($resident && $resident->occupant_category !== 'individual') || in_array(strtolower($bill->flat->unit_type ?? ''), ['shop', 'office', 'commercial', 'it_arcade', 'warehouse']);
+                            $isCommercialOccupant = !empty($businessName) || ($resident && $resident->occupant_category !== 'individual') || in_array(strtolower($bill->flat->unit_type ?? ''), ['shop', 'office', 'commercial', 'it_arcade', 'warehouse']);
                         @endphp
                         <div class="info-title">Billed To</div>
                         <div class="info-content">
@@ -94,12 +93,6 @@
                                 <tr>
                                     <td class="billed-label">Attn:</td>
                                     <td class="prop-value">{{ $contactPerson }}</td>
-                                </tr>
-                                @endif
-                                @if(!empty($gstNumber))
-                                <tr>
-                                    <td class="billed-label">GSTIN:</td>
-                                    <td class="prop-value" style="font-weight: bold; color: #2d3748;">{{ $gstNumber }}</td>
                                 </tr>
                                 @endif
                                 <tr>

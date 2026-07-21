@@ -29,9 +29,9 @@
     
     <h6 class="fw-bold mb-3">Uploaded Documents</h6>
     
-    @if(empty($flatDocument->documents))
+    @if(empty($expectedDocs))
         <div class="alert alert-warning">
-            No documents found for this submission.
+            No documents configured for this resident type.
         </div>
     @else
         <div class="table-responsive">
@@ -45,37 +45,55 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($flatDocument->documents as $key => $doc)
+                    @foreach($expectedDocs as $key => $docInfo)
+                        @php
+                            $doc = $flatDocument->documents[$key] ?? null;
+                        @endphp
                         <tr>
-                            <td>{{ $doc['title'] ?? ucfirst(str_replace('_', ' ', $key)) }}</td>
-                            <td><span class="badge bg-secondary text-uppercase">{{ $doc['file_type'] ?? 'Unknown' }}</span></td>
+                            <td>{{ $docInfo['label'] }}</td>
                             <td>
-                                @if(isset($doc['file_size']))
+                                @if($doc)
+                                    <span class="badge bg-secondary text-uppercase">{{ $doc['file_type'] ?? 'Unknown' }}</span>
+                                @else
+                                    <span class="badge bg-danger">Missing</span>
+                                @endif
+                            </td>
+                            <td>
+                                @if($doc && isset($doc['file_size']))
                                     {{ round($doc['file_size'] / 1024, 2) }} KB
                                 @else
                                     -
                                 @endif
                             </td>
                             <td class="text-center">
-                                @if(isset($doc['file_path']))
-                                    <a href="{{ asset('storage/' . $doc['file_path']) }}" target="_blank" class="btn btn-sm btn-info text-white" title="View">
-                                        <i class="fa-solid fa-eye"></i>
+                                @if($doc)
+                                    @if(isset($doc['file_path']))
+                                        <a href="{{ route('flat-documents.download', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}?inline=true" target="_blank" class="btn btn-sm btn-info text-white" title="View">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </a>
+                                    @endif
+                                    <a href="{{ route('flat-documents.download', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" class="btn btn-sm btn-primary" title="Download">
+                                        <i class="fa-solid fa-download"></i>
                                     </a>
+                                    @can('flat_document_edit')
+                                        <button type="button" class="btn btn-sm btn-warning text-white btn-edit-doc" data-key="{{ $key }}" title="Edit">
+                                            <i class="fa-solid fa-edit"></i>
+                                        </button>
+                                        <input type="file" id="edit-doc-input-{{ $key }}" class="d-none edit-doc-input" data-url="{{ route('flat-documents.update-document', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                    @endcan
+                                    @can('flat_document_delete')
+                                        <button type="button" class="btn btn-sm btn-danger text-white btn-delete-doc" data-url="{{ route('flat-documents.delete-document', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" title="Delete">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    @endcan
+                                @else
+                                    @can('flat_document_edit')
+                                        <button type="button" class="btn btn-sm btn-success text-white btn-edit-doc" data-key="{{ $key }}" title="Upload Document">
+                                            <i class="fa-solid fa-upload"></i> Upload
+                                        </button>
+                                        <input type="file" id="edit-doc-input-{{ $key }}" class="d-none edit-doc-input" data-url="{{ route('flat-documents.update-document', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+                                    @endcan
                                 @endif
-                                <a href="{{ route('flat-documents.download', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" class="btn btn-sm btn-primary" title="Download">
-                                    <i class="fa-solid fa-download"></i>
-                                </a>
-                                @can('flat_document_edit')
-                                    <button type="button" class="btn btn-sm btn-warning text-white btn-edit-doc" data-key="{{ $key }}" title="Edit">
-                                        <i class="fa-solid fa-edit"></i>
-                                    </button>
-                                    <input type="file" id="edit-doc-input-{{ $key }}" class="d-none edit-doc-input" data-url="{{ route('flat-documents.update-document', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
-                                @endcan
-                                @can('flat_document_delete')
-                                    <button type="button" class="btn btn-sm btn-danger text-white btn-delete-doc" data-url="{{ route('flat-documents.delete-document', ['flat_document' => $flatDocument->id, 'doc_key' => $key]) }}" title="Delete">
-                                        <i class="fa-solid fa-trash"></i>
-                                    </button>
-                                @endcan
                             </td>
                         </tr>
                     @endforeach

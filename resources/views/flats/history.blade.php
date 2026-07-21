@@ -35,7 +35,7 @@
                         @php
                             $type = $resident->type;
                             $rawMoveOut = $resident->move_out_date;
-                            $isCurrentCandidate = is_null($rawMoveOut) || \Carbon\Carbon::parse($rawMoveOut)->isFuture();
+                            $isCurrentCandidate = is_null($rawMoveOut) || \Carbon\Carbon::parse($rawMoveOut)->startOfDay()->gte(now()->startOfDay());
 
                             $isCurrent = false;
                             $displayMoveOut = $rawMoveOut ? \Carbon\Carbon::parse($rawMoveOut)->format('d M, Y') : '-';

@@ -43,7 +43,6 @@ class User extends Authenticatable
         'email',
         'phone',
         'role',
-        'designation',
         'password',
         'aadhar_id',
         'status',

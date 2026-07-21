@@ -72,19 +72,11 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Business Name (business_name)</label>
-                            <input type="text" class="form-control form-control-sm" name="business_name" value="{{ old('business_name', old('company_name')) }}" placeholder="e.g. Apex Traders Pvt Ltd">
+                            <input type="text" class="form-control form-control-sm" name="business_name" value="{{ old('business_name') }}" placeholder="e.g. Apex Traders Pvt Ltd">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-semibold">Attn: Contact Person (contact_person)</label>
                             <input type="text" class="form-control form-control-sm" name="contact_person" value="{{ old('contact_person') }}" placeholder="e.g. Rajesh Kumar (Manager)">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small fw-semibold">Occupant GSTIN (gst_number)</label>
-                            <input type="text" class="form-control form-control-sm text-uppercase" name="gst_number" value="{{ old('gst_number', old('gstin')) }}" placeholder="e.g. 24AAACC1206D1ZM">
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label small fw-semibold">Trade / Shop License No.</label>
-                            <input type="text" class="form-control form-control-sm" name="trade_license_no" value="{{ old('trade_license_no') }}" placeholder="Optional">
                         </div>
                     </div>
                 </div>

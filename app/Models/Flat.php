@@ -13,7 +13,6 @@ class Flat extends Model
         'floor_no',
         'flat_type_id',
         'area_sqft',
-        'plot_area_sqyards',
         'status',
     ];
 
@@ -44,10 +43,6 @@ class Flat extends Model
 
     public function maintenanceSqftRate(): float
     {
-        $typeRate = (float) ($this->flatType->rate_per_sqft ?? 0);
-        if ($typeRate > 0) {
-            return $typeRate;
-        }
 
         $sqftRate = $this->is_commercial
             ? (float) \App\Models\Setting::get('commercial_rate_per_sqft', 0)
@@ -90,12 +85,6 @@ class Flat extends Model
                 } else {
                     $baseAmount = $fixedFee;
                 }
-            }
-
-            // Apply commercial surcharge percentage if configured on FlatType
-            $surchargePct = (float) ($type->commercial_surcharge_percentage ?? 0);
-            if ($surchargePct > 0) {
-                $baseAmount += $baseAmount * ($surchargePct / 100);
             }
         } else {
             // No FlatType assigned

@@ -15,12 +15,8 @@ class Resident extends Model
         'user_id',
         'type',
         'occupant_category',
-        'company_name',
         'business_name',
         'contact_person',
-        'gstin',
-        'gst_number',
-        'trade_license_no',
         'move_in_date',
         'move_out_date',
     ];
@@ -33,25 +29,7 @@ class Resident extends Model
         ];
     }
 
-    public function getBusinessNameAttribute($value)
-    {
-        return !empty($value) ? $value : ($this->attributes['company_name'] ?? null);
-    }
 
-    public function getCompanyNameAttribute($value)
-    {
-        return !empty($value) ? $value : ($this->attributes['business_name'] ?? null);
-    }
-
-    public function getGstNumberAttribute($value)
-    {
-        return !empty($value) ? $value : ($this->attributes['gstin'] ?? null);
-    }
-
-    public function getGstinAttribute($value)
-    {
-        return !empty($value) ? $value : ($this->attributes['gst_number'] ?? null);
-    }
 
     public function getContactPersonAttribute($value)
     {

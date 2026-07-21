@@ -145,7 +145,6 @@ class FlatController extends Controller
                 'floor_no' => 'nullable|integer|min:0',
                 'flat_type_id' => ($globalMethod === 'per_sqft' || in_array(strtolower($request->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse'])) ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
                 'area_sqft' => 'nullable|numeric|min:0',
-                'plot_area_sqyards' => 'nullable|numeric|min:0',
                 'status' => 'required|string|max:255',
             ]);
 
@@ -209,6 +208,7 @@ class FlatController extends Controller
             $history = Resident::with('user')
                 ->where('flat_id', $flat->id)
                 ->orderBy('move_in_date', 'desc')
+                ->orderBy('id', 'desc')
                 ->get();
 
 
@@ -270,7 +270,6 @@ class FlatController extends Controller
                 'floor_no' => 'nullable|integer|min:0',
                 'flat_type_id' => ($globalMethod === 'per_sqft' || in_array(strtolower($request->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse'])) ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
                 'area_sqft' => 'nullable|numeric|min:0',
-                'plot_area_sqyards' => 'nullable|numeric|min:0',
                 'status' => 'required|string|max:255',
             ]);
 
@@ -505,13 +504,14 @@ class FlatController extends Controller
 
 
 
-                // 1. End current owner's residency
                 $currentOwner = Resident::where('flat_id', $flat->id)
                     ->where('type', 'owner')
                     ->where(function ($q) {
                         $q->whereNull('move_out_date')
                             ->orWhere('move_out_date', '>=', now()->startOfDay());
                     })
+                    ->orderBy('move_in_date', 'desc')
+                    ->orderBy('id', 'desc')
                     ->first();
 
                 if (! $currentOwner) {

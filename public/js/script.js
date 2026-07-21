@@ -970,7 +970,7 @@ $(document).ready(function () {
 
     // User Filters (Dedicated triple-filter handler)
     function checkUserResetVisibility() {
-        if ($("#users-filter-role").val() || $("#users-filter-designation").val() || $("#users-filter-status").val()) {
+        if ($("#users-filter-role").val() || $("#users-filter-status").val()) {
             $("#users-filter-reset-col").removeClass("d-none");
         } else {
             $("#users-filter-reset-col").addClass("d-none");
@@ -983,12 +983,6 @@ $(document).ready(function () {
         checkUserResetVisibility();
     });
 
-    $(document).on("change", "#users-filter-designation", function () {
-        const dt = $("#users-table").DataTable();
-        dt.column(5).search($(this).val()).draw();
-        checkUserResetVisibility();
-    });
-
     $(document).on("change", "#users-filter-status", function () {
         const dt = $("#users-table").DataTable();
         dt.column(6).search($(this).val()).draw();
@@ -997,10 +991,9 @@ $(document).ready(function () {
 
     $(document).on("click", "#users-filter-reset", function () {
         $("#users-filter-role").val("");
-        $("#users-filter-designation").val("");
         $("#users-filter-status").val("");
         const dt = $("#users-table").DataTable();
-        dt.column(4).search("").column(5).search("").column(6).search("").draw();
+        dt.column(4).search("").column(6).search("").draw();
         checkUserResetVisibility();
     });
 
@@ -1790,48 +1783,91 @@ $(document).ready(function () {
         },
     );
 
-    // Handle flat change to fetch existing owner for rental and toggle commercial profile card
-    $(document).on(
-        "change",
-        "#resident-ajax-form select[name='flat_id']",
-        function () {
-            let flatId = $(this).val();
-            let selectedOption = $(this).find("option:selected");
-            let isCommercial = selectedOption.data("is-commercial") == "1" || selectedOption.data("is-commercial") === 1 || selectedOption.data("is-commercial") === true;
+    // Abstracted function to validate flat owner based on flat_id and resident type
+    function validateFlatOwnerForm(form) {
+        let flatSelect = form.find("select[name='flat_id']");
+        let typeSelect = form.find("select[name='type']");
+        let ownerSelect = form.find("select[name='owner_user_id']");
+        
+        let flatId = flatSelect.val();
+        let residentType = typeSelect.val();
+        
+        let ownerSelectContainer = ownerSelect.closest('.card-body');
+        let ownerSection = ownerSelect.closest('.col-md-12');
+        let submitBtn = form.find('button[type="submit"]');
 
-            let createSection = $("#commercial-profile-section-create");
-            let editSection = $("#commercial-profile-section-edit");
+        if (!flatId || !residentType) {
+            ownerSelect.val("");
+            return;
+        }
 
-            if (isCommercial) {
-                createSection.removeClass("d-none").show();
-                editSection.removeClass("d-none").show();
-            } else {
-                createSection.addClass("d-none").hide();
-                editSection.addClass("d-none").hide();
-            }
+        let isEditForm = form.find('input[name="_method"][value="PUT"]').length > 0;
+        let currentUserId = form.find("select[name='user_id']").val();
 
-            let ownerSelect = $(
-                "#resident-ajax-form select[name='owner_user_id']",
-            );
+        $.ajax({
+            url: `/api/flat-owner/${flatId}`,
+            type: "GET",
+            success: function (data) {
+                ownerSelectContainer.find('.existing-owner-info').remove();
+                ownerSelectContainer.find('.form-text').hide();
+                ownerSelectContainer.find('label[for="owner_user_id"]').hide();
+                ownerSelect.hide();
 
-            if (!flatId) {
-                ownerSelect.val("");
-                return;
-            }
-
-            $.ajax({
-                url: `/api/flat-owner/${flatId}`,
-                type: "GET",
-                success: function (data) {
+                if (residentType === 'rental') {
+                    ownerSection.removeClass('d-none').show();
                     if (data.has_owner && data.user_id) {
                         ownerSelect.val(data.user_id);
+                        if (data.is_active) {
+                            ownerSelectContainer.prepend(`<div class="alert alert-danger mb-3 existing-owner-info border-danger bg-danger bg-opacity-10 py-2"><i class="fas fa-exclamation-triangle me-2"></i><strong>Warning:</strong> ${data.owner_details} is currently residing here. You must move them out before adding a tenant.</div>`);
+                            if (!isEditForm) submitBtn.prop('disabled', true);
+                        } else {
+                            ownerSelectContainer.prepend(`<div class="alert alert-primary mb-3 existing-owner-info border-primary bg-primary bg-opacity-10 py-2"><i class="fas fa-user-check me-2"></i><strong>Owner:</strong> ${data.owner_details}</div>`);
+                            submitBtn.prop('disabled', false);
+                        }
                     } else {
                         ownerSelect.val("");
+                        ownerSelectContainer.prepend(`<div class="alert alert-danger mb-3 existing-owner-info border-danger bg-danger bg-opacity-10 py-2"><i class="fas fa-exclamation-triangle me-2"></i><strong>Error:</strong> This unit does not have an owner. You must add an Owner first before adding a Tenant.</div>`);
+                        if (!isEditForm) submitBtn.prop('disabled', true);
                     }
-                },
-            });
-        },
-    );
+                } else if (residentType === 'owner') {
+                    let isSameOwnerEditing = isEditForm && (String(data.user_id) === String(currentUserId));
+                    
+                    if (data.has_owner && !isSameOwnerEditing) {
+                        ownerSection.removeClass('d-none').show();
+                        ownerSelectContainer.prepend(`<div class="alert alert-danger mb-3 existing-owner-info border-danger bg-danger bg-opacity-10 py-2"><i class="fas fa-exclamation-triangle me-2"></i><strong>Error:</strong> This unit already has an owner (${data.owner_details}). You cannot add a new owner directly. Please use the 'Transfer Ownership' feature instead.</div>`);
+                        submitBtn.prop('disabled', true);
+                    } else {
+                        ownerSection.addClass('d-none').hide();
+                        submitBtn.prop('disabled', false);
+                    }
+                }
+            },
+        });
+    }
+
+    // Handle flat change
+    $(document).on("change", "#resident-ajax-form select[name='flat_id']", function () {
+        let selectedOption = $(this).find("option:selected");
+        let isCommercial = selectedOption.data("is-commercial") == "1" || selectedOption.data("is-commercial") === 1 || selectedOption.data("is-commercial") === true;
+
+        let createSection = $("#commercial-profile-section-create");
+        let editSection = $("#commercial-profile-section-edit");
+
+        if (isCommercial) {
+            createSection.removeClass("d-none").show();
+            editSection.removeClass("d-none").show();
+        } else {
+            createSection.addClass("d-none").hide();
+            editSection.addClass("d-none").hide();
+        }
+
+        validateFlatOwnerForm($("#resident-ajax-form"));
+    });
+
+    // Handle type change
+    $(document).on("change", "#resident-ajax-form select[name='type']", function () {
+        validateFlatOwnerForm($("#resident-ajax-form"));
+    });
 
     // Trigger block change on add/edit flat form open
     $(document).on("ajaxSuccess", function (event, xhr, settings) {

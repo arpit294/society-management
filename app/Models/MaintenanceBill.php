@@ -27,8 +27,6 @@ class MaintenanceBill extends Model
         'flat_id',
         'amount',
         'penalty_amount',
-        'gst_percentage',
-        'gst_amount',
         'total_amount',
         'generated_date',
         'paid_at',
@@ -127,11 +125,10 @@ class MaintenanceBill extends Model
         }
 
         $baseAmount = (float)($this->attributes['amount'] ?? 0);
-        $gstAmount = (float)($this->attributes['gst_amount'] ?? 0);
         $penalty = $this->getPenaltyAmountAttribute($this->attributes['penalty_amount'] ?? 0);
         $discount = (float)($this->attributes['discount_amount'] ?? 0);
 
-        return max(0, $baseAmount + $gstAmount + $penalty - $discount);
+        return max(0, $baseAmount + $penalty - $discount);
     }
 
     public function maintenance()

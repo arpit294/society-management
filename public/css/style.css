@@ -15473,7 +15473,7 @@ table.dataTable {
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
     border-radius: 1rem !important;
-    padding: 15px 15px 15px 50px !important;
+    padding: 15px 45px 15px 50px !important; /* 45px on right to make room for close button */
     font-family: 'Outfit', 'Inter', sans-serif !important;
     opacity: 0.95 !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -15527,6 +15527,24 @@ table.dataTable {
     font-size: 0.95rem !important;
     line-height: 1.5 !important;
     opacity: 0.9;
+}
+
+/* Fix for Close Button Unclickable Issue */
+#toast-container > div .toast-close-button {
+    position: absolute !important;
+    right: 12px !important;
+    top: 12px !important;
+    z-index: 99999 !important;
+    pointer-events: auto !important;
+    font-size: 24px !important;
+    opacity: 0.7 !important;
+    outline: none !important;
+    text-shadow: none !important;
+}
+
+#toast-container > div .toast-close-button:hover {
+    opacity: 1 !important;
+    transform: scale(1.1);
 }
 
 /* ==========================================================================

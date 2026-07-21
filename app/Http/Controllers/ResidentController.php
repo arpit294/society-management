@@ -107,12 +107,8 @@ class ResidentController extends Controller
                 'flat_id' => 'required|exists:flats,id',
                 'type' => 'required|string|in:owner,rental',
                 'occupant_category' => 'nullable|string|max:255',
-                'company_name' => 'nullable|string|max:255',
                 'business_name' => 'nullable|string|max:255',
                 'contact_person' => 'nullable|string|max:255',
-                'gstin' => 'nullable|string|max:255',
-                'gst_number' => 'nullable|string|max:255',
-                'trade_license_no' => 'nullable|string|max:255',
                 'user_id' => 'required|exists:users,id',
                 'move_in_date' => 'required|date',
                 'move_out_date' => 'nullable|date',
@@ -128,10 +124,6 @@ class ResidentController extends Controller
             ]);
 
             $validatedData['occupant_category'] = $validatedData['occupant_category'] ?? 'individual';
-            $validatedData['company_name'] = $validatedData['company_name'] ?? ($validatedData['business_name'] ?? null);
-            $validatedData['business_name'] = $validatedData['business_name'] ?? ($validatedData['company_name'] ?? null);
-            $validatedData['gstin'] = $validatedData['gstin'] ?? ($validatedData['gst_number'] ?? null);
-            $validatedData['gst_number'] = $validatedData['gst_number'] ?? ($validatedData['gstin'] ?? null);
 
             // Remove owner_user_id from validatedData before creating the tenant
             $ownerUserId = $validatedData['owner_user_id'] ?? null;
@@ -231,12 +223,8 @@ class ResidentController extends Controller
                 'flat_id' => 'required|exists:flats,id',
                 'type' => 'required|string|in:owner,rental',
                 'occupant_category' => 'nullable|string|max:255',
-                'company_name' => 'nullable|string|max:255',
                 'business_name' => 'nullable|string|max:255',
                 'contact_person' => 'nullable|string|max:255',
-                'gstin' => 'nullable|string|max:255',
-                'gst_number' => 'nullable|string|max:255',
-                'trade_license_no' => 'nullable|string|max:255',
                 'user_id' => 'required|exists:users,id',
                 'move_in_date' => 'required|date',
                 'move_out_date' => 'nullable|date',
@@ -252,10 +240,6 @@ class ResidentController extends Controller
             ]);
 
             $validatedData['occupant_category'] = $validatedData['occupant_category'] ?? 'individual';
-            $validatedData['company_name'] = $validatedData['company_name'] ?? ($validatedData['business_name'] ?? null);
-            $validatedData['business_name'] = $validatedData['business_name'] ?? ($validatedData['company_name'] ?? null);
-            $validatedData['gstin'] = $validatedData['gstin'] ?? ($validatedData['gst_number'] ?? null);
-            $validatedData['gst_number'] = $validatedData['gst_number'] ?? ($validatedData['gstin'] ?? null);
 
             // Remove owner_user_id from validatedData before updating the tenant
             $ownerUserId = $validatedData['owner_user_id'] ?? null;
@@ -345,16 +329,20 @@ class ResidentController extends Controller
         try {
             $ownerResident = Resident::where('flat_id', $flat_id)
                 ->where('type', 'owner')
-                ->where(function ($q) {
-                    $q->whereNull('move_out_date')
-                        ->orWhere('move_out_date', '>', now()->startOfDay());
-                })
                 ->orderByRaw('move_out_date IS NOT NULL')
                 ->latest('move_in_date')
                 ->first();
 
             if ($ownerResident && $ownerResident->user) {
-                return response()->json(['has_owner' => true, 'user_id' => $ownerResident->user_id]);
+                $isActive = is_null($ownerResident->move_out_date) || \Carbon\Carbon::parse($ownerResident->move_out_date)->startOfDay()->gt(now()->startOfDay());
+                return response()->json([
+                    'has_owner' => true, 
+                    'user_id' => $ownerResident->user_id,
+                    'owner_name' => $ownerResident->user->name,
+                    'owner_phone' => $ownerResident->user->phone,
+                    'owner_details' => $ownerResident->user->resident_details,
+                    'is_active' => $isActive
+                ]);
             }
 
             return response()->json(['has_owner' => false]);

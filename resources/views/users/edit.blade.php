@@ -53,23 +53,6 @@
         </div>
 
         <div class="mb-3">
-            <label class="form-label text-primary fw-semibold">Committee / Society Designation <span class="opacity-50 small">(Optional)</span></label>
-            <select name="designation" class="form-select @error('designation') is-invalid @enderror">
-                <option value="">None / Regular Resident</option>
-                <option value="Secretary" @selected(old('designation', $user->designation ?? '') === 'Secretary')>Secretary</option>
-                <option value="Committee Member" @selected(old('designation', $user->designation ?? '') === 'Committee Member')>Committee Member</option>
-                <option value="Admin" @selected(old('designation', $user->designation ?? '') === 'Admin')>Admin</option>
-                <option value="Chairman" @selected(old('designation', $user->designation ?? '') === 'Chairman')>Chairman</option>
-                <option value="Treasurer" @selected(old('designation', $user->designation ?? '') === 'Treasurer')>Treasurer</option>
-                <option value="Joint Secretary" @selected(old('designation', $user->designation ?? '') === 'Joint Secretary')>Joint Secretary</option>
-            </select>
-            <small class="field-hint text-muted">Assign a committee designation even if their primary role is Owner/Resident.</small>
-            @error('designation')
-                <div class="invalid-feedback d-block field-error">{{ $message }}</div>
-            @enderror
-        </div>
-
-        <div class="mb-3">
             <label class="form-label text-success fw-semibold">National ID / Aadhar / Tax ID <span class="opacity-50 small">(Optional)</span></label>
             <input type="text" name="aadhar_id" class="form-control @error('aadhar_id') is-invalid @enderror"
                 placeholder="Aadhar, PAN, or Tax ID" maxlength="25"

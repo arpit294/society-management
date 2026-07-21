@@ -15,9 +15,6 @@ class FlatType extends Model
         'calculation_method',
         'owner_maintenance_fee',
         'rental_maintenance_fee',
-        'rate_per_sqft',
-        'commercial_surcharge_percentage',
-        'description',
         'status',
     ];
 }

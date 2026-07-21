@@ -35,18 +35,15 @@
                     <div class="col-md-6">
                         @php
                             $resident = $bill->flat ? ($bill->flat->residents()->where('user_id', $bill->user_id)->latest()->first() ?? $bill->flat->owner ?? $bill->flat->tenant) : null;
-                            $businessName = $resident ? ($resident->business_name ?? $resident->company_name) : null;
+                            $businessName = $resident ? $resident->business_name : null;
                             $contactPerson = $resident ? ($resident->contact_person ?? ($bill->user->name ?? null)) : ($bill->user->name ?? null);
-                            $gstNumber = $resident ? ($resident->gst_number ?? $resident->gstin) : null;
-                            $isCommercialOccupant = !empty($businessName) || !empty($gstNumber) || ($resident && $resident->occupant_category !== 'individual') || in_array(strtolower($bill->flat->unit_type ?? ''), ['shop', 'office', 'commercial', 'it_arcade', 'warehouse']);
+                            $isCommercialOccupant = !empty($businessName) || ($resident && $resident->occupant_category !== 'individual') || in_array(strtolower($bill->flat->unit_type ?? ''), ['shop', 'office', 'commercial', 'it_arcade', 'warehouse']);
                         @endphp
                         <strong class="text-uppercase text-muted small d-block mb-1">Billed To / {{ \App\Models\Setting::label('resident', 'Resident') }}</strong>
                         @if($isCommercialOccupant && !empty($businessName))
                             <div class="fs-6 fw-bold text-dark">{{ $businessName }}</div>
                             <div class="small text-secondary"><strong>Attn:</strong> {{ $contactPerson }}</div>
-                            @if(!empty($gstNumber))
-                                <div class="small fw-bold text-primary mb-1">Occupant GSTIN: {{ $gstNumber }}</div>
-                            @endif
+
                         @else
                             <div class="fs-6 fw-bold text-dark">{{ $bill->user->name ?? 'N/A' }}</div>
                         @endif

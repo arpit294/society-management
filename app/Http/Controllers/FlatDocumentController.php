@@ -166,7 +166,8 @@ class FlatDocumentController extends Controller
         abort_if(! \Auth::user()->can('flat_document_view'), 403);
         try {
             $flatDocument->load(['flat.block', 'user']);
-            return view('flat_documents.show', compact('flatDocument'));
+            $expectedDocs = $this->enabledDocumentsFor($flatDocument->resident_type);
+            return view('flat_documents.show', compact('flatDocument', 'expectedDocs'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -200,7 +201,25 @@ class FlatDocumentController extends Controller
                 abort(404, 'File not found on disk');
             }
 
-            return response()->download($filePath, $doc['original_name']);
+            $flat = $flatDocument->flat;
+            $prefix = '';
+            if ($flat) {
+                $blockName = $flat->block ? $flat->block->block_name : '';
+                $prefix = trim($blockName . '-' . $flat->flat_no, '-');
+            }
+
+            $docTitle = $doc['title'] ?? $doc_key;
+            $docTitle = preg_replace('/[^A-Za-z0-9_\- ]/', '', $docTitle);
+            $docTitle = str_replace(' ', '_', $docTitle);
+
+            $extension = pathinfo($doc['original_name'], PATHINFO_EXTENSION);
+            $downloadName = $prefix ? "{$prefix}_{$docTitle}.{$extension}" : "{$docTitle}.{$extension}";
+
+            if (request()->has('inline')) {
+                return response()->file($filePath);
+            }
+
+            return response()->download($filePath, $downloadName);
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -289,7 +308,7 @@ class FlatDocumentController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_document_edit'), 403);
         try {
-            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
+            $maxSizeKb = (float) Setting::get('max_document_size', 2) * 1024;
             $request->validate([
                 'file' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:' . $maxSizeKb,
             ]);
@@ -299,11 +318,7 @@ class FlatDocumentController extends Controller
                 $doc_key = urldecode($doc_key);
             }
 
-            if (!isset($documents[$doc_key])) {
-                return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
-            }
-
-            $oldDoc = $documents[$doc_key];
+            $oldDoc = $documents[$doc_key] ?? null;
 
             if ($request->hasFile('file')) {
                 $file = $request->file('file');
@@ -311,17 +326,26 @@ class FlatDocumentController extends Controller
                 $fileSize = $file->getSize();
                 $fileType = $file->getClientOriginalExtension();
 
-                $fileName = time() . '_' . $originalName;
+                $safeName = preg_replace('/[^A-Za-z0-9_\-\.]/', '', $originalName);
+                $fileName = time() . '_' . str_replace(' ', '_', $safeName);
                 $path = $file->storeAs("documents/flats/{$flatDocument->flat_id}/{$flatDocument->user_id}", $fileName, 'public');
 
                 // Delete old file
-                if (isset($oldDoc['file_path']) && Storage::disk('public')->exists($oldDoc['file_path'])) {
+                if ($oldDoc && isset($oldDoc['file_path']) && Storage::disk('public')->exists($oldDoc['file_path'])) {
                     Storage::disk('public')->delete($oldDoc['file_path']);
+                }
+
+                $title = $oldDoc['title'] ?? ucfirst(str_replace('_', ' ', str_replace('req_doc_' . $flatDocument->resident_type . '_', '', $doc_key)));
+                if (!$oldDoc) {
+                    $enabledDocs = $this->enabledDocumentsFor($flatDocument->resident_type);
+                    if (isset($enabledDocs[$doc_key])) {
+                        $title = $enabledDocs[$doc_key]['label'];
+                    }
                 }
 
                 // Update json
                 $documents[$doc_key] = [
-                    'title' => $oldDoc['title'] ?? ucfirst(str_replace('_', ' ', $doc_key)),
+                    'title' => $title,
                     'file_path' => $path,
                     'original_name' => $originalName,
                     'file_size' => $fileSize,

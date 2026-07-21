@@ -20,7 +20,7 @@ class CleanSocietySeeder extends Seeder
      * Run the clean society seeder.
      * Creates exactly 7 users (Admin, Secretary, 5 Residents), all with password 123456.
      * Creates 1 block (Block A).
-     * Creates 5 unit categories with a single property unit per category.
+     * Creates 4 unit categories with a single property unit per category.
      * Assigns each property unit to exactly 1 resident user.
      */
     public function run(): void
@@ -129,8 +129,8 @@ class CleanSocietySeeder extends Seeder
             'total_flats' => 5,
         ]);
 
-        // 5. Create 14 Unit Categories (FlatTypes)
-        $this->command->info("Creating 14 Unit Categories & 1 Property Unit per Category...");
+        // 5. Create 9 Unit Categories (FlatTypes)
+        $this->command->info("Creating 9 Unit Categories & 1 Property Unit per Category...");
 
         $categoriesData = [
             [
@@ -198,45 +198,7 @@ class CleanSocietySeeder extends Seeder
                 'resident_type' => 'rental',
                 'business_name' => null,
             ],
-            [
-                'flat_type_name' => 'Corporate Office',
-                'owner_fee' => 5000.00,
-                'rental_fee' => 6500.00,
-                'desc' => 'Executive Office Space',
-                'unit_type' => 'office',
-                'flat_no' => '202',
-                'floor_no' => 2,
-                'area_sqft' => 2500,
-                'resident_email' => 'premparate@gmail.com',
-                'resident_type' => 'owner',
-                'business_name' => 'Parate Tech Solutions',
-            ],
-            [
-                'flat_type_name' => 'Commercial Shop',
-                'owner_fee' => 15.50,
-                'rental_fee' => 18.00,
-                'desc' => 'Retail Shop (Per Sq. Ft.)',
-                'unit_type' => 'shop',
-                'flat_no' => '001',
-                'floor_no' => 0,
-                'area_sqft' => 250,
-                'resident_email' => 'mahendraverma@gmail.com',
-                'resident_type' => 'owner',
-                'business_name' => 'Verma Supermarket',
-            ],
-            [
-                'flat_type_name' => 'Luxury Showroom',
-                'owner_fee' => 20.00,
-                'rental_fee' => 25.00,
-                'desc' => 'Commercial Showroom Space',
-                'unit_type' => 'showroom',
-                'flat_no' => '002',
-                'floor_no' => 0,
-                'area_sqft' => 1200,
-                'resident_email' => 'premparate@gmail.com',
-                'resident_type' => 'owner',
-                'business_name' => 'Parate Motors Showroom',
-            ],
+
             [
                 'flat_type_name' => 'Sky Penthouse',
                 'owner_fee' => 6000.00,
@@ -289,32 +251,7 @@ class CleanSocietySeeder extends Seeder
                 'resident_type' => 'owner',
                 'business_name' => null,
             ],
-            [
-                'flat_type_name' => 'Storage Warehouse',
-                'owner_fee' => 12.00,
-                'rental_fee' => 15.00,
-                'desc' => 'Storage Godown & Warehouse Space',
-                'unit_type' => 'warehouse',
-                'flat_no' => '003',
-                'floor_no' => 0,
-                'area_sqft' => 1500,
-                'resident_email' => 'mahendraverma@gmail.com',
-                'resident_type' => 'owner',
-                'business_name' => 'Verma Logistics Storage',
-            ],
-            [
-                'flat_type_name' => 'Open Land / Plot',
-                'owner_fee' => 8.00,
-                'rental_fee' => 10.00,
-                'desc' => 'Society Residential/Commercial Plot',
-                'unit_type' => 'plot',
-                'flat_no' => 'P-01',
-                'floor_no' => 0,
-                'area_sqft' => 2000,
-                'resident_email' => 'arpit@gmail.com',
-                'resident_type' => 'owner',
-                'business_name' => null,
-            ],
+
         ];
 
         foreach ($categoriesData as $cat) {
@@ -356,6 +293,6 @@ class CleanSocietySeeder extends Seeder
         }
 
         $this->command->info("=== Clean Society Database Setup Completed Successfully! ===");
-        $this->command->info("Summary: 7 Users created (Admin, Secretary, 5 Residents), 1 Block created, 14 Unit Categories created with 1 Unit & 1 Resident each.");
+        $this->command->info("Summary: 7 Users created (Admin, Secretary, 5 Residents), 1 Block created, 9 Unit Categories created with 1 Unit & 1 Resident each.");
     }
 }

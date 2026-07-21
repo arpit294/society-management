@@ -148,7 +148,12 @@ class ReportController extends Controller
                 if ($filterUserId) {
                     $yearlyTransferFeesQuery->where('new_owner_id', $filterUserId);
                 }
-                $yearlyTransferFees = $yearlyTransferFeesQuery->sum('amount');
+                $yearlyTransferFeesList = $yearlyTransferFeesQuery->get();
+                $yearlyTransferFees = $yearlyTransferFeesList->sum('amount');
+                $monthlyTransferFeesMap = $yearlyTransferFeesList->groupBy(function ($fee) {
+                    $date = $fee->transfer_date ?: ($fee->paid_at ?: $fee->created_at);
+                    return \Carbon\Carbon::parse($date)->format('F');
+                })->map->sum('amount');
 
                 $yearlyExpensesQuery = Expense::with(['category', 'user'])
                     ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), $selectedYear)
@@ -175,6 +180,7 @@ class ReportController extends Controller
                         'month' => $month,
                         'expected' => $stats['totalExpected'],
                         'paid' => $stats['totalPaid'],
+                        'transfer_fees' => $monthlyTransferFeesMap[$month] ?? 0,
                         'pending' => $stats['totalPending'],
                         'expense' => $monthlyExpenseMap[$month] ?? 0,
                     ];
@@ -339,14 +345,15 @@ class ReportController extends Controller
             $usersYearly = collect();
             if ($reportType === 'yearly') {
                 $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-                $residentsByUser = $activeResidents->groupBy('user_id')->map(function ($grp) {
-                    return $grp->first();
-                });
-                foreach ($residentsByUser as $userId => $resident) {
+                foreach ($activeResidents as $resident) {
                     if (! $resident || ! $resident->user) continue;
+                    
+                    $userId = $resident->user_id;
+                    $flatId = $resident->flat_id;
+                    
                     $userTotals = ['totalExpected' => 0, 'totalPaid' => 0, 'totalPending' => 0];
                     foreach ($months as $month) {
-                        $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $userId, $filterBlockId);
+                        $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $userId, $filterBlockId, $flatId);
                         $userTotals['totalExpected'] += $stats['totalExpected'];
                         $userTotals['totalPaid'] += $stats['totalPaid'];
                         $userTotals['totalPending'] += $stats['totalPending'];
@@ -357,6 +364,7 @@ class ReportController extends Controller
                                 ->orWhereYear('paid_at', $selectedYear)
                                 ->orWhereYear('created_at', $selectedYear);
                         })
+                        ->where('flat_id', $flatId)
                         ->where('new_owner_id', $userId)
                         ->sum('amount');
 
@@ -584,11 +592,11 @@ class ReportController extends Controller
                         round($yearlyPending, 2)
                     ]));
 
-                    // Add Per-User Yearly Summary 
+                    // Add Resident Yearly Summary 
                     if (!empty($usersYearly) && $usersYearly->isNotEmpty()) {
                         $writer->addRow(Row::fromValues([]));
-                        $writer->addRow(Row::fromValues(["Per-User Yearly Summary - $selectedYear"]));
-                        $writer->addRow(Row::fromValues(['User', 'Block', 'Flat', 'Expected', 'Paid', 'Transfer Fees', 'Pending']));
+                        $writer->addRow(Row::fromValues(["Resident Yearly Summary - $selectedYear"]));
+                        $writer->addRow(Row::fromValues(['Resident Name', 'Block', 'Flat', 'Expected', 'Paid', 'Transfer Fees', 'Pending']));
                         foreach ($usersYearly as $u) {
                             $writer->addRow(Row::fromValues([
                                 $u->user ? $u->user->name : 'N/A',
@@ -775,14 +783,16 @@ class ReportController extends Controller
 
         $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-        $residentsByUser = $activeResidents->groupBy('user_id')->map(fn($grp) => $grp->first());
-
         $usersYearly = collect();
-        foreach ($residentsByUser as $userId => $resident) {
+        foreach ($activeResidents as $resident) {
             if (! $resident || ! $resident->user) continue;
+            
+            $userId = $resident->user_id;
+            $flatId = $resident->flat_id;
+            
             $userTotals = ['totalExpected' => 0, 'totalPaid' => 0, 'totalPending' => 0];
             foreach ($months as $month) {
-                $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $userId, $filterBlockId);
+                $stats = $this->calculateMonthlyStats($month, $selectedYear, $activeResidents, $userId, $filterBlockId, $flatId);
                 $userTotals['totalExpected'] += $stats['totalExpected'];
                 $userTotals['totalPaid'] += $stats['totalPaid'];
                 $userTotals['totalPending'] += $stats['totalPending'];
@@ -793,6 +803,7 @@ class ReportController extends Controller
                         ->orWhereYear('paid_at', $selectedYear)
                         ->orWhereYear('created_at', $selectedYear);
                 })
+                ->where('flat_id', $flatId)
                 ->where('new_owner_id', $userId)
                 ->sum('amount');
 
@@ -826,7 +837,7 @@ class ReportController extends Controller
 
 
 
-    private function calculateMonthlyStats($month, $year, $activeResidents, $filterUserId = null, $filterBlockId = null)
+    private function calculateMonthlyStats($month, $year, $activeResidents, $filterUserId = null, $filterBlockId = null, $filterFlatId = null)
     {
         $maintenance = Maintenance::where('month', $month)
             ->where('year', $year)
@@ -858,6 +869,9 @@ class ReportController extends Controller
                 ->where('maintenance_id', $maintenance->id)
                 ->when($filterUserId, function ($q) use ($filterUserId) {
                     $q->where('user_id', $filterUserId);
+                })
+                ->when($filterFlatId, function ($q) use ($filterFlatId) {
+                    $q->where('flat_id', $filterFlatId);
                 })
                 ->when($filterBlockId, function ($q) use ($filterBlockId) {
                     $q->where(function ($sub) use ($filterBlockId) {
@@ -910,6 +924,9 @@ class ReportController extends Controller
             }
 
             if ($filterUserId && $resident->user_id != $filterUserId) {
+                continue;
+            }
+            if ($filterFlatId && $resident->flat_id != $filterFlatId) {
                 continue;
             }
 

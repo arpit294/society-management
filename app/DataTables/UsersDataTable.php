@@ -23,9 +23,6 @@ class UsersDataTable extends DataTable
             ->filterColumn('role', function (QueryBuilder $query, string $keyword): void {
                 $query->where('role', $keyword);
             })
-            ->filterColumn('designation', function (QueryBuilder $query, string $keyword): void {
-                $query->where('designation', 'like', "%{$keyword}%");
-            })
             ->filterColumn('status', function (QueryBuilder $query, string $keyword): void {
                 $val = ($keyword === 'active' || $keyword === '1' || $keyword === 1 || $keyword === true) ? 1 : 0;
                 $query->where('status', $val);
@@ -51,41 +48,6 @@ class UsersDataTable extends DataTable
                 $label = config('roles.labels.'.$role, ucwords(str_replace('_', ' ', $role)));
                 return '<span class="badge bg-secondary bg-opacity-25 text-body px-3 py-1 fw-semibold">'.$label.'</span>';
             })
-            ->editColumn('designation', function (User $user) {
-                $desig = trim((string) $user->designation);
-                if (empty($desig)) {
-                    // Fallback check if designation is not explicitly set but role is secretary/committee_member/admin
-                    $roleLower = strtolower(trim((string) $user->role));
-                    if (in_array($roleLower, ['secretary', 'secretory'])) {
-                        $desig = 'Secretary';
-                    } elseif (in_array($roleLower, ['committee_member', 'commitee_member'])) {
-                        $desig = 'Committee Member';
-                    } elseif ($roleLower === 'admin') {
-                        $desig = 'Admin';
-                    } else {
-                        return '<span class="badge bg-secondary bg-opacity-10 text-muted px-2 py-1">-</span>';
-                    }
-                }
-                $dLower = strtolower($desig);
-
-                if (in_array($dLower, ['admin', 'society admin'])) {
-                    return '<span class="badge bg-danger text-white px-3 py-2 fw-bold shadow-sm" style="font-size: 0.85rem;"><i class="fa-solid fa-user-shield me-1"></i> Admin</span>';
-                }
-                if (in_array($dLower, ['committee member', 'committee_member', 'commitee member', 'commitee_member'])) {
-                    return '<span class="badge bg-primary text-white px-3 py-2 fw-bold shadow-sm" style="font-size: 0.85rem;"><i class="fa-solid fa-users-gear me-1"></i> Committee Member</span>';
-                }
-                if (in_array($dLower, ['secretary', 'secretory'])) {
-                    return '<span class="badge bg-info text-dark px-3 py-2 fw-bold shadow-sm" style="font-size: 0.85rem;"><i class="fa-solid fa-user-tie me-1"></i> Secretary</span>';
-                }
-                if (in_array($dLower, ['chairman'])) {
-                    return '<span class="badge bg-warning text-dark px-3 py-2 fw-bold shadow-sm" style="font-size: 0.85rem;"><i class="fa-solid fa-crown me-1"></i> Chairman</span>';
-                }
-                if (in_array($dLower, ['treasurer'])) {
-                    return '<span class="badge bg-success text-white px-3 py-2 fw-bold shadow-sm" style="font-size: 0.85rem;"><i class="fa-solid fa-vault me-1"></i> Treasurer</span>';
-                }
-
-                return '<span class="badge bg-dark text-white px-3 py-2 fw-semibold shadow-sm" style="font-size: 0.85rem;"><i class="fa-solid fa-award me-1"></i> ' . ucwords($desig) . '</span>';
-            })
             ->editColumn('status', function (User $user) {
                 $class = $user->status === 'active' ? 'bg-success' : 'bg-danger';
 
@@ -94,7 +56,7 @@ class UsersDataTable extends DataTable
             ->editColumn('created_at', function (User $user) {
                 return $user->created_at?->format('d-m-Y h:i A');
             })
-            ->rawColumns(['role', 'designation', 'status', 'action'])
+            ->rawColumns(['role', 'status', 'action'])
             ->setRowId('id');
 
     }
@@ -150,7 +112,6 @@ class UsersDataTable extends DataTable
             Column::make('email'),
             Column::make('phone'),
             Column::make('role'),
-            Column::make('designation')->title('Designation')->orderable(false),
             Column::make('status'),
             Column::make('created_at'),
             Column::make('action')->orderable(false)->searchable(false),

@@ -82,7 +82,6 @@ class FlatTypesDataTable extends DataTable
                 'category_type',
                 'owner_maintenance_fee',
                 'rental_maintenance_fee',
-                'rate_per_sqft',
                 'calculation_method',
                 'status',
                 'created_at',

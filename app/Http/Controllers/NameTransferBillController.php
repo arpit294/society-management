@@ -125,29 +125,19 @@ class NameTransferBillController extends Controller
 
             DB::beginTransaction();
             try {
-                // 1. End current owner's residency
-                $oldResident = Resident::where('flat_id', $bill->flat_id)
-                    ->where('user_id', $bill->old_owner_id)
-                    ->where('type', 'owner')
-                    ->orderBy('move_in_date', 'desc')
-                    ->first();
+                // 1. End current owner's residency by completely removing all existing residents for this flat
+                Resident::where('flat_id', $bill->flat_id)->delete();
 
-                if ($oldResident) {
-                    $oldResident->update(['move_out_date' => $transferDate]);
+                // Sync flat occupancy status
+                if ($bill->flat) {
+                    $bill->flat->syncOccupancyStatus();
                 }
-
-                // 2. Create new resident
-                Resident::create([
-                    'block_id' => $bill->flat->block_id,
-                    'flat_id' => $bill->flat_id,
-                    'user_id' => $bill->new_owner_id,
-                    'type' => 'owner',
-                    'move_in_date' => $transferDate,
-                ]);
 
                 // Sync user statuses for both old and new owners
                 Resident::syncUserStatus($bill->old_owner_id);
-                Resident::syncUserStatus($bill->new_owner_id);
+                if ($bill->new_owner_id) {
+                    Resident::syncUserStatus($bill->new_owner_id);
+                }
 
                 // 3. Mark as approved
                 $bill->update([

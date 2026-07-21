@@ -22,14 +22,14 @@
 
                         <div class="mb-4">
                             <label class="form-label">
-                                Email
+                                Email or Phone Number
                             </label>
 
-                            <input type="email" name="email"
-                                class="form-control @error('email') is-invalid @enderror" placeholder="Enter your email"
-                                value="{{ old('email') }}">
+                            <input type="text" name="login"
+                                class="form-control @error('login') is-invalid @enderror" placeholder="Enter your email or phone"
+                                value="{{ old('login') }}">
 
-                            @error('email')
+                            @error('login')
                                 <div class="invalid-feedback d-block">
                                     {{ $message }}
                                 </div>

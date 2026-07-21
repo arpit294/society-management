@@ -190,14 +190,7 @@ class MaintenanceBillController extends Controller
 
             $numberOfMonths = (int) $request->months;
 
-            // Calculate GST if enabled and unit or flat_type is commercial
-            $gstPercentage = 0;
-            $gstAmount = 0;
-            if (Setting::get('enable_commercial_gst') == '1' &&
-                ($resident->flat->unit_type === 'shop' || $resident->flat->unit_type === 'office' || $resident->flat->has_commercial_license || ($resident->flat->flatType && $resident->flat->flatType->category_type === 'commercial'))) {
-                $gstPercentage = (float) Setting::get('commercial_gst_percentage', 18);
-                $gstAmount = round(($monthlyFee * $gstPercentage) / 100, 2);
-            }
+            // Removed GST calculation
 
             // Handle file upload for payment slips
             $paymentSlipPath = null;
@@ -213,8 +206,8 @@ class MaintenanceBillController extends Controller
                 $request, $monthlyFee, $numberOfMonths, $currentDate
             );
 
-            // Split the total amount evenly across the selected number of months including GST
-            $amountPerMonth = $monthlyFee + $gstAmount + ($totalPenaltyAmount / $numberOfMonths) - ($totalDiscountAmount / $numberOfMonths);
+            // Split the total amount evenly across the selected number of months
+            $amountPerMonth = $monthlyFee + ($totalPenaltyAmount / $numberOfMonths) - ($totalDiscountAmount / $numberOfMonths);
             $amountPerMonth = max(0, $amountPerMonth); // Prevent negative bills
 
             // Generate a unique batch ID to group these multi-month payments together
@@ -248,8 +241,6 @@ class MaintenanceBillController extends Controller
                         'user_id' => $resident->user_id,
                         'block_id' => $resident->block_id,
                         'amount' => $monthlyFee,
-                        'gst_percentage' => $gstPercentage,
-                        'gst_amount' => $gstAmount,
                         'discount_amount' => $totalDiscountAmount / $numberOfMonths,
                         'penalty_amount' => $totalPenaltyAmount / $numberOfMonths,
                         'total_amount' => $amountPerMonth,
@@ -400,7 +391,7 @@ class MaintenanceBillController extends Controller
                 // Lock in the dynamically calculated amounts so they never change again
                 $maintenanceBill->penalty_amount = $totalPenaltyAmount;
                 $maintenanceBill->discount_amount = $totalDiscountAmount;
-                $maintenanceBill->total_amount = max(0, $monthlyFee + ($maintenanceBill->gst_amount ?? 0) + $totalPenaltyAmount - $totalDiscountAmount);
+                $maintenanceBill->total_amount = max(0, $monthlyFee + $totalPenaltyAmount - $totalDiscountAmount);
 
             } elseif ($request->status !== config('status.maintenance_bills.paid')) {
                 // Revert back to unpaid state
@@ -414,7 +405,7 @@ class MaintenanceBillController extends Controller
                 // Reset modifiers
                 $maintenanceBill->penalty_amount = 0;
                 $maintenanceBill->discount_amount = 0;
-                $maintenanceBill->total_amount = ($maintenanceBill->amount ?? 0) + ($maintenanceBill->gst_amount ?? 0);
+                $maintenanceBill->total_amount = ($maintenanceBill->amount ?? 0);
             }
 
             $maintenanceBill->save();

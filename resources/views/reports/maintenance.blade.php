@@ -414,6 +414,9 @@
                                     $yearlyPaidData = collect($monthlyBreakdown)
                                         ->map(fn($m) => round($m->paid, 2))
                                         ->values();
+                                    $yearlyTotalIncomeData = collect($monthlyBreakdown)
+                                        ->map(fn($m) => round($m->paid + ($m->transfer_fees ?? 0), 2))
+                                        ->values();
                                     $yearlyPendingData = collect($monthlyBreakdown)
                                         ->map(fn($m) => round($m->pending, 2))
                                         ->values();
@@ -449,7 +452,7 @@
 
                                 <div class="card">
                                     <div class="card-header d-flex justify-content-between align-items-center">
-                                        <h5 class="mb-0">Per-User Yearly Summary ({{ $selectedYear }})</h5>
+                                        <h5 class="mb-0">Resident Yearly Summary ({{ $selectedYear }})</h5>
                                     </div>
                                     <div class="card-body p-0">
                                         <div class="table-responsive">
@@ -459,7 +462,7 @@
                                                 <thead class="highlight-thead">
                                                     <tr>
                                                         <th>#</th>
-                                                        <th>User</th>
+                                                        <th>Resident Name</th>
                                                         <th>{{ \App\Models\Setting::label('block', 'Block') }}</th>
                                                         <th>{{ \App\Models\Setting::label('unit', 'Flat') }}</th>
                                                         <th class="text-end">Expected</th>
@@ -1058,7 +1061,7 @@
                                 labels: {!! json_encode($yearlyMonths) !!},
                                 datasets: [{
                                         label: "Collected Revenue",
-                                        data: {!! json_encode($yearlyPaidData) !!},
+                                        data: {!! json_encode($yearlyTotalIncomeData) !!},
                                         backgroundColor: "#198754",
                                         borderRadius: 4
                                     },

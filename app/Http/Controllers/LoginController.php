@@ -34,10 +34,17 @@ class LoginController extends Controller
     public function store(LoginRequest $request): RedirectResponse
     {
         try {
+            $loginType = filter_var($request->input('login'), FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
+
+            $credentials = [
+                $loginType => $request->input('login'),
+                'password' => $request->input('password')
+            ];
+
             // Attempt to authenticate the user with the provided credentials
-            if (! Auth::attempt($request->validated())) {
+            if (! Auth::attempt($credentials)) {
                 throw ValidationException::withMessages([
-                    'email' => 'The provided credentials do not match our records.',
+                    'login' => 'The provided credentials do not match our records.',
                 ]);
             }
 
