@@ -154,7 +154,7 @@ class FlatController extends Controller
                 $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
             }
 
-            $flatTypeObj = FlatType::find($validatedData['flat_type_id'] ?? null);
+            $flatTypeObj = FlatType::find($validatedDaxta['flat_type_id'] ?? null);
             $calcMethod = $flatTypeObj ? ($flatTypeObj->calculation_method ?? 'fixed') : 'fixed';
             $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid');
 
