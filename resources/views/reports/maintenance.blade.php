@@ -71,14 +71,14 @@
 
                         <div class="col-xl-2 col-md-4 col-sm-6">
                             <label class="form-label">{{ \App\Models\Setting::label('resident', 'Resident') }}</label>
-                            <select name="user_id" class="form-select select2-filter js-auto-submit"
+                            <select name="resident_id" class="form-select select2-filter js-auto-submit"
                                 style="width: 100%;">
                                 <option value="">All {{ \App\Models\Setting::label('resident', 'Resident') }}s</option>
                                 @if (isset($residents))
                                     @foreach ($residents as $res)
                                         @if ($res->user)
-                                            <option value="{{ $res->user_id }}"
-                                                {{ isset($filterUserId) && $filterUserId == $res->user_id ? 'selected' : '' }}>
+                                            <option value="{{ $res->id }}"
+                                                {{ isset($filterResidentId) && $filterResidentId == $res->id ? 'selected' : '' }}>
                                                 {{ $res->user->name }} @if ($res->flat)
                                                     - {{ $res->flat->flat_no }}
                                                 @endif
@@ -93,14 +93,12 @@
                             @if (request()->has('month') ||
                                     request()->has('year') ||
                                     request()->has('report_type') ||
-                                    request()->has('user_id') ||
+                                    request()->has('resident_id') ||
                                     request()->has('block_id'))
                                 <a href="{{ route('reports.maintenance', ['active_tab' => request('active_tab', '#main-maintenance')]) }}"
                                     id="resetFilterBtn" class="btn btn-outline-secondary w-100">Reset</a>
                             @endif
-                            <button type="submit"
-                                formaction="{{ request('active_tab') === '#main-expense' ? route('reports.expense.export') : (request('active_tab') === '#main-summary' ? route('reports.summary.export') : route('reports.maintenance.export')) }}"
-                                id="exportReportBtn" class="btn btn-success text-white w-100">
+                            <button type="button" class="btn btn-success text-white w-100" data-coreui-toggle="modal" data-coreui-target="#exportModal">
                                 <svg class="icon me-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"
                                     style="width: 1rem; height: 1rem; fill: currentColor;">
                                     <path
@@ -761,7 +759,36 @@
                 </div>
             </div>
         </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-light border-bottom-0">
+                <h5 class="modal-title fw-bold" id="exportModalLabel"><i class="fa-solid fa-file-excel text-success me-2"></i>Export Report</h5>
+                <button type="button" class="btn-close" data-coreui-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted mb-4 text-center">Choose which section of the financial report you want to export. The current filters (Year, Block, Owner) will be applied.</p>
+                <div class="d-grid gap-3">
+                    <button type="submit" form="filterForm" formaction="{{ route('reports.maintenance.export') }}" class="btn btn-outline-primary py-3 d-flex flex-column align-items-center justify-content-center text-center rounded-3 transition-hover" onclick="setTimeout(()=>document.querySelector('#exportModal .btn-close').click(), 500)">
+                        <i class="fa-solid fa-file-invoice-dollar fa-2x mb-2"></i>
+                        <span class="fw-bold fs-6">Maintenance Collection</span>
+                    </button>
+                    <button type="submit" form="filterForm" formaction="{{ route('reports.expense.export') }}" class="btn btn-outline-danger py-3 d-flex flex-column align-items-center justify-content-center text-center rounded-3 transition-hover" onclick="setTimeout(()=>document.querySelector('#exportModal .btn-close').click(), 500)">
+                        <i class="fa-solid fa-money-bill-transfer fa-2x mb-2"></i>
+                        <span class="fw-bold fs-6">Society Expenses</span>
+                    </button>
+                    <button type="submit" form="filterForm" formaction="{{ route('reports.summary.export') }}" class="btn btn-outline-success py-3 d-flex flex-column align-items-center justify-content-center text-center rounded-3 transition-hover" onclick="setTimeout(()=>document.querySelector('#exportModal .btn-close').click(), 500)">
+                        <i class="fa-solid fa-chart-pie fa-2x mb-2"></i>
+                        <span class="fw-bold fs-6">Financial Summary</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 
 
     @push('scripts')
@@ -1227,7 +1254,7 @@
                     if ($('#usersYearlyTable').length) {
                         const initUsersYearly = function() {
                             const yearVal = $('select[name="year"]').val() || '{{ $selectedYear ?? date('Y') }}';
-                            const userVal = $('select[name="user_id"]').val() || '';
+                            const residentVal = $('select[name="resident_id"]').val() || '';
                             const blockVal = $('select[name="block_id"]').val() || '';
                             if ($.fn.DataTable.isDataTable('#usersYearlyTable')) {
                                 $('#usersYearlyTable').DataTable().destroy();
@@ -1240,8 +1267,12 @@
                                     url: '{{ route('reports.usersYearly.data') }}',
                                     data: function(d) {
                                         d.year = yearVal;
-                                        d.user_id = userVal;
-                                        d.block_id = blockVal;
+                                        if (blockVal) {
+                                            d.block_id = blockVal;
+                                        }
+                                        if (residentVal) {
+                                            d.resident_id = residentVal;
+                                        }
                                     }
                                 },
                                 columns: [{
@@ -1292,7 +1323,7 @@
 
                         // init now and on filter change
                         initUsersYearly();
-                        $(document).on('change', 'select[name="year"], select[name="user_id"], select[name="block_id"]',
+                        $(document).on('change', 'select[name="year"], select[name="resident_id"], select[name="block_id"]',
                             function() {
                                 initUsersYearly();
                             });

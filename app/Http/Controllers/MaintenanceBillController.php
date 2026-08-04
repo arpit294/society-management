@@ -125,7 +125,7 @@ class MaintenanceBillController extends Controller
             $residentDetails = $residents->mapWithKeys(function ($resident) {
                 $details = 'Basic Maintenance Fee';
                 if ($resident->flat) {
-                    $isCommercial = $resident->flat->is_commercial || in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
+                    $isCommercial = in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
                     $flatType = $resident->flat->flatType;
                     
                     $sqftRate = $resident->flat->maintenanceSqftRate();
@@ -147,7 +147,43 @@ class MaintenanceBillController extends Controller
             $discountSettings = $this->getSettingValues('discount');
             $penaltySettings = $this->getSettingValues('penalty');
 
-            return view('maintenance_bills.create', compact('residents', 'residentFees', 'residentDetails', 'discountSettings', 'penaltySettings'));
+            // Calculate the next billed month for each resident
+            $flatLastPaid = [];
+            $flatEarliestUnpaid = [];
+
+            // 1. Get the latest PAID bill for each flat
+            $latestPaidBills = DB::table('maintenance_bills')
+                ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
+                ->where('maintenance_bills.status', 'paid')
+                ->select('maintenance_bills.flat_id', 'maintenances.month', 'maintenances.year')
+                ->get();
+            
+            foreach ($latestPaidBills as $bill) {
+                try {
+                    $date = Carbon::parse("1 {$bill->month} {$bill->year}");
+                    if (!isset($flatLastPaid[$bill->flat_id]) || $date->gt($flatLastPaid[$bill->flat_id])) {
+                        $flatLastPaid[$bill->flat_id] = $date;
+                    }
+                } catch (\Exception $e) {
+                    continue;
+                }
+            }
+
+            $nextBilledDates = [];
+            // Fetch global billing start month, fallback to current month
+            $defaultStartMonth = \App\Models\Setting::get('billing_start_month', Carbon::now()->format('Y-m'));
+
+            foreach ($residents as $res) {
+                if (isset($flatLastPaid[$res->flat_id])) {
+                    // Start from the month AFTER the last paid bill
+                    $nextBilledDates[$res->id] = $flatLastPaid[$res->flat_id]->copy()->addMonth()->format('Y-m');
+                } else {
+                    // If no paid bills, start from the configured default billing start month
+                    $nextBilledDates[$res->id] = $defaultStartMonth;
+                }
+            }
+
+            return view('maintenance_bills.create', compact('residents', 'residentFees', 'residentDetails', 'discountSettings', 'penaltySettings', 'nextBilledDates'));
         } catch (\Exception $e) {
             if ($e instanceof ValidationException || $e instanceof HttpExceptionInterface) {
                 throw $e;
@@ -521,7 +557,7 @@ class MaintenanceBillController extends Controller
             if ($resident && $resident->flat) {
                 $amount = $resident->flat->calculateMaintenanceFee($resident->type);
                 $details = 'Basic Maintenance Fee';
-                $isCommercial = $resident->flat->is_commercial || in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
+                $isCommercial = in_array(strtolower($resident->flat->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse']);
                 $flatType = $resident->flat->flatType;
                 
                 $sqftRate = $resident->flat->maintenanceSqftRate();

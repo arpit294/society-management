@@ -85,7 +85,21 @@ class FlatsDatatables extends DataTable
                 return $model->updated_at ? $model->updated_at->format('Y-m-d H:i:s') : '-';
             })
             ->addColumn('owner_name', function ($model) {
-                return $model->owner && $model->owner->user ? $model->owner->user->name : '<span class="text-muted fst-italic">None</span>';
+                if ($model->owner && $model->owner->user) {
+                    return $model->owner->user->name;
+                }
+                
+                $latestTransfer = \App\Models\NameTransferBill::with('newOwner')
+                    ->where('flat_id', $model->id)
+                    ->where('is_approved', true)
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
+                    
+                if ($latestTransfer && $latestTransfer->newOwner) {
+                    return $latestTransfer->newOwner->name;
+                }
+
+                return '<span class="text-muted fst-italic">None</span>';
             })
             ->addColumn('tenant_name', function ($model) {
                 return $model->tenant && $model->tenant->user ? $model->tenant->user->name : '<span class="text-muted fst-italic">None</span>';

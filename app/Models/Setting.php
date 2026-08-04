@@ -98,8 +98,7 @@ class Setting extends Model
         ];
 
         $hasExplicitSetting = array_key_exists("ui_label_{$key}", $allSettings) 
-            && !empty($allSettings["ui_label_{$key}"]) 
-            && !in_array($allSettings["ui_label_{$key}"], $genericDefaults);
+            && !empty(trim($allSettings["ui_label_{$key}"]));
 
         if (!$hasExplicitSetting && $propType !== 'flat_residential') {
             if ($propType === 'commercial_complex') {
@@ -190,7 +189,9 @@ class Setting extends Model
         }
 
         $value = $hasExplicitSetting ? $allSettings["ui_label_{$key}"] : self::get("ui_label_{$key}");
-        return !empty($value) ? $value : ($default ?: (self::defaults()["ui_label_{$key}"] ?? $key));
+        $finalValue = !empty($value) ? $value : ($default ?: (self::defaults()["ui_label_{$key}"] ?? $key));
+        
+        return ucwords(trim($finalValue));
     }
 
     public static function unitIconClass(): string

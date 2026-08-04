@@ -1,6 +1,6 @@
 <form id="prepayment-form" action="{{ route('maintenance-bills.store') }}" method="POST" enctype="multipart/form-data"
     data-fees="{{ json_encode($residentFees) }}" data-details="{{ json_encode($residentDetails ?? []) }}" data-discount="{{ json_encode($discountSettings) }}"
-    data-penalty="{{ json_encode($penaltySettings) }}">
+    data-penalty="{{ json_encode($penaltySettings) }}" data-next-billed="{{ json_encode($nextBilledDates ?? []) }}">
     @csrf
     <div class="modal-header">
         <div>

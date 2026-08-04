@@ -79,7 +79,7 @@ class FlatController extends Controller
             ['name' => '5 BHK', 'owner_maintenance_fee' => 5000, 'rental_maintenance_fee' => 6000, 'category_type' => 'flat', 'status' => 'active', 'description' => '5 Bedroom, Hall, Kitchen'],
             ['name' => 'Flat / Apartment', 'owner_maintenance_fee' => 2000, 'rental_maintenance_fee' => 2500, 'category_type' => 'flat', 'status' => 'active', 'description' => 'Standard Flat / Apartment'],
             ['name' => 'Studio Apartment', 'owner_maintenance_fee' => 800, 'rental_maintenance_fee' => 1200, 'category_type' => 'flat', 'status' => 'active', 'description' => 'Studio Unit / 1 RK'],
-            
+
             // Other Residential Unit Types
             ['name' => 'Penthouse', 'owner_maintenance_fee' => 6000, 'rental_maintenance_fee' => 7500, 'category_type' => 'penthouse', 'status' => 'active', 'description' => 'Luxury Penthouse Unit'],
             ['name' => 'Duplex', 'owner_maintenance_fee' => 4500, 'rental_maintenance_fee' => 5500, 'category_type' => 'duplex', 'status' => 'active', 'description' => 'Multi-level Duplex Unit'],
@@ -114,8 +114,8 @@ class FlatController extends Controller
             $blocks = Block::all();
             // Only get active flat types for the dropdown
             $flatTypes = FlatType::where('status', config('status.general.active'))->get();
-            $globalBillingMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
-            $structureType = \App\Models\Setting::get('society_property_type', 'flat_residential');
+            $globalBillingMethod = Setting::get('maintenance_billing_method', 'fixed');
+            $structureType = Setting::get('society_property_type', 'flat_residential');
 
             return view('flats.create', compact('blocks', 'flatTypes', 'globalBillingMethod', 'structureType'));
         } catch (\Exception $e) {
@@ -137,13 +137,12 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_create'), 403);
         try {
-            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
             $validatedData = $request->validate([
                 'block_id' => 'required|integer|exists:blocks,id',
                 'unit_type' => 'nullable|string|max:255',
                 'flat_no' => ['required', 'string', 'max:255', Rule::unique('flats', 'flat_no')->where('block_id', $request->block_id)],
                 'floor_no' => 'nullable|integer|min:0',
-                'flat_type_id' => ($globalMethod === 'per_sqft' || in_array(strtolower($request->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse'])) ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
+                'flat_type_id' => 'nullable|integer|exists:flat_types,id',
                 'area_sqft' => 'nullable|numeric|min:0',
                 'status' => 'required|string|max:255',
             ]);
@@ -155,14 +154,13 @@ class FlatController extends Controller
                 $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
             }
 
-            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
             $flatTypeObj = FlatType::find($validatedData['flat_type_id'] ?? null);
             $calcMethod = $flatTypeObj ? ($flatTypeObj->calculation_method ?? 'fixed') : 'fixed';
-            $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
+            $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid');
 
             if ($isPerSqft && (empty($validatedData['area_sqft']) || (float) $validatedData['area_sqft'] <= 0)) {
                 throw ValidationException::withMessages([
-                    'area_sqft' => ['Carpet Area (Sq. Ft.) is mandatory and must be greater than 0 because Carpet Area Based maintenance billing is active (' . ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' ? 'Category Level' : 'Global Level') . '). Otherwise area 0 hone par bill 0 ban jayega.'],
+                    'area_sqft' => ['Carpet Area (Sq. Ft.) is mandatory and must be greater than 0 because the selected Category uses Area Based maintenance billing. Otherwise area 0 hone par bill 0 ban jayega.'],
                 ]);
             }
 
@@ -177,6 +175,8 @@ class FlatController extends Controller
 
                 $this->ensureBlockHasFlatCapacity((int) $validatedData['block_id']);
             }
+
+
 
             Flat::create($validatedData);
 
@@ -262,13 +262,12 @@ class FlatController extends Controller
     {
         abort_if(! \Auth::user()->can('flat_edit'), 403);
         try {
-            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
             $validatedData = $request->validate([
                 'block_id' => 'required|integer|exists:blocks,id',
                 'unit_type' => 'nullable|string|max:255',
                 'flat_no' => ['required', 'string', 'max:255', Rule::unique('flats', 'flat_no')->where('block_id', $request->block_id)->ignore($flat->id)],
                 'floor_no' => 'nullable|integer|min:0',
-                'flat_type_id' => ($globalMethod === 'per_sqft' || in_array(strtolower($request->unit_type ?? ''), ['shop', 'office', 'showroom', 'warehouse'])) ? 'nullable|integer|exists:flat_types,id' : 'required|integer|exists:flat_types,id',
+                'flat_type_id' => 'nullable|integer|exists:flat_types,id',
                 'area_sqft' => 'nullable|numeric|min:0',
                 'status' => 'required|string|max:255',
             ]);
@@ -280,14 +279,13 @@ class FlatController extends Controller
                 $validatedData['floor_no'] = $validatedData['floor_no'] ?? 0;
             }
 
-            $globalMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
             $flatTypeObj = FlatType::find($validatedData['flat_type_id'] ?? null);
             $calcMethod = $flatTypeObj ? ($flatTypeObj->calculation_method ?? 'fixed') : 'fixed';
-            $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' || $globalMethod === 'per_sqft');
+            $isPerSqft = ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid');
 
             if ($isPerSqft && (empty($validatedData['area_sqft']) || (float) $validatedData['area_sqft'] <= 0)) {
                 throw ValidationException::withMessages([
-                    'area_sqft' => ['Carpet Area (Sq. Ft.) is mandatory and must be greater than 0 because Carpet Area Based maintenance billing is active (' . ($calcMethod === 'per_sqft' || $calcMethod === 'hybrid' ? 'Category Level' : 'Global Level') . '). Otherwise area 0 hone par bill 0 ban jayega.'],
+                    'area_sqft' => ['Carpet Area (Sq. Ft.) is mandatory and must be greater than 0 because the selected Category uses Area Based maintenance billing. Otherwise area 0 hone par bill 0 ban jayega.'],
                 ]);
             }
 
@@ -377,7 +375,7 @@ class FlatController extends Controller
 
             $settings = \App\Models\Setting::getAll();
             $defaultFee = isset($settings['name_transfer_fee']) ? (float) $settings['name_transfer_fee'] : 0;
-            
+
             $users = \App\Models\User::where('status', 1)->get();
 
             return view('flats.transfer', compact('flat', 'currentOwner', 'pendingBills', 'defaultFee', 'users'));

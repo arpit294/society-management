@@ -72,7 +72,7 @@ class FlatDocumentController extends Controller
             $residentType = $validated['resident_type'];
             $requiredDocuments = $this->enabledDocumentsFor($residentType);
 
-            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
+            $maxSizeKb = (float) Setting::get('max_document_size', 2) * 1024;
             $fileRules = [];
             $hasAnyRequired = false;
             foreach ($requiredDocuments as $key => $docInfo) {

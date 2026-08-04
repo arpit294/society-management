@@ -12,7 +12,7 @@
         <div class="col-12">
             <form action="{{ route('settings.store') }}" method="POST">
                 @csrf
-
+                <input type="hidden" name="active_module" value="general-settings">
                 <!-- Card 1: General Settings -->
                 <div class="card mb-4 border-0 shadow-sm" id="general-settings">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
@@ -56,6 +56,12 @@
                                         {{ ($settings['financial_year_start'] ?? 'january_1') == 'april_1' ? 'selected' : '' }}>
                                         1st April</option>
                                 </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-body small fw-semibold text-uppercase">Billing Start Month</label>
+                                <input type="month" name="billing_start_month" class="form-control"
+                                    value="{{ $settings['billing_start_month'] ?? '' }}">
+                                <small class="text-muted" style="font-size: 0.75rem;">Default start month for properties with no previous payments.</small>
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label text-body small fw-semibold text-uppercase">Currency</label>
@@ -138,6 +144,10 @@
                     </div>
                 </div>
 
+                </form>
+            <form action="{{ route('settings.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="active_module" value="structure-settings">
                 <!-- Card 1.5: Property & Structure Configuration (SMP 2.0) -->
                 <div class="card mb-4 border-0 shadow-sm" id="structure-settings">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
@@ -180,27 +190,7 @@
                                     @endif
                                 </select>
                             </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label text-body small fw-semibold text-uppercase">Billing
-                                    Calculation Method</label>
-                                <select name="maintenance_billing_method" id="maintenance_billing_method_select"
-                                    class="form-select">
-                                    <option value="fixed"
-                                        {{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'fixed' ? 'selected' : '' }}>
-                                        Fixed Rate per Unit / Flat (Standard)</option>
-                                    <option value="per_sqft"
-                                        {{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'per_sqft' ? 'selected' : '' }}>
-                                        Carpet Area Based (Per Sq. Ft. x Area)</option>
-                                    <option value="both" id="billing_method_both_option"
-                                        class="{{ ($settings['society_property_type'] ?? 'flat_residential') === 'mixed_use' ? '' : 'd-none' }}"
-                                        style="{{ ($settings['society_property_type'] ?? 'flat_residential') === 'mixed_use' ? '' : 'display: none;' }}"
-                                        {{ ($settings['society_property_type'] ?? 'flat_residential') !== 'mixed_use' ? 'disabled hidden' : '' }}
-                                        {{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'both' ? 'selected' : '' }}>
-                                        Both (Hybrid: Fixed / Sq. Ft. per Category)</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3 mb-3 {{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'fixed' && !in_array($settings['society_property_type'] ?? 'flat_residential', ['mixed_use', 'commercial_complex']) ? 'd-none' : '' }}"
-                                id="maintenance_rate_per_sqft_wrapper" style="{{ ($settings['maintenance_billing_method'] ?? 'fixed') == 'fixed' && !in_array($settings['society_property_type'] ?? 'flat_residential', ['mixed_use', 'commercial_complex']) ? 'display: none;' : '' }}">
+                            <div class="col-md-4 mb-3" id="maintenance_rate_per_sqft_wrapper">
                                 <label class="form-label text-body small fw-semibold text-uppercase">Per Sq. Ft. Rate
                                     (₹) <small class="text-muted fw-normal" style="font-size: 0.75rem;">(Commercial / Area Based)</small></label>
                                 <div class="input-group">
@@ -241,6 +231,10 @@
                     </div>
                 </div>
 
+                </form>
+            <form action="{{ route('settings.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="active_module" value="penalty-settings">
                 <!-- Card 2: Late Penalty Settings -->
                 <div class="card mb-4 border-0 shadow-sm" id="penalty-settings">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
@@ -357,6 +351,10 @@
                     </div>
                 </div>
 
+                </form>
+            <form action="{{ route('settings.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="active_module" value="discount-settings">
                 <!-- Card 3: Prepayment Discount Settings -->
                 <div class="card mb-4 border-0 shadow-sm" id="discount-settings">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
@@ -448,6 +446,10 @@
                     </div>
                 </div>
 
+                </form>
+            <form action="{{ route('settings.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="active_module" value="documents-settings">
                 <!-- Card 4: Required Documents Settings -->
                 <div class="card mb-4 border-0 shadow-sm" id="documents-settings">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
@@ -615,6 +617,10 @@
                     </div>
                 </div>
 
+                </form>
+            <form action="{{ route('settings.store') }}" method="POST">
+                @csrf
+                <input type="hidden" name="active_module" value="toaster-settings">
                 <!-- Card 5: Toaster & Alert Notification Settings -->
                 <div class="card mb-4 border-0 shadow-sm" id="toaster-settings">
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
@@ -1670,4 +1676,62 @@
             </div>
         </div>
     </div>
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Find all sidebar links that point to settings hashes
+            const sidebarLinks = document.querySelectorAll('.sidebar .nav-link[href*="settings#"]');
+            if (sidebarLinks.length === 0) return;
+
+            const sections = [];
+            const linkMap = new Map();
+
+            sidebarLinks.forEach(link => {
+                const url = new URL(link.href, window.location.origin);
+                const hash = url.hash;
+                if (hash) {
+                    // Try to find the section by ID. If there are duplicates (like a row and a card), 
+                    // prefer the card to avoid premature triggering.
+                    let target = document.querySelector(`div.card${hash}`) || document.querySelector(hash);
+                    if (target) {
+                        sections.push(target);
+                        linkMap.set(target, link);
+                    }
+                }
+            });
+
+            if (sections.length === 0) return;
+
+            // Set up IntersectionObserver
+            const observerOptions = {
+                root: null,
+                // Adjust margins so that the active state triggers when the section is near the top 1/3rd of the screen
+                rootMargin: '-10% 0px -70% 0px',
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        // Remove 'active' class from all sidebar settings links
+                        sidebarLinks.forEach(link => link.classList.remove('active'));
+                        // Add 'active' class to the currently visible section's link
+                        const activeLink = linkMap.get(entry.target);
+                        if (activeLink) {
+                            activeLink.classList.add('active');
+                            
+                            // Optional: Ensure the parent nav-group is open (if it's not already)
+                            const parentGroup = activeLink.closest('.nav-group');
+                            if (parentGroup && !parentGroup.classList.contains('show')) {
+                                parentGroup.classList.add('show');
+                            }
+                        }
+                    }
+                });
+            }, observerOptions);
+
+            sections.forEach(section => observer.observe(section));
+        });
+    </script>
+    @endpush
 </x-user-page>

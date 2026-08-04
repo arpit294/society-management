@@ -133,6 +133,22 @@ class NameTransferBillController extends Controller
                     $bill->flat->syncOccupancyStatus();
                 }
 
+                // 2. Add the new owner as a resident
+                if ($bill->new_owner_id) {
+                    $newOwner = User::find($bill->new_owner_id);
+                    if ($newOwner) {
+                        Resident::create([
+                            'block_id' => $bill->flat->block_id ?? null,
+                            'flat_id' => $bill->flat_id,
+                            'user_id' => $bill->new_owner_id,
+                            'type' => 'owner',
+                            'occupant_category' => 'individual',
+                            'contact_person' => $newOwner->name,
+                            'move_in_date' => $transferDate,
+                        ]);
+                    }
+                }
+
                 // Sync user statuses for both old and new owners
                 Resident::syncUserStatus($bill->old_owner_id);
                 if ($bill->new_owner_id) {

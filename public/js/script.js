@@ -1826,8 +1826,11 @@ $(document).ready(function () {
                         }
                     } else {
                         ownerSelect.val("");
-                        ownerSelectContainer.prepend(`<div class="alert alert-danger mb-3 existing-owner-info border-danger bg-danger bg-opacity-10 py-2"><i class="fas fa-exclamation-triangle me-2"></i><strong>Error:</strong> This unit does not have an owner. You must add an Owner first before adding a Tenant.</div>`);
-                        if (!isEditForm) submitBtn.prop('disabled', true);
+                        ownerSelectContainer.prepend(`<div class="alert alert-warning mb-3 existing-owner-info py-2"><i class="fas fa-exclamation-triangle me-2"></i><strong>Warning:</strong> This unit does not have an owner. Please assign an Owner below to add this Tenant.</div>`);
+                        ownerSelectContainer.find('label[for="owner_user_id"]').show();
+                        ownerSelectContainer.find('.form-text').show();
+                        ownerSelect.show();
+                        if (!isEditForm) submitBtn.prop('disabled', false);
                     }
                 } else if (residentType === 'owner') {
                     let isSameOwnerEditing = isEditForm && (String(data.user_id) === String(currentUserId));
@@ -2370,9 +2373,52 @@ $(document).ready(function () {
                 $("#fee-description").text("Basic Maintenance Fee");
             }
             $("#maintenance-fees-section").slideDown();
+
+            // Auto-select start_month based on last payment
+            const nextBilledDatesStr = $('#prepayment-form').attr('data-next-billed');
+            if (nextBilledDatesStr) {
+                try {
+                    const nextBilledDates = JSON.parse(nextBilledDatesStr);
+                    const startDateEl = document.querySelector("#start_date");
+                    if (startDateEl && startDateEl._flatpickr) {
+                        const fp = startDateEl._flatpickr;
+                        if (nextBilledDates[resId]) {
+                            fp.setDate(nextBilledDates[resId]);
+                            const parts = nextBilledDates[resId].split("-");
+                            $("#hidden_start_month").val(
+                                flatpickr.l10ns.default.months.longhand[parseInt(parts[1]) - 1]
+                            );
+                            $("#hidden_start_year").val(parts[0]);
+                            $("#start_date").css('pointer-events', 'none').css('background-color', '#e9ecef').prop('readonly', true);
+                            fp.set('clickOpens', false);
+                        } else {
+                            // If no past bills, default to current month
+                            const now = new Date();
+                            const currentMonth = now.getFullYear() + '-' + (now.getMonth() + 1).toString().padStart(2, '0');
+                            fp.setDate(currentMonth);
+                            $("#hidden_start_month").val(
+                                flatpickr.l10ns.default.months.longhand[now.getMonth()]
+                            );
+                            $("#hidden_start_year").val(now.getFullYear());
+                            $("#start_date").css('pointer-events', 'none').css('background-color', '#e9ecef').prop('readonly', true);
+                            fp.set('clickOpens', false);
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error parsing nextBilledDates:", e);
+                }
+            }
         } else {
             window.currentMonthlyFee = 0;
             $("#maintenance-fees-section").slideUp();
+            
+            const startDateEl = document.querySelector("#start_date");
+            if (startDateEl && startDateEl._flatpickr) {
+                startDateEl._flatpickr.clear();
+                $("#hidden_start_month").val("");
+                $("#hidden_start_year").val("");
+                $("#start_date").css('pointer-events', 'auto').css('background-color', '');
+            }
         }
         window.calculatePaymentTotals();
     });
