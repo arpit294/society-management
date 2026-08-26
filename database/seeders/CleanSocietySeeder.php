@@ -261,7 +261,6 @@ class CleanSocietySeeder extends Seeder
                 'category_type' => $cat['unit_type'],
                 'owner_maintenance_fee' => $cat['owner_fee'],
                 'rental_maintenance_fee' => $cat['rental_fee'],
-                'description' => $cat['desc'],
                 'status' => 'active',
             ]);
 
