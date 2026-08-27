@@ -28,7 +28,9 @@ class CleanSocietySeeder extends Seeder
         $this->command->info("=== Starting Clean Society Database Setup ===");
 
         // 1. Clean / Truncate tables cleanly
-        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        }
         MaintenanceBill::truncate();
         Maintenance::truncate();
         Resident::truncate();
@@ -36,7 +38,9 @@ class CleanSocietySeeder extends Seeder
         FlatType::truncate();
         Block::truncate();
         User::truncate();
-        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        if (DB::getDriverName() === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
 
         // 2. Ensure Roles & Permissions and Settings exist
         $this->call([
