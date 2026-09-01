@@ -1037,6 +1037,25 @@
                                                                 class="form-check-label text-body fw-medium"
                                                                 for="em_complaints">Complaints</label></div>
                                                     </div>
+                                                    @if(!empty($isFinanceActive))
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]"
+                                                                value="expense_categories" id="em_expense_categories"
+                                                                checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_expense_categories">Expense Categories</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]" value="expenses"
+                                                                id="em_expenses" checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_expenses">Expenses</label></div>
+                                                    </div>
                                                     <div class="col-6">
                                                         <div class="form-check small"><input
                                                                 class="form-check-input export-master-chk"
@@ -1065,6 +1084,7 @@
                                                                 for="em_name_transfer_bills">Transfer Fees</label>
                                                         </div>
                                                     </div>
+                                                    @endif
                                                 </div>
                                             </div>
 
@@ -1100,7 +1120,7 @@
                                             <hr class="text-body opacity-25 mb-4">
                                             <p class="text-body small mb-4">
                                                 Upload an Excel (.xlsx) Master backup workbook to bulk restore database
-                                                records across Blocks, Flats, Residents, Staff, Expenses, Complaints,
+                                                records across Blocks, Flats, Residents, Staff{{ !empty($isFinanceActive) ? ', Expenses' : '' }}, Complaints,
                                                 and Settings.
                                             </p>
                                         </div>

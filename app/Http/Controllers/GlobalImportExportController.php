@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\CurrencyHelper;
+use App\Helpers\ModuleHelper;
 use App\Models\Block;
 use App\Models\Complain;
 use App\Models\Expense;
@@ -13,7 +14,10 @@ use App\Models\Maintenance;
 use App\Models\MaintenanceBill;
 use App\Models\NameTransferBill;
 use App\Models\Resident;
+use App\Models\Setting;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +32,7 @@ use OpenSpout\Reader\XLSX\Reader as XLSXReader;
 use OpenSpout\Reader\CSV\Reader as CSVReader;
 use OpenSpout\Writer\XLSX\Writer as XLSXWriter;
 use OpenSpout\Writer\CSV\Writer as CSVWriter;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 class GlobalImportExportController extends Controller
@@ -40,8 +45,9 @@ class GlobalImportExportController extends Controller
     private function getTableConfigs(): array
     {
         $currencySymbol = CurrencyHelper::getCurrencySymbol();
+        $isFinanceActive = ModuleHelper::isFinanceActive();
 
-        return [
+        $configs = [
             'blocks' => [
                 'label' => 'Blocks',
                 'model' => Block::class,
@@ -55,6 +61,13 @@ class GlobalImportExportController extends Controller
                 'headers' => ['block_name', 'flat_no', 'floor_no', 'flat_type_name', 'status'],
                 'labels' => ['Block Name (*)', 'Flat No (*)', 'Floor No', 'Flat Type Name', 'Status (occupied/vacant)'],
                 'required' => ['block_name', 'flat_no'],
+            ],
+            'flat_types' => [
+                'label' => Setting::label('unit_types', 'Flat Types'),
+                'model' => FlatType::class,
+                'headers' => ['name', 'owner_maintenance_fee', 'rental_maintenance_fee', 'description', 'status'],
+                'labels' => ['Type Name (*)', "Owner Fee ({$currencySymbol})", "Rental Fee ({$currencySymbol})", 'Description', 'Status (active/inactive)'],
+                'required' => ['name'],
             ],
             'users' => [
                 'label' => 'Staff & Users',
@@ -77,49 +90,57 @@ class GlobalImportExportController extends Controller
                 'labels' => ['Subject (*)', 'Description (*)', 'User Email (*)', 'Category (Maintenance Issues/Security Issues/Cleanliness & Housekeeping/Common Facilities/other)', 'Status (pending/in-progress/resolved)', 'Resolution Notes'],
                 'required' => ['subject', 'description', 'user_email'],
             ],
-            'expenses' => [
-                'label' => 'Expenses',
-                'model' => Expense::class,
-                'headers' => ['title', 'total_amount', 'category_title', 'expense_date', 'invoice', 'user_email'],
-                'labels' => ['Title (*)', "Total Amount ({$currencySymbol}) (*)", 'Category Title', 'Expense Date (YYYY-MM-DD)', 'Invoice No', 'User Email'],
-                'required' => ['title', 'total_amount'],
-            ],
-            'flat_types' => [
-                'label' => \App\Models\Setting::label('unit_types', 'Flat Types'),
-                'model' => FlatType::class,
-                'headers' => ['name', 'owner_maintenance_fee', 'rental_maintenance_fee', 'description', 'status'],
-                'labels' => ['Type Name (*)', "Owner Fee ({$currencySymbol})", "Rental Fee ({$currencySymbol})", 'Description', 'Status (active/inactive)'],
-                'required' => ['name'],
-            ],
-            'expense_categories' => [
-                'label' => 'Expense Categories',
-                'model' => ExpenseCategory::class,
-                'headers' => ['title', 'status'],
-                'labels' => ['Category Title (*)', 'Status (active/inactive)'],
-                'required' => ['title'],
-            ],
-            'maintenances' => [
-                'label' => 'Maintenance Batches',
-                'model' => Maintenance::class,
-                'headers' => ['month', 'year', 'billing_cycle', 'due_date', 'total_additional_cost', 'status'],
-                'labels' => ['Month (Jan, Feb...) (*)', 'Year (YYYY) (*)', 'Billing Cycle (monthly/quarterly/yearly)', 'Due Date (YYYY-MM-DD)', "Additional Cost ({$currencySymbol})", 'Status (draft/published)'],
-                'required' => ['month', 'year'],
-            ],
-            'maintenance_bills' => [
-                'label' => 'Maintenance Payments / Bills',
-                'model' => MaintenanceBill::class,
-                'headers' => ['user_email', 'block_name', 'flat_no', 'amount', 'penalty_amount', 'discount_amount', 'total_amount', 'generated_date', 'paid_at', 'payment_method', 'transaction_id', 'payment_slip', 'status'],
-                'labels' => ['User Email (*)', 'Block Name (*)', 'Flat No (*)', "Amount ({$currencySymbol}) (*)", "Penalty Amount ({$currencySymbol})", "Discount Amount ({$currencySymbol})", "Total Amount ({$currencySymbol}) (*)", 'Generated Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Status (pending/paid)'],
-                'required' => ['user_email', 'block_name', 'flat_no', 'total_amount'],
-            ],
-            'name_transfer_bills' => [
-                'label' => 'Transfer Fees',
-                'model' => NameTransferBill::class,
-                'headers' => ['block_name', 'flat_no', 'old_owner_email', 'new_owner_email', 'amount', 'transfer_date', 'paid_at', 'payment_method', 'transaction_id', 'payment_slip', 'is_approved', 'status'],
-                'labels' => ['Block Name (*)', 'Flat No (*)', 'Old Owner Email (*)', 'New Owner Email (*)', "Transfer Fee Amount ({$currencySymbol}) (*)", 'Transfer Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Is Approved (1/0)', 'Status (pending/paid)'],
-                'required' => ['block_name', 'flat_no', 'old_owner_email', 'new_owner_email', 'amount'],
-            ],
         ];
+
+        if ($isFinanceActive) {
+            if (ModuleHelper::hasModel(ExpenseCategory::class, 'expense_categories')) {
+                $configs['expense_categories'] = [
+                    'label' => 'Expense Categories',
+                    'model' => ExpenseCategory::class,
+                    'headers' => ['title', 'status'],
+                    'labels' => ['Category Title (*)', 'Status (active/inactive)'],
+                    'required' => ['title'],
+                ];
+            }
+            if (ModuleHelper::hasModel(Expense::class, 'expenses')) {
+                $configs['expenses'] = [
+                    'label' => 'Expenses',
+                    'model' => Expense::class,
+                    'headers' => ['title', 'total_amount', 'category_title', 'expense_date', 'invoice', 'user_email'],
+                    'labels' => ['Title (*)', "Total Amount ({$currencySymbol}) (*)", 'Category Title', 'Expense Date (YYYY-MM-DD)', 'Invoice No', 'User Email'],
+                    'required' => ['title', 'total_amount'],
+                ];
+            }
+            if (ModuleHelper::hasModel(Maintenance::class, 'maintenances')) {
+                $configs['maintenances'] = [
+                    'label' => 'Maintenance Batches',
+                    'model' => Maintenance::class,
+                    'headers' => ['month', 'year', 'billing_cycle', 'due_date', 'total_additional_cost', 'status'],
+                    'labels' => ['Month (Jan, Feb...) (*)', 'Year (YYYY) (*)', 'Billing Cycle (monthly/quarterly/yearly)', 'Due Date (YYYY-MM-DD)', "Additional Cost ({$currencySymbol})", 'Status (draft/published)'],
+                    'required' => ['month', 'year'],
+                ];
+            }
+            if (ModuleHelper::hasModel(MaintenanceBill::class, 'maintenance_bills')) {
+                $configs['maintenance_bills'] = [
+                    'label' => 'Maintenance Payments / Bills',
+                    'model' => MaintenanceBill::class,
+                    'headers' => ['user_email', 'block_name', 'flat_no', 'amount', 'penalty_amount', 'discount_amount', 'total_amount', 'generated_date', 'paid_at', 'payment_method', 'transaction_id', 'payment_slip', 'status'],
+                    'labels' => ['User Email (*)', 'Block Name (*)', 'Flat No (*)', "Amount ({$currencySymbol}) (*)", "Penalty Amount ({$currencySymbol})", "Discount Amount ({$currencySymbol})", "Total Amount ({$currencySymbol}) (*)", 'Generated Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Status (pending/paid)'],
+                    'required' => ['user_email', 'block_name', 'flat_no', 'total_amount'],
+                ];
+            }
+            if (ModuleHelper::hasModel(NameTransferBill::class, 'name_transfer_bills')) {
+                $configs['name_transfer_bills'] = [
+                    'label' => 'Transfer Fees',
+                    'model' => NameTransferBill::class,
+                    'headers' => ['block_name', 'flat_no', 'old_owner_email', 'new_owner_email', 'amount', 'transfer_date', 'paid_at', 'payment_method', 'transaction_id', 'payment_slip', 'is_approved', 'status'],
+                    'labels' => ['Block Name (*)', 'Flat No (*)', 'Old Owner Email (*)', 'New Owner Email (*)', "Transfer Fee Amount ({$currencySymbol}) (*)", 'Transfer Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Is Approved (1/0)', 'Status (pending/paid)'],
+                    'required' => ['block_name', 'flat_no', 'old_owner_email', 'new_owner_email', 'amount'],
+                ];
+            }
+        }
+
+        return $configs;
     }
 
     /**
@@ -127,8 +148,8 @@ class GlobalImportExportController extends Controller
      *
      * @param \Exception $e
      * @param string $methodName
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
-     * @throws \Illuminate\Validation\ValidationException
+     * @return JsonResponse | RedirectResponse
+     * @throws ValidationException
      */
     private function handleException(\Exception $e, string $methodName)
     {
@@ -153,8 +174,8 @@ class GlobalImportExportController extends Controller
     /**
      * Exports data for a given table in either CSV or XLSX format.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     * @param Request $request
+     * @return StreamedResponse
      */
     public function export(Request $request)
     {
@@ -302,8 +323,8 @@ class GlobalImportExportController extends Controller
     /**
      * Downloads an Excel template for importing data.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     * @param Request $request
+     * @return StreamedResponse
      */
     public function downloadTemplate(Request $request)
     {
@@ -348,15 +369,15 @@ class GlobalImportExportController extends Controller
     /**
      * Previews the data from an uploaded import file.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return JsonResponse
      */
     public function previewImport(Request $request)
     {
         abort_if(Gate::denies('setting_edit'), 403, 'Unauthorized access.');
 
         try {
-            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
+            $maxSizeKb = (float) Setting::get('max_document_size', 2) * 1024;
             $request->validate([
                 'table' => 'required|string',
                 'import_file' => 'required|file|max:' . $maxSizeKb,
@@ -396,7 +417,7 @@ class GlobalImportExportController extends Controller
     /**
      * Stores the uploaded import file temporarily.
      *
-     * @param \Illuminate\Http\UploadedFile $file
+     * @param UploadedFile $file
      * @param string $table
      * @return string
      */
@@ -480,8 +501,8 @@ class GlobalImportExportController extends Controller
     /**
      * Processes the actual import of data from a temporary file.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return JsonResponse
      */
     public function processImport(Request $request)
     {
@@ -891,7 +912,7 @@ class GlobalImportExportController extends Controller
         abort_if(Gate::denies('setting_edit'), 403, 'Unauthorized access.');
 
         try {
-            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
+            $maxSizeKb = (float) Setting::get('max_document_size', 2) * 1024;
             $request->validate([
                 'import_file' => 'required|file|max:' . $maxSizeKb,
             ]);
