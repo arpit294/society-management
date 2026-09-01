@@ -139,6 +139,7 @@
         </li>
         @endcan
 
+        @if(\App\Helpers\ModuleHelper::isFinanceActive())
         <li class="nav-title text-uppercase text-secondary fs-8 fw-bold px-3 mt-3 mb-1" style="letter-spacing: 0.1em; opacity: 0.65;">{{ __('Financials') }}</li>
 
         @if(auth()->user()?->can('maintenance_bill_view') || auth()->user()?->can('expense_category_view') || auth()->user()?->can('expense_view') || auth()->user()?->can('name_transfer_bill_view'))
@@ -153,7 +154,7 @@
             <ul class="nav-group-items">
                 @can('maintenance_bill_view')
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('prepayments*') ? 'active' : '' }}" href="{{ route('maintenance-bills.index') }}">
+                    <a class="nav-link {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('prepayments*') ? 'active' : '' }}" href="{{ Route::has('maintenance-bills.index') ? route('maintenance-bills.index') : '#' }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         {{ __('Payments') }}
                     </a>
@@ -161,7 +162,7 @@
                 @endcan
                 @can('expense_category_view')
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('expense-categories*') ? 'active' : '' }}" href="{{ route('expense-categories.index') }}">
+                    <a class="nav-link {{ request()->is('expense-categories*') ? 'active' : '' }}" href="{{ Route::has('expense-categories.index') ? route('expense-categories.index') : '#' }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         {{ __('Expense Categories') }}
                     </a>
@@ -169,7 +170,7 @@
                 @endcan
                 @can('expense_view')
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('expenses*') ? 'active' : '' }}" href="{{ route('expenses.index') }}">
+                    <a class="nav-link {{ request()->is('expenses*') ? 'active' : '' }}" href="{{ Route::has('expenses.index') ? route('expenses.index') : '#' }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         {{ __('Expenses') }}
                     </a>
@@ -177,7 +178,7 @@
                 @endcan
                 @can('name_transfer_bill_view')
                 <li class="nav-item">
-                    <a class="nav-link {{ request()->is('name-transfer-bills*') ? 'active' : '' }}" href="{{ route('name-transfer-bills.index') }}">
+                    <a class="nav-link {{ request()->is('name-transfer-bills*') ? 'active' : '' }}" href="{{ Route::has('name-transfer-bills.index') ? route('name-transfer-bills.index') : '#' }}">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         {{ __('Name Transfer Bills') }}
                     </a>
@@ -185,6 +186,7 @@
                 @endcan
             </ul>
         </li>
+        @endif
         @endif
 
         <li class="nav-title text-uppercase text-secondary fs-8 fw-bold px-3 mt-3 mb-1" style="letter-spacing: 0.1em; opacity: 0.65;">{{ __('Administration') }}</li>
@@ -210,6 +212,7 @@
                         Property & Structure
                     </a>
                 </li>
+                @if(\App\Helpers\ModuleHelper::isFinanceActive())
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('settings.index') }}#penalty-settings">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
@@ -222,6 +225,7 @@
                         Prepayment Discounts
                     </a>
                 </li>
+                @endif
                 <li class="nav-item">
                     <a class="nav-link" href="{{ route('settings.index') }}#documents-settings">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
@@ -254,16 +258,21 @@
                 </li>
             </ul>
         </li>
+        @endcan
 
+        @if(\App\Helpers\ModuleHelper::isFinanceActive() && Route::has('reports.maintenance'))
         <li class="nav-item">
             <a class="nav-link {{ request()->routeIs('reports.maintenance') ? 'active' : '' }}" href="{{ route('reports.maintenance') }}">
                 <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M448 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V96c0-35.35-28.65-64-64-64zM64 64h384c17.64 0 32 14.36 32 32v64H32V96c0-17.64 14.36-32 32-32zm384 384H64c-17.64 0-32-14.36-32-32V192h448v224c0 17.64-14.36 32-32 32zM128 256h128v32H128v-32zm0 64h256v32H128v-32zm0 64h256v32H128v-32z" />
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M480 32H32a16 16 0 0 0-16 16v416a16 16 0 0 0 16 16h448a16 16 0 0 0 16-16V48a16 16 0 0 0-16-16zm-16 416H48V64h416v384z" />
+                    <path fill="var(--ci-primary-color, currentcolor)"
+                        d="M128 320h64v64h-64zm96-128h64v192h-64zm96-96h64v288h-64z" />
                 </svg>
                 {{ __('Reports') }}
             </a>
         </li>
-        @endcan
+        @endif
     </ul>
     {{-- <div class="sidebar-footer border-top d-none d-md-flex">
         <button class="sidebar-toggler" type="button" data-coreui-toggle="unfoldable"></button>

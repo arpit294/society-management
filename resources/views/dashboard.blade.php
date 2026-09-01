@@ -10,7 +10,7 @@
                 <!-- TOP CARDS ROW -->
                 <div class="row g-4 mb-4">
                     <!-- Flats Card -->
-                    <div class="col-sm-6 col-xl-3">
+                    <div class="col-sm-6 {{ !empty($isFinanceActive) ? 'col-xl-3' : 'col-xl-4' }}">
                         <div class="card kpi-hero-card kpi-theme-indigo h-100 border-0">
                             <div class="card-body p-4 d-flex flex-column justify-content-between">
                                 <!-- Top Row: Icon Pedestal & Live Badge -->
@@ -35,7 +35,7 @@
                     </div>
                     
                     <!-- Residents Card -->
-                    <div class="col-sm-6 col-xl-3">
+                    <div class="col-sm-6 {{ !empty($isFinanceActive) ? 'col-xl-3' : 'col-xl-4' }}">
                         <div class="card kpi-hero-card kpi-theme-cyan h-100 border-0">
                             <div class="card-body p-4 d-flex flex-column justify-content-between">
                                 <!-- Top Row: Icon Pedestal & Live Badge -->
@@ -59,7 +59,7 @@
                     </div>
 
                     <!-- Complaints Card -->
-                    <div class="col-sm-6 col-xl-3">
+                    <div class="col-sm-6 {{ !empty($isFinanceActive) ? 'col-xl-3' : 'col-xl-4' }}">
                         <div class="card kpi-hero-card kpi-theme-rose h-100 border-0">
                             <div class="card-body p-4 d-flex flex-column justify-content-between">
                                 <!-- Top Row: Icon Pedestal & Live Badge -->
@@ -82,6 +82,7 @@
                         </div>
                     </div>
 
+                    @if(!empty($isFinanceActive))
                     <!-- Available Fund Card -->
                     <div class="col-sm-6 col-xl-3">
                         <div class="card kpi-hero-card kpi-theme-emerald h-100 border-0">
@@ -105,6 +106,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                 </div>
 
                 <!-- BLOCKS SUMMARY SECTION -->
@@ -165,6 +167,7 @@
                 </div>
                 @endif
 
+                @if(!empty($isFinanceActive))
                 <!-- CHARTS ROW 1 -->
                 <div class="row g-4 mb-4">
                     <!-- Main Chart: Revenue vs Expenses -->
@@ -179,9 +182,11 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
                 <!-- CHARTS ROW 2 -->
                 <div class="row g-4 mb-4">
+                    @if(!empty($isFinanceActive))
                     <!-- Expense Breakdown Chart -->
                     <div class="col-lg-6">
                         <div class="card glass-card h-100 shadow-sm border-0">
@@ -193,9 +198,10 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
                     <!-- Occupancy Rates Chart -->
-                    <div class="col-lg-6">
+                    <div class="{{ !empty($isFinanceActive) ? 'col-lg-6' : 'col-12' }}">
                         <div class="card glass-card h-100 shadow-sm border-0">
                             <div class="card-header bg-transparent border-0 pt-4 pb-0">
                                 <h5 class="card-title mb-0 fw-bold">Occupancy Rates</h5>
@@ -207,6 +213,7 @@
                     </div>
                 </div>
 
+                @if(!empty($isFinanceActive))
                 <!-- LIVE CASHFLOW & NET-WORTH LEDGER ROW -->
                 <div class="row g-4 mb-4">
                     <!-- Left Col: This Month's Cashflow Pulse -->
@@ -388,17 +395,22 @@
                             <div class="d-flex align-items-center justify-content-between pt-3 mt-3 border-top" style="border-color: rgba(255, 255, 255, 0.08) !important;">
                                 <span class="text-muted small"><i class="fa-solid fa-lock text-primary me-1"></i> All transactions are cryptographically audited & reconciled</span>
                                 <div class="d-flex gap-3">
+                                    @if(\Illuminate\Support\Facades\Route::has('maintenance-bills.index'))
                                     <a href="{{ route('maintenance-bills.index') }}" class="btn btn-sm btn-link text-success fw-semibold text-decoration-none p-0">
                                         Inflow <i class="fa-solid fa-arrow-right ms-1"></i>
                                     </a>
+                                    @endif
+                                    @if(\Illuminate\Support\Facades\Route::has('expenses.index'))
                                     <a href="{{ route('expenses.index') }}" class="btn btn-sm btn-link text-danger fw-semibold text-decoration-none p-0">
                                         Outflow <i class="fa-solid fa-arrow-right ms-1"></i>
                                     </a>
+                                    @endif
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                @endif
 
             </div>
         </div>
