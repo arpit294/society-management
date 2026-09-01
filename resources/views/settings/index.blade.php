@@ -232,6 +232,7 @@
                 </div>
 
                 </form>
+            @if(!empty($isFinanceActive))
             <form action="{{ route('settings.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="active_module" value="penalty-settings">
@@ -250,7 +251,7 @@
                                     <div>
                                         <label class="form-check-label fw-bold mb-1 text-body d-block"
                                             for="apply_penalty" style="cursor: pointer; font-size: 1rem;">Allow Late
-                                            Fees Penalty</label>
+                                             Fees Penalty</label>
                                         <div class="small text-muted">Automatically apply late penalty charges to
                                             unpaid invoices after grace period</div>
                                     </div>
@@ -447,6 +448,7 @@
                 </div>
 
                 </form>
+            @endif
             <form action="{{ route('settings.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="active_module" value="documents-settings">
