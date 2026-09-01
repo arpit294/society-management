@@ -13,6 +13,7 @@
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
         "maatwebsite/excel": "4.x-dev",
+        "nwidart/laravel-modules": "^13.0",
         "spatie/laravel-permission": "^8.3",
         "yajra/laravel-datatables": "^13.0"
     },
@@ -90,7 +91,8 @@
         },
         "allow-plugins": {
             "pestphp/pest-plugin": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "wikimedia/composer-merge-plugin": true
         }
     },
     "minimum-stability": "stable",

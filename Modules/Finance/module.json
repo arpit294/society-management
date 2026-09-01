@@ -1,0 +1,16 @@
+{
+    "name": "Finance",
+    "alias": "finance",
+    "description": "Finance & Accounting Module for Society Management System",
+    "keywords": [
+        "finance",
+        "maintenance",
+        "expenses",
+        "reports"
+    ],
+    "priority": 0,
+    "providers": [
+        "Modules\\Finance\\FinanceServiceProvider"
+    ],
+    "files": []
+}
