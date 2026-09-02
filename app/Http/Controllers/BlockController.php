@@ -10,6 +10,7 @@ use App\Models\Flat;
 use App\Models\FlatDocument;
 use App\Models\MaintenanceBill;
 use App\Models\NameTransferBill;
+use App\Models\Resident;
 use App\Models\Setting;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Http\JsonResponse;
@@ -220,10 +221,10 @@ class BlockController extends Controller
                 if ($flatIds->isNotEmpty()) {
                     Complain::whereIn('flat_id', $flatIds)->delete();
                     FlatDocument ::whereIn('flat_id', $flatIds)->delete();
-                    if (ModuleHelper::isFinanceActive() && ModuleHelper::hasModel(\App\Models\NameTransferBill::class, 'name_transfer_bills')) {
+                    if (ModuleHelper::isFinanceActive() && ModuleHelper::hasModel(NameTransferBill::class, 'name_transfer_bills')) {
                         NameTransferBill::whereIn('flat_id', $flatIds)->delete();
                     }
-                    \App\Models\Resident::whereIn('flat_id', $flatIds)->delete();
+                    Resident::whereIn('flat_id', $flatIds)->delete();
                 }
                 if (ModuleHelper::isFinanceActive() &&  ModuleHelper::hasModel(MaintenanceBill::class, 'maintenance_bills')) {
                     MaintenanceBill::where('block_id', $block->id)->delete();
