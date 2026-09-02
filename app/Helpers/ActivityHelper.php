@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\NameTransferBill;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Route;
+use Nwidart\Modules\Collection;
 
 class ActivityHelper
 {
@@ -15,7 +16,7 @@ class ActivityHelper
      * Get recent society activities across all modules.
      *
      * @param int $limit
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     public static function getRecentActivities($limit = 8)
     {
