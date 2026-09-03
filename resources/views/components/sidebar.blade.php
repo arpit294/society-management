@@ -139,52 +139,95 @@
         </li>
         @endcan
 
-        <li class="nav-title text-uppercase text-secondary fs-8 fw-bold px-3 mt-3 mb-1" style="letter-spacing: 0.1em; opacity: 0.65;">{{ __('Financials') }}</li>
-
-        @if(auth()->user()?->can('maintenance_bill_view') || auth()->user()?->can('expense_category_view') || auth()->user()?->can('expense_view') || auth()->user()?->can('name_transfer_bill_view'))
-        <li class="nav-group {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('expense-categories*') || request()->is('expenses*') || request()->is('prepayments*') || request()->is('name-transfer-bills*') ? 'show' : '' }}">
-            <a class="nav-link nav-group-toggle" href="#">
-                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)"
-                        d="M448 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V96c0-35.35-28.65-64-64-64zM64 64h384c17.64 0 32 14.36 32 32v64H32V96c0-17.64 14.36-32 32-32zm384 384H64c-17.64 0-32-14.36-32-32V192h448v224c0 17.64-14.36 32-32 32zM128 256h128v32H128v-32zm0 64h256v32H128v-32zm0 64h256v32H128v-32z" />
-                </svg>
-                {{ __('Finances') }}
-            </a>
-            <ul class="nav-group-items">
-                @can('maintenance_bill_view')
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('prepayments*') ? 'active' : '' }}" href="{{ route('maintenance-bills.index') }}">
-                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                        {{ __('Payments') }}
-                    </a>
-                </li>
-                @endcan
-                @can('expense_category_view')
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('expense-categories*') ? 'active' : '' }}" href="{{ route('expense-categories.index') }}">
-                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                        {{ __('Expense Categories') }}
-                    </a>
-                </li>
-                @endcan
-                @can('expense_view')
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('expenses*') ? 'active' : '' }}" href="{{ route('expenses.index') }}">
-                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                        {{ __('Expenses') }}
-                    </a>
-                </li>
-                @endcan
-                @can('name_transfer_bill_view')
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('name-transfer-bills*') ? 'active' : '' }}" href="{{ route('name-transfer-bills.index') }}">
-                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
-                        {{ __('Name Transfer Bills') }}
-                    </a>
-                </li>
-                @endcan
-            </ul>
+        <li class="nav-title text-uppercase text-secondary fs-8 fw-bold px-3 mt-3 mb-1" style="letter-spacing: 0.1em; opacity: 0.65;">
+            {{ __('Financials') }}
         </li>
+
+        @if(\App\Helpers\ModuleHelper::isFinanceActive())
+            {{-- ACTIVE FINANCE MODULE NAVIGATION --}}
+            @if(auth()->user()?->can('maintenance_bill_view') || auth()->user()?->can('expense_category_view') || auth()->user()?->can('expense_view') || auth()->user()?->can('name_transfer_bill_view'))
+            <li class="nav-group {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('expense-categories*') || request()->is('expenses*') || request()->is('prepayments*') || request()->is('name-transfer-bills*') ? 'show' : '' }}">
+                <a class="nav-link nav-group-toggle" href="#">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                        <path fill="var(--ci-primary-color, currentcolor)"
+                            d="M448 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V96c0-35.35-28.65-64-64-64zM64 64h384c17.64 0 32 14.36 32 32v64H32V96c0-17.64 14.36-32 32-32zm384 384H64c-17.64 0-32-14.36-32-32V192h448v224c0 17.64-14.36 32-32 32zM128 256h128v32H128v-32zm0 64h256v32H128v-32zm0 64h256v32H128v-32z" />
+                    </svg>
+                    {{ __('Finances') }}
+                </a>
+                <ul class="nav-group-items">
+                    @can('maintenance_bill_view')
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->is('maintenance-bills*') || request()->is('payments*') || request()->is('prepayments*') ? 'active' : '' }}" href="{{ Route::has('maintenance-bills.index') ? route('maintenance-bills.index') : '#' }}">
+                            <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                            {{ __('Payments') }}
+                        </a>
+                    </li>
+                    @endcan
+                    @can('expense_category_view')
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->is('expense-categories*') ? 'active' : '' }}" href="{{ Route::has('expense-categories.index') ? route('expense-categories.index') : '#' }}">
+                            <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                            {{ __('Expense Categories') }}
+                        </a>
+                    </li>
+                    @endcan
+                    @can('expense_view')
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->is('expenses*') ? 'active' : '' }}" href="{{ Route::has('expenses.index') ? route('expenses.index') : '#' }}">
+                            <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                            {{ __('Expenses') }}
+                        </a>
+                    </li>
+                    @endcan
+                    @can('name_transfer_bill_view')
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->is('name-transfer-bills*') ? 'active' : '' }}" href="{{ Route::has('name-transfer-bills.index') ? route('name-transfer-bills.index') : '#' }}">
+                            <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                            {{ __('Name Transfer Bills') }}
+                        </a>
+                    </li>
+                    @endcan
+                </ul>
+            </li>
+            @endif
+        @else
+            {{-- INACTIVE / PRO PREVIEW NAVIGATION --}}
+            <li class="nav-group">
+                <a class="nav-link nav-group-toggle" href="#">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                        <path fill="var(--ci-primary-color, currentcolor)"
+                            d="M448 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V96c0-35.35-28.65-64-64-64zM64 64h384c17.64 0 32 14.36 32 32v64H32V96c0-17.64 14.36-32 32-32zm384 384H64c-17.64 0-32-14.36-32-32V192h448v224c0 17.64-14.36 32-32 32zM128 256h128v32H128v-32zm0 64h256v32H128v-32zm0 64h256v32H128v-32z" />
+                    </svg>
+                    <span>{{ __('Finances') }}</span>
+                    <span class="badge bg-warning text-dark fw-bold ms-auto me-3" style="font-size: 0.6rem; letter-spacing: 0.05em;">PRO</span>
+                </a>
+                <ul class="nav-group-items">
+                    <li class="nav-item">
+                        <a class="nav-link js-premium-feature" href="javascript:void(0)" data-feature="Maintenance Invoicing & Payments">
+                            <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                            {{ __('Payments') }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link js-premium-feature" href="javascript:void(0)" data-feature="Expense Categories">
+                            <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                            {{ __('Expense Categories') }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link js-premium-feature" href="javascript:void(0)" data-feature="Society Expenses Tracking">
+                            <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                            {{ __('Expenses') }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link js-premium-feature" href="javascript:void(0)" data-feature="Flat Ownership Name Transfers">
+                            <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                            {{ __('Name Transfer Bills') }}
+                        </a>
+                    </li>
+                </ul>
+            </li>
         @endif
 
         <li class="nav-title text-uppercase text-secondary fs-8 fw-bold px-3 mt-3 mb-1" style="letter-spacing: 0.1em; opacity: 0.65;">{{ __('Administration') }}</li>
@@ -211,15 +254,25 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('settings.index') }}#penalty-settings">
+                    <a class="nav-link {{ !\App\Helpers\ModuleHelper::isFinanceActive() ? 'js-premium-feature' : '' }}" 
+                       href="{{ \App\Helpers\ModuleHelper::isFinanceActive() ? route('settings.index') . '#penalty-settings' : 'javascript:void(0)' }}" 
+                       data-feature="Late Penalty Automation Settings">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         Late Penalty Settings
+                        @if(!\App\Helpers\ModuleHelper::isFinanceActive())
+                            <span class="badge bg-warning text-dark fw-bold ms-auto" style="font-size: 0.58rem;">PRO</span>
+                        @endif
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="{{ route('settings.index') }}#discount-settings">
+                    <a class="nav-link {{ !\App\Helpers\ModuleHelper::isFinanceActive() ? 'js-premium-feature' : '' }}" 
+                       href="{{ \App\Helpers\ModuleHelper::isFinanceActive() ? route('settings.index') . '#discount-settings' : 'javascript:void(0)' }}" 
+                       data-feature="Prepayment Discounts Settings">
                         <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
                         Prepayment Discounts
+                        @if(!\App\Helpers\ModuleHelper::isFinanceActive())
+                            <span class="badge bg-warning text-dark fw-bold ms-auto" style="font-size: 0.58rem;">PRO</span>
+                        @endif
                     </a>
                 </li>
                 <li class="nav-item">
@@ -252,23 +305,39 @@
                         {{ __('Global Import Export') }}
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#module-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        {{ __('Module Settings') }}
+                    </a>
+                </li>
             </ul>
         </li>
+        @endcan
 
         <li class="nav-item">
-            <a class="nav-link {{ request()->routeIs('reports.maintenance') ? 'active' : '' }}" href="{{ route('reports.maintenance') }}">
-                <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-                    <path fill="var(--ci-primary-color, currentcolor)" d="M448 32H64C28.65 32 0 60.65 0 96v320c0 35.35 28.65 64 64 64h384c35.35 0 64-28.65 64-64V96c0-35.35-28.65-64-64-64zM64 64h384c17.64 0 32 14.36 32 32v64H32V96c0-17.64 14.36-32 32-32zm384 384H64c-17.64 0-32-14.36-32-32V192h448v224c0 17.64-14.36 32-32 32zM128 256h128v32H128v-32zm0 64h256v32H128v-32zm0 64h256v32H128v-32z" />
-                </svg>
-                {{ __('Reports') }}
-            </a>
+            @if(\App\Helpers\ModuleHelper::isFinanceActive() && Route::has('reports.maintenance'))
+                <a class="nav-link {{ request()->routeIs('reports.maintenance') ? 'active' : '' }}" href="{{ route('reports.maintenance') }}">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                        <path fill="var(--ci-primary-color, currentcolor)"
+                            d="M480 32H32a16 16 0 0 0-16 16v416a16 16 0 0 0 16 16h448a16 16 0 0 0 16-16V48a16 16 0 0 0-16-16zm-16 416H48V64h416v384z" />
+                        <path fill="var(--ci-primary-color, currentcolor)"
+                            d="M128 320h64v64h-64zm96-128h64v192h-64zm96-96h64v288h-64z" />
+                    </svg>
+                    {{ __('Reports') }}
+                </a>
+            @else
+                <a class="nav-link js-premium-feature" href="javascript:void(0)" data-feature="Financial Audits & Society Reports">
+                    <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                        <path fill="var(--ci-primary-color, currentcolor)"
+                            d="M480 32H32a16 16 0 0 0-16 16v416a16 16 0 0 0 16 16h448a16 16 0 0 0 16-16V48a16 16 0 0 0-16-16zm-16 416H48V64h416v384z" />
+                        <path fill="var(--ci-primary-color, currentcolor)"
+                            d="M128 320h64v64h-64zm96-128h64v192h-64zm96-96h64v288h-64z" />
+                    </svg>
+                    {{ __('Reports') }}
+                    <span class="badge bg-warning text-dark fw-bold ms-auto" style="font-size: 0.6rem; letter-spacing: 0.05em;">PRO</span>
+                </a>
+            @endif
         </li>
-        @endcan
     </ul>
-    {{-- <div class="sidebar-footer border-top d-none d-md-flex">
-        <button class="sidebar-toggler" type="button" data-coreui-toggle="unfoldable"></button>
-    </div> --}}
 </div>
-
-
-{{--  --}}

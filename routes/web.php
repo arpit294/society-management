@@ -111,16 +111,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('complains/{complain}', [ComplainController::class, 'destroy'])->name('complains.destroy');
     });
 
-    Route::middleware('permission:expense_view')->group(function () {
-        Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
-        Route::get('expenses/create', [ExpenseController::class, 'create'])->name('expenses.create');
-        Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
-        Route::get('expenses/{expense}/edit', [ExpenseController::class, 'edit'])->name('expenses.edit');
-        Route::put('expenses/{expense}', [ExpenseController::class, 'update'])->name('expenses.update');
-        Route::patch('expenses/{expense}', [ExpenseController::class, 'update']);
-        Route::delete('expenses/{expense}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
-    });
-
     Route::middleware('permission:flat_document_view')->group(function () {
         Route::get('flat-documents', [FlatDocumentController::class, 'index'])->name('flat-documents.index');
         Route::get('flat-documents/create', [FlatDocumentController::class, 'create'])->name('flat-documents.create');
@@ -132,16 +122,6 @@ Route::middleware('auth')->group(function () {
         Route::post('flat-documents/{flat_document}/document/{doc_key}', [FlatDocumentController::class, 'updateDocument'])->name('flat-documents.update-document');
     });
 
-    Route::middleware('permission:expense_category_view')->group(function () {
-        Route::get('expense-categories', [ExpenseCategoryController::class, 'index'])->name('expense-categories.index');
-        Route::get('expense-categories/create', [ExpenseCategoryController::class, 'create'])->name('expense-categories.create');
-        Route::post('expense-categories', [ExpenseCategoryController::class, 'store'])->name('expense-categories.store');
-        Route::get('expense-categories/{expense_category}/edit', [ExpenseCategoryController::class, 'edit'])->name('expense-categories.edit');
-        Route::put('expense-categories/{expense_category}', [ExpenseCategoryController::class, 'update'])->name('expense-categories.update');
-        Route::patch('expense-categories/{expense_category}', [ExpenseCategoryController::class, 'update']);
-        Route::delete('expense-categories/{expense_category}', [ExpenseCategoryController::class, 'destroy'])->name('expense-categories.destroy');
-    });
-
     Route::middleware('permission:flat_type_view')->group(function () {
         Route::get('flat-types', [FlatTypeController::class, 'index'])->name('flat-types.index');
         Route::get('flat-types/create', [FlatTypeController::class, 'create'])->name('flat-types.create');
@@ -150,25 +130,6 @@ Route::middleware('auth')->group(function () {
         Route::put('flat-types/{flat_type}', [FlatTypeController::class, 'update'])->name('flat-types.update');
         Route::patch('flat-types/{flat_type}', [FlatTypeController::class, 'update']);
         Route::delete('flat-types/{flat_type}', [FlatTypeController::class, 'destroy'])->name('flat-types.destroy');
-    });
-
-    Route::middleware('permission:maintenance_bill_view')->group(function () {
-        Route::get('maintenance-bills/resident-info/{user_id}', [MaintenanceBillController::class, 'getResidentInfo'])->name('maintenance-bills.resident-info');
-        Route::get('maintenance-bills/details/{id}', [MaintenanceBillController::class, 'details'])->name('maintenance-bills.details');
-        Route::get('maintenance-bills/download-invoice/{id}', [MaintenanceBillController::class, 'downloadInvoice'])->name('maintenance-bills.download-invoice');
-        Route::get('maintenance-bills', [MaintenanceBillController::class, 'index'])->name('maintenance-bills.index');
-        Route::get('maintenance-bills/create', [MaintenanceBillController::class, 'create'])->name('maintenance-bills.create');
-        Route::post('maintenance-bills', [MaintenanceBillController::class, 'store'])->name('maintenance-bills.store');
-        Route::delete('maintenance-bills/individual/{id}', [MaintenanceBillController::class, 'destroyIndividual'])->name('maintenance-bills.destroy-individual');
-        Route::delete('maintenance-bills/{maintenanceBill}', [MaintenanceBillController::class, 'destroy'])->name('maintenance-bills.destroy');
-        Route::post('maintenance-bills/{maintenanceBill}/update-status', [MaintenanceBillController::class, 'updateStatus'])->name('maintenance-bills.update-status');
-    });
-
-    Route::middleware('permission:name_transfer_bill_view')->group(function () {
-        Route::get('name-transfer-bills', [NameTransferBillController::class, 'index'])->name('name-transfer-bills.index');
-        Route::post('name-transfer-bills/{bill}/approve', [NameTransferBillController::class, 'approve'])->name('name-transfer-bills.approve');
-        Route::post('name-transfer-bills/{bill}/update-status', [NameTransferBillController::class, 'updateStatus'])->name('name-transfer-bills.update-status');
-        Route::delete('name-transfer-bills/{bill}', [NameTransferBillController::class, 'destroy'])->name('name-transfer-bills.destroy');
     });
 
     Route::middleware('permission:setting_view')->group(function () {
@@ -193,13 +154,6 @@ Route::middleware('auth')->group(function () {
         Route::get('settings/global-backup/template-master', [GlobalImportExportController::class, 'templateMaster'])->name('settings.global.template_master');
         Route::post('settings/global-backup/preview-master', [GlobalImportExportController::class, 'previewMaster'])->name('settings.global.preview_master');
         Route::post('settings/global-backup/process-master', [GlobalImportExportController::class, 'processMaster'])->name('settings.global.process_master');
-
-        // Reports
-        Route::get('reports/maintenance/export', [ReportController::class, 'exportReport'])->name('reports.maintenance.export');
-        Route::get('reports/expense/export', [ReportController::class, 'exportExpenseReport'])->name('reports.expense.export');
-        Route::get('reports/summary/export', [ReportController::class, 'exportSummaryReport'])->name('reports.summary.export');
-        Route::get('reports/maintenance', [ReportController::class, 'maintenanceReport'])->name('reports.maintenance');
-        Route::get('reports/maintenance/users-yearly-data', [ReportController::class, 'usersYearlyData'])->name('reports.usersYearly.data');
     });
 
     Route::middleware('permission:setting_edit')->group(function () {

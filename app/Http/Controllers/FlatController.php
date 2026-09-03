@@ -6,8 +6,6 @@ use App\DataTables\FlatsDatatables;
 use App\Models\Block;
 use App\Models\Flat;
 use App\Models\FlatType;
-use App\Models\MaintenanceBill;
-use App\Models\NameTransferBill;
 use App\Models\Resident;
 use App\Models\Setting;
 use App\Models\User;
@@ -51,7 +49,7 @@ class FlatController extends Controller
         try {
             $blocks = Block::all();
             $flatTypes = FlatType::where('status', config('status.general.active'))->get();
-            $globalBillingMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
+            $globalBillingMethod = Setting::get('maintenance_billing_method', 'fixed');
 
             return $dataTable->render('flats.index', compact('blocks', 'flatTypes', 'globalBillingMethod'));
         } catch (\Exception $e) {
@@ -237,8 +235,8 @@ class FlatController extends Controller
             self::syncDefaultFlatTypes();
             $blocks = Block::all();
             $flatTypes = FlatType::all();
-            $globalBillingMethod = \App\Models\Setting::get('maintenance_billing_method', 'fixed');
-            $structureType = \App\Models\Setting::get('society_property_type', 'flat_residential');
+            $globalBillingMethod = Setting::get('maintenance_billing_method', 'fixed');
+            $structureType = Setting::get('society_property_type', 'flat_residential');
 
             return view('flats.edit', compact('flat', 'blocks', 'flatTypes', 'globalBillingMethod', 'structureType'));
         } catch (\Exception $e) {
@@ -349,6 +347,7 @@ class FlatController extends Controller
     public function transferCreate(Flat $flat)
     {
         abort_if(! \Auth::user()->can('flat_edit'), 403);
+        abort_if(! \App\Helpers\ModuleHelper::isFinanceActive(), 404, 'Finance module is currently inactive.');
         try {
             $flat->load('block');
             $currentOwner = Resident::with('user')
@@ -368,15 +367,19 @@ class FlatController extends Controller
                 return response('<div class="p-4 text-center text-danger">This flat does not currently have an active owner to transfer from.</div>');
             }
 
-            $pendingBills = \App\Models\MaintenanceBill::with('maintenance')
-                ->where('flat_id', $flat->id)
-                ->where('status', '!=', config('status.maintenance_bills.paid'))
-                ->get();
+            $pendingBills = collect([]);
+            $maintenanceBillModel = \App\Helpers\ModuleHelper::getModel('MaintenanceBill');
+            if (\App\Helpers\ModuleHelper::isFinanceActive() && $maintenanceBillModel && \App\Helpers\ModuleHelper::hasModel($maintenanceBillModel, 'maintenance_bills')) {
+                $pendingBills = $maintenanceBillModel::with('maintenance')
+                    ->where('flat_id', $flat->id)
+                    ->where('status', '!=', config('status.maintenance_bills.paid'))
+                    ->get();
+            }
 
-            $settings = \App\Models\Setting::getAll();
+            $settings = Setting::getAll();
             $defaultFee = isset($settings['name_transfer_fee']) ? (float) $settings['name_transfer_fee'] : 0;
 
-            $users = \App\Models\User::where('status', 1)->get();
+            $users = User::where('status', 1)->get();
 
             return view('flats.transfer', compact('flat', 'currentOwner', 'pendingBills', 'defaultFee', 'users'));
         } catch (\Exception $e) {
@@ -397,13 +400,19 @@ class FlatController extends Controller
     public function payPendingDues(Request $request, Flat $flat)
     {
         abort_if(! \Auth::user()->can('maintenance_bill_create'), 403);
+        abort_if(! \App\Helpers\ModuleHelper::isFinanceActive(), 404, 'Finance module is currently inactive.');
         try {
             $request->validate([
                 'payment_method' => 'required|string',
                 'transaction_id' => 'nullable|string',
             ]);
 
-            $pendingBills = MaintenanceBill::with('resident', 'flat.flatType', 'maintenance')
+            $maintenanceBillModel = \App\Helpers\ModuleHelper::getModel('MaintenanceBill');
+            if (! $maintenanceBillModel) {
+                return response()->json(['success' => false, 'message' => 'Finance module is not available.'], 404);
+            }
+
+            $pendingBills = $maintenanceBillModel::with('resident', 'flat.flatType', 'maintenance')
                 ->where('flat_id', $flat->id)
                 ->where('status', '!=', config('status.maintenance_bills.paid'))
                 ->get();
@@ -448,6 +457,7 @@ class FlatController extends Controller
     public function transferStore(Request $request, Flat $flat)
     {
         abort_if(! \Auth::user()->can('flat_edit'), 403);
+        abort_if(! \App\Helpers\ModuleHelper::isFinanceActive(), 404, 'Finance module is currently inactive.');
         try {
             if ($request->has('transaction_id')) {
                 $request->merge([
@@ -457,7 +467,7 @@ class FlatController extends Controller
                 ]);
             }
 
-            $maxSizeKb = (float) \App\Models\Setting::get('max_document_size', 2) * 1024;
+            $maxSizeKb = (float) Setting::get('max_document_size', 2) * 1024;
             $validatedData = $request->validate([
                 'user_type' => 'required|in:new,existing',
                 'existing_user_id' => 'required_if:user_type,existing|nullable|exists:users,id',
@@ -491,13 +501,18 @@ class FlatController extends Controller
 
             DB::beginTransaction();
             try {
-                // Check if there are any pending maintenance bills for this flat
-                $pendingBills = MaintenanceBill::where('flat_id', $flat->id)
-                    ->where('status', '!=', config('status.maintenance_bills.paid'))
-                    ->get();
+                $maintenanceBillModel = \App\Helpers\ModuleHelper::getModel('MaintenanceBill');
+                $nameTransferModel = \App\Helpers\ModuleHelper::getModel('NameTransferBill');
 
-                if ($pendingBills->isNotEmpty()) {
-                    throw new \Exception('Ownership transfer is restricted until all pending maintenance dues (' . $pendingBills->count() . ' pending) are paid.');
+                // Check if there are any pending maintenance bills for this flat
+                if ($maintenanceBillModel && \App\Helpers\ModuleHelper::hasModel($maintenanceBillModel, 'maintenance_bills')) {
+                    $pendingBills = $maintenanceBillModel::where('flat_id', $flat->id)
+                        ->where('status', '!=', config('status.maintenance_bills.paid'))
+                        ->get();
+
+                    if ($pendingBills->isNotEmpty()) {
+                        throw new \Exception('Ownership transfer is restricted until all pending maintenance dues (' . $pendingBills->count() . ' pending) are paid.');
+                    }
                 }
 
 
@@ -570,7 +585,9 @@ class FlatController extends Controller
                     }
                 }
 
-                NameTransferBill::create($billData);
+                if ($nameTransferModel) {
+                    $nameTransferModel::create($billData);
+                }
 
                 DB::commit();
 
