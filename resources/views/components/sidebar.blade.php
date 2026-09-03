@@ -305,6 +305,12 @@
                         {{ __('Global Import Export') }}
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ route('settings.index') }}#module-settings">
+                        <span class="nav-icon"><span class="nav-icon-bullet"></span></span>
+                        {{ __('Module Settings') }}
+                    </a>
+                </li>
             </ul>
         </li>
         @endcan

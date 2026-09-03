@@ -1231,6 +1231,301 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Module Management Hub -->
+            <div class="row mt-4" id="module-settings">
+                <div class="col-12">
+                    <div class="card mb-5 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                        
+                        <!-- Card Header -->
+                        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2 fs-5">
+                                    <i class="fa-solid fa-puzzle-piece"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0 fw-bold">Module Management & Extensions</h4>
+                                    <p class="text-muted small mb-0">Upload module ZIP packages and manage installed society extensions</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small fw-semibold">
+                                    <i class="fa-solid fa-layer-group me-1"></i>Modular System
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card-body p-4">
+                            
+                            <!-- TOP SECTION: Upload Module ZIP & Automated Config Instructions -->
+                            <div class="row g-4 mb-5">
+                                
+                                <!-- Left Column: Drag & Drop ZIP Upload Box -->
+                                <div class="col-lg-7">
+                                    <div class="card h-100 border border-secondary border-opacity-25 rounded-4 shadow-sm p-4" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="fw-bold mb-0 text-body">
+                                                <i class="fa-solid fa-file-zipper text-warning me-2"></i>Install Module via ZIP
+                                            </h5>
+                                            <span class="badge bg-secondary bg-opacity-15 text-body border border-secondary border-opacity-25 px-2.5 py-1 rounded-pill fs-8">
+                                                .ZIP Format
+                                            </span>
+                                        </div>
+                                        <p class="text-muted small mb-3">
+                                            Select or drag a valid module ZIP archive (e.g. <code>Finance.zip</code>). The system will automatically extract files, register composer autoloading, run database migrations, seed default records, and enable the module.
+                                        </p>
+
+                                        <!-- Drag & Drop Zone -->
+                                        <div class="drag-drop-module-zone border border-2 border-dashed rounded-3 p-4 text-center position-relative mb-3" 
+                                             id="module-drag-drop-zone"
+                                             style="background: rgba(59, 130, 246, 0.03); border-color: rgba(59, 130, 246, 0.3) !important; cursor: pointer; transition: all 0.3s ease;">
+                                            <input type="file" 
+                                                   id="module_zip_file" 
+                                                   name="module_zip"
+                                                   accept=".zip" 
+                                                   class="position-absolute w-100 h-100 top-0 start-0 opacity-0 no-dropify" 
+                                                   style="cursor: pointer; z-index: 5;">
+                                            
+                                            <div class="py-2" id="module-upload-idle-state" style="pointer-events: none;">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 58px; height: 58px;">
+                                                    <i class="fa-solid fa-cloud-arrow-up fa-2x"></i>
+                                                </div>
+                                                <h6 class="fw-bold text-body mb-1">Drag & Drop Module ZIP here</h6>
+                                                <p class="text-muted small mb-2">or click anywhere inside this box to select from your computer</p>
+                                                <span class="badge bg-secondary bg-opacity-10 text-muted fs-8">Accepted: .ZIP only (Max 50 MB)</span>
+                                            </div>
+
+                                            <!-- File Selected State (Hidden initially) -->
+                                            <div class="py-2 d-none" id="module-upload-selected-state">
+                                                <div class="rounded-circle bg-success bg-opacity-10 text-success d-inline-flex align-items-center justify-content-center mb-2" style="width: 54px; height: 54px;">
+                                                    <i class="fa-solid fa-file-zipper fa-2x"></i>
+                                                </div>
+                                                <h6 class="fw-bold text-success mb-1" id="selected-module-name">Finance.zip</h6>
+                                                <p class="text-muted small mb-2" id="selected-module-size">2.4 MB</p>
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" id="btn-remove-selected-module">
+                                                    <i class="fa-solid fa-xmark me-1"></i>Remove File
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Install Action Buttons -->
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2">
+                                            <div class="small text-muted d-flex align-items-center gap-1">
+                                                <i class="fa-solid fa-shield-halved text-success"></i> Auto-verified with <code>module.json</code>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-pill fw-semibold" id="btn-reset-module-upload">
+                                                    Cancel
+                                                </button>
+                                                <button type="button" class="btn btn-primary px-4 py-2 rounded-pill fw-semibold shadow-sm" id="btn-install-module-demo">
+                                                    <i class="fa-solid fa-bolt me-1"></i> Upload & Install Module
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column: Auto-Configuration Pipeline Flow -->
+                                <div class="col-lg-5">
+                                    <div class="card h-100 border border-secondary border-opacity-25 rounded-4 shadow-sm p-4" style="background: rgba(255, 255, 255, 0.02);">
+                                        <h5 class="fw-bold mb-3 text-body">
+                                            <i class="fa-solid fa-gears text-primary me-2"></i>Automated Pipeline
+                                        </h5>
+                                        <p class="text-muted small mb-3">
+                                            When you upload a module package, the system automatically executes the following actions:
+                                        </p>
+
+                                        <div class="d-flex flex-column gap-3 mb-4">
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold fs-7" style="width: 28px; height: 28px; flex-shrink: 0;">1</div>
+                                                <div>
+                                                    <div class="fw-semibold text-body small">Archive Verification</div>
+                                                    <div class="text-muted fs-8">Validates package integrity and checks for required <code>module.json</code> manifest.</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold fs-7" style="width: 28px; height: 28px; flex-shrink: 0;">2</div>
+                                                <div>
+                                                    <div class="fw-semibold text-body small">Extraction to Modules/</div>
+                                                    <div class="text-muted fs-8">Safely unzips controllers, models, views, and migrations into the module folder.</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold fs-7" style="width: 28px; height: 28px; flex-shrink: 0;">3</div>
+                                                <div>
+                                                    <div class="fw-semibold text-body small">Composer Autoload & Migrations</div>
+                                                    <div class="text-muted fs-8">Regenerates autoload mappings and runs module database schema migrations.</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold fs-7" style="width: 28px; height: 28px; flex-shrink: 0;">4</div>
+                                                <div>
+                                                    <div class="fw-semibold text-body small">Activation & Cache Purge</div>
+                                                    <div class="text-muted fs-8">Enables module status in <code>modules_statuses.json</code> and flushes application cache.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="p-3 rounded-3 border border-warning border-opacity-25 bg-warning bg-opacity-10 text-body small">
+                                            <i class="fa-solid fa-lightbulb text-warning me-1"></i>
+                                            <strong>Note:</strong> Modules are completely isolated and can be enabled or disabled anytime.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BOTTOM SECTION: Installed & Available Extensions -->
+                            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                <div>
+                                    <h5 class="fw-bold mb-0 text-body">
+                                        <i class="fa-solid fa-cubes text-primary me-2"></i>Installed Modules & Extensions
+                                    </h5>
+                                    <p class="text-muted small mb-0">Manage active society features, toggle extensions, or view module configurations</p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill small">
+                                        <i class="fa-solid fa-circle-check me-1"></i>1 Module Installed
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Module Cards Grid -->
+                            <div class="row g-4">
+                                
+                                <!-- Module 1: Finance Module -->
+                                <div class="col-12 col-lg-8 col-xl-7">
+                                    <div class="card h-100 border border-secondary border-opacity-25 rounded-4 shadow-sm p-4 position-relative" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <div class="d-flex align-items-center gap-3">
+                                                <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-3 fs-3 flex-shrink-0">
+                                                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                                        <h5 class="fw-bold mb-0 text-body">Finance & Accounting</h5>
+                                                        <span class="badge bg-warning text-dark fw-bold" style="font-size: 0.65rem;">CORE MODULE</span>
+                                                        <span class="badge bg-secondary bg-opacity-20 text-body font-monospace" style="font-size: 0.7rem;">v1.0.0</span>
+                                                    </div>
+                                                    <p class="text-muted small mb-0">Modules/Finance</p>
+                                                </div>
+                                            </div>
+
+                                            <!-- Status Switch (Design Preview) -->
+                                            <div class="form-check form-switch m-0" style="transform: scale(1.25);" title="Toggle Module Status">
+                                                <input class="form-check-input module-toggle-demo" type="checkbox" id="module_toggle_finance" {{ \App\Helpers\ModuleHelper::isFinanceActive() ? 'checked' : '' }} style="cursor: pointer;">
+                                            </div>
+                                        </div>
+
+                                        <p class="text-muted small mb-4">
+                                            Complete society financial management system including automated monthly/quarterly maintenance billing, expense tracking, flat ownership transfer fees, late payment penalties, prepayment discounts, and annual audit reports.
+                                        </p>
+
+                                        <!-- Feature Tags -->
+                                        <div class="d-flex flex-wrap gap-1.5 mb-4">
+                                            <span class="badge bg-body-tertiary text-body border px-2.5 py-1 rounded-pill fs-8">Maintenance Invoicing</span>
+                                            <span class="badge bg-body-tertiary text-body border px-2.5 py-1 rounded-pill fs-8">Expense Logging</span>
+                                            <span class="badge bg-body-tertiary text-body border px-2.5 py-1 rounded-pill fs-8">Name Transfers</span>
+                                            <span class="badge bg-body-tertiary text-body border px-2.5 py-1 rounded-pill fs-8">Audit Reports</span>
+                                            <span class="badge bg-body-tertiary text-body border px-2.5 py-1 rounded-pill fs-8">Late Penalties</span>
+                                        </div>
+
+                                        <hr class="text-body opacity-15 mb-3">
+
+                                        <!-- Module Actions -->
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                            <div class="d-flex align-items-center gap-2" id="finance-module-status-badge">
+                                                @if(\App\Helpers\ModuleHelper::isFinanceActive())
+                                                    <span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fs-8">
+                                                        <i class="fa-solid fa-circle-check me-1"></i>Active & Enabled
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-warning bg-opacity-15 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fs-8">
+                                                        <i class="fa-solid fa-circle-pause me-1"></i>Disabled (PRO Locked)
+                                                    </span>
+                                                @endif
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" data-coreui-toggle="modal" data-coreui-target="#moduleDetailsModal" data-bs-toggle="modal" data-bs-target="#moduleDetailsModal">
+                                                    <i class="fa-solid fa-circle-info me-1"></i>Details
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" id="btn-uninstall-demo">
+                                                    <i class="fa-solid fa-trash me-1"></i>Uninstall
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Module Manifest Details Modal (Design Preview) -->
+            <div class="modal fade" id="moduleDetailsModal" tabindex="-1" aria-labelledby="moduleDetailsModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content border border-secondary border-opacity-25 shadow-lg rounded-4 overflow-hidden" style="background: #0f172a; color: #f8fafc;">
+                        <div class="modal-header border-bottom border-white border-opacity-10 p-4" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="rounded-3 bg-warning text-dark p-2.5 fs-4 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                                </div>
+                                <div>
+                                    <h5 class="modal-title fw-bold text-white mb-0" id="moduleDetailsModalLabel">Finance & Accounting Module Details</h5>
+                                    <span class="text-white-50 small">Manifest Metadata (<code>module.json</code>)</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" data-coreui-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4" style="background: #0f172a;">
+                            <div class="row g-3 mb-4">
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded-3 border border-white border-opacity-10" style="background: rgba(255, 255, 255, 0.03);">
+                                        <div class="text-white-50 fs-8 text-uppercase fw-semibold mb-1">Module Name</div>
+                                        <div class="text-white fw-bold">Finance</div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded-3 border border-white border-opacity-10" style="background: rgba(255, 255, 255, 0.03);">
+                                        <div class="text-white-50 fs-8 text-uppercase fw-semibold mb-1">Version & Priority</div>
+                                        <div class="text-white fw-bold">v1.0.0 <span class="badge bg-primary bg-opacity-20 text-info ms-1">Priority: 10</span></div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded-3 border border-white border-opacity-10" style="background: rgba(255, 255, 255, 0.03);">
+                                        <div class="text-white-50 fs-8 text-uppercase fw-semibold mb-1">Namespace</div>
+                                        <div class="text-white font-monospace small">Modules\Finance\</div>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="p-3 rounded-3 border border-white border-opacity-10" style="background: rgba(255, 255, 255, 0.03);">
+                                        <div class="text-white-50 fs-8 text-uppercase fw-semibold mb-1">Provider</div>
+                                        <div class="text-white font-monospace small">FinanceServiceProvider</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h6 class="text-white fw-semibold small text-uppercase mb-2" style="letter-spacing: 0.05em;">Registered Components & Routes:</h6>
+                            <div class="p-3 rounded-3 border border-white border-opacity-10 font-monospace fs-8 text-white-50" style="background: rgba(0, 0, 0, 0.3);">
+                                <div class="text-success mb-1">✔ Maintenance Bills & Invoices Controller (/maintenance-bills)</div>
+                                <div class="text-success mb-1">✔ Society Expenses & Receipts Controller (/expenses)</div>
+                                <div class="text-success mb-1">✔ Expense Categories Taxonomy Controller (/expense-categories)</div>
+                                <div class="text-success mb-1">✔ Flat Ownership Transfer Bills Controller (/name-transfer-bills)</div>
+                                <div class="text-success">✔ Annual & Monthly Excel Financial Audit Reports (/reports)</div>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top border-white border-opacity-10 p-3" style="background: #0b1120;">
+                            <button type="button" class="btn btn-secondary px-4 rounded-pill" data-bs-dismiss="modal" data-coreui-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Master All-in-One Import Modal (3-Step Resident Style) -->
             <div class="modal fade" id="master-import-modal" tabindex="-1" aria-labelledby="masterImportModalLabel"
                 aria-hidden="true" data-coreui-backdrop="static">
@@ -1797,6 +2092,173 @@
             }, observerOptions);
 
             sections.forEach(section => observer.observe(section));
+
+            // Module Settings Design Interactive Handlers
+            const moduleFileInput = document.getElementById('module_zip_file');
+            const dragDropZone = document.getElementById('module-drag-drop-zone');
+            const idleState = document.getElementById('module-upload-idle-state');
+            const selectedState = document.getElementById('module-upload-selected-state');
+            const selectedName = document.getElementById('selected-module-name');
+            const selectedSize = document.getElementById('selected-module-size');
+            const btnRemoveFile = document.getElementById('btn-remove-selected-module');
+            const btnResetUpload = document.getElementById('btn-reset-module-upload');
+            const btnInstallDemo = document.getElementById('btn-install-module-demo');
+            const btnUninstallDemo = document.getElementById('btn-uninstall-demo');
+
+            function formatBytes(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function handleFileSelect(file) {
+                if (!file) return;
+                if (!file.name.toLowerCase().endsWith('.zip')) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Invalid File Format',
+                            text: 'Please select a valid .zip module archive.',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                    } else {
+                        alert('Please select a valid .zip module archive.');
+                    }
+                    return;
+                }
+
+                if (selectedName && selectedSize) {
+                    selectedName.textContent = file.name;
+                    selectedSize.textContent = formatBytes(file.size);
+                }
+
+                if (idleState) idleState.classList.add('d-none');
+                if (selectedState) selectedState.classList.remove('d-none');
+                if (dragDropZone) dragDropZone.style.borderColor = '#10b981';
+            }
+
+            function resetModuleUpload() {
+                if (moduleFileInput) moduleFileInput.value = '';
+                if (idleState) idleState.classList.remove('d-none');
+                if (selectedState) selectedState.classList.add('d-none');
+                if (dragDropZone) dragDropZone.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+            }
+
+            if (moduleFileInput) {
+                moduleFileInput.addEventListener('change', function(e) {
+                    if (e.target.files && e.target.files[0]) {
+                        handleFileSelect(e.target.files[0]);
+                    }
+                });
+            }
+
+            if (dragDropZone) {
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dragDropZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dragDropZone.style.background = 'rgba(59, 130, 246, 0.1)';
+                        dragDropZone.style.borderColor = '#3b82f6';
+                    }, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dragDropZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dragDropZone.style.background = 'rgba(59, 130, 246, 0.03)';
+                        dragDropZone.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                    }, false);
+                });
+
+                dragDropZone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    if (files && files[0]) {
+                        handleFileSelect(files[0]);
+                    }
+                });
+            }
+
+            if (btnRemoveFile) {
+                btnRemoveFile.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    resetModuleUpload();
+                });
+            }
+
+            if (btnResetUpload) {
+                btnResetUpload.addEventListener('click', function(e) {
+                    resetModuleUpload();
+                });
+            }
+
+            if (btnInstallDemo) {
+                btnInstallDemo.addEventListener('click', function() {
+                    const file = moduleFileInput && moduleFileInput.files ? moduleFileInput.files[0] : null;
+                    if (!file) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Select Module Package',
+                                text: 'Please drag or select a .zip module file to preview installation.',
+                                confirmButtonColor: '#3b82f6'
+                            });
+                        } else {
+                            alert('Please drag or select a .zip module file to preview installation.');
+                        }
+                        return;
+                    }
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Module Installation Ready',
+                            html: `Package <b>${file.name}</b> selected (${formatBytes(file.size)}).<br><small class="text-muted">Module pipeline will extract to Modules/, run composer dump-autoload, migrate schema & clear cache.</small>`,
+                            icon: 'success',
+                            confirmButtonText: 'Great!',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                    } else {
+                        alert(`Package ${file.name} selected. Ready for backend installation pipeline.`);
+                    }
+                });
+            }
+
+            if (btnUninstallDemo) {
+                btnUninstallDemo.addEventListener('click', function() {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Uninstall Module?',
+                            text: 'Are you sure you want to uninstall the Finance & Accounting module? This will disable routes and archive module data.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Yes, Uninstall',
+                            confirmButtonColor: '#ef4444',
+                            cancelButtonColor: '#64748b'
+                        });
+                    } else {
+                        confirm('Are you sure you want to uninstall this module?');
+                    }
+                });
+            }
+
+            const moduleToggle = document.getElementById('module_toggle_finance');
+            if (moduleToggle) {
+                moduleToggle.addEventListener('change', function(e) {
+                    const isChecked = e.target.checked;
+                    const statusBadge = document.getElementById('finance-module-status-badge');
+                    if (statusBadge) {
+                        if (isChecked) {
+                            statusBadge.innerHTML = '<span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fs-8"><i class="fa-solid fa-circle-check me-1"></i>Active & Enabled</span>';
+                        } else {
+                            statusBadge.innerHTML = '<span class="badge bg-warning bg-opacity-15 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fs-8"><i class="fa-solid fa-circle-pause me-1"></i>Disabled (PRO Locked)</span>';
+                        }
+                    }
+                });
+            }
         });
     </script>
     @endpush
