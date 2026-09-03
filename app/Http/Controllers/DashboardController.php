@@ -5,16 +5,11 @@ namespace App\Http\Controllers;
 use App\Helpers\CurrencyHelper;
 use App\Helpers\ModuleHelper;
 use App\Models\Block;
-use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\Flat;
 use App\Models\Complain;
-use App\Models\MaintenanceBill;
-use App\Models\Expense;
-use App\Models\ExpenseCategory;
-use App\Models\Maintenance;
-use App\Models\NameTransferBill;
+use App\Models\Flat;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -41,19 +36,25 @@ class DashboardController extends Controller
                 },
             ])->get();
 
+            $maintenanceBillModel = ModuleHelper::getModel('MaintenanceBill');
+            $expenseModel = ModuleHelper::getModel('Expense');
+            $expenseCategoryModel = ModuleHelper::getModel('ExpenseCategory');
+            $nameTransferBillModel = ModuleHelper::getModel('NameTransferBill');
+            $maintenanceModel = ModuleHelper::getModel('Maintenance');
+
             $isFinanceActive = ModuleHelper::isFinanceActive()
-                && ModuleHelper::hasModel(MaintenanceBill::class, 'maintenance_bills');
+                && ModuleHelper::hasModel($maintenanceBillModel, 'maintenance_bills');
 
             $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-            if ($isFinanceActive) {
-                $totalRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid', 'paid'))->sum('total_amount')
-                    + (ModuleHelper::hasModel(NameTransferBill::class, 'name_transfer_bills') ? NameTransferBill::where('status', config('status.name_transfer_bills.paid', 'paid'))->sum('amount') : 0);
-                $totalExpenses = ModuleHelper::hasModel(Expense::class, 'expenses') ? Expense::sum('total_amount') : 0;
+            if ($isFinanceActive && $maintenanceBillModel) {
+                $totalRevenue = $maintenanceBillModel::where('status', config('status.maintenance_bills.paid', 'paid'))->sum('total_amount')
+                    + ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills') ? $nameTransferBillModel::where('status', config('status.name_transfer_bills.paid', 'paid'))->sum('amount') : 0);
+                $totalExpenses = ($expenseModel && ModuleHelper::hasModel($expenseModel, 'expenses')) ? $expenseModel::sum('total_amount') : 0;
                 $totalAvailableFund = $totalRevenue - $totalExpenses;
 
                 // Revenue Chart Data (Current Year)
-                $monthlyRevenueDB = MaintenanceBill::where('maintenance_bills.status', config('status.maintenance_bills.paid', 'paid'))
+                $monthlyRevenueDB = $maintenanceBillModel::where('maintenance_bills.status', config('status.maintenance_bills.paid', 'paid'))
                     ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
                     ->where('maintenances.year', date('Y'))
                     ->selectRaw('maintenances.month, sum(maintenance_bills.total_amount) as total')
@@ -62,8 +63,8 @@ class DashboardController extends Controller
                     ->toArray();
 
                 $transferRevenueDB = [];
-                if (ModuleHelper::hasModel(NameTransferBill::class, 'name_transfer_bills')) {
-                    $transferRevenueDB = NameTransferBill::where('status', config('status.name_transfer_bills.paid', 'paid'))
+                if ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills')) {
+                    $transferRevenueDB = $nameTransferBillModel::where('status', config('status.name_transfer_bills.paid', 'paid'))
                         ->whereYear(DB::raw('COALESCE(updated_at, created_at)'), date('Y'))
                         ->selectRaw('MONTHNAME(COALESCE(updated_at, created_at)) as month, sum(amount) as total')
                         ->groupBy('month')
@@ -73,8 +74,8 @@ class DashboardController extends Controller
 
                 // Expense Chart Data (Current Year)
                 $monthlyExpensesDB = [];
-                if (ModuleHelper::hasModel(Expense::class, 'expenses')) {
-                    $monthlyExpensesDB = Expense::whereYear(DB::raw('COALESCE(expense_date, created_at)'), date('Y'))
+                if ($expenseModel && ModuleHelper::hasModel($expenseModel, 'expenses')) {
+                    $monthlyExpensesDB = $expenseModel::whereYear(DB::raw('COALESCE(expense_date, created_at)'), date('Y'))
                         ->selectRaw('MONTHNAME(COALESCE(expense_date, created_at)) as month, sum(total_amount) as total')
                         ->groupBy('month')
                         ->pluck('total', 'month')
@@ -90,9 +91,9 @@ class DashboardController extends Controller
                 }
 
                 // Bill Status Chart Data
-                $paidBills = MaintenanceBill::where('status', config('status.maintenance_bills.paid', 'paid'))->count();
-                $pendingBills = MaintenanceBill::where('status', config('status.maintenance_bills.pending', 'pending'))->count();
-                $overdueBills = MaintenanceBill::where('status', config('status.maintenance_bills.overdue', 'overdue'))->count();
+                $paidBills = $maintenanceBillModel::where('status', config('status.maintenance_bills.paid', 'paid'))->count();
+                $pendingBills = $maintenanceBillModel::where('status', config('status.maintenance_bills.pending', 'pending'))->count();
+                $overdueBills = $maintenanceBillModel::where('status', config('status.maintenance_bills.overdue', 'overdue'))->count();
                 $billStatusData = [
                     'paid' => $paidBills,
                     'pending' => $pendingBills,
@@ -101,8 +102,8 @@ class DashboardController extends Controller
 
                 // Expense Breakdown Chart Data
                 $expensesByCategory = collect();
-                if (ModuleHelper::hasModel(Expense::class, 'expenses') && ModuleHelper::hasModel(ExpenseCategory::class, 'expense_categories')) {
-                    $expensesByCategory = Expense::join('expense_categories', 'expenses.category_id', '=', 'expense_categories.id')
+                if ($expenseModel && $expenseCategoryModel && ModuleHelper::hasModel($expenseModel, 'expenses') && ModuleHelper::hasModel($expenseCategoryModel, 'expense_categories')) {
+                    $expensesByCategory = $expenseModel::join('expense_categories', 'expenses.category_id', '=', 'expense_categories.id')
                         ->selectRaw('expense_categories.title, sum(expenses.total_amount) as total')
                         ->groupBy('expense_categories.title')
                         ->pluck('total', 'title');
@@ -112,7 +113,7 @@ class DashboardController extends Controller
                 $expenseBreakdownData = $expensesByCategory->values()->toArray();
 
                 // Recent Payment Activities
-                $recentPayments = MaintenanceBill::with('user', 'flat', 'block')
+                $recentPayments = $maintenanceBillModel::with('user', 'flat', 'block')
                     ->where('status', config('status.maintenance_bills.paid', 'paid'))
                     ->latest('updated_at')
                     ->take(30)
@@ -143,12 +144,12 @@ class DashboardController extends Controller
 
                 $unapprovedTransferUserIds = [];
                 $recentTransfers = collect();
-                if (ModuleHelper::hasModel(NameTransferBill::class, 'name_transfer_bills')) {
-                    $unapprovedTransferUserIds = NameTransferBill::where(function ($q) {
+                if ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills')) {
+                    $unapprovedTransferUserIds = $nameTransferBillModel::where(function ($q) {
                         $q->where('is_approved', false)->orWhereNull('is_approved');
                     })->pluck('new_owner_id')->filter()->toArray();
 
-                    $recentTransfers = NameTransferBill::with('flat.block', 'oldOwner', 'newOwner')
+                    $recentTransfers = $nameTransferBillModel::with('flat.block', 'oldOwner', 'newOwner')
                         ->where('is_approved', true)
                         ->latest('updated_at')
                         ->take(4)
@@ -170,34 +171,34 @@ class DashboardController extends Controller
                 }
 
                 // Live Cashflow Metrics
-                $thisMonthRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid', 'paid'))
+                $thisMonthRevenue = $maintenanceBillModel::where('status', config('status.maintenance_bills.paid', 'paid'))
                     ->whereMonth('updated_at', now()->month)
                     ->whereYear('updated_at', now()->year)
                     ->sum('total_amount')
-                    + (ModuleHelper::hasModel(NameTransferBill::class, 'name_transfer_bills') ? NameTransferBill::where('status', config('status.name_transfer_bills.paid', 'paid'))
+                    + ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills') ? $nameTransferBillModel::where('status', config('status.name_transfer_bills.paid', 'paid'))
                         ->where('is_approved', true)
                         ->whereMonth('updated_at', now()->month)
                         ->whereYear('updated_at', now()->year)
                         ->sum('amount') : 0);
 
-                $thisMonthPenalty = MaintenanceBill::where('status', config('status.maintenance_bills.paid', 'paid'))
+                $thisMonthPenalty = $maintenanceBillModel::where('status', config('status.maintenance_bills.paid', 'paid'))
                     ->whereMonth('updated_at', now()->month)
                     ->whereYear('updated_at', now()->year)
                     ->sum('penalty_amount');
 
-                $totalPenaltyRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid', 'paid'))->sum('penalty_amount');
+                $totalPenaltyRevenue = $maintenanceBillModel::where('status', config('status.maintenance_bills.paid', 'paid'))->sum('penalty_amount');
 
-                $thisMonthTransfer = ModuleHelper::hasModel(NameTransferBill::class, 'name_transfer_bills') ? NameTransferBill::where('status', config('status.name_transfer_bills.paid', 'paid'))
+                $thisMonthTransfer = ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills')) ? $nameTransferBillModel::where('status', config('status.name_transfer_bills.paid', 'paid'))
                     ->where('is_approved', true)
                     ->whereMonth('updated_at', now()->month)
                     ->whereYear('updated_at', now()->year)
                     ->sum('amount') : 0;
 
-                $totalTransferRevenue = ModuleHelper::hasModel(NameTransferBill::class, 'name_transfer_bills') ? NameTransferBill::where('status', config('status.name_transfer_bills.paid', 'paid'))
+                $totalTransferRevenue = ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills')) ? $nameTransferBillModel::where('status', config('status.name_transfer_bills.paid', 'paid'))
                     ->where('is_approved', true)
                     ->sum('amount') : 0;
 
-                $thisMonthExpense = ModuleHelper::hasModel(Expense::class, 'expenses') ? Expense::whereMonth(DB::raw('COALESCE(expense_date, created_at)'), now()->month)
+                $thisMonthExpense = ($expenseModel && ModuleHelper::hasModel($expenseModel, 'expenses')) ? $expenseModel::whereMonth(DB::raw('COALESCE(expense_date, created_at)'), now()->month)
                     ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), now()->year)
                     ->sum('total_amount') : 0;
 
@@ -205,7 +206,7 @@ class DashboardController extends Controller
                 $cashflowStatus = $thisMonthNet >= 0 ? 'Surplus (+)' : 'Deficit (-)';
                 $cashflowColor = $thisMonthNet >= 0 ? 'success' : 'danger';
 
-                $recentIncomeBills = MaintenanceBill::with('user', 'flat', 'block')
+                $recentIncomeBills = $maintenanceBillModel::with('user', 'flat', 'block')
                     ->where('status', config('status.maintenance_bills.paid', 'paid'))
                     ->latest('updated_at')
                     ->take(30)
@@ -265,8 +266,8 @@ class DashboardController extends Controller
                     });
 
                 $recentTransferIncome = collect();
-                if (ModuleHelper::hasModel(NameTransferBill::class, 'name_transfer_bills')) {
-                    $recentTransferIncome = NameTransferBill::with('flat.block', 'newOwner')
+                if ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills')) {
+                    $recentTransferIncome = $nameTransferBillModel::with('flat.block', 'newOwner')
                         ->where('status', config('status.name_transfer_bills.paid', 'paid'))
                         ->where('is_approved', true)
                         ->latest('updated_at')
@@ -286,8 +287,8 @@ class DashboardController extends Controller
                 }
 
                 $recentExpenseItems = collect();
-                if (ModuleHelper::hasModel(Expense::class, 'expenses')) {
-                    $recentExpenseItems = Expense::with('category')
+                if ($expenseModel && ModuleHelper::hasModel($expenseModel, 'expenses')) {
+                    $recentExpenseItems = $expenseModel::with('category')
                         ->latest('created_at')
                         ->take(8)
                         ->get()

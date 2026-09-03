@@ -6,13 +6,8 @@ use App\Helpers\CurrencyHelper;
 use App\Helpers\ModuleHelper;
 use App\Models\Block;
 use App\Models\Complain;
-use App\Models\Expense;
-use App\Models\ExpenseCategory;
 use App\Models\Flat;
 use App\Models\FlatType;
-use App\Models\Maintenance;
-use App\Models\MaintenanceBill;
-use App\Models\NameTransferBill;
 use App\Models\Resident;
 use App\Models\Setting;
 use App\Models\User;
@@ -93,46 +88,52 @@ class GlobalImportExportController extends Controller
         ];
 
         if ($isFinanceActive) {
-            if (ModuleHelper::hasModel(ExpenseCategory::class, 'expense_categories')) {
+            $expenseCategoryModel = ModuleHelper::getModel('ExpenseCategory');
+            $expenseModel = ModuleHelper::getModel('Expense');
+            $maintenanceModel = ModuleHelper::getModel('Maintenance');
+            $maintenanceBillModel = ModuleHelper::getModel('MaintenanceBill');
+            $nameTransferBillModel = ModuleHelper::getModel('NameTransferBill');
+
+            if ($expenseCategoryModel && ModuleHelper::hasModel($expenseCategoryModel, 'expense_categories')) {
                 $configs['expense_categories'] = [
                     'label' => 'Expense Categories',
-                    'model' => ExpenseCategory::class,
+                    'model' => $expenseCategoryModel,
                     'headers' => ['title', 'status'],
                     'labels' => ['Category Title (*)', 'Status (active/inactive)'],
                     'required' => ['title'],
                 ];
             }
-            if (ModuleHelper::hasModel(Expense::class, 'expenses')) {
+            if ($expenseModel && ModuleHelper::hasModel($expenseModel, 'expenses')) {
                 $configs['expenses'] = [
                     'label' => 'Expenses',
-                    'model' => Expense::class,
+                    'model' => $expenseModel,
                     'headers' => ['title', 'total_amount', 'category_title', 'expense_date', 'invoice', 'user_email'],
                     'labels' => ['Title (*)', "Total Amount ({$currencySymbol}) (*)", 'Category Title', 'Expense Date (YYYY-MM-DD)', 'Invoice No', 'User Email'],
                     'required' => ['title', 'total_amount'],
                 ];
             }
-            if (ModuleHelper::hasModel(Maintenance::class, 'maintenances')) {
+            if ($maintenanceModel && ModuleHelper::hasModel($maintenanceModel, 'maintenances')) {
                 $configs['maintenances'] = [
                     'label' => 'Maintenance Batches',
-                    'model' => Maintenance::class,
+                    'model' => $maintenanceModel,
                     'headers' => ['month', 'year', 'billing_cycle', 'due_date', 'total_additional_cost', 'status'],
                     'labels' => ['Month (Jan, Feb...) (*)', 'Year (YYYY) (*)', 'Billing Cycle (monthly/quarterly/yearly)', 'Due Date (YYYY-MM-DD)', "Additional Cost ({$currencySymbol})", 'Status (draft/published)'],
                     'required' => ['month', 'year'],
                 ];
             }
-            if (ModuleHelper::hasModel(MaintenanceBill::class, 'maintenance_bills')) {
+            if ($maintenanceBillModel && ModuleHelper::hasModel($maintenanceBillModel, 'maintenance_bills')) {
                 $configs['maintenance_bills'] = [
                     'label' => 'Maintenance Payments / Bills',
-                    'model' => MaintenanceBill::class,
+                    'model' => $maintenanceBillModel,
                     'headers' => ['user_email', 'block_name', 'flat_no', 'amount', 'penalty_amount', 'discount_amount', 'total_amount', 'generated_date', 'paid_at', 'payment_method', 'transaction_id', 'payment_slip', 'status'],
                     'labels' => ['User Email (*)', 'Block Name (*)', 'Flat No (*)', "Amount ({$currencySymbol}) (*)", "Penalty Amount ({$currencySymbol})", "Discount Amount ({$currencySymbol})", "Total Amount ({$currencySymbol}) (*)", 'Generated Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Status (pending/paid)'],
                     'required' => ['user_email', 'block_name', 'flat_no', 'total_amount'],
                 ];
             }
-            if (ModuleHelper::hasModel(NameTransferBill::class, 'name_transfer_bills')) {
+            if ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills')) {
                 $configs['name_transfer_bills'] = [
                     'label' => 'Transfer Fees',
-                    'model' => NameTransferBill::class,
+                    'model' => $nameTransferBillModel,
                     'headers' => ['block_name', 'flat_no', 'old_owner_email', 'new_owner_email', 'amount', 'transfer_date', 'paid_at', 'payment_method', 'transaction_id', 'payment_slip', 'is_approved', 'status'],
                     'labels' => ['Block Name (*)', 'Flat No (*)', 'Old Owner Email (*)', 'New Owner Email (*)', "Transfer Fee Amount ({$currencySymbol}) (*)", 'Transfer Date (YYYY-MM-DD)', 'Paid At (YYYY-MM-DD HH:MM)', 'Payment Method', 'Transaction ID', 'Payment Slip URL', 'Is Approved (1/0)', 'Status (pending/paid)'],
                     'required' => ['block_name', 'flat_no', 'old_owner_email', 'new_owner_email', 'amount'],

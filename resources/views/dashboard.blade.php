@@ -10,7 +10,7 @@
                 <!-- TOP CARDS ROW -->
                 <div class="row g-4 mb-4">
                     <!-- Flats Card -->
-                    <div class="col-sm-6 {{ !empty($isFinanceActive) ? 'col-xl-3' : 'col-xl-4' }}">
+                    <div class="col-sm-6 col-xl-3">
                         <div class="card kpi-hero-card kpi-theme-indigo h-100 border-0">
                             <div class="card-body p-4 d-flex flex-column justify-content-between">
                                 <!-- Top Row: Icon Pedestal & Live Badge -->
@@ -24,7 +24,6 @@
                                 </div>
                                 <!-- Bottom Row: Label & Value -->
                                 <div class="mt-2">
-                                    <div class="kpi-label mb-1">{{ __('Total Flats') }}</div>
                                     <div class="kpi-label mb-1">Total {{ \App\Models\Setting::label('unit_plural', 'Flats') }}</div>
                                     <div class="kpi-number counter-animate" data-target="{{ $totalFlats }}">0</div>
                                 </div>
@@ -35,7 +34,7 @@
                     </div>
                     
                     <!-- Residents Card -->
-                    <div class="col-sm-6 {{ !empty($isFinanceActive) ? 'col-xl-3' : 'col-xl-4' }}">
+                    <div class="col-sm-6 col-xl-3">
                         <div class="card kpi-hero-card kpi-theme-cyan h-100 border-0">
                             <div class="card-body p-4 d-flex flex-column justify-content-between">
                                 <!-- Top Row: Icon Pedestal & Live Badge -->
@@ -59,7 +58,7 @@
                     </div>
 
                     <!-- Complaints Card -->
-                    <div class="col-sm-6 {{ !empty($isFinanceActive) ? 'col-xl-3' : 'col-xl-4' }}">
+                    <div class="col-sm-6 col-xl-3">
                         <div class="card kpi-hero-card kpi-theme-rose h-100 border-0">
                             <div class="card-body p-4 d-flex flex-column justify-content-between">
                                 <!-- Top Row: Icon Pedestal & Live Badge -->
@@ -102,6 +101,28 @@
                                     <div class="kpi-number">{{ \App\Helpers\CurrencyHelper::getCurrencySymbol() }}<span class="counter-animate" data-target="{{ $totalAvailableFund }}">0</span></div>
                                 </div>
                                 <!-- Decorative Glow Orb -->
+                                <div class="kpi-glow-orb"></div>
+                            </div>
+                        </div>
+                    </div>
+                    @else
+                    <!-- PRO Teaser: Available Fund Card -->
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="card kpi-hero-card kpi-theme-emerald h-100 border-0 js-premium-feature" data-feature="Society Financial Accounting & Fund Balance" style="cursor: pointer;">
+                            <div class="card-body p-4 d-flex flex-column justify-content-between position-relative">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="kpi-icon-pedestal">
+                                        <i class="fas fa-wallet text-warning"></i>
+                                    </div>
+                                    <span class="badge bg-warning text-dark fw-bold px-2 py-1"><i class="fa-solid fa-lock me-1"></i>PRO</span>
+                                </div>
+                                <div class="mt-2">
+                                    <div class="kpi-label mb-1">{{ __('Financial Balance') }}</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="fs-4 fw-bold text-body opacity-75">••••••••</span>
+                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 small">Unlock</span>
+                                    </div>
+                                </div>
                                 <div class="kpi-glow-orb"></div>
                             </div>
                         </div>
@@ -178,6 +199,31 @@
                             </div>
                             <div class="card-body">
                                 <canvas id="mainChart" height="300"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @else
+                <!-- PRO Financial Analytics Teaser Row -->
+                <div class="row g-4 mb-4">
+                    <div class="col-12">
+                        <div class="card glass-card shadow-sm border-0 p-4 js-premium-feature" data-feature="Society Revenue & Expense Financial Analytics" style="cursor: pointer; background: linear-gradient(135deg, rgba(30, 41, 59, 0.03) 0%, rgba(245, 158, 11, 0.05) 100%);">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-3 fs-3 flex-shrink-0">
+                                        <i class="fa-solid fa-chart-pie"></i>
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <h5 class="fw-bold mb-0 text-body">Financial Analytics & Cashflow Charts</h5>
+                                            <span class="badge bg-warning text-dark fw-bold">PRO FEATURE</span>
+                                        </div>
+                                        <p class="text-muted small mb-0">Track monthly maintenance collections vs society expenditures, cash balances, and budget allocations with the Finance Module.</p>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-warning px-4 py-2 fw-semibold text-dark rounded-pill flex-shrink-0 shadow-sm js-premium-feature-btn" data-feature="Financial Accounting & Analytics">
+                                    <i class="fa-solid fa-crown me-1"></i> Unlock Analytics
+                                </button>
                             </div>
                         </div>
                     </div>

@@ -448,6 +448,50 @@
                 </div>
 
                 </form>
+            @else
+                <!-- PRO Teaser Card: Late Penalty Settings -->
+                <div class="card mb-4 border-0 shadow-sm" id="penalty-settings">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fa-solid fa-clock-rotate-left text-danger me-2"></i>Late Penalty Settings</h4>
+                        <span class="badge bg-warning text-dark fw-bold px-2 py-1"><i class="fa-solid fa-lock me-1"></i>PRO FEATURE</span>
+                    </div>
+                    <div class="card-body p-4 text-center py-5">
+                        <div class="mb-3">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10 text-danger" style="width: 64px; height: 64px; font-size: 1.75rem;">
+                                <i class="fa-solid fa-percent"></i>
+                            </span>
+                        </div>
+                        <h5 class="fw-bold mb-2">Automated Late Penalties</h5>
+                        <p class="text-muted mx-auto mb-4" style="max-width: 500px;">
+                            Configure automated penalty rules, grace periods, and late fees for overdue maintenance invoices across monthly, quarterly, and yearly billing cycles.
+                        </p>
+                        <button type="button" class="btn btn-warning px-4 py-2 fw-semibold text-dark rounded-pill shadow-sm js-premium-feature-btn" data-feature="Late Penalty Automation Settings">
+                            <i class="fa-solid fa-crown me-1"></i> Unlock with Finance Module
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PRO Teaser Card: Prepayment Discount Settings -->
+                <div class="card mb-4 border-0 shadow-sm" id="discount-settings">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fa-solid fa-tag text-success me-2"></i>Prepayment Discount Settings</h4>
+                        <span class="badge bg-warning text-dark fw-bold px-2 py-1"><i class="fa-solid fa-lock me-1"></i>PRO FEATURE</span>
+                    </div>
+                    <div class="card-body p-4 text-center py-5">
+                        <div class="mb-3">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 text-success" style="width: 64px; height: 64px; font-size: 1.75rem;">
+                                <i class="fa-solid fa-tags"></i>
+                            </span>
+                        </div>
+                        <h5 class="fw-bold mb-2">Advance Prepayment Discounts</h5>
+                        <p class="text-muted mx-auto mb-4" style="max-width: 500px;">
+                            Offer early bird discounts to residents who pay their maintenance in advance for 3, 6, or 12 months.
+                        </p>
+                        <button type="button" class="btn btn-warning px-4 py-2 fw-semibold text-dark rounded-pill shadow-sm js-premium-feature-btn" data-feature="Prepayment Discounts Settings">
+                            <i class="fa-solid fa-crown me-1"></i> Unlock with Finance Module
+                        </button>
+                    </div>
+                </div>
             @endif
             <form action="{{ route('settings.store') }}" method="POST">
                 @csrf

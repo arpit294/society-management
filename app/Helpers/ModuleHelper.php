@@ -35,28 +35,40 @@ class ModuleHelper
      */
     public static function isFinanceActive(): bool
     {
-        if (self::isModuleActive('Finance')) {
-            return true;
+        return self::isModuleActive('Finance');
+    }
+
+    /**
+     * Resolve a model class from either Modules or App namespaces.
+     *
+     * @param string $shortName e.g. MaintenanceBill, Expense, ExpenseCategory, NameTransferBill, Maintenance, PrepaidMaintenance
+     * @return string|null
+     */
+    public static function getModel(string $shortName): ?string
+    {
+        $moduleClass = "Modules\\Finance\\Models\\{$shortName}";
+        if (class_exists($moduleClass)) {
+            return $moduleClass;
         }
 
-        // Secondary check: if financial routes are registered in the application
-        if (Route::has('maintenance-bills.index') || Route::has('expenses.index')) {
-            return true;
+        $appClass = "App\\Models\\{$shortName}";
+        if (class_exists($appClass)) {
+            return $appClass;
         }
 
-        return false;
+        return null;
     }
 
     /**
      * Check if a model class exists and its underlying database table exists.
      *
-     * @param string $modelClass Full class name e.g. App\Models\MaintenanceBill
+     * @param string|null $modelClass Full class name e.g. App\Models\MaintenanceBill
      * @param string|null $table Optional table name. If null, will try to infer from model instance.
      * @return bool
      */
-    public static function hasModel(string $modelClass, ?string $table = null): bool
+    public static function hasModel(?string $modelClass, ?string $table = null): bool
     {
-        if (! class_exists($modelClass)) {
+        if (! $modelClass || ! class_exists($modelClass)) {
             return false;
         }
 

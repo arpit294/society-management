@@ -2,13 +2,10 @@
 
 namespace App\Helpers;
 
-use App\Models\MaintenanceBill;
 use App\Models\Complain;
 use App\Models\User;
-use App\Models\NameTransferBill;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Route;
-use Nwidart\Modules\Collection;
 
 class ActivityHelper
 {
@@ -16,16 +13,17 @@ class ActivityHelper
      * Get recent society activities across all modules.
      *
      * @param int $limit
-     * @return Collection
+     * @return \Illuminate\Support\Collection
      */
     public static function getRecentActivities($limit = 8)
     {
         try {
-            $isFinanceActive = ModuleHelper::isFinanceActive() &&  ModuleHelper::hasModel(MaintenanceBill::class, 'maintenance_bills');
+            $maintenanceBillModel = ModuleHelper::getModel('MaintenanceBill');
+            $isFinanceActive = ModuleHelper::isFinanceActive() && ModuleHelper::hasModel($maintenanceBillModel, 'maintenance_bills');
 
             $recentPayments = collect([]);
-            if ($isFinanceActive) {
-                $recentPayments = MaintenanceBill::with('flat.block', 'user')
+            if ($isFinanceActive && $maintenanceBillModel) {
+                $recentPayments = $maintenanceBillModel::with('flat.block', 'user')
                     ->where('status', 'paid')
                     ->latest('updated_at')
                     ->get()
@@ -93,12 +91,13 @@ class ActivityHelper
 
             $unapprovedTransferUserIds = [];
             $recentTransfers = collect([]);
-            if ($isFinanceActive && ModuleHelper::hasModel(NameTransferBill::class, 'name_transfer_bills')) {
-                $unapprovedTransferUserIds = NameTransferBill::where(function ($q) {
+            $nameTransferModel = ModuleHelper::getModel('NameTransferBill');
+            if ($isFinanceActive && $nameTransferModel && ModuleHelper::hasModel($nameTransferModel, 'name_transfer_bills')) {
+                $unapprovedTransferUserIds = $nameTransferModel::where(function ($q) {
                     $q->where('is_approved', false)->orWhereNull('is_approved');
                 })->pluck('new_owner_id')->filter()->toArray();
 
-                $recentTransfers = NameTransferBill::with('flat.block', 'oldOwner', 'newOwner')
+                $recentTransfers = $nameTransferModel::with('flat.block', 'oldOwner', 'newOwner')
                     ->where('is_approved', true)
                     ->latest('updated_at')
                     ->take(4)

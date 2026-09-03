@@ -8,6 +8,9 @@
     @if(\App\Helpers\ModuleHelper::isFinanceActive())
     <button type="button" class="btn btn-sm btn-outline-warning btn-transfer-flat" data-url="{{ route('flats.transfer.create', $id, false) }}"
         data-coreui-toggle="tooltip" title="Transfer Ownership"><i class="fa-solid fa-exchange-alt"></i></button>
+    @else
+    <button type="button" class="btn btn-sm btn-outline-secondary js-premium-feature-btn"
+        data-feature="Flat Ownership Transfer" data-coreui-toggle="tooltip" title="Transfer Ownership (PRO Feature)"><i class="fa-solid fa-lock text-warning"></i></button>
     @endif
 
     <button type="button" class="btn btn-sm btn-outline-primary btn-edit-flat" data-url="{{ route('flats.edit', $id, false) }}"
