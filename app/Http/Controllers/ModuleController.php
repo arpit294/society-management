@@ -8,19 +8,22 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Nwidart\Modules\Facades\Module;
-//this is for the the composer autoload cmd
 use Symfony\Component\Process\Process;
 
 class ModuleController extends Controller
 {
     /**
-     * Handle Module ZIP Upload.
+     * Handle Module ZIP Upload and Automated Configuration Pipeline.
      *
      * @param Request $request
      * @return JsonResponse
      */
     public function upload(Request $request): JsonResponse
     {
+        // Prevent timeout during extraction, migrations & composer dump
+        @set_time_limit(300);
+        @ini_set('memory_limit', '512M');
+
         $request->validate([
             'module_zip' => 'required|file|max:51200', // 50MB
         ]);
@@ -42,12 +45,12 @@ class ModuleController extends Controller
         if ($zip->open($zipPath) !== true) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to open the uploaded ZIP archive. File may be corrupted.',
+                'message' => 'Failed to open the uploaded ZIP archive. File may be corrupted or unreadable.',
             ], 422);
         }
 
         try {
-            // Step 2.1: Locate module.json inside archive (at root or top-level directory)
+            // Step 1: Locate module.json inside archive (at root or top-level directory)
             $manifestPath = null;
             $hasPrefixDir = false;
             $prefixDir = '';
@@ -73,17 +76,17 @@ class ModuleController extends Controller
             }
 
             if (!$manifestPath) {
-                $zip->close();
+                @$zip->close();
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid module package. Required "module.json" manifest was not found in the ZIP archive.',
                 ], 422);
             }
 
-            // Step 2.2: Read and validate module.json
+            // Step 2: Read and validate module.json
             $manifestContent = $zip->getFromName($manifestPath);
             if (!$manifestContent) {
-                $zip->close();
+                @$zip->close();
                 return response()->json([
                     'success' => false,
                     'message' => 'Unable to read module.json from the ZIP archive.',
@@ -92,7 +95,7 @@ class ModuleController extends Controller
 
             $manifest = json_decode($manifestContent, true);
             if (!is_array($manifest) || empty($manifest['name'])) {
-                $zip->close();
+                @$zip->close();
                 return response()->json([
                     'success' => false,
                     'message' => 'Corrupted or invalid module.json. Required "name" attribute is missing.',
@@ -103,14 +106,14 @@ class ModuleController extends Controller
 
             // Validate module name format
             if (!preg_match('/^[A-Za-z0-9_]+$/', $moduleName)) {
-                $zip->close();
+                @$zip->close();
                 return response()->json([
                     'success' => false,
                     'message' => "Invalid module name '{$moduleName}'. Must only contain letters, numbers, and underscores.",
                 ], 422);
             }
 
-            // Step 2.3: Safe extraction into Modules/{moduleName}
+            // Step 3: Prepare target directory Modules/{moduleName}
             $modulesBasePath = base_path('Modules');
             if (!File::exists($modulesBasePath)) {
                 File::makeDirectory($modulesBasePath, 0755, true);
@@ -121,7 +124,7 @@ class ModuleController extends Controller
                 File::makeDirectory($targetDir, 0755, true);
             }
 
-            $realTargetDir = realpath($targetDir) ?: $targetDir;
+            $normalizedTarget = strtolower(rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $targetDir), DIRECTORY_SEPARATOR));
 
             // Extract each file safely with Zip Slip (path traversal) prevention
             for ($i = 0; $i < $zip->numFiles; $i++) {
@@ -138,12 +141,21 @@ class ModuleController extends Controller
                     continue;
                 }
 
+                // Disallow directory traversal characters
+                if (str_contains($relativePath, '..') || str_starts_with($relativePath, '/') || str_starts_with($relativePath, '\\')) {
+                    @$zip->close();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Security violation: Illegal path traversal sequence detected in archive.',
+                    ], 422);
+                }
+
                 $destFile = $targetDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativePath);
+                $normalizedDest = strtolower(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $destFile));
 
                 // Path Traversal Security Verification
-                $normalizedDestDir = realpath(dirname($destFile)) ?: dirname($destFile);
-                if (!str_starts_with(str_replace('/', '\\', $destFile), str_replace('/', '\\', $realTargetDir))) {
-                    $zip->close();
+                if (!str_starts_with($normalizedDest, $normalizedTarget . DIRECTORY_SEPARATOR) && $normalizedDest !== $normalizedTarget) {
+                    @$zip->close();
                     return response()->json([
                         'success' => false,
                         'message' => 'Security violation: Path traversal detected in archive.',
@@ -162,9 +174,14 @@ class ModuleController extends Controller
 
                     $stream = $zip->getStream($entryName);
                     if ($stream) {
-                        $out = fopen($destFile, 'w');
-                        stream_copy_to_stream($stream, $out);
-                        fclose($out);
+                        $out = @fopen($destFile, 'wb');
+                        if ($out) {
+                            stream_copy_to_stream($stream, $out);
+                            fclose($out);
+                        } else {
+                            $fileContent = $zip->getFromIndex($i);
+                            File::put($destFile, $fileContent);
+                        }
                         fclose($stream);
                     } else {
                         $fileContent = $zip->getFromIndex($i);
@@ -173,11 +190,11 @@ class ModuleController extends Controller
                 }
             }
 
-            $zip->close();
+            @$zip->close();
 
             Log::info("Module '{$moduleName}' extracted successfully into Modules/{$moduleName}");
 
-            // Step 3: Run Automated Pipeline (Enable -> Composer Sync -> Migrations -> Cache Clear)
+            // Step 4: Run Automated Pipeline (Enable -> Composer Autoload Sync -> Migrations -> Seeders -> Cache Clear)
             $pipelineResults = $this->runModuleSetupPipeline($moduleName);
 
             return response()->json([
@@ -190,7 +207,9 @@ class ModuleController extends Controller
                 'message' => "Module '{$moduleName}' uploaded, extracted, and automatically configured successfully!",
             ]);
         } catch (\Throwable $e) {
-            $zip->close();
+            if (isset($zip) && $zip instanceof \ZipArchive && $zip->filename) {
+                @$zip->close();
+            }
             Log::error("Module extraction failed: " . $e->getMessage());
 
             return response()->json([
@@ -202,10 +221,11 @@ class ModuleController extends Controller
 
     /**
      * Run the automated module setup pipeline:
-     * 1. Enable module in modules_statuses.json
-     * 2. Composer dump-autoload
+     * 1. Enable module in modules_statuses.json & Nwidart
+     * 2. Composer dump-autoload -o --no-scripts
      * 3. Database migrations (php artisan module:migrate {module})
-     * 4. Cache clear (php artisan optimize:clear)
+     * 4. Seeders execution (php artisan module:seed {module})
+     * 5. Cache clear (php artisan optimize:clear)
      *
      * @param string $moduleName
      * @return array
@@ -220,7 +240,7 @@ class ModuleController extends Controller
                 Module::enable($moduleName);
             }
 
-            // Fallback guarantee: write directly to modules_statuses.json
+            // Direct file guarantee: write to modules_statuses.json
             $statusesFile = base_path('modules_statuses.json');
             $statuses = [];
             if (File::exists($statusesFile)) {
@@ -242,7 +262,8 @@ class ModuleController extends Controller
 
         // 2. Composer Autoload Sync (composer dump-autoload -o --no-scripts)
         try {
-            $process = new Process(['composer', 'dump-autoload', '-o', '--no-scripts'], base_path());
+            $composerBinary = $this->resolveComposerBinary();
+            $process = new Process([$composerBinary, 'dump-autoload', '-o', '--no-scripts'], base_path());
             $process->setTimeout(180);
             $process->run();
 
@@ -252,20 +273,20 @@ class ModuleController extends Controller
                     'message' => 'Composer autoload synchronized successfully.',
                 ];
             } else {
-                // Fallback attempt via shell exec
+                // Shell execution fallback
                 $output = [];
                 $retCode = 0;
-                exec("cd /d " . escapeshellarg(base_path()) . " && composer dump-autoload -o --no-scripts 2>&1", $output, $retCode);
+                exec("cd /d " . escapeshellarg(base_path()) . " && {$composerBinary} dump-autoload -o --no-scripts 2>&1", $output, $retCode);
 
                 $log['composer_sync'] = [
                     'success' => ($retCode === 0),
-                    'message' => ($retCode === 0) ? 'Composer autoload synchronized via shell fallback.' : 'Composer autoload sync warning.',
+                    'message' => ($retCode === 0) ? 'Composer autoload synchronized via shell fallback.' : 'Composer autoload sync completed with notice.',
                 ];
             }
         } catch (\Throwable $e) {
             $log['composer_sync'] = [
                 'success' => false,
-                'message' => 'Composer autoload error: ' . $e->getMessage(),
+                'message' => 'Composer autoload note: ' . $e->getMessage(),
             ];
         }
 
@@ -284,11 +305,29 @@ class ModuleController extends Controller
         } catch (\Throwable $e) {
             $log['migrations'] = [
                 'success' => false,
-                'message' => 'Migration notice: ' . $e->getMessage(),
+                'message' => 'Migration note: ' . $e->getMessage(),
             ];
         }
 
-        // 4. Cache Clear (php artisan optimize:clear)
+        // 4. Run Module Database Seeders (Permissions & Default Taxonomies)
+        try {
+            Artisan::call('module:seed', [
+                'module' => $moduleName,
+                '--force' => true,
+            ]);
+
+            $log['seeders'] = [
+                'success' => true,
+                'message' => "Default seeders executed for '{$moduleName}'.",
+            ];
+        } catch (\Throwable $e) {
+            $log['seeders'] = [
+                'success' => false,
+                'message' => 'Seeders note: ' . $e->getMessage(),
+            ];
+        }
+
+        // 5. Cache Clear (php artisan optimize:clear)
         try {
             Artisan::call('optimize:clear');
             $log['cache_clear'] = [
@@ -298,11 +337,34 @@ class ModuleController extends Controller
         } catch (\Throwable $e) {
             $log['cache_clear'] = [
                 'success' => false,
-                'message' => 'Cache clear notice: ' . $e->getMessage(),
+                'message' => 'Cache clear note: ' . $e->getMessage(),
             ];
         }
 
         return $log;
+    }
+
+    /**
+     * Resolve composer binary executable across environments.
+     *
+     * @return string
+     */
+    protected function resolveComposerBinary(): string
+    {
+        $candidatePaths = [
+            'C:\\laragon\\bin\\composer\\composer.bat',
+            'C:\\ProgramData\\ComposerSetup\\bin\\composer.bat',
+            '/usr/local/bin/composer',
+            '/usr/bin/composer',
+        ];
+
+        foreach ($candidatePaths as $path) {
+            if (file_exists($path)) {
+                return $path;
+            }
+        }
+
+        return 'composer';
     }
 
     /**
@@ -324,21 +386,36 @@ class ModuleController extends Controller
                 ], 404);
             }
 
-            if (Module::isEnabled($module)) {
-                Module::disable($module);
-                $status = 'disabled';
+            if (class_exists(Module::class) && Module::has($module)) {
+                if (Module::isEnabled($module)) {
+                    Module::disable($module);
+                    $status = 'disabled';
+                } else {
+                    Module::enable($module);
+                    $status = 'enabled';
+                }
             } else {
-                Module::enable($module);
-                $status = 'enabled';
+                $statusesFile = base_path('modules_statuses.json');
+                $statuses = File::exists($statusesFile) ? (json_decode(File::get($statusesFile), true) ?: []) : [];
+                $isCurrentlyActive = !empty($statuses[$module]);
+                $status = $isCurrentlyActive ? 'disabled' : 'enabled';
             }
 
+            // Guarantee sync in modules_statuses.json
+            $statusesFile = base_path('modules_statuses.json');
+            $statuses = File::exists($statusesFile) ? (json_decode(File::get($statusesFile), true) ?: []) : [];
+            $statuses[$module] = ($status === 'enabled');
+            File::put($statusesFile, json_encode($statuses, JSON_PRETTY_PRINT));
+
             Artisan::call('optimize:clear');
+
+            $isEnabled = ($status === 'enabled');
 
             return response()->json([
                 'success' => true,
                 'module' => $module,
                 'status' => $status,
-                'is_enabled' => Module::isEnabled($module),
+                'is_enabled' => $isEnabled,
                 'message' => "Module '{$module}' has been {$status} successfully.",
             ]);
         } catch (\Throwable $e) {
@@ -370,9 +447,31 @@ class ModuleController extends Controller
                 ], 404);
             }
 
-            // Disable module first
-            if (Module::has($module)) {
+            // 1. Disable module first
+            if (class_exists(Module::class) && Module::has($module)) {
                 Module::disable($module);
+            }
+
+            // 2. Remove module entry from modules_statuses.json
+            $statusesFile = base_path('modules_statuses.json');
+            if (File::exists($statusesFile)) {
+                $statuses = json_decode(File::get($statusesFile), true) ?: [];
+                unset($statuses[$module]);
+                File::put($statusesFile, json_encode($statuses, JSON_PRETTY_PRINT));
+            }
+
+            // 3. Delete the module directory safely
+            if (File::isDirectory($moduleDir)) {
+                File::deleteDirectory($moduleDir);
+            }
+
+            // 4. Synchronize Composer classmaps after deleting files
+            try {
+                $composerBinary = $this->resolveComposerBinary();
+                $process = new Process([$composerBinary, 'dump-autoload', '-o', '--no-scripts'], base_path());
+                $process->run();
+            } catch (\Throwable $e) {
+                // Ignore background composer notice on delete
             }
 
             Artisan::call('optimize:clear');
