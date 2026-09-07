@@ -46,9 +46,11 @@ class ModuleHelper
      */
     public static function getModel(string $shortName): ?string
     {
-        $moduleClass = "Modules\\Finance\\Models\\{$shortName}";
-        if (class_exists($moduleClass)) {
-            return $moduleClass;
+        if (self::isFinanceActive() && is_dir(base_path('Modules/Finance'))) {
+            $moduleClass = "Modules\\Finance\\Models\\{$shortName}";
+            if (class_exists($moduleClass)) {
+                return $moduleClass;
+            }
         }
 
         $appClass = "App\\Models\\{$shortName}";
