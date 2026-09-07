@@ -2204,43 +2204,132 @@
                             Swal.fire({
                                 icon: 'info',
                                 title: 'Select Module Package',
-                                text: 'Please drag or select a .zip module file to preview installation.',
+                                text: 'Please drag or select a .zip module file before uploading.',
                                 confirmButtonColor: '#3b82f6'
                             });
                         } else {
-                            alert('Please drag or select a .zip module file to preview installation.');
+                            alert('Please drag or select a .zip module file before uploading.');
                         }
                         return;
                     }
 
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            title: 'Module Installation Ready',
-                            html: `Package <b>${file.name}</b> selected (${formatBytes(file.size)}).<br><small class="text-muted">Module pipeline will extract to Modules/, run composer dump-autoload, migrate schema & clear cache.</small>`,
-                            icon: 'success',
-                            confirmButtonText: 'Great!',
-                            confirmButtonColor: '#3b82f6'
-                        });
-                    } else {
-                        alert(`Package ${file.name} selected. Ready for backend installation pipeline.`);
-                    }
+                    const formData = new FormData();
+                    formData.append('module_zip', file);
+                    formData.append('_token', '{{ csrf_token() }}');
+
+                    btnInstallDemo.disabled = true;
+                    btnInstallDemo.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Uploading...';
+
+                    fetch('{{ route("settings.modules.upload") }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(response => response.json().then(data => ({ status: response.status, body: data })))
+                    .then(res => {
+                        btnInstallDemo.disabled = false;
+                        btnInstallDemo.innerHTML = '<i class="fa-solid fa-bolt me-1"></i> Upload & Install Module';
+
+                        if (res.body.success) {
+                            let pipelineHtml = `
+                                <div class="text-start mt-3 p-3 rounded-3 font-monospace small" style="background: rgba(0,0,0,0.25);">
+                                    <div class="text-success mb-1">✔ Archive Extracted to ${res.body.target_directory || 'Modules/'}</div>
+                                    <div class="text-success mb-1">✔ Module Status Enabled in modules_statuses.json</div>
+                                    <div class="text-success mb-1">✔ Composer Autoload Synchronized</div>
+                                    <div class="text-success mb-1">✔ Database Migrations Executed</div>
+                                    <div class="text-success">✔ Application Caches Cleared</div>
+                                </div>
+                                <p class="text-muted small mt-2 mb-0">Module <b>${res.body.module}</b> is now active and ready to use!</p>
+                            `;
+
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    title: 'Module Installed & Configured!',
+                                    html: pipelineHtml,
+                                    icon: 'success',
+                                    confirmButtonText: 'Reload Page',
+                                    confirmButtonColor: '#3b82f6'
+                                }).then(() => window.location.reload());
+                            } else {
+                                alert(res.body.message);
+                                window.location.reload();
+                            }
+                        } else {
+                            throw new Error(res.body.message || 'Upload failed');
+                        }
+                    })
+                    .catch(err => {
+                        btnInstallDemo.disabled = false;
+                        btnInstallDemo.innerHTML = '<i class="fa-solid fa-bolt me-1"></i> Upload & Install Module';
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                title: 'Upload Failed',
+                                text: err.message,
+                                icon: 'error',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        } else {
+                            alert('Error: ' + err.message);
+                        }
+                    });
                 });
             }
 
             if (btnUninstallDemo) {
                 btnUninstallDemo.addEventListener('click', function() {
+                    const executeUninstall = () => {
+                        fetch('{{ route("settings.modules.destroy", "Finance") }}', {
+                            method: 'DELETE',
+                            headers: {
+                                'Accept': 'application/json',
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        title: 'Uninstalled!',
+                                        text: data.message,
+                                        icon: 'success',
+                                        confirmButtonColor: '#3b82f6'
+                                    }).then(() => window.location.reload());
+                                } else {
+                                    alert(data.message);
+                                    window.location.reload();
+                                }
+                            } else {
+                                throw new Error(data.message);
+                            }
+                        })
+                        .catch(err => {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({ title: 'Error', text: err.message, icon: 'error' });
+                            } else {
+                                alert(err.message);
+                            }
+                        });
+                    };
+
                     if (typeof Swal !== 'undefined') {
                         Swal.fire({
                             title: 'Uninstall Module?',
-                            text: 'Are you sure you want to uninstall the Finance & Accounting module? This will disable routes and archive module data.',
+                            text: 'Are you sure you want to uninstall the Finance & Accounting module?',
                             icon: 'warning',
                             showCancelButton: true,
                             confirmButtonText: 'Yes, Uninstall',
                             confirmButtonColor: '#ef4444',
                             cancelButtonColor: '#64748b'
+                        }).then((result) => {
+                            if (result.isConfirmed) executeUninstall();
                         });
-                    } else {
-                        confirm('Are you sure you want to uninstall this module?');
+                    } else if (confirm('Are you sure you want to uninstall this module?')) {
+                        executeUninstall();
                     }
                 });
             }
@@ -2250,13 +2339,53 @@
                 moduleToggle.addEventListener('change', function(e) {
                     const isChecked = e.target.checked;
                     const statusBadge = document.getElementById('finance-module-status-badge');
-                    if (statusBadge) {
-                        if (isChecked) {
-                            statusBadge.innerHTML = '<span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fs-8"><i class="fa-solid fa-circle-check me-1"></i>Active & Enabled</span>';
-                        } else {
-                            statusBadge.innerHTML = '<span class="badge bg-warning bg-opacity-15 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fs-8"><i class="fa-solid fa-circle-pause me-1"></i>Disabled (PRO Locked)</span>';
+
+                    fetch('{{ route("settings.modules.toggle", "Finance") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
                         }
-                    }
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (statusBadge) {
+                                if (data.is_enabled) {
+                                    statusBadge.innerHTML = '<span class="badge bg-success bg-opacity-15 text-success border border-success border-opacity-25 px-2.5 py-1 rounded-pill fs-8"><i class="fa-solid fa-circle-check me-1"></i>Active & Enabled</span>';
+                                } else {
+                                    statusBadge.innerHTML = '<span class="badge bg-warning bg-opacity-15 text-warning border border-warning border-opacity-25 px-2.5 py-1 rounded-pill fs-8"><i class="fa-solid fa-circle-pause me-1"></i>Disabled (PRO Locked)</span>';
+                                }
+                            }
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    toast: true,
+                                    position: 'top-end',
+                                    icon: 'success',
+                                    title: data.message,
+                                    showConfirmButton: false,
+                                    timer: 2500
+                                });
+                            }
+                        } else {
+                            e.target.checked = !isChecked;
+                            throw new Error(data.message);
+                        }
+                    })
+                    .catch(err => {
+                        e.target.checked = !isChecked;
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                toast: true,
+                                position: 'top-end',
+                                icon: 'error',
+                                title: err.message || 'Failed to toggle module status',
+                                showConfirmButton: false,
+                                timer: 3000
+                            });
+                        }
+                    });
                 });
             }
         });

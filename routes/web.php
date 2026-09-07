@@ -19,6 +19,7 @@ use App\Http\Controllers\RoleAndPermissionController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\PropertyTypeController;
 use App\Http\Controllers\GlobalImportExportController;
+use App\Http\Controllers\ModuleController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -154,6 +155,11 @@ Route::middleware('auth')->group(function () {
         Route::get('settings/global-backup/template-master', [GlobalImportExportController::class, 'templateMaster'])->name('settings.global.template_master');
         Route::post('settings/global-backup/preview-master', [GlobalImportExportController::class, 'previewMaster'])->name('settings.global.preview_master');
         Route::post('settings/global-backup/process-master', [GlobalImportExportController::class, 'processMaster'])->name('settings.global.process_master');
+
+        // Module Management
+        Route::post('settings/modules/upload', [ModuleController::class, 'upload'])->name('settings.modules.upload');
+        Route::post('settings/modules/{module}/toggle', [ModuleController::class, 'toggle'])->name('settings.modules.toggle');
+        Route::delete('settings/modules/{module}', [ModuleController::class, 'destroy'])->name('settings.modules.destroy');
     });
 
     Route::middleware('permission:setting_edit')->group(function () {

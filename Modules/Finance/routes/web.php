@@ -7,7 +7,7 @@ use Modules\Finance\Http\Controllers\MaintenanceBillController;
 use Modules\Finance\Http\Controllers\NameTransferBillController;
 use Modules\Finance\Http\Controllers\ReportController;
 
-Route::middleware(['auth', 'finance.active'])->group(function () {
+Route::middleware('auth')->group(function () {
 
     Route::middleware('permission:expense_category_view')->group(function () {
         Route::get('expense-categories', [ExpenseCategoryController::class, 'index'])->name('expense-categories.index');
