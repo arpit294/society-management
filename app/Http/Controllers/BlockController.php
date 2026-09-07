@@ -3,9 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\DataTables\BlocksDataTable;
+use App\Helpers\ModuleHelper;
 use App\Models\Block;
+use App\Models\Complain;
 use App\Models\Flat;
-use App\Models\MaintenanceBill;
+use App\Models\FlatDocument;
+use App\Models\Resident;
+use App\Models\Setting;
+use GuzzleHttp\Psr7\Response;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -19,8 +26,8 @@ class BlockController extends Controller
      *
      * @param \Exception $e
      * @param string $methodName
-     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
-     * @throws \Illuminate\Validation\ValidationException
+     * @return JsonResponse|RedirectResponse
+     * @throws ValidationException
      */
     private function handleException(\Exception $e, string $methodName)
     {
@@ -45,8 +52,8 @@ class BlockController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @param \App\DataTables\BlocksDataTable $dataTable
-     * @return \Illuminate\Http\Response
+     * @param BlocksDataTable $dataTable
+     * @return Response
      */
     public function index(BlocksDataTable $dataTable)
     {
@@ -85,7 +92,7 @@ class BlockController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function create()
     {
@@ -101,8 +108,8 @@ class BlockController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param Request $request
+     * @return JsonResponse
      */
     public function store(Request $request)
     {
@@ -136,8 +143,8 @@ class BlockController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param \App\Models\Block $block
-     * @return \Illuminate\Http\Response
+     * @param Block $block
+     * @return Response
      */
     public function edit(Block $block)
     {
@@ -156,7 +163,7 @@ class BlockController extends Controller
      * @param Request $request
      * @param Block $block
      * @return JsonResponse
-     * @throws \Illuminate\Validation\ValidationException
+     * @throws ValidationException
      */
     public function update(Request $request, Block $block)
     {
@@ -199,8 +206,8 @@ class BlockController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param \App\Models\Block $block
-     * @return \Illuminate\Http\JsonResponse
+     * @param Block $block
+     * @return JsonResponse
      */
     public function destroy(Block $block)
     {
@@ -210,17 +217,23 @@ class BlockController extends Controller
             DB::transaction(function () use ($block) {
                 $flatIds = Flat::where('block_id', $block->id)->pluck('id');
                 if ($flatIds->isNotEmpty()) {
-                    \App\Models\Complain::whereIn('flat_id', $flatIds)->delete();
-                    \App\Models\FlatDocument::whereIn('flat_id', $flatIds)->delete();
-                    \App\Models\NameTransferBill::whereIn('flat_id', $flatIds)->delete();
-                    \App\Models\Resident::whereIn('flat_id', $flatIds)->delete();
+                    Complain::whereIn('flat_id', $flatIds)->delete();
+                    FlatDocument ::whereIn('flat_id', $flatIds)->delete();
+                    $nameTransferModel = ModuleHelper::getModel('NameTransferBill');
+                    if (ModuleHelper::isFinanceActive() && $nameTransferModel && ModuleHelper::hasModel($nameTransferModel, 'name_transfer_bills')) {
+                        $nameTransferModel::whereIn('flat_id', $flatIds)->delete();
+                    }
+                    Resident::whereIn('flat_id', $flatIds)->delete();
                 }
-                MaintenanceBill::where('block_id', $block->id)->delete();
+                $maintenanceBillModel = ModuleHelper::getModel('MaintenanceBill');
+                if (ModuleHelper::isFinanceActive() && $maintenanceBillModel && ModuleHelper::hasModel($maintenanceBillModel, 'maintenance_bills')) {
+                    $maintenanceBillModel::where('block_id', $block->id)->delete();
+                }
                 Flat::where('block_id', $block->id)->delete();
                 $block->delete();
             });
 
-            $blockLabel = \App\Models\Setting::label('block', 'Block');
+            $blockLabel = Setting::label('block', 'Block');
             return response()->json([
                 'success' => true,
                 'message' => "{$blockLabel} deleted successfully.",

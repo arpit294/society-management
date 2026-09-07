@@ -467,15 +467,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const dashboardChartDataEl = document.getElementById(
         "dashboard-chart-data",
     );
-    if (dashboardChartDataEl && document.getElementById("mainChart")) {
+    if (dashboardChartDataEl) {
         const months = JSON.parse(
-            dashboardChartDataEl.getAttribute("data-months"),
+            dashboardChartDataEl.getAttribute("data-months") || "[]",
         );
         const revenueData = JSON.parse(
-            dashboardChartDataEl.getAttribute("data-revenue"),
+            dashboardChartDataEl.getAttribute("data-revenue") || "[]",
         );
         const expenseData = JSON.parse(
-            dashboardChartDataEl.getAttribute("data-expenses"),
+            dashboardChartDataEl.getAttribute("data-expenses") || "[]",
         );
 
         Chart.defaults.color =
@@ -487,102 +487,105 @@ document.addEventListener("DOMContentLoaded", function () {
                 "--cui-border-color-translucent",
             ) || "rgba(0,0,0,0.1)";
 
-        const mainChartCtx = document
-            .getElementById("mainChart")
-            .getContext("2d");
+        let mainChart = null;
+        if (document.getElementById("mainChart")) {
+            const mainChartCtx = document
+                .getElementById("mainChart")
+                .getContext("2d");
 
-        let gradientRevenue = mainChartCtx.createLinearGradient(0, 0, 0, 400);
-        gradientRevenue.addColorStop(0, "rgba(99, 102, 241, 0.5)"); // Indigo
-        gradientRevenue.addColorStop(1, "rgba(99, 102, 241, 0.0)");
+            let gradientRevenue = mainChartCtx.createLinearGradient(0, 0, 0, 400);
+            gradientRevenue.addColorStop(0, "rgba(99, 102, 241, 0.5)"); // Indigo
+            gradientRevenue.addColorStop(1, "rgba(99, 102, 241, 0.0)");
 
-        let gradientExpense = mainChartCtx.createLinearGradient(0, 0, 0, 400);
-        gradientExpense.addColorStop(0, "rgba(239, 68, 68, 0.5)"); // Red
-        gradientExpense.addColorStop(1, "rgba(239, 68, 68, 0.0)");
+            let gradientExpense = mainChartCtx.createLinearGradient(0, 0, 0, 400);
+            gradientExpense.addColorStop(0, "rgba(239, 68, 68, 0.5)"); // Red
+            gradientExpense.addColorStop(1, "rgba(239, 68, 68, 0.0)");
 
-        let mainChart = new Chart(mainChartCtx, {
-            type: "line",
-            data: {
-                labels: months,
-                datasets: [
-                    {
-                        label: "Revenue (Paid Bills)",
-                        backgroundColor: gradientRevenue,
-                        borderColor: "#6366f1",
-                        borderWidth: 3,
-                        pointBackgroundColor: "#6366f1",
-                        pointBorderColor: "#fff",
-                        pointHoverBackgroundColor: "#fff",
-                        pointHoverBorderColor: "#6366f1",
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        fill: true,
-                        tension: 0.4,
-                        data: revenueData,
-                    },
-                    {
-                        label: "Society Expenses",
-                        backgroundColor: gradientExpense,
-                        borderColor: "#ef4444",
-                        borderWidth: 3,
-                        pointBackgroundColor: "#ef4444",
-                        pointBorderColor: "#fff",
-                        pointHoverBackgroundColor: "#fff",
-                        pointHoverBorderColor: "#ef4444",
-                        pointRadius: 4,
-                        pointHoverRadius: 6,
-                        fill: true,
-                        tension: 0.4,
-                        data: expenseData,
-                    },
-                ],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: { mode: "index", intersect: false },
-                plugins: {
-                    legend: {
-                        position: "top",
-                        labels: {
-                            usePointStyle: true,
-                            pointStyle: "circle",
-                            padding: 20,
+            mainChart = new Chart(mainChartCtx, {
+                type: "line",
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: "Revenue (Paid Bills)",
+                            backgroundColor: gradientRevenue,
+                            borderColor: "#6366f1",
+                            borderWidth: 3,
+                            pointBackgroundColor: "#6366f1",
+                            pointBorderColor: "#fff",
+                            pointHoverBackgroundColor: "#fff",
+                            pointHoverBorderColor: "#6366f1",
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.4,
+                            data: revenueData,
                         },
-                    },
-                    tooltip: {
-                        backgroundColor: "rgba(15, 23, 42, 0.9)",
-                        titlePadding: 10,
-                        bodyPadding: 10,
-                        cornerRadius: 8,
-                        callbacks: {
-                            label: function (context) {
-                                let label = context.dataset.label || "";
-                                if (label) label += ": ";
-                                if (context.parsed.y !== null)
-                                    label += formatPageCurrency(
-                                        context.parsed.y,
-                                        dashboardChartDataEl,
-                                    );
-                                return label;
+                        {
+                            label: "Society Expenses",
+                            backgroundColor: gradientExpense,
+                            borderColor: "#ef4444",
+                            borderWidth: 3,
+                            pointBackgroundColor: "#ef4444",
+                            pointBorderColor: "#fff",
+                            pointHoverBackgroundColor: "#fff",
+                            pointHoverBorderColor: "#ef4444",
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            fill: true,
+                            tension: 0.4,
+                            data: expenseData,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: "index", intersect: false },
+                    plugins: {
+                        legend: {
+                            position: "top",
+                            labels: {
+                                usePointStyle: true,
+                                pointStyle: "circle",
+                                padding: 20,
+                            },
+                        },
+                        tooltip: {
+                            backgroundColor: "rgba(15, 23, 42, 0.9)",
+                            titlePadding: 10,
+                            bodyPadding: 10,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function (context) {
+                                    let label = context.dataset.label || "";
+                                    if (label) label += ": ";
+                                    if (context.parsed.y !== null)
+                                        label += formatPageCurrency(
+                                            context.parsed.y,
+                                            dashboardChartDataEl,
+                                        );
+                                    return label;
+                                },
                             },
                         },
                     },
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        suggestedMax: 1000,
-                        grid: { borderDash: [4, 4] },
-                        ticks: {
-                            callback: function (value) {
-                                return formatPageCurrency(value, dashboardChartDataEl);
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            suggestedMax: 1000,
+                            grid: { borderDash: [4, 4] },
+                            ticks: {
+                                callback: function (value) {
+                                    return formatPageCurrency(value, dashboardChartDataEl);
+                                },
                             },
                         },
+                        x: { grid: { display: false } },
                     },
-                    x: { grid: { display: false } },
                 },
-            },
-        });
+            });
+        }
 
         // Status Doughnut Chart (Maintenance Tracker)
         let statusChart = null;

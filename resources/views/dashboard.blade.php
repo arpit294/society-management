@@ -24,7 +24,6 @@
                                 </div>
                                 <!-- Bottom Row: Label & Value -->
                                 <div class="mt-2">
-                                    <div class="kpi-label mb-1">{{ __('Total Flats') }}</div>
                                     <div class="kpi-label mb-1">Total {{ \App\Models\Setting::label('unit_plural', 'Flats') }}</div>
                                     <div class="kpi-number counter-animate" data-target="{{ $totalFlats }}">0</div>
                                 </div>
@@ -82,6 +81,7 @@
                         </div>
                     </div>
 
+                    @if(!empty($isFinanceActive))
                     <!-- Available Fund Card -->
                     <div class="col-sm-6 col-xl-3">
                         <div class="card kpi-hero-card kpi-theme-emerald h-100 border-0">
@@ -105,6 +105,29 @@
                             </div>
                         </div>
                     </div>
+                    @else
+                    <!-- PRO Teaser: Available Fund Card -->
+                    <div class="col-sm-6 col-xl-3">
+                        <div class="card kpi-hero-card kpi-theme-emerald h-100 border-0 js-premium-feature" data-feature="Society Financial Accounting & Fund Balance" style="cursor: pointer;">
+                            <div class="card-body p-4 d-flex flex-column justify-content-between position-relative">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div class="kpi-icon-pedestal">
+                                        <i class="fas fa-wallet text-warning"></i>
+                                    </div>
+                                    <span class="badge bg-warning text-dark fw-bold px-2 py-1"><i class="fa-solid fa-lock me-1"></i>PRO</span>
+                                </div>
+                                <div class="mt-2">
+                                    <div class="kpi-label mb-1">{{ __('Financial Balance') }}</div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="fs-4 fw-bold text-body opacity-75">••••••••</span>
+                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 small">Unlock</span>
+                                    </div>
+                                </div>
+                                <div class="kpi-glow-orb"></div>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
                 </div>
 
                 <!-- BLOCKS SUMMARY SECTION -->
@@ -165,6 +188,7 @@
                 </div>
                 @endif
 
+                @if(!empty($isFinanceActive))
                 <!-- CHARTS ROW 1 -->
                 <div class="row g-4 mb-4">
                     <!-- Main Chart: Revenue vs Expenses -->
@@ -179,9 +203,36 @@
                         </div>
                     </div>
                 </div>
+                @else
+                <!-- PRO Financial Analytics Teaser Row -->
+                <div class="row g-4 mb-4">
+                    <div class="col-12">
+                        <div class="card glass-card shadow-sm border-0 p-4 js-premium-feature" data-feature="Society Revenue & Expense Financial Analytics" style="cursor: pointer; background: linear-gradient(135deg, rgba(30, 41, 59, 0.03) 0%, rgba(245, 158, 11, 0.05) 100%);">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="rounded-3 bg-warning bg-opacity-10 text-warning p-3 fs-3 flex-shrink-0">
+                                        <i class="fa-solid fa-chart-pie"></i>
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <h5 class="fw-bold mb-0 text-body">Financial Analytics & Cashflow Charts</h5>
+                                            <span class="badge bg-warning text-dark fw-bold">PRO FEATURE</span>
+                                        </div>
+                                        <p class="text-muted small mb-0">Track monthly maintenance collections vs society expenditures, cash balances, and budget allocations with the Finance Module.</p>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-warning px-4 py-2 fw-semibold text-dark rounded-pill flex-shrink-0 shadow-sm js-premium-feature-btn" data-feature="Financial Accounting & Analytics">
+                                    <i class="fa-solid fa-crown me-1"></i> Unlock Analytics
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
 
                 <!-- CHARTS ROW 2 -->
                 <div class="row g-4 mb-4">
+                    @if(!empty($isFinanceActive))
                     <!-- Expense Breakdown Chart -->
                     <div class="col-lg-6">
                         <div class="card glass-card h-100 shadow-sm border-0">
@@ -193,9 +244,10 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
                     <!-- Occupancy Rates Chart -->
-                    <div class="col-lg-6">
+                    <div class="{{ !empty($isFinanceActive) ? 'col-lg-6' : 'col-12' }}">
                         <div class="card glass-card h-100 shadow-sm border-0">
                             <div class="card-header bg-transparent border-0 pt-4 pb-0">
                                 <h5 class="card-title mb-0 fw-bold">Occupancy Rates</h5>
@@ -207,6 +259,7 @@
                     </div>
                 </div>
 
+                @if(!empty($isFinanceActive))
                 <!-- LIVE CASHFLOW & NET-WORTH LEDGER ROW -->
                 <div class="row g-4 mb-4">
                     <!-- Left Col: This Month's Cashflow Pulse -->
@@ -388,17 +441,22 @@
                             <div class="d-flex align-items-center justify-content-between pt-3 mt-3 border-top" style="border-color: rgba(255, 255, 255, 0.08) !important;">
                                 <span class="text-muted small"><i class="fa-solid fa-lock text-primary me-1"></i> All transactions are cryptographically audited & reconciled</span>
                                 <div class="d-flex gap-3">
+                                    @if(\Illuminate\Support\Facades\Route::has('maintenance-bills.index'))
                                     <a href="{{ route('maintenance-bills.index') }}" class="btn btn-sm btn-link text-success fw-semibold text-decoration-none p-0">
                                         Inflow <i class="fa-solid fa-arrow-right ms-1"></i>
                                     </a>
+                                    @endif
+                                    @if(\Illuminate\Support\Facades\Route::has('expenses.index'))
                                     <a href="{{ route('expenses.index') }}" class="btn btn-sm btn-link text-danger fw-semibold text-decoration-none p-0">
                                         Outflow <i class="fa-solid fa-arrow-right ms-1"></i>
                                     </a>
+                                    @endif
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                @endif
 
             </div>
         </div>

@@ -3,16 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\CurrencyHelper;
-use Illuminate\Http\Request;
-use App\Models\User;
-use App\Models\Flat;
+use App\Helpers\ModuleHelper;
+use App\Models\Block;
 use App\Models\Complain;
-use App\Models\MaintenanceBill;
-use App\Models\Expense;
-use App\Models\ExpenseCategory;
-use App\Models\Maintenance;
-use App\Models\NameTransferBill;
+use App\Models\Flat;
+use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -32,105 +29,313 @@ class DashboardController extends Controller
             $totalComplaints = Complain::where('status', '!=', config('status.complaints.resolved'))->count();
 
             $totalOccupiedFlats = Flat::where('status', config('status.flats.occupied'))->count();
-            $blocks = \App\Models\Block::withCount([
+            $blocks = Block::withCount([
                 'flats',
                 'flats as occupied_flats_count' => function ($query) {
                     $query->where('status', config('status.flats.occupied'));
                 },
             ])->get();
 
-            $totalRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->sum('total_amount')
-                + NameTransferBill::where('status', config('status.name_transfer_bills.paid'))->sum('amount');
-            $totalExpenses = Expense::sum('total_amount');
-            $totalAvailableFund = $totalRevenue - $totalExpenses;
+            $maintenanceBillModel = ModuleHelper::getModel('MaintenanceBill');
+            $expenseModel = ModuleHelper::getModel('Expense');
+            $expenseCategoryModel = ModuleHelper::getModel('ExpenseCategory');
+            $nameTransferBillModel = ModuleHelper::getModel('NameTransferBill');
+            $maintenanceModel = ModuleHelper::getModel('Maintenance');
 
-            // Revenue Chart Data (Current Year)
+            $isFinanceActive = ModuleHelper::isFinanceActive()
+                && ModuleHelper::hasModel($maintenanceBillModel, 'maintenance_bills');
+
             $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-            $monthlyRevenueDB = MaintenanceBill::where('maintenance_bills.status', config('status.maintenance_bills.paid'))
-                ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
-                ->where('maintenances.year', date('Y'))
-                ->selectRaw('maintenances.month, sum(maintenance_bills.total_amount) as total')
-                ->groupBy('maintenances.month')
-                ->pluck('total', 'month')
-                ->toArray();
+            if ($isFinanceActive && $maintenanceBillModel) {
+                $totalRevenue = $maintenanceBillModel::where('status', config('status.maintenance_bills.paid', 'paid'))->sum('total_amount')
+                    + ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills') ? $nameTransferBillModel::where('status', config('status.name_transfer_bills.paid', 'paid'))->sum('amount') : 0);
+                $totalExpenses = ($expenseModel && ModuleHelper::hasModel($expenseModel, 'expenses')) ? $expenseModel::sum('total_amount') : 0;
+                $totalAvailableFund = $totalRevenue - $totalExpenses;
 
-            $transferRevenueDB = NameTransferBill::where('status', config('status.name_transfer_bills.paid'))
-                ->whereYear(DB::raw('COALESCE(updated_at, created_at)'), date('Y'))
-                ->selectRaw('MONTHNAME(COALESCE(updated_at, created_at)) as month, sum(amount) as total')
-                ->groupBy('month')
-                ->pluck('total', 'month')
-                ->toArray();
+                // Revenue Chart Data (Current Year)
+                $monthlyRevenueDB = $maintenanceBillModel::where('maintenance_bills.status', config('status.maintenance_bills.paid', 'paid'))
+                    ->join('maintenances', 'maintenance_bills.maintenance_id', '=', 'maintenances.id')
+                    ->where('maintenances.year', date('Y'))
+                    ->selectRaw('maintenances.month, sum(maintenance_bills.total_amount) as total')
+                    ->groupBy('maintenances.month')
+                    ->pluck('total', 'month')
+                    ->toArray();
 
-            // Expense Chart Data (Current Year)
-            $monthlyExpensesDB = Expense::whereYear(DB::raw('COALESCE(expense_date, created_at)'), date('Y'))
-                ->selectRaw('MONTHNAME(COALESCE(expense_date, created_at)) as month, sum(total_amount) as total')
-                ->groupBy('month')
-                ->pluck('total', 'month')
-                ->toArray();
+                $transferRevenueDB = [];
+                if ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills')) {
+                    $transferRevenueDB = $nameTransferBillModel::where('status', config('status.name_transfer_bills.paid', 'paid'))
+                        ->whereYear(DB::raw('COALESCE(updated_at, created_at)'), date('Y'))
+                        ->selectRaw('MONTHNAME(COALESCE(updated_at, created_at)) as month, sum(amount) as total')
+                        ->groupBy('month')
+                        ->pluck('total', 'month')
+                        ->toArray();
+                }
 
-            $chartDataRevenue = [];
-            $chartDataExpenses = [];
+                // Expense Chart Data (Current Year)
+                $monthlyExpensesDB = [];
+                if ($expenseModel && ModuleHelper::hasModel($expenseModel, 'expenses')) {
+                    $monthlyExpensesDB = $expenseModel::whereYear(DB::raw('COALESCE(expense_date, created_at)'), date('Y'))
+                        ->selectRaw('MONTHNAME(COALESCE(expense_date, created_at)) as month, sum(total_amount) as total')
+                        ->groupBy('month')
+                        ->pluck('total', 'month')
+                        ->toArray();
+                }
 
-            foreach ($months as $month) {
-                $chartDataRevenue[] = ($monthlyRevenueDB[$month] ?? 0) + ($transferRevenueDB[$month] ?? 0);
-                $chartDataExpenses[] = $monthlyExpensesDB[$month] ?? 0;
+                $chartDataRevenue = [];
+                $chartDataExpenses = [];
+
+                foreach ($months as $month) {
+                    $chartDataRevenue[] = ($monthlyRevenueDB[$month] ?? 0) + ($transferRevenueDB[$month] ?? 0);
+                    $chartDataExpenses[] = $monthlyExpensesDB[$month] ?? 0;
+                }
+
+                // Bill Status Chart Data
+                $paidBills = $maintenanceBillModel::where('status', config('status.maintenance_bills.paid', 'paid'))->count();
+                $pendingBills = $maintenanceBillModel::where('status', config('status.maintenance_bills.pending', 'pending'))->count();
+                $overdueBills = $maintenanceBillModel::where('status', config('status.maintenance_bills.overdue', 'overdue'))->count();
+                $billStatusData = [
+                    'paid' => $paidBills,
+                    'pending' => $pendingBills,
+                    'overdue' => $overdueBills,
+                ];
+
+                // Expense Breakdown Chart Data
+                $expensesByCategory = collect();
+                if ($expenseModel && $expenseCategoryModel && ModuleHelper::hasModel($expenseModel, 'expenses') && ModuleHelper::hasModel($expenseCategoryModel, 'expense_categories')) {
+                    $expensesByCategory = $expenseModel::join('expense_categories', 'expenses.category_id', '=', 'expense_categories.id')
+                        ->selectRaw('expense_categories.title, sum(expenses.total_amount) as total')
+                        ->groupBy('expense_categories.title')
+                        ->pluck('total', 'title');
+                }
+
+                $expenseBreakdownLabels = $expensesByCategory->keys()->toArray();
+                $expenseBreakdownData = $expensesByCategory->values()->toArray();
+
+                // Recent Payment Activities
+                $recentPayments = $maintenanceBillModel::with('user', 'flat', 'block')
+                    ->where('status', config('status.maintenance_bills.paid', 'paid'))
+                    ->latest('updated_at')
+                    ->take(30)
+                    ->get()
+                    ->groupBy(function ($bill) {
+                        $timeKey = $bill->paid_at ? $bill->paid_at->format('Y-m-d_H:i') : $bill->updated_at->format('Y-m-d_H:i');
+                        return 'user_' . $bill->user_id . '_flat_' . $bill->flat_id . '_' . $timeKey;
+                    })
+                    ->take(4)
+                    ->map(function ($billsGroup) {
+                        $bill = $billsGroup->first();
+                        $totalAmount = $billsGroup->sum('total_amount');
+                        $monthsCount = $billsGroup->count();
+                        $residentName = $bill->user?->name ?? 'Unknown Resident';
+                        $flatNo = ($bill->block ? $bill->block->block_name . '-' : '') . ($bill->flat?->flat_no ?? 'N/A');
+                        $durationText = $monthsCount > 1 ? " ({$monthsCount} months)" : "";
+
+                        return (object) [
+                            'type' => 'payment',
+                            'icon' => 'fa-solid fa-money-bill-wave text-success',
+                            'title' => 'Payment Received',
+                            'description' => "{$residentName} (Flat #{$flatNo}) paid " . CurrencyHelper::formatCurrency($totalAmount) . $durationText,
+                            'time' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now())->diffForHumans(),
+                            'timestamp' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now())
+                        ];
+                    })
+                    ->values();
+
+                $unapprovedTransferUserIds = [];
+                $recentTransfers = collect();
+                if ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills')) {
+                    $unapprovedTransferUserIds = $nameTransferBillModel::where(function ($q) {
+                        $q->where('is_approved', false)->orWhereNull('is_approved');
+                    })->pluck('new_owner_id')->filter()->toArray();
+
+                    $recentTransfers = $nameTransferBillModel::with('flat.block', 'oldOwner', 'newOwner')
+                        ->where('is_approved', true)
+                        ->latest('updated_at')
+                        ->take(4)
+                        ->get()
+                        ->map(function ($transfer) {
+                            $oldName = $transfer->oldOwner?->name ?? 'Previous Owner';
+                            $newName = $transfer->newOwner?->name ?? 'New Owner';
+                            $flatNo = ($transfer->flat?->block ? $transfer->flat->block->block_name . '-' : '') . ($transfer->flat?->flat_no ?? 'N/A');
+
+                            return (object) [
+                                'type' => 'transfer',
+                                'icon' => 'fa-solid fa-right-left text-warning',
+                                'title' => 'Ownership Transferred',
+                                'description' => "Flat #{$flatNo} transferred from {$oldName} to {$newName}",
+                                'time' => Carbon::parse($transfer->updated_at ?? $transfer->created_at ?? now())->diffForHumans(),
+                                'timestamp' => Carbon::parse($transfer->updated_at ?? $transfer->created_at ?? now())
+                            ];
+                        });
+                }
+
+                // Live Cashflow Metrics
+                $thisMonthRevenue = $maintenanceBillModel::where('status', config('status.maintenance_bills.paid', 'paid'))
+                    ->whereMonth('updated_at', now()->month)
+                    ->whereYear('updated_at', now()->year)
+                    ->sum('total_amount')
+                    + ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills') ? $nameTransferBillModel::where('status', config('status.name_transfer_bills.paid', 'paid'))
+                        ->where('is_approved', true)
+                        ->whereMonth('updated_at', now()->month)
+                        ->whereYear('updated_at', now()->year)
+                        ->sum('amount') : 0);
+
+                $thisMonthPenalty = $maintenanceBillModel::where('status', config('status.maintenance_bills.paid', 'paid'))
+                    ->whereMonth('updated_at', now()->month)
+                    ->whereYear('updated_at', now()->year)
+                    ->sum('penalty_amount');
+
+                $totalPenaltyRevenue = $maintenanceBillModel::where('status', config('status.maintenance_bills.paid', 'paid'))->sum('penalty_amount');
+
+                $thisMonthTransfer = ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills')) ? $nameTransferBillModel::where('status', config('status.name_transfer_bills.paid', 'paid'))
+                    ->where('is_approved', true)
+                    ->whereMonth('updated_at', now()->month)
+                    ->whereYear('updated_at', now()->year)
+                    ->sum('amount') : 0;
+
+                $totalTransferRevenue = ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills')) ? $nameTransferBillModel::where('status', config('status.name_transfer_bills.paid', 'paid'))
+                    ->where('is_approved', true)
+                    ->sum('amount') : 0;
+
+                $thisMonthExpense = ($expenseModel && ModuleHelper::hasModel($expenseModel, 'expenses')) ? $expenseModel::whereMonth(DB::raw('COALESCE(expense_date, created_at)'), now()->month)
+                    ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), now()->year)
+                    ->sum('total_amount') : 0;
+
+                $thisMonthNet = $thisMonthRevenue - $thisMonthExpense;
+                $cashflowStatus = $thisMonthNet >= 0 ? 'Surplus (+)' : 'Deficit (-)';
+                $cashflowColor = $thisMonthNet >= 0 ? 'success' : 'danger';
+
+                $recentIncomeBills = $maintenanceBillModel::with('user', 'flat', 'block')
+                    ->where('status', config('status.maintenance_bills.paid', 'paid'))
+                    ->latest('updated_at')
+                    ->take(30)
+                    ->get()
+                    ->groupBy(function ($bill) {
+                        return ($bill->user_id ?? '0') . '_' . ($bill->flat_id ?? '0') . '_' . $bill->updated_at->format('Y-m-d');
+                    })
+                    ->flatMap(function ($group) {
+                        $firstBill = $group->first();
+                        $flatNo = ($firstBill->block ? $firstBill->block->block_name . '-' : '') . ($firstBill->flat?->flat_no ?? 'N/A');
+                        $userName = $firstBill->user?->name ?? 'Resident';
+
+                        $totalBaseAmount = $group->sum(function ($b) {
+                            return (float) $b->total_amount - (float) $b->penalty_amount;
+                        });
+                        $totalPenaltyAmount = $group->sum('penalty_amount');
+                        $totalAmount = $group->sum('total_amount');
+
+                        $latestTimestamp = $group->max('updated_at');
+
+                        $records = [];
+
+                        if ($totalBaseAmount > 0) {
+                            $records[] = (object) [
+                                'type' => 'income',
+                                'category' => 'Maintenance Fee',
+                                'title' => $userName . " (Flat #{$flatNo})",
+                                'amount' => $totalBaseAmount,
+                                'timestamp' => Carbon::parse($latestTimestamp ?? now()),
+                                'time' => Carbon::parse($latestTimestamp ?? now())->diffForHumans()
+                            ];
+                        }
+
+                        if ($totalPenaltyAmount > 0) {
+                            $records[] = (object) [
+                                'type' => 'income',
+                                'category' => 'Penalty Fee',
+                                'title' => "Late Penalty - " . $userName . " (Flat #{$flatNo})",
+                                'amount' => $totalPenaltyAmount,
+                                'timestamp' => Carbon::parse($latestTimestamp ?? now()),
+                                'time' => Carbon::parse($latestTimestamp ?? now())->diffForHumans()
+                            ];
+                        }
+
+                        if (empty($records)) {
+                            $records[] = (object) [
+                                'type' => 'income',
+                                'category' => 'Maintenance Fee',
+                                'title' => $userName . " (Flat #{$flatNo})",
+                                'amount' => $totalAmount,
+                                'timestamp' => Carbon::parse($latestTimestamp ?? now()),
+                                'time' => Carbon::parse($latestTimestamp ?? now())->diffForHumans()
+                            ];
+                        }
+
+                        return $records;
+                    });
+
+                $recentTransferIncome = collect();
+                if ($nameTransferBillModel && ModuleHelper::hasModel($nameTransferBillModel, 'name_transfer_bills')) {
+                    $recentTransferIncome = $nameTransferBillModel::with('flat.block', 'newOwner')
+                        ->where('status', config('status.name_transfer_bills.paid', 'paid'))
+                        ->where('is_approved', true)
+                        ->latest('updated_at')
+                        ->take(4)
+                        ->get()
+                        ->map(function ($bill) {
+                            $flatNo = ($bill->flat?->block ? $bill->flat->block->block_name . '-' : '') . ($bill->flat?->flat_no ?? 'N/A');
+                            return (object) [
+                                'type' => 'income',
+                                'category' => 'Transfer Fee',
+                                'title' => "Ownership Transfer (Flat #{$flatNo})",
+                                'amount' => $bill->amount,
+                                'timestamp' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now()),
+                                'time' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now())->diffForHumans()
+                            ];
+                        });
+                }
+
+                $recentExpenseItems = collect();
+                if ($expenseModel && ModuleHelper::hasModel($expenseModel, 'expenses')) {
+                    $recentExpenseItems = $expenseModel::with('category')
+                        ->latest('created_at')
+                        ->take(8)
+                        ->get()
+                        ->map(function ($exp) {
+                            return (object) [
+                                'type' => 'expense',
+                                'category' => $exp->category?->title ?? 'General Expense',
+                                'title' => $exp->title ?? 'Society Expenditure',
+                                'amount' => $exp->total_amount,
+                                'timestamp' => Carbon::parse($exp->created_at ?? $exp->updated_at ?? now()),
+                                'time' => Carbon::parse($exp->created_at ?? $exp->updated_at ?? now())->diffForHumans()
+                            ];
+                        });
+                }
+
+                $ledgerTransactions = $recentIncomeBills->concat($recentTransferIncome)->concat($recentExpenseItems)
+                    ->sortByDesc('timestamp')
+                    ->take(10)
+                    ->values();
+            } else {
+                $totalRevenue = 0;
+                $totalExpenses = 0;
+                $totalAvailableFund = 0;
+                $chartDataRevenue = array_fill(0, 12, 0);
+                $chartDataExpenses = array_fill(0, 12, 0);
+                $billStatusData = ['paid' => 0, 'pending' => 0, 'overdue' => 0];
+                $expenseBreakdownLabels = [];
+                $expenseBreakdownData = [];
+                $recentPayments = collect();
+                $recentTransfers = collect();
+                $unapprovedTransferUserIds = [];
+                $thisMonthRevenue = 0;
+                $thisMonthPenalty = 0;
+                $totalPenaltyRevenue = 0;
+                $thisMonthTransfer = 0;
+                $totalTransferRevenue = 0;
+                $thisMonthExpense = 0;
+                $thisMonthNet = 0;
+                $cashflowStatus = 'N/A';
+                $cashflowColor = 'secondary';
+                $ledgerTransactions = collect();
             }
 
-            // Bill Status Chart Data
-            $paidBills = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->count();
-            $pendingBills = MaintenanceBill::where('status', config('status.maintenance_bills.pending'))->count();
-            $overdueBills = MaintenanceBill::where('status', config('status.maintenance_bills.overdue'))->count();
-            $billStatusData = [
-                'paid' => $paidBills,
-                'pending' => $pendingBills,
-                'overdue' => $overdueBills,
-            ];
-
-            // Flat Occupancy Chart Data (Auto-syncs and calculates occupied vs empty accurately based on residents)
+            // Flat Occupancy Chart Data
             $occupancyData = Flat::syncAllOccupancyStatus();
 
-            // Expense Breakdown Chart Data
-            $expensesByCategory = Expense::join('expense_categories', 'expenses.category_id', '=', 'expense_categories.id')
-                ->selectRaw('expense_categories.title, sum(expenses.total_amount) as total')
-                ->groupBy('expense_categories.title')
-                ->pluck('total', 'title');
-
-            $expenseBreakdownLabels = $expensesByCategory->keys()->toArray();
-            $expenseBreakdownData = $expensesByCategory->values()->toArray();
-
-            // Recent Activity Feed
-            $recentPayments = MaintenanceBill::with('user', 'flat', 'block')
-                ->where('status', config('status.maintenance_bills.paid'))
-                ->latest('updated_at')
-                ->take(30)
-                ->get()
-                ->groupBy(function ($bill) {
-                    // Group bills paid by the same resident for the same flat within the same minute into a single activity entry
-                    $timeKey = $bill->paid_at ? $bill->paid_at->format('Y-m-d_H:i') : $bill->updated_at->format('Y-m-d_H:i');
-                    return 'user_' . $bill->user_id . '_flat_' . $bill->flat_id . '_' . $timeKey;
-                })
-                ->take(4)
-                ->map(function ($billsGroup) {
-                    $bill = $billsGroup->first();
-                    $totalAmount = $billsGroup->sum('total_amount');
-                    $monthsCount = $billsGroup->count();
-                    $residentName = $bill->user?->name ?? 'Unknown Resident';
-                    $flatNo = ($bill->block ? $bill->block->block_name . '-' : '') . ($bill->flat?->flat_no ?? 'N/A');
-                    $durationText = $monthsCount > 1 ? " ({$monthsCount} months)" : "";
-
-                    return (object) [
-                        'type' => 'payment',
-                        'icon' => 'fa-solid fa-money-bill-wave text-success',
-                        'title' => 'Payment Received',
-                        'description' => "{$residentName} (Flat #{$flatNo}) paid " . CurrencyHelper::formatCurrency($totalAmount) . $durationText,
-                        'time' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now())->diffForHumans(),
-                        'timestamp' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now())
-                    ];
-                })
-                ->values();
-
-            // Fetch recent complaints and map them to activity feed format
+            // Fetch recent complaints
             $recentComplaints = Complain::with('user')
                 ->latest('created_at')
                 ->take(4)
@@ -147,10 +352,7 @@ class DashboardController extends Controller
                     ];
                 });
 
-            $unapprovedTransferUserIds = NameTransferBill::where(function ($q) {
-                $q->where('is_approved', false)->orWhereNull('is_approved');
-            })->pluck('new_owner_id')->filter()->toArray();
-
+            // Fetch recent users
             $recentUsers = User::whereNotIn('id', $unapprovedTransferUserIds)
                 ->latest('updated_at')
                 ->take(3)
@@ -167,165 +369,13 @@ class DashboardController extends Controller
                     ];
                 });
 
-            $recentTransfers = NameTransferBill::with('flat.block', 'oldOwner', 'newOwner')
-                ->where('is_approved', true)
-                ->latest('updated_at')
-                ->take(4)
-                ->get()
-                ->map(function ($transfer) {
-                    $oldName = $transfer->oldOwner?->name ?? 'Previous Owner';
-                    $newName = $transfer->newOwner?->name ?? 'New Owner';
-                    $flatNo = ($transfer->flat?->block ? $transfer->flat->block->block_name . '-' : '') . ($transfer->flat?->flat_no ?? 'N/A');
-
-                    return (object) [
-                        'type' => 'transfer',
-                        'icon' => 'fa-solid fa-right-left text-warning',
-                        'title' => 'Ownership Transferred',
-                        'description' => "Flat #{$flatNo} transferred from {$oldName} to {$newName}",
-                        'time' => Carbon::parse($transfer->updated_at ?? $transfer->created_at ?? now())->diffForHumans(),
-                        'timestamp' => Carbon::parse($transfer->updated_at ?? $transfer->created_at ?? now())
-                    ];
-                });
-
             $activities = $recentPayments->concat($recentComplaints)->concat($recentUsers)->concat($recentTransfers)
                 ->sortByDesc('timestamp')
                 ->take(8)
                 ->values();
 
-            // Live Cashflow & Net-Worth Ledger Metrics
-            $thisMonthRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))
-                ->whereMonth('updated_at', now()->month)
-                ->whereYear('updated_at', now()->year)
-                ->sum('total_amount')
-                + NameTransferBill::where('status', config('status.name_transfer_bills.paid'))
-                ->where('is_approved', true)
-                ->whereMonth('updated_at', now()->month)
-                ->whereYear('updated_at', now()->year)
-                ->sum('amount');
-
-            $thisMonthPenalty = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))
-                ->whereMonth('updated_at', now()->month)
-                ->whereYear('updated_at', now()->year)
-                ->sum('penalty_amount');
-
-            $totalPenaltyRevenue = MaintenanceBill::where('status', config('status.maintenance_bills.paid'))->sum('penalty_amount');
-
-            $thisMonthTransfer = NameTransferBill::where('status', config('status.name_transfer_bills.paid'))
-                ->where('is_approved', true)
-                ->whereMonth('updated_at', now()->month)
-                ->whereYear('updated_at', now()->year)
-                ->sum('amount');
-
-            $totalTransferRevenue = NameTransferBill::where('status', config('status.name_transfer_bills.paid'))
-                ->where('is_approved', true)
-                ->sum('amount');
-
-            $thisMonthExpense = Expense::whereMonth(DB::raw('COALESCE(expense_date, created_at)'), now()->month)
-                ->whereYear(DB::raw('COALESCE(expense_date, created_at)'), now()->year)
-                ->sum('total_amount');
-
-            $thisMonthNet = $thisMonthRevenue - $thisMonthExpense;
-            $cashflowStatus = $thisMonthNet >= 0 ? 'Surplus (+)' : 'Deficit (-)';
-            $cashflowColor = $thisMonthNet >= 0 ? 'success' : 'danger';
-
-            $recentIncomeBills = MaintenanceBill::with('user', 'flat', 'block')
-                ->where('status', config('status.maintenance_bills.paid'))
-                ->latest('updated_at')
-                ->take(30)
-                ->get()
-                ->groupBy(function ($bill) {
-                    return ($bill->user_id ?? '0') . '_' . ($bill->flat_id ?? '0') . '_' . $bill->updated_at->format('Y-m-d');
-                })
-                ->flatMap(function ($group) {
-                    $firstBill = $group->first();
-                    $flatNo = ($firstBill->block ? $firstBill->block->block_name . '-' : '') . ($firstBill->flat?->flat_no ?? 'N/A');
-                    $userName = $firstBill->user?->name ?? 'Resident';
-
-                    $totalBaseAmount = $group->sum(function ($b) {
-                        return (float) $b->total_amount - (float) $b->penalty_amount;
-                    });
-                    $totalPenaltyAmount = $group->sum('penalty_amount');
-                    $totalAmount = $group->sum('total_amount');
-
-                    $latestTimestamp = $group->max('updated_at');
-
-                    $records = [];
-
-                    if ($totalBaseAmount > 0) {
-                        $records[] = (object) [
-                            'type' => 'income',
-                            'category' => 'Maintenance Fee',
-                            'title' => $userName . " (Flat #{$flatNo})",
-                            'amount' => $totalBaseAmount,
-                            'timestamp' => Carbon::parse($latestTimestamp ?? now()),
-                            'time' => Carbon::parse($latestTimestamp ?? now())->diffForHumans()
-                        ];
-                    }
-
-                    if ($totalPenaltyAmount > 0) {
-                        $records[] = (object) [
-                            'type' => 'income',
-                            'category' => 'Penalty Fee',
-                            'title' => "Late Penalty - " . $userName . " (Flat #{$flatNo})",
-                            'amount' => $totalPenaltyAmount,
-                            'timestamp' => Carbon::parse($latestTimestamp ?? now()),
-                            'time' => Carbon::parse($latestTimestamp ?? now())->diffForHumans()
-                        ];
-                    }
-
-                    if (empty($records)) {
-                        $records[] = (object) [
-                            'type' => 'income',
-                            'category' => 'Maintenance Fee',
-                            'title' => $userName . " (Flat #{$flatNo})",
-                            'amount' => $totalAmount,
-                            'timestamp' => Carbon::parse($latestTimestamp ?? now()),
-                            'time' => Carbon::parse($latestTimestamp ?? now())->diffForHumans()
-                        ];
-                    }
-
-                    return $records;
-                });
-
-            $recentTransferIncome = NameTransferBill::with('flat.block', 'newOwner')
-                ->where('status', config('status.name_transfer_bills.paid'))
-                ->where('is_approved', true)
-                ->latest('updated_at')
-                ->take(4)
-                ->get()
-                ->map(function ($bill) {
-                    $flatNo = ($bill->flat?->block ? $bill->flat->block->block_name . '-' : '') . ($bill->flat?->flat_no ?? 'N/A');
-                    return (object) [
-                        'type' => 'income',
-                        'category' => 'Transfer Fee',
-                        'title' => "Ownership Transfer (Flat #{$flatNo})",
-                        'amount' => $bill->amount,
-                        'timestamp' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now()),
-                        'time' => Carbon::parse($bill->updated_at ?? $bill->created_at ?? now())->diffForHumans()
-                    ];
-                });
-
-            $recentExpenseItems = Expense::with('category')
-                ->latest('created_at')
-                ->take(8)
-                ->get()
-                ->map(function ($exp) {
-                    return (object) [
-                        'type' => 'expense',
-                        'category' => $exp->category?->title ?? 'General Expense',
-                        'title' => $exp->title ?? 'Society Expenditure',
-                        'amount' => $exp->total_amount,
-                        'timestamp' => Carbon::parse($exp->created_at ?? $exp->updated_at ?? now()),
-                        'time' => Carbon::parse($exp->created_at ?? $exp->updated_at ?? now())->diffForHumans()
-                    ];
-                });
-
-            $ledgerTransactions = $recentIncomeBills->concat($recentTransferIncome)->concat($recentExpenseItems)
-                ->sortByDesc('timestamp')
-                ->take(10)
-                ->values();
-
             return view('dashboard', compact(
+                'isFinanceActive',
                 'totalResidents',
                 'totalFlats',
                 'totalComplaints',

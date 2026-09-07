@@ -232,6 +232,7 @@
                 </div>
 
                 </form>
+            @if(!empty($isFinanceActive))
             <form action="{{ route('settings.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="active_module" value="penalty-settings">
@@ -250,7 +251,7 @@
                                     <div>
                                         <label class="form-check-label fw-bold mb-1 text-body d-block"
                                             for="apply_penalty" style="cursor: pointer; font-size: 1rem;">Allow Late
-                                            Fees Penalty</label>
+                                             Fees Penalty</label>
                                         <div class="small text-muted">Automatically apply late penalty charges to
                                             unpaid invoices after grace period</div>
                                     </div>
@@ -447,6 +448,51 @@
                 </div>
 
                 </form>
+            @else
+                <!-- PRO Teaser Card: Late Penalty Settings -->
+                <div class="card mb-4 border-0 shadow-sm" id="penalty-settings">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fa-solid fa-clock-rotate-left text-danger me-2"></i>Late Penalty Settings</h4>
+                        <span class="badge bg-warning text-dark fw-bold px-2 py-1"><i class="fa-solid fa-lock me-1"></i>PRO FEATURE</span>
+                    </div>
+                    <div class="card-body p-4 text-center py-5">
+                        <div class="mb-3">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-danger bg-opacity-10 text-danger" style="width: 64px; height: 64px; font-size: 1.75rem;">
+                                <i class="fa-solid fa-percent"></i>
+                            </span>
+                        </div>
+                        <h5 class="fw-bold mb-2">Automated Late Penalties</h5>
+                        <p class="text-muted mx-auto mb-4" style="max-width: 500px;">
+                            Configure automated penalty rules, grace periods, and late fees for overdue maintenance invoices across monthly, quarterly, and yearly billing cycles.
+                        </p>
+                        <button type="button" class="btn btn-warning px-4 py-2 fw-semibold text-dark rounded-pill shadow-sm js-premium-feature-btn" data-feature="Late Penalty Automation Settings">
+                            <i class="fa-solid fa-crown me-1"></i> Unlock with Finance Module
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PRO Teaser Card: Prepayment Discount Settings -->
+                <div class="card mb-4 border-0 shadow-sm" id="discount-settings">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fa-solid fa-tag text-success me-2"></i>Prepayment Discount Settings</h4>
+                        <span class="badge bg-warning text-dark fw-bold px-2 py-1"><i class="fa-solid fa-lock me-1"></i>PRO FEATURE</span>
+                    </div>
+                    <div class="card-body p-4 text-center py-5">
+                        <div class="mb-3">
+                            <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success bg-opacity-10 text-success" style="width: 64px; height: 64px; font-size: 1.75rem;">
+                                <i class="fa-solid fa-tags"></i>
+                            </span>
+                        </div>
+                        <h5 class="fw-bold mb-2">Advance Prepayment Discounts</h5>
+                        <p class="text-muted mx-auto mb-4" style="max-width: 500px;">
+                            Offer early bird discounts to residents who pay their maintenance in advance for 3, 6, or 12 months.
+                        </p>
+                        <button type="button" class="btn btn-warning px-4 py-2 fw-semibold text-dark rounded-pill shadow-sm js-premium-feature-btn" data-feature="Prepayment Discounts Settings">
+                            <i class="fa-solid fa-crown me-1"></i> Unlock with Finance Module
+                        </button>
+                    </div>
+                </div>
+            @endif
             <form action="{{ route('settings.store') }}" method="POST">
                 @csrf
                 <input type="hidden" name="active_module" value="documents-settings">
@@ -1035,6 +1081,25 @@
                                                                 class="form-check-label text-body fw-medium"
                                                                 for="em_complaints">Complaints</label></div>
                                                     </div>
+                                                    @if(!empty($isFinanceActive))
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]"
+                                                                value="expense_categories" id="em_expense_categories"
+                                                                checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_expense_categories">Expense Categories</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-6">
+                                                        <div class="form-check small"><input
+                                                                class="form-check-input export-master-chk"
+                                                                type="checkbox" name="tables[]" value="expenses"
+                                                                id="em_expenses" checked><label
+                                                                class="form-check-label text-body fw-medium"
+                                                                for="em_expenses">Expenses</label></div>
+                                                    </div>
                                                     <div class="col-6">
                                                         <div class="form-check small"><input
                                                                 class="form-check-input export-master-chk"
@@ -1063,6 +1128,7 @@
                                                                 for="em_name_transfer_bills">Transfer Fees</label>
                                                         </div>
                                                     </div>
+                                                    @endif
                                                 </div>
                                             </div>
 
@@ -1098,7 +1164,7 @@
                                             <hr class="text-body opacity-25 mb-4">
                                             <p class="text-body small mb-4">
                                                 Upload an Excel (.xlsx) Master backup workbook to bulk restore database
-                                                records across Blocks, Flats, Residents, Staff, Expenses, Complaints,
+                                                records across Blocks, Flats, Residents, Staff{{ !empty($isFinanceActive) ? ', Expenses' : '' }}, Complaints,
                                                 and Settings.
                                             </p>
                                         </div>
@@ -1165,6 +1231,157 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Module Management Hub -->
+            <div class="row mt-4" id="module-settings">
+                <div class="col-12">
+                    <div class="card mb-5 border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                        
+                        <!-- Card Header -->
+                        <div class="card-header bg-white border-bottom py-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="rounded-3 bg-primary bg-opacity-10 text-primary p-2 fs-5">
+                                    <i class="fa-solid fa-puzzle-piece"></i>
+                                </div>
+                                <div>
+                                    <h4 class="mb-0 fw-bold">Module Management & Extensions</h4>
+                                    <p class="text-muted small mb-0">Upload module ZIP packages and manage installed society extensions</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill small fw-semibold">
+                                    <i class="fa-solid fa-layer-group me-1"></i>Modular System
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card-body p-4">
+                            
+                            <!-- TOP SECTION: Upload Module ZIP & Automated Config Instructions -->
+                            <div class="row g-4 mb-5">
+                                
+                                <!-- Left Column: Drag & Drop ZIP Upload Box -->
+                                <div class="col-lg-7">
+                                    <div class="card h-100 border border-secondary border-opacity-25 rounded-4 shadow-sm p-4" style="background: rgba(255, 255, 255, 0.02);">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="fw-bold mb-0 text-body">
+                                                <i class="fa-solid fa-file-zipper text-warning me-2"></i>Install Module via ZIP
+                                            </h5>
+                                            <span class="badge bg-secondary bg-opacity-15 text-body border border-secondary border-opacity-25 px-2.5 py-1 rounded-pill fs-8">
+                                                .ZIP Format
+                                            </span>
+                                        </div>
+                                        <p class="text-muted small mb-3">
+                                            Select or drag a valid module ZIP archive (e.g. <code>Finance.zip</code>). The system will automatically extract files, register composer autoloading, run database migrations, seed default records, and enable the module.
+                                        </p>
+
+                                        <!-- Drag & Drop Zone -->
+                                        <div class="drag-drop-module-zone border border-2 border-dashed rounded-3 p-4 text-center position-relative mb-3" 
+                                             id="module-drag-drop-zone"
+                                             style="background: rgba(59, 130, 246, 0.03); border-color: rgba(59, 130, 246, 0.3) !important; cursor: pointer; transition: all 0.3s ease;">
+                                            <input type="file" 
+                                                   id="module_zip_file" 
+                                                   name="module_zip"
+                                                   accept=".zip" 
+                                                   class="position-absolute w-100 h-100 top-0 start-0 opacity-0 no-dropify" 
+                                                   style="cursor: pointer; z-index: 5;">
+                                            
+                                            <div class="py-2" id="module-upload-idle-state" style="pointer-events: none;">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-inline-flex align-items-center justify-content-center mb-3" style="width: 58px; height: 58px;">
+                                                    <i class="fa-solid fa-cloud-arrow-up fa-2x"></i>
+                                                </div>
+                                                <h6 class="fw-bold text-body mb-1">Drag & Drop Module ZIP here</h6>
+                                                <p class="text-muted small mb-2">or click anywhere inside this box to select from your computer</p>
+                                                <span class="badge bg-secondary bg-opacity-10 text-muted fs-8">Accepted: .ZIP only (Max 50 MB)</span>
+                                            </div>
+
+                                            <!-- File Selected State (Hidden initially) -->
+                                            <div class="py-2 d-none" id="module-upload-selected-state">
+                                                <div class="rounded-circle bg-success bg-opacity-10 text-success d-inline-flex align-items-center justify-content-center mb-2" style="width: 54px; height: 54px;">
+                                                    <i class="fa-solid fa-file-zipper fa-2x"></i>
+                                                </div>
+                                                <h6 class="fw-bold text-success mb-1" id="selected-module-name">Finance.zip</h6>
+                                                <p class="text-muted small mb-2" id="selected-module-size">2.4 MB</p>
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" id="btn-remove-selected-module">
+                                                    <i class="fa-solid fa-xmark me-1"></i>Remove File
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Install Action Buttons -->
+                                        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 pt-2">
+                                            <div class="small text-muted d-flex align-items-center gap-1">
+                                                <i class="fa-solid fa-shield-halved text-success"></i> Auto-verified with <code>module.json</code>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-outline-secondary px-3 py-2 rounded-pill fw-semibold" id="btn-reset-module-upload">
+                                                    Cancel
+                                                </button>
+                                                <button type="button" class="btn btn-primary px-4 py-2 rounded-pill fw-semibold shadow-sm" id="btn-install-module-demo">
+                                                    <i class="fa-solid fa-bolt me-1"></i> Upload & Install Module
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column: Auto-Configuration Pipeline Flow -->
+                                <div class="col-lg-5">
+                                    <div class="card h-100 border border-secondary border-opacity-25 rounded-4 shadow-sm p-4" style="background: rgba(255, 255, 255, 0.02);">
+                                        <h5 class="fw-bold mb-3 text-body">
+                                            <i class="fa-solid fa-gears text-primary me-2"></i>Automated Pipeline
+                                        </h5>
+                                        <p class="text-muted small mb-3">
+                                            When you upload a module package, the system automatically executes the following actions:
+                                        </p>
+
+                                        <div class="d-flex flex-column gap-3 mb-4">
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold fs-7" style="width: 28px; height: 28px; flex-shrink: 0;">1</div>
+                                                <div>
+                                                    <div class="fw-semibold text-body small">Archive Verification</div>
+                                                    <div class="text-muted fs-8">Validates package integrity and checks for required <code>module.json</code> manifest.</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold fs-7" style="width: 28px; height: 28px; flex-shrink: 0;">2</div>
+                                                <div>
+                                                    <div class="fw-semibold text-body small">Extraction to Modules/</div>
+                                                    <div class="text-muted fs-8">Safely unzips controllers, models, views, and migrations into the module folder.</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold fs-7" style="width: 28px; height: 28px; flex-shrink: 0;">3</div>
+                                                <div>
+                                                    <div class="fw-semibold text-body small">Composer Autoload & Migrations</div>
+                                                    <div class="text-muted fs-8">Regenerates autoload mappings and runs module database schema migrations.</div>
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex align-items-start gap-3">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold fs-7" style="width: 28px; height: 28px; flex-shrink: 0;">4</div>
+                                                <div>
+                                                    <div class="fw-semibold text-body small">Activation & Cache Purge</div>
+                                                    <div class="text-muted fs-8">Enables module status in <code>modules_statuses.json</code> and flushes application cache.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="p-3 rounded-3 border border-warning border-opacity-25 bg-warning bg-opacity-10 text-body small">
+                                            <i class="fa-solid fa-lightbulb text-warning me-1"></i>
+                                            <strong>Note:</strong> Modules are completely isolated and can be enabled or disabled anytime.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Master All-in-One Import Modal (3-Step Resident Style) -->
             <div class="modal fade" id="master-import-modal" tabindex="-1" aria-labelledby="masterImportModalLabel"
                 aria-hidden="true" data-coreui-backdrop="static">
@@ -1731,6 +1948,191 @@
             }, observerOptions);
 
             sections.forEach(section => observer.observe(section));
+
+            // Module Settings Design Interactive Handlers
+            const moduleFileInput = document.getElementById('module_zip_file');
+            const dragDropZone = document.getElementById('module-drag-drop-zone');
+            const idleState = document.getElementById('module-upload-idle-state');
+            const selectedState = document.getElementById('module-upload-selected-state');
+            const selectedName = document.getElementById('selected-module-name');
+            const selectedSize = document.getElementById('selected-module-size');
+            const btnRemoveFile = document.getElementById('btn-remove-selected-module');
+            const btnResetUpload = document.getElementById('btn-reset-module-upload');
+            const btnInstallDemo = document.getElementById('btn-install-module-demo');
+            const btnUninstallDemo = document.getElementById('btn-uninstall-demo');
+
+            function formatBytes(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function handleFileSelect(file) {
+                if (!file) return;
+                if (!file.name.toLowerCase().endsWith('.zip')) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Invalid File Format',
+                            text: 'Please select a valid .zip module archive.',
+                            confirmButtonColor: '#3b82f6'
+                        });
+                    } else {
+                        alert('Please select a valid .zip module archive.');
+                    }
+                    return;
+                }
+
+                if (selectedName && selectedSize) {
+                    selectedName.textContent = file.name;
+                    selectedSize.textContent = formatBytes(file.size);
+                }
+
+                if (idleState) idleState.classList.add('d-none');
+                if (selectedState) selectedState.classList.remove('d-none');
+                if (dragDropZone) dragDropZone.style.borderColor = '#10b981';
+            }
+
+            function resetModuleUpload() {
+                if (moduleFileInput) moduleFileInput.value = '';
+                if (idleState) idleState.classList.remove('d-none');
+                if (selectedState) selectedState.classList.add('d-none');
+                if (dragDropZone) dragDropZone.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+            }
+
+            if (moduleFileInput) {
+                moduleFileInput.addEventListener('change', function(e) {
+                    if (e.target.files && e.target.files[0]) {
+                        handleFileSelect(e.target.files[0]);
+                    }
+                });
+            }
+
+            if (dragDropZone) {
+                ['dragenter', 'dragover'].forEach(eventName => {
+                    dragDropZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dragDropZone.style.background = 'rgba(59, 130, 246, 0.1)';
+                        dragDropZone.style.borderColor = '#3b82f6';
+                    }, false);
+                });
+
+                ['dragleave', 'drop'].forEach(eventName => {
+                    dragDropZone.addEventListener(eventName, (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        dragDropZone.style.background = 'rgba(59, 130, 246, 0.03)';
+                        dragDropZone.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+                    }, false);
+                });
+
+                dragDropZone.addEventListener('drop', (e) => {
+                    const dt = e.dataTransfer;
+                    const files = dt.files;
+                    if (files && files[0]) {
+                        handleFileSelect(files[0]);
+                    }
+                });
+            }
+
+            if (btnRemoveFile) {
+                btnRemoveFile.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    resetModuleUpload();
+                });
+            }
+
+            if (btnResetUpload) {
+                btnResetUpload.addEventListener('click', function(e) {
+                    resetModuleUpload();
+                });
+            }
+
+            if (btnInstallDemo) {
+                btnInstallDemo.addEventListener('click', function() {
+                    const file = moduleFileInput && moduleFileInput.files ? moduleFileInput.files[0] : null;
+                    if (!file) {
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'Select Module Package',
+                                text: 'Please drag or select a .zip module file before uploading.',
+                                confirmButtonColor: '#3b82f6'
+                            });
+                        } else {
+                            alert('Please drag or select a .zip module file before uploading.');
+                        }
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('module_zip', file);
+                    formData.append('_token', '{{ csrf_token() }}');
+
+                    btnInstallDemo.disabled = true;
+                    btnInstallDemo.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Uploading...';
+
+                    fetch('{{ route("settings.modules.upload") }}', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(response => response.json().then(data => ({ status: response.status, body: data })))
+                    .then(res => {
+                        btnInstallDemo.disabled = false;
+                        btnInstallDemo.innerHTML = '<i class="fa-solid fa-bolt me-1"></i> Upload & Install Module';
+
+                        if (res.body.success) {
+                            let pipelineHtml = `
+                                <div class="text-start mt-3 p-3 rounded-3 font-monospace small" style="background: rgba(0,0,0,0.25);">
+                                    <div class="text-success mb-1">✔ Archive Extracted to ${res.body.target_directory || 'Modules/'}</div>
+                                    <div class="text-success mb-1">✔ Module Status Enabled in modules_statuses.json</div>
+                                    <div class="text-success mb-1">✔ Composer Autoload Synchronized</div>
+                                    <div class="text-success mb-1">✔ Database Migrations Executed</div>
+                                    <div class="text-success">✔ Application Caches Cleared</div>
+                                </div>
+                                <p class="text-muted small mt-2 mb-0">Module <b>${res.body.module}</b> is now active and ready to use!</p>
+                            `;
+
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    title: 'Module Installed & Configured!',
+                                    html: pipelineHtml,
+                                    icon: 'success',
+                                    confirmButtonText: 'Reload Page',
+                                    confirmButtonColor: '#3b82f6'
+                                }).then(() => window.location.reload());
+                            } else {
+                                alert(res.body.message);
+                                window.location.reload();
+                            }
+                        } else {
+                            throw new Error(res.body.message || 'Upload failed');
+                        }
+                    })
+                    .catch(err => {
+                        btnInstallDemo.disabled = false;
+                        btnInstallDemo.innerHTML = '<i class="fa-solid fa-bolt me-1"></i> Upload & Install Module';
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                title: 'Upload Failed',
+                                text: err.message,
+                                icon: 'error',
+                                confirmButtonColor: '#ef4444'
+                            });
+                        } else {
+                            alert('Error: ' + err.message);
+                        }
+                    });
+                });
+            }
         });
     </script>
     @endpush

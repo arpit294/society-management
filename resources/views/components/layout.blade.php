@@ -102,8 +102,12 @@
 
     <div id="global-flash-messages" class="d-none" data-success="{{ session('success') }}"
         data-error="{{ !str_contains(session('error', ''), '<br>') ? session('error') : '' }}"
-        data-status="{{ session('status') }}" data-validation="{{ $errors->any() ? $errors->first() : '' }}">
+        data-status="{{ session('status') }}" data-validation="{{ (isset($errors) && $errors->any()) ? $errors->first() : '' }}">
     </div>
+
+    <!-- Global Premium Feature Upsell Modal -->
+    <x-premium-modal />
+
     @stack('scripts')
 </body>
 
